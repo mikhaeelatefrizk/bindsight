@@ -1,0 +1,27 @@
+name: Zenodo deposit on tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  deposit:
+    name: Deposit release on Zenodo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      # The actual Zenodo deposit is wired via the GitHub-Zenodo integration:
+      # https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content
+      # Once you enable that for the repo, every published GitHub Release gets
+      # an automatic Zenodo DOI. This workflow exists to make sure the release
+      # is in the right shape (CITATION.cff present, README + LICENSE present).
+      - name: Sanity check release artifacts
+        run: |
+          test -f CITATION.cff
+          test -f LICENSE
+          test -f README.md
+          test -f CHANGELOG.md
+          echo "Release artifacts present. Zenodo deposit will be created via the GitHub-Zenodo integration."
