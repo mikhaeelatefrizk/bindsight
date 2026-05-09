@@ -1,0 +1,16 @@
+name: xpr2bind-report
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip>=24.0
+  - pandas>=2.2
+  - pyarrow>=16
+  - matplotlib>=3.8
+  - seaborn>=0.13
+  - jupyter>=1.0
+  - quarto>=1.5
+  - pip:
+      - py3Dmol>=2.0
+      - streamlit>=1.36
+      - -e ..

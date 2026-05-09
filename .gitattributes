@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+*.py text diff=python
+*.md text
+*.yaml text
+*.yml text
+*.toml text
+*.cff text
+Snakefile text
+
+# Binary-y data
+*.parquet binary
+*.tar.gz binary
+*.gz binary
+*.zip binary
+*.cif binary
+*.pdb binary

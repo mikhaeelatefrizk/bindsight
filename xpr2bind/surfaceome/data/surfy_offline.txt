@@ -1,0 +1,17 @@
+# Offline-test fallback subset of the SURFY surfaceome list.
+# This is NOT the full SURFY table — it is a tiny curated list of widely-cited
+# human surface antigens used for unit tests and `--allow-offline` smoke runs.
+# For production discovery runs, populate the cache from
+# https://wlab.ethz.ch/surfaceome (CC-BY).
+#
+# One UniProt accession per line. Lines starting with '#' are ignored.
+P04626
+P00533
+Q14953
+Q13421
+P10747
+P16410
+Q9NZQ7
+P09038
+P10275
+P19838

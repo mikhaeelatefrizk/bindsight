@@ -1,0 +1,96 @@
+# --- xpr2bind ----------------------------------------------------------------
+# Pipeline artifacts
+runs/
+results/
+.snakemake/
+*.parquet
+*.tar.gz
+*.zip
+!tests/fixtures/**/*.parquet
+!tests/fixtures/**/*.tar.gz
+
+# Vendored data dependencies (downloaded at install time, not committed)
+data/surface_bind/
+data/alphafolddb_cache/
+data/recount3_cache/
+data/colabfold_msa_cache/
+
+# Generated reports
+report.html
+*_report.html
+report_files/
+
+# RO-Crate exports
+*.crate.zip
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local
+*.pem
+*.key
+secrets/
+
+# OS
+desktop.ini

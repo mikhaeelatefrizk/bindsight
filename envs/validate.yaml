@@ -1,0 +1,12 @@
+# Placeholder env for the validation half. Validators run on remote GPU; the
+# local env just packages and unpacks results.
+name: xpr2bind-validate
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip>=24.0
+  - pyyaml>=6.0
+  - pydantic>=2.6
+  - pip:
+      - -e ..

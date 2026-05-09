@@ -1,0 +1,13 @@
+# Placeholder env for the design half. Most heavy ML deps live inside the
+# remote-GPU runner image, NOT in this local conda env. This env only needs
+# the spec/result handling code to run on the orchestrator.
+name: xpr2bind-design
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip>=24.0
+  - pyyaml>=6.0
+  - pydantic>=2.6
+  - pip:
+      - -e ..

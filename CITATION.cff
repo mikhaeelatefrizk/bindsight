@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use xpr2bind in your research, please cite it as below."
+title: "xpr2bind: a reproducible bridge from RNA-seq to de novo protein binder design"
+abstract: >-
+  xpr2bind is an open-source Python package that produces ranked de novo protein
+  binder candidates directly from bulk or single-cell RNA-seq counts, using an
+  opinionated pipeline that joins differential expression analysis, the human
+  surfaceome (SURFY + SURFACE-Bind), AlphaFoldDB structures, deep-learning
+  binder design (RFdiffusion + ProteinMPNN, BindCraft, or BoltzGen), and
+  affinity validation (Boltz-2, Chai-1r, or AF2-IG), with end-to-end
+  PROV-O / RO-Crate provenance.
+type: software
+authors:
+  - family-names: "Atef Rizk"
+    given-names: "Mikhaeel"
+    email: "mikhaeelatefrizk@proton.me"
+    affiliation: "Independent Researcher, Rotterdam, NL"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"  # TODO: add ORCID
+repository-code: "https://github.com/mikhaeelatefrizk/xpr2bind"
+url: "https://github.com/mikhaeelatefrizk/xpr2bind"
+license: MIT
+keywords:
+  - protein-design
+  - bioinformatics
+  - RNA-seq
+  - de-novo-binder-design
+  - AlphaFold
+  - RFdiffusion
+  - ProteinMPNN
+  - Boltz
+  - BindCraft
+  - reproducibility
+  - PROV-O
+  - RO-Crate
+  - target-discovery
+  - cancer-immunotherapy
+version: 0.0.1-dev
+date-released: "2026-05-09"

@@ -1,0 +1,212 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+# -----------------------------------------------------------------------------
+# Project metadata
+# -----------------------------------------------------------------------------
+[project]
+name = "xpr2bind"
+version = "0.0.1.dev0"
+description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "protein-design",
+    "bioinformatics",
+    "RNA-seq",
+    "de-novo-binder-design",
+    "AlphaFold",
+    "RFdiffusion",
+    "ProteinMPNN",
+    "Boltz",
+    "BindCraft",
+    "reproducibility",
+    "PROV-O",
+    "RO-Crate",
+    "target-discovery",
+]
+authors = [
+    { name = "Mikhaeel Atef Rizk", email = "mikhaeelatefrizk@proton.me" },
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# -----------------------------------------------------------------------------
+# Runtime dependencies — kept intentionally minimal for the package itself.
+# Heavy stage-specific deps (pydeseq2, snakemake, biopython) live in conda envs
+# under envs/*.yaml so users can install only what they need.
+# -----------------------------------------------------------------------------
+dependencies = [
+    "click>=8.1",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "pyyaml>=6.0",
+    "requests>=2.32",
+    "rich>=13.7",          # CLI output formatting
+    "tenacity>=8.4",       # API retry policies
+    "platformdirs>=4.2",   # cache locations
+]
+
+[project.optional-dependencies]
+discover = [
+    "pydeseq2>=0.5",
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "numpy>=1.26",
+    "biopython>=1.83",
+    "gql[requests]>=3.5",  # Open Targets GraphQL
+]
+report = [
+    "py3Dmol>=2.0",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "jupyter>=1.0",
+]
+runners = [
+    "modal>=0.64",
+    "google-api-python-client>=2.0",  # Colab/Drive
+    "kaggle>=1.6",
+]
+all = [
+    "xpr2bind[discover,report,runners]",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-mock>=3.12",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "types-requests",
+    "types-pyyaml",
+    "pre-commit>=3.7",
+    "build>=1.2",
+    "twine>=5.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/mikhaeelatefrizk/xpr2bind"
+Documentation = "https://github.com/mikhaeelatefrizk/xpr2bind#readme"
+Repository = "https://github.com/mikhaeelatefrizk/xpr2bind"
+Issues = "https://github.com/mikhaeelatefrizk/xpr2bind/issues"
+Changelog = "https://github.com/mikhaeelatefrizk/xpr2bind/blob/main/CHANGELOG.md"
+
+[project.scripts]
+xpr2bind = "xpr2bind.cli:main"
+
+# -----------------------------------------------------------------------------
+# Plugin entry points — designers, validators, runners can be added by 3rd
+# parties without forking xpr2bind.
+# -----------------------------------------------------------------------------
+[project.entry-points."xpr2bind.designers"]
+rfdiff_mpnn = "xpr2bind.design.rfdiff_mpnn:RFdiffMPNNDesigner"
+bindcraft   = "xpr2bind.design.bindcraft:BindCraftDesigner"
+boltzgen    = "xpr2bind.design.boltzgen:BoltzGenDesigner"
+
+[project.entry-points."xpr2bind.validators"]
+boltz2  = "xpr2bind.validate.boltz2:Boltz2Validator"
+chai1r  = "xpr2bind.validate.chai1r:Chai1rValidator"
+af2_ig  = "xpr2bind.validate.af2_ig:AF2IGValidator"
+
+[project.entry-points."xpr2bind.runners"]
+colab        = "xpr2bind.runners.colab:ColabRunner"
+modal        = "xpr2bind.runners.modal_runner:ModalRunner"
+kaggle       = "xpr2bind.runners.kaggle:KaggleRunner"
+local_docker = "xpr2bind.runners.local_docker:LocalDockerRunner"
+mock         = "xpr2bind.runners.mock:MockRunner"
+
+# -----------------------------------------------------------------------------
+# Tooling
+# -----------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["xpr2bind"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".snakemake", "runs", "results"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+    "PT",   # pytest-style
+    "D",    # pydocstyle
+]
+ignore = [
+    "D100", "D104", "D105", "D107",  # missing docstrings on modules / packages / dunder / __init__
+    "E501",                            # line too long (formatter handles)
+    "RUF002",                          # ambiguous Unicode in docstrings (× and similar are intentional)
+    "RUF003",                          # ambiguous Unicode in comments
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["D", "S101"]
+"xpr2bind/**/__init__.py" = ["D", "F401"]
+"scripts/**/*" = ["D", "PLW0127"]    # Snakemake injects globals; doc-strings live in module docstring
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["tests/fixtures", "build", "dist"]
+
+[[tool.mypy.overrides]]
+module = ["pydeseq2.*", "Bio.*", "py3Dmol.*", "modal.*", "snakemake.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=xpr2bind",
+    "--cov-report=term-missing",
+]
+testpaths = ["tests"]
+markers = [
+    "gpu: tests that require an NVIDIA GPU (skipped in CI)",
+    "slow: long-running tests against real APIs (skipped by default)",
+    "integration: end-to-end tests across modules",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["xpr2bind"]
+omit = [
+    "xpr2bind/_version.py",
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

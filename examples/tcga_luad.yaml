@@ -1,0 +1,83 @@
+# Example xpr2bind config: TCGA-LUAD (lung adenocarcinoma) primary tumor vs.
+# matched solid normal. Sourced from recount3 (counts already aligned and
+# uniformly processed).
+#
+# This is the v0.1 canonical example — used in CI and in the rediscovery
+# validation paper. The expected output is a ranked list of binder candidates
+# against tumor-specific surface antigens, with EGFR (a known LUAD target)
+# expected to appear in the top 10.
+
+name: tcga_luad_v01
+out_dir: runs/tcga_luad_v01
+
+# ---------------------------------------------------------------------------
+# Inputs
+# ---------------------------------------------------------------------------
+inputs:
+  # Counts matrix: gene × sample, integer counts. Will be downloaded from
+  # recount3 by `xpr2bind discover` if the path doesn't exist locally.
+  counts: data/recount3_cache/tcga_luad/counts.tsv.gz
+  # Sample design: one row per sample with at minimum a ``condition`` column
+  # encoding tumor vs. normal.
+  design: data/recount3_cache/tcga_luad/design.tsv
+
+# ---------------------------------------------------------------------------
+# Stage parameters
+# ---------------------------------------------------------------------------
+params:
+  deg:
+    design_formula: "~ condition"
+    contrast: ["condition", "tumor", "normal"]
+    fdr_threshold: 0.05
+    log2fc_threshold: 1.0
+    min_replicates: 3
+
+  target_discovery:
+    # Surfaceome filter
+    require_surfy: true
+    surfy_allow_offline_fallback: false  # In production, fail fast if SURFY isn't cached
+
+    # Specificity filter (low expression in vital tissues)
+    vital_tissues:
+      - heart_left_ventricle
+      - brain_cortex
+      - liver
+      - lung
+    vital_tissue_max_tpm: 5.0
+
+    # Pull tractability + safety from Open Targets
+    use_open_targets: true
+    require_tractable_modality: ["Antibody"]    # Filter to antibody-tractable
+    max_safety_events: 5
+
+    # SURFACE-Bind site lookup
+    require_surface_bind_site: true
+    min_surface_bind_score: 0.5
+
+    # Top-N targets carried forward to design
+    top_n: 5
+
+  design:
+    designer: rfdiff_mpnn
+    n_trajectories: 50
+    binder_length_min: 50
+    binder_length_max: 100
+    seed: 42
+
+  validate:
+    validator: boltz2
+    iptm_threshold: 0.65
+    pae_interaction_threshold: 8.0
+
+  rank:
+    weights:
+      log2fc_specificity: 0.25
+      iptm: 0.30
+      affinity: 0.30
+      sequence_recovery: 0.15
+
+# ---------------------------------------------------------------------------
+# Runtime
+# ---------------------------------------------------------------------------
+backend: colab          # colab | modal | kaggle | local_docker | mock
+cheap_profile: false    # If true, drops to T4 / 10 trajectories / ESM-2 pre-screen
