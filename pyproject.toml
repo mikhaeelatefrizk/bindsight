@@ -157,6 +157,7 @@ select = [
 ignore = [
     "D100", "D104", "D105", "D107",  # missing docstrings on modules / packages / dunder / __init__
     "E501",                            # line too long (formatter handles)
+    "RUF001",                          # ambiguous Unicode in strings (× and similar are intentional)
     "RUF002",                          # ambiguous Unicode in docstrings (× and similar are intentional)
     "RUF003",                          # ambiguous Unicode in comments
 ]
