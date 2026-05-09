@@ -13,17 +13,30 @@ which are pure-Python and work today.
 
 from __future__ import annotations
 
+import logging
 import sys
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 import click
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.panel import Panel
 from rich.table import Table
 
 from xpr2bind import __version__
 
 console = Console()
+
+
+def _setup_logging(verbose: bool) -> None:
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -76,20 +89,58 @@ def main() -> None:
 @click.option(
     "--top-n",
     type=int,
-    default=5,
-    show_default=True,
-    help="Number of top-ranked targets to carry forward.",
+    default=None,
+    help="Override params.target_discovery.top_n in the config.",
 )
-def discover(config: Path, out_dir: Path, top_n: int) -> None:
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Verbose (DEBUG) logging.",
+)
+def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> None:
     """Discover surface antigen targets from RNA-seq counts.
 
     Runs the discovery half of the pipeline (CPU only):
-    DEG → surfaceome filter → SURFACE-Bind site lookup → AlphaFoldDB pull.
+    DEG → surfaceome filter → Open Targets enrichment → AlphaFoldDB pull.
+    SURFACE-Bind site lookup is wired in v0.0.3.
     """
+    _setup_logging(verbose)
+    from xpr2bind.config import RunConfig
+    from xpr2bind.pipelines import discover as discover_pipeline
+
+    cfg = RunConfig.from_yaml(config)
+    cfg.out_dir = out_dir
+    if top_n is not None:
+        cfg.params.target_discovery.top_n = top_n
+
     console.print(f"[dim]config:[/dim] {config}")
     console.print(f"[dim]out:[/dim] {out_dir}")
-    console.print(f"[dim]top-n:[/dim] {top_n}")
-    _not_implemented("discover")
+    console.print(f"[dim]top-n:[/dim] {cfg.params.target_discovery.top_n}")
+
+    manifest = discover_pipeline.run(cfg, out_dir=out_dir)
+
+    failed = [s for s in manifest.stages if s.status == "failed"]
+    if failed:
+        console.print(
+            Panel(
+                "\n".join(f"[red]{s.name}[/red]: {s.error}" for s in failed),
+                title="Stage failures",
+                border_style="red",
+            )
+        )
+        sys.exit(1)
+
+    console.print(
+        Panel(
+            f"[green]Discovery complete.[/green]\n"
+            f"Manifest: {out_dir / 'run_manifest.jsonld'}\n"
+            f"Targets:  {out_dir / 'targets' / 'candidates.parquet'}\n"
+            f"Epitopes: {out_dir / 'epitopes' / 'epitopes.parquet'}",
+            title="xpr2bind discover",
+            border_style="green",
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -326,6 +377,81 @@ def verify_licenses(config: Path | None) -> None:
     console.print(
         "\n[dim]See LICENSING.md for the full inventory and commercial-use guidance.[/dim]"
     )
+
+
+# ---------------------------------------------------------------------------
+# doctor — diagnose the local install (cache state, vendored data, env vars)
+# ---------------------------------------------------------------------------
+@main.command()
+def doctor() -> None:
+    """Diagnose the local install: Python, deps, cache state, vendored data."""
+    import os
+    import platform
+
+    from xpr2bind.io.paths import cache_dir
+
+    table = Table(title="xpr2bind doctor", show_lines=False, title_style="bold")
+    table.add_column("Check", style="cyan", no_wrap=True)
+    table.add_column("Status")
+    table.add_column("Detail", overflow="fold")
+
+    def _row(name: str, ok: bool, detail: str = "") -> None:
+        status = "[green]ok[/green]" if ok else "[yellow]warn[/yellow]"
+        table.add_row(name, status, detail)
+
+    # Runtime
+    _row("python", sys.version_info >= (3, 11), platform.python_version())
+    _row("platform", True, platform.platform())
+    _row("xpr2bind", True, __version__)
+
+    # Optional deps that the discovery half needs
+    for dep in ("pydeseq2", "pandas", "pyarrow", "requests", "tenacity"):
+        try:
+            v = pkg_version(dep)
+            _row(f"dep: {dep}", True, v)
+        except PackageNotFoundError:
+            _row(
+                f"dep: {dep}",
+                False,
+                'not installed; run: pip install -e ".[discover]"',
+            )
+
+    # Cache state
+    base = cache_dir()
+    _row("cache root", base.exists(), str(base))
+    surfy_cache = base / "surfy" / "surfy_v1.uniprot.txt"
+    _row(
+        "SURFY cache",
+        surfy_cache.exists(),
+        str(surfy_cache)
+        if surfy_cache.exists()
+        else "missing — using bundled offline fallback (~10 proteins)",
+    )
+    afdb_cache = base / "alphafolddb"
+    n_afdb = len(list(afdb_cache.glob("*.cif"))) if afdb_cache.exists() else 0
+    _row("AlphaFoldDB cache", afdb_cache.exists(), f"{n_afdb} mmCIF files cached")
+    ot_cache = base / "opentargets"
+    n_ot = len(list(ot_cache.glob("*.json"))) if ot_cache.exists() else 0
+    _row("Open Targets cache", ot_cache.exists(), f"{n_ot} cached responses")
+
+    # Vendored data (SURFACE-Bind)
+    sb_env = os.environ.get("XPR2BIND_SURFACE_BIND_DATA")
+    sb_default = Path("data/surface_bind")
+    if sb_env:
+        sb_path = Path(sb_env)
+        _row(
+            "SURFACE-Bind data",
+            sb_path.exists(),
+            f"env XPR2BIND_SURFACE_BIND_DATA={sb_path}",
+        )
+    else:
+        _row(
+            "SURFACE-Bind data",
+            (sb_default / "sites").exists() if sb_default.exists() else False,
+            "data/surface_bind/sites — see data/surface_bind/README.md",
+        )
+
+    console.print(table)
 
 
 if __name__ == "__main__":  # pragma: no cover

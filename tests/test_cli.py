@@ -27,10 +27,22 @@ def test_cli_verify_licenses() -> None:
     assert "Boltz-2" in r.output
 
 
-def test_cli_discover_not_implemented(tmp_path) -> None:
+def test_cli_discover_rejects_invalid_config(tmp_path) -> None:
+    """An ill-shaped YAML must raise a Pydantic ValidationError, not silently run."""
+    from pydantic import ValidationError
+
     cfg = tmp_path / "config.yaml"
     cfg.write_text("name: x\n")
     r = CliRunner().invoke(main, ["discover", str(cfg), "--out", str(tmp_path / "run")])
+    assert r.exit_code != 0
+    assert isinstance(r.exception, ValidationError)
+
+
+def test_cli_design_not_implemented(tmp_path) -> None:
+    """``design`` is still a stub in v0.0.x — kept for the CLI surface."""
+    run = tmp_path / "run"
+    run.mkdir()
+    r = CliRunner().invoke(main, ["design", str(run)])
     assert r.exit_code == 2
     assert "Not implemented" in r.output
 

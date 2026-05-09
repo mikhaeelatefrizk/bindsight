@@ -9,8 +9,11 @@ import pytest
 PUBLIC_MODULES = [
     "xpr2bind",
     "xpr2bind.cli",
+    "xpr2bind.config",
     "xpr2bind.io",
     "xpr2bind.io.paths",
+    "xpr2bind.pipelines",
+    "xpr2bind.pipelines.discover",
     "xpr2bind.provenance",
     "xpr2bind.provenance.manifest",
     "xpr2bind.targets",
