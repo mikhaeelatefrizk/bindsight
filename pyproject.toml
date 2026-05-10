@@ -137,6 +137,16 @@ mock         = "xpr2bind.runners.mock:MockRunner"
 [tool.hatch.build.targets.wheel]
 packages = ["xpr2bind"]
 
+# Include non-Python data files in the wheel: surfaceome offline list,
+# report templates / CSS / JS, plus example data needed by `xpr2bind demo`.
+[tool.hatch.build.targets.wheel.shared-data]
+"examples/demo" = "xpr2bind_demo"
+
+[tool.hatch.build.targets.wheel.force-include]
+"xpr2bind/surfaceome/data/surfy_offline.txt" = "xpr2bind/surfaceome/data/surfy_offline.txt"
+"xpr2bind/report/templates/report.html.j2"   = "xpr2bind/report/templates/report.html.j2"
+"xpr2bind/report/templates/report.css"       = "xpr2bind/report/templates/report.css"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

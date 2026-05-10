@@ -8,6 +8,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — Phase 3 "perfect demo" (2026-05-11)
+- **`xpr2bind demo`** — one-command end-to-end run on a shipped 10-gene
+  tumor-vs-normal cohort. Takes ~30 s on a CPU laptop, no internet required,
+  no GPU required. The pipeline rediscovers ERBB2 (HER2) and EGFR as top
+  antibody-tractable surface antigens, producing a real HTML report.
+- **`examples/demo/`** — bundled `counts.tsv`, `design.tsv`, `config.yaml`
+  for the demo. Files ship with the wheel via `[tool.hatch.build.targets.wheel.force-include]`.
+- **`xpr2bind.report.html.render_run`** — paper-style HTML report renderer.
+  Self-contained single-file output: embedded CSS, base64 PNG volcano plot,
+  candidates table with badges, epitopes table, full PROV-O provenance table,
+  styled to look like a Nature methods page. Pure jinja2 + matplotlib, no
+  Quarto / Jupyter dependency.
+- **`xpr2bind.report.streamlit_app`** — interactive Streamlit dashboard for
+  browsing a run. Launched via `xpr2bind report <run> --format streamlit`.
+- **`xpr2bind report`** is now wired (was stub).
+- **`xpr2bind.targets.ensembl_uniprot`** — bundled offline ENSG → UniProt
+  fallback map (~15 well-known cancer surface antigens + drivers). Used when
+  Open Targets is disabled or unreachable; status `bundled_fallback` is
+  recorded in the candidates table.
+- **`docs/colab-design-howto.md`** — step-by-step recipe for running
+  RFdiffusion + ProteinMPNN + Boltz-2 on Colab against a `xpr2bind` discover
+  output. Documents the manual flow until live runner integration in v0.1.0-rc2.
+- **README polished**: feature matrix showing what works today vs. what's
+  pending; 60-second quickstart; cleaner install instructions.
+- 18 new tests (demo E2E, ensembl_uniprot fallback, HTML report renderer,
+  CLI demo + report). Total: **156 fast tests passing**, all green.
+- Windows console fix: `sys.stdout.reconfigure(encoding='utf-8')` at CLI
+  startup so Rich box-drawing chars + ≥/×/→ glyphs render on cp1252 terminals
+  without crashing.
+
 ### Added — Phase 2 GPU-half scaffold (2026-05-10)
 - `xpr2bind.cost` — real GPU cost estimator. Pricing table for Modal /
   Colab Pro+ / Kaggle / local across A100 / H100 / L4 / T4 / RTX4090 etc.

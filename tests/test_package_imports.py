@@ -19,6 +19,7 @@ PUBLIC_MODULES = [
     "xpr2bind.provenance.manifest",
     "xpr2bind.targets",
     "xpr2bind.targets.open_targets",
+    "xpr2bind.targets.ensembl_uniprot",
     "xpr2bind.surfaceome",
     "xpr2bind.surfaceome.surfy",
     "xpr2bind.structures",
@@ -47,6 +48,8 @@ PUBLIC_MODULES = [
     "xpr2bind.validate.af2_ig",
     "xpr2bind.rank",
     "xpr2bind.report",
+    "xpr2bind.report.html",
+    "xpr2bind.report.streamlit_app",
 ]
 
 

@@ -1,15 +1,50 @@
 # xpr2bind
 
-> **Expression → Binder.** A reproducible, open-source bridge from RNA-seq counts to ranked de novo protein binder candidates, with end-to-end provenance.
+> **Expression → Binder.** The first open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein binder candidates, with full provenance back to the patient cohort.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)]()
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
+[![Tests: 138+](https://img.shields.io/badge/tests-138+-brightgreen.svg)]()
 
-> ⚠️ **Pre-release.** v0.0.1-dev. APIs and outputs are subject to change. See [CHANGELOG.md](CHANGELOG.md).
+> ⚠️ **Pre-release.** v0.0.1-dev. APIs and outputs may change. See [CHANGELOG.md](CHANGELOG.md).
 
-**New here?** → [What is xpr2bind?](docs/what-is-xpr2bind.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md)
+**New here?** → [What is xpr2bind?](docs/what-is-xpr2bind.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
+
+---
+
+## Try it in 60 seconds
+
+After cloning + installing (one time, ~3 min — see [Install](#install) below):
+
+```bash
+xpr2bind demo
+```
+
+This runs the full discovery half on a tiny shipped 10-gene tumor-vs-normal cohort and produces a real HTML report you can open in a browser. The pipeline rediscovers HER2 (ERBB2) and EGFR as the top antibody-tractable surface antigens — the textbook cancer immunotherapy targets — entirely from synthetic RNA-seq counts. ~30 seconds on a CPU laptop, no internet required, no GPU required.
+
+```
+$ xpr2bind demo
+╭───────────── Demo run ──────────────╮
+│ Synthetic 10-gene tumor-vs-normal   │
+│ cohort. The pipeline should         │
+│ rediscover ERBB2 (HER2) and EGFR    │
+│ as top antibody-tractable surface   │
+│ antigens. Takes ~30s on a CPU       │
+│ laptop.                             │
+╰─────────────────────────────────────╯
+INFO  DEGs: 10 total, 5 significant
+INFO  surfaceome filter: 5 → 2
+INFO  safety filter (≤100 events): 2 → 2
+INFO  wrote runs/demo/report.html
+╭───────── xpr2bind demo ─────────────╮
+│ Demo complete!                      │
+│ Report HTML: runs/demo/report.html  │
+╰─────────────────────────────────────╯
+```
+
+Open `runs/demo/report.html` in your browser.
 
 ---
 
@@ -69,27 +104,62 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 
 For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#comparison-vs-existing-tools).
 
+## What works today (v0.0.x)
+
+| Capability | Status | How to try |
+|---|---|---|
+| `xpr2bind demo` — full discovery half on a shipped example, report HTML included | ✅ ready | `xpr2bind demo` |
+| `xpr2bind discover` — your own RNA-seq cohort → ranked targets | ✅ ready | `xpr2bind discover my.yaml --out runs/x` |
+| `xpr2bind report --format html` — paper-style HTML, embedded volcano + tables + provenance | ✅ ready | `xpr2bind report runs/demo` |
+| `xpr2bind report --format streamlit` — interactive dashboard | ✅ ready | `xpr2bind report runs/demo --format streamlit` |
+| `xpr2bind doctor` — diagnose deps, caches, vendored data | ✅ ready | `xpr2bind doctor` |
+| `xpr2bind verify-licenses` — per-component license inventory | ✅ ready | `xpr2bind verify-licenses` |
+| `xpr2bind design --dry-run` — GPU cost estimate for any backend | ✅ ready | `xpr2bind design runs/demo --backend modal --dry-run` |
+| `xpr2bind validate --dry-run` — validator GPU cost estimate | ✅ ready | `xpr2bind validate runs/demo --backend modal` |
+| GPU design via Colab (manual recipe) | ✅ ready | [docs/colab-design-howto.md](docs/colab-design-howto.md) |
+| `xpr2bind design` — live job submission to Colab/Modal | 🚧 v0.1.0-rc2 | (pending) |
+| `xpr2bind validate` — live Boltz-2 invocation | 🚧 v0.1.0-rc2 | (pending) |
+| `xpr2bind rank` — multi-objective ranking | 🚧 v0.1.0-rc2 | (pending) |
+| `xpr2bind export` — RO-Crate for Zenodo | 🚧 v0.1.0-rc2 | (pending) |
+| Validation paper (rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA) | ⏳ v0.2 | (pending) |
+
 ## Status & roadmap
 
-- ✅ **v0.0.1-dev** (current) — repo skeleton, manifest schema, CLI shell
-- 🚧 **v0.0.x** — discovery half (CPU only): pydeseq2, Open Targets, SURFY/SURFACE-Bind, AlphaFoldDB
-- ⏳ **v0.1.0** — design half (GPU offload): RFdiffusion+ProteinMPNN backbone, Boltz-2 validation, Quarto report, RO-Crate export
-- ⏳ **v0.2.0** — BindCraft + BoltzGen designer plugins, fpocket epitope fallback, scRNA-seq input
-- ⏳ **v1.0.0** — JOSS submission, validation paper
+- ✅ **v0.0.1-dev** (current) — discovery half + report + Streamlit + cost estimator + doctor + plugin scaffolding
+- 🚧 **v0.1.0-rc2** — live GPU runner integration, real RFdiff+MPNN+Boltz-2 invocation, RO-Crate export
+- ⏳ **v0.2.0** — BindCraft + BoltzGen designer plugins, fpocket epitope fallback, scRNA-seq input, validation paper
+- ⏳ **v1.0.0** — JOSS submission
 
 See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
 
-## Installation
+## Install
 
-> `xpr2bind` is not yet on PyPI. Install from source:
+`xpr2bind` is not yet on PyPI. Install from source (Windows / macOS / Linux,
+Python 3.11+):
 
 ```bash
-git clone https://github.com/mikhaeelatefrizk/xpr2bind.git
+git clone <repo-url> xpr2bind
 cd xpr2bind
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -e ".[dev,discover,report]"
+xpr2bind --version
+xpr2bind doctor                # confirm install is clean
+xpr2bind demo                  # run the 60-second demo
+```
+
+For Conda users, `envs/discover.yaml` provides the same set of dependencies:
+
+```bash
 mamba env create -f envs/discover.yaml
 mamba activate xpr2bind-discover
-pip install -e ".[dev]"
-xpr2bind --version
+pip install -e ".[dev,report]"
 ```
 
 ## Quickstart (target: v0.0.x)

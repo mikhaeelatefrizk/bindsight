@@ -1,3 +1,5 @@
-"""Reporting: Quarto HTML + Streamlit dashboard, both backed by the same data."""
+"""Reporting: paper-style HTML + Streamlit dashboard, both backed by the same data."""
 
-from __future__ import annotations
+from xpr2bind.report.html import render_run
+
+__all__ = ["render_run"]
