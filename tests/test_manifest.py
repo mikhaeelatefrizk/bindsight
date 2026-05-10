@@ -1,4 +1,4 @@
-"""Tests for ``xpr2bind.provenance.manifest`` — the inter-module contract."""
+"""Tests for ``bindsight.provenance.manifest`` — the inter-module contract."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from xpr2bind.provenance import (
+from bindsight.provenance import (
     ContainerRef,
     InputRef,
     Manifest,
@@ -18,7 +18,7 @@ from xpr2bind.provenance import (
     new_manifest,
     sha256_file,
 )
-from xpr2bind.provenance.manifest import MANIFEST_SCHEMA_VERSION, PROV_CONTEXT
+from bindsight.provenance.manifest import MANIFEST_SCHEMA_VERSION, PROV_CONTEXT
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ def test_new_manifest_captures_runtime() -> None:
     assert m.name == "t"
     assert m.runtime.python
     assert m.runtime.platform
-    assert m.runtime.xpr2bind_version
+    assert m.runtime.bindsight_version
     assert m.schema_version == MANIFEST_SCHEMA_VERSION
 
 

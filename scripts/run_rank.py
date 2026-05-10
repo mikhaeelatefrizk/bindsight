@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
-LOG = logging.getLogger("xpr2bind.rank")
+LOG = logging.getLogger("bindsight.rank")
 
 
 def main() -> int:

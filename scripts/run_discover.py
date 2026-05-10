@@ -1,6 +1,6 @@
 """Snakemake script: target discovery + epitope lookup.
 
-Wraps :func:`xpr2bind.pipelines.discover._do_discover` so the work survives
+Wraps :func:`bindsight.pipelines.discover._do_discover` so the work survives
 either as a Snakemake rule or as a direct Python call from the CLI.
 """
 
@@ -18,14 +18,14 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
 )
-LOG = logging.getLogger("xpr2bind.discover")
+LOG = logging.getLogger("bindsight.discover")
 
 
 def main() -> int:
     # Lazy imports keep the script importable even when the discover extras
     # are missing in a different env.
-    from xpr2bind.config import RunConfig, TargetDiscoveryParams
-    from xpr2bind.pipelines.discover import _do_discover
+    from bindsight.config import RunConfig, TargetDiscoveryParams
+    from bindsight.pipelines.discover import _do_discover
 
     deg_table = Path(snakemake.input.deg_table)
     out_targets = Path(snakemake.output.targets)

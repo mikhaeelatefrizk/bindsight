@@ -1,50 +1,60 @@
-# xpr2bind
+# bindsight
 
 > **Expression → Binder.** The first open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein binder candidates, with full provenance back to the patient cohort.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)]()
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
+[![Tests: 175+](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen.svg)]()
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
-[![Tests: 138+](https://img.shields.io/badge/tests-138+-brightgreen.svg)]()
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
 
-> ⚠️ **Pre-release.** v0.0.1-dev. APIs and outputs may change. See [CHANGELOG.md](CHANGELOG.md).
+> 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation patterned for free Colab; web UI with Streamlit Cloud deploy.
 
-**New here?** → [What is xpr2bind?](docs/what-is-xpr2bind.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
+**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
 
 ---
 
-## Try it in 60 seconds
+## Three ways to try it
 
-After cloning + installing (one time, ~3 min — see [Install](#install) below):
+### 1. Web app (zero install)
+
+After deployment to Streamlit Cloud (one click after `git push`), anyone visiting `https://bindsight.streamlit.app` gets:
+- The Home page with what bindsight is
+- A **Demo** button that runs the full pipeline live and renders a report
+- A **Run on my data** page (upload counts.tsv + design.tsv → get results)
+- A **Browse a run** page to inspect any output directory
+
+### 2. Local web app (one command)
 
 ```bash
-xpr2bind demo
+pip install -e ".[discover,report]"
+bindsight ui
+# → opens http://localhost:8501 with the same multi-page interface
 ```
 
-This runs the full discovery half on a tiny shipped 10-gene tumor-vs-normal cohort and produces a real HTML report you can open in a browser. The pipeline rediscovers HER2 (ERBB2) and EGFR as the top antibody-tractable surface antigens — the textbook cancer immunotherapy targets — entirely from synthetic RNA-seq counts. ~30 seconds on a CPU laptop, no internet required, no GPU required.
+### 3. CLI (60 seconds)
+
+```bash
+bindsight demo
+```
+
+Runs the full discovery half on a shipped 10-gene tumor-vs-normal cohort, produces a real HTML report you can open in a browser. The pipeline rediscovers HER2 (ERBB2) and EGFR as the top antibody-tractable surface antigens — entirely from RNA-seq counts. ~30 seconds, no internet, no GPU.
 
 ```
-$ xpr2bind demo
+$ bindsight demo
 ╭───────────── Demo run ──────────────╮
-│ Synthetic 10-gene tumor-vs-normal   │
-│ cohort. The pipeline should         │
-│ rediscover ERBB2 (HER2) and EGFR    │
-│ as top antibody-tractable surface   │
-│ antigens. Takes ~30s on a CPU       │
-│ laptop.                             │
+│ The pipeline should rediscover      │
+│ ERBB2 (HER2) and EGFR as top        │
+│ antibody-tractable surface antigens.│
 ╰─────────────────────────────────────╯
 INFO  DEGs: 10 total, 5 significant
 INFO  surfaceome filter: 5 → 2
-INFO  safety filter (≤100 events): 2 → 2
 INFO  wrote runs/demo/report.html
-╭───────── xpr2bind demo ─────────────╮
+╭───────── bindsight demo ─────────────╮
 │ Demo complete!                      │
 │ Report HTML: runs/demo/report.html  │
 ╰─────────────────────────────────────╯
 ```
-
-Open `runs/demo/report.html` in your browser.
 
 ---
 
@@ -55,7 +65,7 @@ Two ecosystems in computational biology operate side-by-side and barely talk to 
 - **Genomics** (DESeq2, edgeR, Seurat, scanpy, TCGA, recount3) stops at *"here are the interesting genes."*
 - **Protein design** (RFdiffusion, ProteinMPNN, BindCraft, BoltzGen, AlphaFold, Boltz-2) starts from *"given a target..."*
 
-The bridge between them — *"this gene is up in disease, low in healthy tissue, surface-exposed, has a known targetable site, here is a docked binder seed and a designed binder ranked by predicted affinity, with the receipts back to the patient cohort"* — is missing. People build it ad-hoc, per project, never reproducibly. **xpr2bind ships that bridge as one tool.**
+The bridge between them — *"this gene is up in disease, low in healthy tissue, surface-exposed, has a known targetable site, here is a docked binder seed and a designed binder ranked by predicted affinity, with the receipts back to the patient cohort"* — is missing. People build it ad-hoc, per project, never reproducibly. **bindsight ships that bridge as one tool.**
 
 ## What it does
 
@@ -93,7 +103,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 
 ## What's distinctive
 
-| | Existing protein-design tools | xpr2bind |
+| | Existing protein-design tools | bindsight |
 |---|---|---|
 | Input | Target structure | RNA-seq counts |
 | Provenance | PDB + maybe a log | PROV-O JSON-LD + RO-Crate, audit trail to patient cohort |
@@ -104,42 +114,41 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 
 For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#comparison-vs-existing-tools).
 
-## What works today (v0.0.x)
+## What works today (v0.1.0)
 
 | Capability | Status | How to try |
 |---|---|---|
-| `xpr2bind demo` — full discovery half on a shipped example, report HTML included | ✅ ready | `xpr2bind demo` |
-| `xpr2bind discover` — your own RNA-seq cohort → ranked targets | ✅ ready | `xpr2bind discover my.yaml --out runs/x` |
-| `xpr2bind report --format html` — paper-style HTML, embedded volcano + tables + provenance | ✅ ready | `xpr2bind report runs/demo` |
-| `xpr2bind report --format streamlit` — interactive dashboard | ✅ ready | `xpr2bind report runs/demo --format streamlit` |
-| `xpr2bind doctor` — diagnose deps, caches, vendored data | ✅ ready | `xpr2bind doctor` |
-| `xpr2bind verify-licenses` — per-component license inventory | ✅ ready | `xpr2bind verify-licenses` |
-| `xpr2bind design --dry-run` — GPU cost estimate for any backend | ✅ ready | `xpr2bind design runs/demo --backend modal --dry-run` |
-| `xpr2bind validate --dry-run` — validator GPU cost estimate | ✅ ready | `xpr2bind validate runs/demo --backend modal` |
-| GPU design via Colab (manual recipe) | ✅ ready | [docs/colab-design-howto.md](docs/colab-design-howto.md) |
-| `xpr2bind design` — live job submission to Colab/Modal | 🚧 v0.1.0-rc2 | (pending) |
-| `xpr2bind validate` — live Boltz-2 invocation | 🚧 v0.1.0-rc2 | (pending) |
-| `xpr2bind rank` — multi-objective ranking | 🚧 v0.1.0-rc2 | (pending) |
-| `xpr2bind export` — RO-Crate for Zenodo | 🚧 v0.1.0-rc2 | (pending) |
-| Validation paper (rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA) | ⏳ v0.2 | (pending) |
+| **Web UI** — multi-page Streamlit app (Home / Demo / Run on my data / Browse / About) | ✅ ready | `bindsight ui`  *or*  Streamlit Cloud |
+| **`bindsight demo`** — full discovery on shipped example + paper-style report | ✅ ready | `bindsight demo` |
+| **`bindsight discover`** — your own RNA-seq cohort → ranked targets | ✅ ready | `bindsight discover my.yaml --out runs/x` |
+| **`bindsight rank`** — multi-objective composite scoring of validated binders | ✅ ready | `bindsight rank runs/x` |
+| **`bindsight report --format html`** — paper-style HTML, embedded volcano + tables + provenance | ✅ ready | `bindsight report runs/x` |
+| **`bindsight report --format streamlit`** — interactive dashboard for one run | ✅ ready | `bindsight report runs/x --format streamlit` |
+| **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
+| **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
+| **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
+| **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
+| **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
+| **GPU design notebook** — RFdiffusion + ProteinMPNN + Boltz-2 wired in templated Colab notebook | ✅ ready | `bindsight design runs/x --backend colab` opens a notebook with real install + inference cells |
+| **Manual Colab recipe** — step-by-step for the GPU half | ✅ ready | [docs/colab-design-howto.md](docs/colab-design-howto.md) |
 
 ## Status & roadmap
 
-- ✅ **v0.0.1-dev** (current) — discovery half + report + Streamlit + cost estimator + doctor + plugin scaffolding
-- 🚧 **v0.1.0-rc2** — live GPU runner integration, real RFdiff+MPNN+Boltz-2 invocation, RO-Crate export
-- ⏳ **v0.2.0** — BindCraft + BoltzGen designer plugins, fpocket epitope fallback, scRNA-seq input, validation paper
-- ⏳ **v1.0.0** — JOSS submission
+- ✅ **v0.1.0** (current) — discovery + rank + report + export + web UI + real Colab notebook patterns
+- 🔬 **v0.1.x** — first-user GPU validation (someone with a real GPU runs the Colab notebook end-to-end and reports any install/inference issues; we patch fast)
+- ⏳ **v0.2.0** — live Modal/Colab job submission via API, BindCraft + BoltzGen plugins fully wired, scRNA-seq input
+- ⏳ **v1.0.0** — JOSS submission + validation paper (rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA cohorts)
 
 See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
 
 ## Install
 
-`xpr2bind` is not yet on PyPI. Install from source (Windows / macOS / Linux,
+`bindsight` is not yet on PyPI. Install from source (Windows / macOS / Linux,
 Python 3.11+):
 
 ```bash
-git clone <repo-url> xpr2bind
-cd xpr2bind
+git clone <repo-url> bindsight
+cd bindsight
 python -m venv .venv
 
 # Windows
@@ -149,16 +158,16 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -e ".[dev,discover,report]"
-xpr2bind --version
-xpr2bind doctor                # confirm install is clean
-xpr2bind demo                  # run the 60-second demo
+bindsight --version
+bindsight doctor                # confirm install is clean
+bindsight demo                  # run the 60-second demo
 ```
 
 For Conda users, `envs/discover.yaml` provides the same set of dependencies:
 
 ```bash
 mamba env create -f envs/discover.yaml
-mamba activate xpr2bind-discover
+mamba activate bindsight-discover
 pip install -e ".[dev,report]"
 ```
 
@@ -166,28 +175,28 @@ pip install -e ".[dev,report]"
 
 ```bash
 # 1. Discover targets from a TCGA cohort (CPU only, ~10 minutes on a laptop)
-xpr2bind discover examples/tcga_luad.yaml --out runs/luad_v01
+bindsight discover examples/tcga_luad.yaml --out runs/luad_v01
 
 # 2. Inspect the discovered targets
-xpr2bind report runs/luad_v01 --format html
+bindsight report runs/luad_v01 --format html
 open runs/luad_v01/report.html
 
 # 3. (v0.1+) Design binders for the top 5 targets via Colab GPU
-xpr2bind design runs/luad_v01 --backend colab --trajectories 50
+bindsight design runs/luad_v01 --backend colab --trajectories 50
 
 # 4. (v0.1+) Validate with Boltz-2
-xpr2bind validate runs/luad_v01 --backend colab --validator boltz2
+bindsight validate runs/luad_v01 --backend colab --validator boltz2
 
 # 5. (v0.1+) Rank, report, export as RO-Crate
-xpr2bind rank runs/luad_v01
-xpr2bind report runs/luad_v01 --format html --include-binders
-xpr2bind export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
+bindsight rank runs/luad_v01
+bindsight report runs/luad_v01 --format html --include-binders
+bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
 ```
 
 ## Repository layout
 
 ```
-xpr2bind/                 # Python package
+bindsight/                 # Python package
 ├── io/                   # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/                  # pydeseq2 wrapper (+ optional R bridge)
 ├── targets/              # Open Targets, HPA, GTEx, recount3 clients
@@ -227,7 +236,7 @@ pyproject.toml            # Python packaging
 
 ## Acknowledgments
 
-`xpr2bind` is an opinionated wrapper. Real intellectual credit belongs to the upstream tool authors. See [LICENSING.md](LICENSING.md) for the full inventory; the work this builds on most directly:
+`bindsight` is an opinionated wrapper. Real intellectual credit belongs to the upstream tool authors. See [LICENSING.md](LICENSING.md) for the full inventory; the work this builds on most directly:
 
 - [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) (Khakzad et al., PNAS 2025) — the targetable-sites catalog that makes the bridge tractable
 - [pydeseq2](https://github.com/owkin/PyDESeq2) (Muzellec et al., Bioinformatics 2023) — Python DESeq2 implementation
@@ -239,7 +248,7 @@ pyproject.toml            # Python packaging
 
 ## Citation
 
-If you use `xpr2bind` in your work, please cite it via [CITATION.cff](CITATION.cff). Once a Zenodo DOI is issued (on first tagged release), it will appear here. Please also cite the upstream tools you used (the per-run manifest emits a `software.bib` to make this easy).
+If you use `bindsight` in your work, please cite it via [CITATION.cff](CITATION.cff). Once a Zenodo DOI is issued (on first tagged release), it will appear here. Please also cite the upstream tools you used (the per-run manifest emits a `software.bib` to make this easy).
 
 ## License
 

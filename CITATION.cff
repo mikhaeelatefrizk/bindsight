@@ -1,8 +1,8 @@
 cff-version: 1.2.0
-message: "If you use xpr2bind in your research, please cite it as below."
-title: "xpr2bind: a reproducible bridge from RNA-seq to de novo protein binder design"
+message: "If you use bindsight in your research, please cite it as below."
+title: "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design"
 abstract: >-
-  xpr2bind is an open-source Python package that produces ranked de novo protein
+  bindsight is an open-source Python package that produces ranked de novo protein
   binder candidates directly from bulk or single-cell RNA-seq counts, using an
   opinionated pipeline that joins differential expression analysis, the human
   surfaceome (SURFY + SURFACE-Bind), AlphaFoldDB structures, deep-learning
@@ -16,8 +16,8 @@ authors:
     email: "mikhaeelatefrizk@proton.me"
     affiliation: "Independent Researcher, Rotterdam, NL"
     # orcid: "https://orcid.org/0000-0000-0000-0000"  # TODO: add ORCID
-repository-code: "https://github.com/mikhaeelatefrizk/xpr2bind"
-url: "https://github.com/mikhaeelatefrizk/xpr2bind"
+repository-code: "https://github.com/mikhaeelatefrizk/bindsight"
+url: "https://github.com/mikhaeelatefrizk/bindsight"
 license: MIT
 keywords:
   - protein-design

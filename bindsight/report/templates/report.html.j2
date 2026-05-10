@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>bindsight report — {{ run_name }}</title>
+<style>{{ css|safe }}</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>bindsight report</h1>
+    <p class="subtitle">RNA-seq → de novo protein binder candidates, with end-to-end provenance.</p>
+    <div class="meta">
+      run: <strong>{{ run_name }}</strong> &middot;
+      id: <code>{{ run_id }}</code> &middot;
+      created: {{ created_at }}
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Summary</h2>
+  <div class="kpi-row">
+    <div class="kpi"><div class="num">{{ n_deg }}</div><div class="label">genes tested</div></div>
+    <div class="kpi"><div class="num">{{ n_significant }}</div><div class="label">significant DEGs</div></div>
+    <div class="kpi"><div class="num">{{ candidates_table|length }}</div><div class="label">candidate targets</div></div>
+    <div class="kpi"><div class="num">{{ epitopes_table|length }}</div><div class="label">top-N epitopes</div></div>
+  </div>
+  <p class="note info">
+    Every number above is one click from its evidence in the
+    <a href="#provenance">provenance</a> section. The artifacts on disk
+    (Parquet + JSON-LD) are the canonical record &mdash; this HTML is a
+    rendered view.
+  </p>
+</section>
+
+{% if volcano_b64 %}
+<section>
+  <h2>Differential expression</h2>
+  <p>
+    Volcano plot of the differential expression analysis. Significant genes
+    (FDR&nbsp;&lt;&nbsp;threshold and |log2FC|&nbsp;&ge;&nbsp;threshold) are
+    highlighted; dashed lines mark the thresholds.
+  </p>
+  <img class="plot" src="data:image/png;base64,{{ volcano_b64 }}" alt="Volcano plot">
+</section>
+{% endif %}
+
+<section>
+  <h2>Candidate targets</h2>
+  <p>
+    Genes that survived all filters: significantly differentially expressed,
+    surface-exposed (SURFY), antibody-tractable (Open Targets, when enabled),
+    and below the safety-event threshold. Top-N rows highlighted.
+  </p>
+  {% if candidates_table %}
+  <table>
+    <thead>
+      <tr>
+        <th>rank</th><th>symbol</th><th>UniProt</th>
+        <th>log2FC</th><th>padj</th>
+        <th>tractable modalities</th><th>safety events</th>
+        <th>has structure</th><th>top-N</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in candidates_table %}
+      <tr {% if r.rank_in_top_n %}class="top"{% endif %}>
+        <td class="num">{{ r.rank }}</td>
+        <td><strong>{{ r.symbol or '-' }}</strong></td>
+        <td><code>{{ r.uniprot_id or '-' }}</code></td>
+        <td class="num">{{ r.log2fc }}</td>
+        <td class="num">{{ r.padj }}</td>
+        <td>{{ r.tractable_modalities or '-' }}</td>
+        <td class="num">{{ r.n_safety_events }}</td>
+        <td>
+          {% if r.has_alphafold_structure %}<span class="badge ok">yes</span>
+          {% else %}<span class="badge warn">no</span>{% endif %}
+        </td>
+        <td>
+          {% if r.rank_in_top_n %}<span class="badge ok">top</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="note">No candidates survived the filters. Loosen thresholds in the config and re-run.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Epitopes (top-N targets)</h2>
+  <p>
+    For each top-N target, the AlphaFoldDB structure path and SURFACE-Bind
+    epitope status. <code>pending_surface_bind_lookup</code> means the
+    SURFACE-Bind data tree wasn't available at run time &mdash; populate
+    <code>data/surface_bind/</code> per its README and re-run to fill these.
+  </p>
+  {% if epitopes_table %}
+  <table>
+    <thead>
+      <tr><th>symbol</th><th>UniProt</th><th>structure</th><th>site id</th><th>status</th></tr>
+    </thead>
+    <tbody>
+    {% for e in epitopes_table %}
+      <tr>
+        <td><strong>{{ e.symbol or '-' }}</strong></td>
+        <td><code>{{ e.uniprot_id or '-' }}</code></td>
+        <td><code>{{ e.structure_path or '-' }}</code></td>
+        <td>{{ e.site_id or '-' }}</td>
+        <td>
+          {% if e.epitope_status == 'pending_surface_bind_lookup' %}
+            <span class="badge warn">pending</span>
+          {% else %}
+            <span class="badge ok">{{ e.epitope_status }}</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="note">No top-N epitopes to display.</p>
+  {% endif %}
+</section>
+
+<section id="provenance">
+  <h2>Provenance</h2>
+  <p>
+    Every stage's tool, version, license, inputs (with SHA-256), and outputs
+    (with SHA-256). The full PROV-O JSON-LD is in
+    <code>run_manifest.jsonld</code> at the run root.
+  </p>
+  {% if stages %}
+  <table>
+    <thead>
+      <tr><th>stage</th><th>tool</th><th>version</th><th>license</th><th>status</th><th>notes</th></tr>
+    </thead>
+    <tbody>
+    {% for s in stages %}
+      <tr>
+        <td><strong>{{ s.name }}</strong></td>
+        <td><code>{{ s.tool.name }}</code></td>
+        <td>{{ s.tool.version }}</td>
+        <td>{{ s.tool.license }}</td>
+        <td>
+          {% if s.status == 'completed' %}<span class="badge ok">{{ s.status }}</span>
+          {% elif s.status == 'failed' %}<span class="badge err">{{ s.status }}</span>
+          {% else %}<span class="badge">{{ s.status }}</span>{% endif %}
+        </td>
+        <td>{{ s.notes or '' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="note">No manifest stages found.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>How to read this report</h2>
+  <ul>
+    <li><strong>Candidate targets</strong> are ranked by structural
+        druggability (has_alphafold_structure first, then log2FC). The
+        top-N rows are carried forward into the GPU half.</li>
+    <li><strong>Epitopes</strong> become the input to <code>bindsight design</code>
+        once SURFACE-Bind data is populated.</li>
+    <li><strong>Provenance</strong> shows what ran. Every entry's
+        SHA-256 hashes are in <code>run_manifest.jsonld</code>.</li>
+  </ul>
+</section>
+
+<footer>
+  Generated by <a href="https://github.com/mikhaeelatefrizk/bindsight"><code>bindsight</code></a>.
+  Cite the upstream tools you used (see <code>LICENSING.md</code>).
+</footer>
+
+</main>
+</body>
+</html>

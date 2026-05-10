@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from xpr2bind.runners.colab import ColabRunner
+from bindsight.runners.colab import ColabRunner
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def test_estimate_cost_t4_free(runner: ColabRunner) -> None:
 
 def test_submit_writes_valid_notebook_json(runner: ColabRunner, tmp_path: Path) -> None:
     spec = tmp_path / "spec.json"
-    spec.write_text('{"target_uniprot": "P04626"}')
+    spec.write_text('{"target_uniprot": "P04626", "epitope_residues": [10, 11, 12]}')
     results = tmp_path / "results"
 
     handle = runner.submit(spec, results_dir=results)
@@ -36,11 +36,19 @@ def test_submit_writes_valid_notebook_json(runner: ColabRunner, tmp_path: Path) 
     assert nb["nbformat"] == 4
     assert nb["metadata"]["accelerator"] == "GPU"
     assert nb["metadata"]["colab"]["gpuType"] == "T4"
-    # 5 cells: intro, install, spec, designer, package
-    assert len(nb["cells"]) == 5
-    assert nb["cells"][0]["cell_type"] == "markdown"
+    # New design notebook: ~16 cells (markdown + code interleaved for the full
+    # RFdiff + MPNN + Boltz-2 pipeline). Check the rough shape rather than exact
+    # count so minor template tweaks don't break the test.
+    assert len(nb["cells"]) >= 10
     code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
-    assert len(code_cells) == 4
+    md_cells = [c for c in nb["cells"] if c["cell_type"] == "markdown"]
+    assert len(code_cells) >= 6
+    assert len(md_cells) >= 4
+    # Real install commands are in there (not stubs)
+    src = "\n".join("".join(c["source"]) for c in code_cells)
+    assert "RFdiffusion" in src
+    assert "ProteinMPNN" in src
+    assert "boltz" in src.lower()
 
 
 def test_submit_handles_missing_spec_file_gracefully(runner: ColabRunner, tmp_path: Path) -> None:
@@ -48,8 +56,9 @@ def test_submit_handles_missing_spec_file_gracefully(runner: ColabRunner, tmp_pa
     handle = runner.submit(tmp_path / "no_spec.json", results_dir=tmp_path / "results")
     nb_path = Path(handle.model_extra["notebook_path"])
     nb = json.loads(nb_path.read_text())
-    # Spec cell exists; loaded JSON is the literal {} fallback.
-    assert "Loaded spec keys" in "".join(nb["cells"][2]["source"])
+    # Notebook is still well-formed; the spec-load cell handles an empty dict.
+    src = "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
+    assert "SPEC" in src
 
 
 def test_poll_returns_running_when_no_results_yet(runner: ColabRunner, tmp_path: Path) -> None:

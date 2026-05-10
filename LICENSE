@@ -24,7 +24,7 @@ SOFTWARE.
 NOTE ON COMPONENT LICENSES
 ================================================================================
 
-xpr2bind itself is MIT-licensed. However, xpr2bind orchestrates external
+bindsight itself is MIT-licensed. However, bindsight orchestrates external
 tools and data sources whose licenses differ. See LICENSING.md for the full
 inventory and per-tool commercial-use guidance. In particular:
 
@@ -33,4 +33,4 @@ inventory and per-tool commercial-use guidance. In particular:
   - DESeq2 / edgeR (the optional R-bridge DEG path) are GPL-licensed.
 
 These are runtime dependencies and are NOT vendored in this repository. The
-default xpr2bind paths use only MIT/Apache/BSD/CC-BY components.
+default bindsight paths use only MIT/Apache/BSD/CC-BY components.

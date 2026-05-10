@@ -1,6 +1,6 @@
 # How to design binders on Colab (the real recipe)
 
-> Step-by-step: how to take the `xpr2bind discover` output (target structures
+> Step-by-step: how to take the `bindsight discover` output (target structures
 > + epitopes) and produce real, designed binder PDBs on free or paid Google
 > Colab. No GPU on your laptop required.
 
@@ -8,16 +8,16 @@
 
 ## What you need before starting
 
-- A finished `xpr2bind discover` run (e.g. `runs/luad_v01/`).
+- A finished `bindsight discover` run (e.g. `runs/luad_v01/`).
 - A Google account (Colab is free; Colab Pro+ is $50/month and gives A100 access).
 - About 15 minutes (T4) or 5 minutes (A100) of attention.
 
 If you haven't run discover yet:
 
 ```bash
-xpr2bind discover examples/demo/config.yaml --out runs/demo
+bindsight discover examples/demo/config.yaml --out runs/demo
 # or
-xpr2bind demo
+bindsight demo
 ```
 
 ---
@@ -122,7 +122,7 @@ files.download("binders.tar.gz")
 ```
 
 Drop `binders.tar.gz` into your local `runs/demo/design/` (creating the
-directory if needed). When `xpr2bind validate` and `xpr2bind rank` ship
+directory if needed). When `bindsight validate` and `bindsight rank` ship
 their live implementations in v0.1.0-rc2, they'll pick up the tarball
 automatically.
 
@@ -146,11 +146,11 @@ Open them in PyMOL, NGL, or ChimeraX.
 | Colab Pro+ | A100 (40 GB) | 50–200 | 30 min | $50/mo |
 | Modal | A100 (40 GB) | 50–200 | 20 min | ~$3 |
 
-The `xpr2bind design --backend modal --dry-run` command gives you a precise
+The `bindsight design --backend modal --dry-run` command gives you a precise
 estimate for your specific config:
 
 ```bash
-xpr2bind design runs/demo --backend modal --designer rfdiff_mpnn \
+bindsight design runs/demo --backend modal --designer rfdiff_mpnn \
     --trajectories 50 --dry-run
 # → Cost estimate panel shows GPU-hours and USD
 ```
@@ -173,7 +173,7 @@ xpr2bind design runs/demo --backend modal --designer rfdiff_mpnn \
 Google's Colab API doesn't let third-party apps spin up free-tier notebooks
 without OAuth (and rate-limits the OAuth flow heavily). Modal is the right
 backend for "no clicks, runs on a schedule" workflows; Colab is the right
-backend for "free GPU and I'm willing to click two buttons." `xpr2bind`
+backend for "free GPU and I'm willing to click two buttons." `bindsight`
 supports both — pick per command via `--backend`.
 
 ---
@@ -183,7 +183,7 @@ supports both — pick per command via `--backend`.
 In v0.1.0-rc2 the live runner integration lands and you'll be able to do:
 
 ```bash
-xpr2bind design runs/demo --backend colab --designer rfdiff_mpnn
+bindsight design runs/demo --backend colab --designer rfdiff_mpnn
 # → templates a notebook, opens it in your browser, polls for results
 ```
 

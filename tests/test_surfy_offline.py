@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from xpr2bind.surfaceome import is_surface_protein, load_surfy
+from bindsight.surfaceome import is_surface_protein, load_surfy
 
 
 @pytest.fixture(autouse=True)
 def _clear_surfy_cache(monkeypatch, tmp_path):
     """Force the cache miss so we always hit the offline fallback."""
     cache_path = tmp_path / "surfy_v1.uniprot.txt"
-    monkeypatch.setattr("xpr2bind.surfaceome.surfy._surfy_cache_path", lambda: cache_path)
+    monkeypatch.setattr("bindsight.surfaceome.surfy._surfy_cache_path", lambda: cache_path)
 
 
 def test_offline_fallback_loads() -> None:
@@ -34,6 +34,6 @@ def test_is_surface_protein() -> None:
 
 def test_no_fallback_raises_when_disabled(tmp_path, monkeypatch) -> None:
     cache_path = tmp_path / "missing.txt"
-    monkeypatch.setattr("xpr2bind.surfaceome.surfy._surfy_cache_path", lambda: cache_path)
+    monkeypatch.setattr("bindsight.surfaceome.surfy._surfy_cache_path", lambda: cache_path)
     with pytest.raises(FileNotFoundError):
         load_surfy(allow_offline_fallback=False)

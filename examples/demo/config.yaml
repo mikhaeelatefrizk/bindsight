@@ -1,12 +1,12 @@
-# xpr2bind demo config — runs end-to-end on a tiny synthetic 10-gene cohort
-# in ~30 seconds on a CPU laptop. Used by `xpr2bind demo`.
+# bindsight demo config — runs end-to-end on a tiny synthetic 10-gene cohort
+# in ~30 seconds on a CPU laptop. Used by `bindsight demo`.
 #
 # Storyline: the cohort is "tumor" (n=4) vs. "normal" (n=4). The tumor samples
 # are designed to over-express HER2 (ERBB2), EGFR, ESR1, KRAS, HRAS — all
 # real human surface or driver proteins. The pipeline should rediscover HER2
 # and EGFR as the top antibody-tractable surface antigens.
 
-name: xpr2bind_demo
+name: bindsight_demo
 out_dir: runs/demo
 
 inputs:

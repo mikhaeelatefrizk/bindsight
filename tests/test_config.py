@@ -8,7 +8,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from xpr2bind.config import (
+from bindsight.config import (
     DEGParams,
     DesignParams,
     RankWeights,

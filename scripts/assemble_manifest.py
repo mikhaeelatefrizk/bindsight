@@ -1,7 +1,7 @@
 """Snakemake script: stitch per-rule manifest fragments into run_manifest.jsonld.
 
 Reads each ``manifest_fragment.jsonld`` written by an earlier rule, builds a
-single :class:`xpr2bind.provenance.Manifest`, and writes it to the run root.
+single :class:`bindsight.provenance.Manifest`, and writes it to the run root.
 
 v0.0.x: minimal placeholder — full assembly logic lands in v0.0.2 once the
 discovery half emits real fragments.
@@ -14,12 +14,12 @@ import logging
 import sys
 from pathlib import Path
 
-from xpr2bind.provenance import new_manifest
+from bindsight.provenance import new_manifest
 
 snakemake = snakemake  # type: ignore[name-defined]  # noqa: F821
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-LOG = logging.getLogger("xpr2bind.assemble_manifest")
+LOG = logging.getLogger("bindsight.assemble_manifest")
 
 
 def main() -> int:

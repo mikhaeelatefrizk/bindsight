@@ -1,4 +1,4 @@
-# Example xpr2bind config: TCGA-LUAD (lung adenocarcinoma) primary tumor vs.
+# Example bindsight config: TCGA-LUAD (lung adenocarcinoma) primary tumor vs.
 # matched solid normal. Sourced from recount3 (counts already aligned and
 # uniformly processed).
 #
@@ -15,7 +15,7 @@ out_dir: runs/tcga_luad_v01
 # ---------------------------------------------------------------------------
 inputs:
   # Counts matrix: gene × sample, integer counts. Will be downloaded from
-  # recount3 by `xpr2bind discover` if the path doesn't exist locally.
+  # recount3 by `bindsight discover` if the path doesn't exist locally.
   counts: data/recount3_cache/tcga_luad/counts.tsv.gz
   # Sample design: one row per sample with at minimum a ``condition`` column
   # encoding tumor vs. normal.

@@ -7,7 +7,7 @@ import json
 import pytest
 from jinja2.exceptions import UndefinedError
 
-from xpr2bind.runners.notebook import (
+from bindsight.runners.notebook import (
     build_notebook,
     code_cell_from_template,
     markdown_cell,

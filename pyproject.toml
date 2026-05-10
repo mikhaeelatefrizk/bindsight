@@ -6,8 +6,8 @@ build-backend = "hatchling.build"
 # Project metadata
 # -----------------------------------------------------------------------------
 [project]
-name = "xpr2bind"
-version = "0.0.1.dev0"
+name = "bindsight"
+version = "0.1.0"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -85,7 +85,7 @@ runners = [
     "kaggle>=1.6",
 ]
 all = [
-    "xpr2bind[discover,report,runners]",
+    "bindsight[discover,report,runners]",
 ]
 dev = [
     "pytest>=8.0",
@@ -101,51 +101,51 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mikhaeelatefrizk/xpr2bind"
-Documentation = "https://github.com/mikhaeelatefrizk/xpr2bind#readme"
-Repository = "https://github.com/mikhaeelatefrizk/xpr2bind"
-Issues = "https://github.com/mikhaeelatefrizk/xpr2bind/issues"
-Changelog = "https://github.com/mikhaeelatefrizk/xpr2bind/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/mikhaeelatefrizk/bindsight"
+Documentation = "https://github.com/mikhaeelatefrizk/bindsight#readme"
+Repository = "https://github.com/mikhaeelatefrizk/bindsight"
+Issues = "https://github.com/mikhaeelatefrizk/bindsight/issues"
+Changelog = "https://github.com/mikhaeelatefrizk/bindsight/blob/main/CHANGELOG.md"
 
 [project.scripts]
-xpr2bind = "xpr2bind.cli:main"
+bindsight = "bindsight.cli:main"
 
 # -----------------------------------------------------------------------------
 # Plugin entry points — designers, validators, runners can be added by 3rd
-# parties without forking xpr2bind.
+# parties without forking bindsight.
 # -----------------------------------------------------------------------------
-[project.entry-points."xpr2bind.designers"]
-rfdiff_mpnn = "xpr2bind.design.rfdiff_mpnn:RFdiffMPNNDesigner"
-bindcraft   = "xpr2bind.design.bindcraft:BindCraftDesigner"
-boltzgen    = "xpr2bind.design.boltzgen:BoltzGenDesigner"
+[project.entry-points."bindsight.designers"]
+rfdiff_mpnn = "bindsight.design.rfdiff_mpnn:RFdiffMPNNDesigner"
+bindcraft   = "bindsight.design.bindcraft:BindCraftDesigner"
+boltzgen    = "bindsight.design.boltzgen:BoltzGenDesigner"
 
-[project.entry-points."xpr2bind.validators"]
-boltz2  = "xpr2bind.validate.boltz2:Boltz2Validator"
-chai1r  = "xpr2bind.validate.chai1r:Chai1rValidator"
-af2_ig  = "xpr2bind.validate.af2_ig:AF2IGValidator"
+[project.entry-points."bindsight.validators"]
+boltz2  = "bindsight.validate.boltz2:Boltz2Validator"
+chai1r  = "bindsight.validate.chai1r:Chai1rValidator"
+af2_ig  = "bindsight.validate.af2_ig:AF2IGValidator"
 
-[project.entry-points."xpr2bind.runners"]
-colab        = "xpr2bind.runners.colab:ColabRunner"
-modal        = "xpr2bind.runners.modal_runner:ModalRunner"
-kaggle       = "xpr2bind.runners.kaggle:KaggleRunner"
-local_docker = "xpr2bind.runners.local_docker:LocalDockerRunner"
-mock         = "xpr2bind.runners.mock:MockRunner"
+[project.entry-points."bindsight.runners"]
+colab        = "bindsight.runners.colab:ColabRunner"
+modal        = "bindsight.runners.modal_runner:ModalRunner"
+kaggle       = "bindsight.runners.kaggle:KaggleRunner"
+local_docker = "bindsight.runners.local_docker:LocalDockerRunner"
+mock         = "bindsight.runners.mock:MockRunner"
 
 # -----------------------------------------------------------------------------
 # Tooling
 # -----------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
-packages = ["xpr2bind"]
+packages = ["bindsight"]
 
 # Include non-Python data files in the wheel: surfaceome offline list,
-# report templates / CSS / JS, plus example data needed by `xpr2bind demo`.
+# report templates / CSS / JS, plus example data needed by `bindsight demo`.
 [tool.hatch.build.targets.wheel.shared-data]
-"examples/demo" = "xpr2bind_demo"
+"examples/demo" = "bindsight_demo"
 
 [tool.hatch.build.targets.wheel.force-include]
-"xpr2bind/surfaceome/data/surfy_offline.txt" = "xpr2bind/surfaceome/data/surfy_offline.txt"
-"xpr2bind/report/templates/report.html.j2"   = "xpr2bind/report/templates/report.html.j2"
-"xpr2bind/report/templates/report.css"       = "xpr2bind/report/templates/report.css"
+"bindsight/surfaceome/data/surfy_offline.txt" = "bindsight/surfaceome/data/surfy_offline.txt"
+"bindsight/report/templates/report.html.j2"   = "bindsight/report/templates/report.html.j2"
+"bindsight/report/templates/report.css"       = "bindsight/report/templates/report.css"
 
 [tool.ruff]
 line-length = 100
@@ -178,13 +178,13 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["D", "S101"]
-"xpr2bind/**/__init__.py" = ["D", "F401"]
+"bindsight/**/__init__.py" = ["D", "F401"]
 "scripts/**/*" = ["D", "PLW0127"]    # Snakemake injects globals; doc-strings live in module docstring
 # Stub plugin files in v0.0.x — Protocol already documents the methods. Drop
 # this ignore as each plugin gets a real implementation in v0.1.0-rc2.
-"xpr2bind/design/{bindcraft,boltzgen}.py" = ["D102"]
-"xpr2bind/validate/{chai1r,af2_ig}.py" = ["D102"]
-"xpr2bind/runners/{local_docker,modal_runner,kaggle}.py" = ["D102"]
+"bindsight/design/{bindcraft,boltzgen}.py" = ["D102"]
+"bindsight/validate/{chai1r,af2_ig}.py" = ["D102"]
+"bindsight/runners/{local_docker,modal_runner,kaggle}.py" = ["D102"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -202,7 +202,7 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=xpr2bind",
+    "--cov=bindsight",
     "--cov-report=term-missing",
 ]
 testpaths = ["tests"]
@@ -214,9 +214,9 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["xpr2bind"]
+source = ["bindsight"]
 omit = [
-    "xpr2bind/_version.py",
+    "bindsight/_version.py",
     "*/tests/*",
 ]
 

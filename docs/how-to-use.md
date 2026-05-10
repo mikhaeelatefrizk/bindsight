@@ -1,4 +1,4 @@
-# How to use `xpr2bind`
+# How to use `bindsight`
 
 > Practical walkthrough for the v0.0.x discovery half (which works today) and
 > what's coming in v0.1 for the design half.
@@ -7,11 +7,11 @@
 
 ## Install
 
-`xpr2bind` is not yet on PyPI. From source:
+`bindsight` is not yet on PyPI. From source:
 
 ```bash
-git clone <your-repo-url> xpr2bind
-cd xpr2bind
+git clone <your-repo-url> bindsight
+cd bindsight
 python -m venv .venv
 .venv\Scripts\activate                              # Windows
 # source .venv/bin/activate                          # macOS / Linux
@@ -21,12 +21,12 @@ pip install -e ".[dev,discover]"
 Then:
 
 ```bash
-xpr2bind --version           # 0.0.1.dev0
-xpr2bind doctor              # check the install
-xpr2bind verify-licenses     # see the license inventory
+bindsight --version           # 0.0.1.dev0
+bindsight doctor              # check the install
+bindsight verify-licenses     # see the license inventory
 ```
 
-`xpr2bind doctor` is the first thing to run if anything looks weird later.
+`bindsight doctor` is the first thing to run if anything looks weird later.
 It tells you what's installed, what's cached, and what's missing.
 
 ---
@@ -45,10 +45,10 @@ runs/luad_v01/
 ├── epitopes/
 │   └── epitopes.parquet         # one row per top-N target
 ├── structures/                  # mmCIFs cached in your global cache, not here
-├── design/                      # populated by `xpr2bind design` (v0.1+)
-├── validate/                    # populated by `xpr2bind validate` (v0.1+)
-├── rank/                        # populated by `xpr2bind rank` (v0.1+)
-├── report.html                  # populated by `xpr2bind report` (v0.1+)
+├── design/                      # populated by `bindsight design` (v0.1+)
+├── validate/                    # populated by `bindsight validate` (v0.1+)
+├── rank/                        # populated by `bindsight rank` (v0.1+)
+├── report.html                  # populated by `bindsight report` (v0.1+)
 └── run_manifest.jsonld          # PROV-O audit trail of every stage
 ```
 
@@ -59,7 +59,7 @@ Treat it like a lab notebook entry: never edit, always commit.
 
 ## Step 1 — Author a config
 
-Configs are YAML files validated by `xpr2bind.config.RunConfig`. Start by
+Configs are YAML files validated by `bindsight.config.RunConfig`. Start by
 copying the bundled example:
 
 ```bash
@@ -141,7 +141,7 @@ must contain the levels you reference in `contrast`.
 
 ## Step 3 — Populate caches before the first real run
 
-`xpr2bind` caches three external data sources locally. The `doctor` command
+`bindsight` caches three external data sources locally. The `doctor` command
 shows you which are populated. For real runs, you need:
 
 ### 3a. Full SURFY surfaceome list
@@ -151,9 +151,9 @@ download the full SURFY table from https://wlab.ethz.ch/surfaceome (CC-BY) and
 write the UniProt accessions to:
 
 ```
-%LOCALAPPDATA%\xpr2bind\Cache\surfy\surfy_v1.uniprot.txt    # Windows
-~/.cache/xpr2bind/surfy/surfy_v1.uniprot.txt                # Linux
-~/Library/Caches/xpr2bind/surfy/surfy_v1.uniprot.txt        # macOS
+%LOCALAPPDATA%\bindsight\Cache\surfy\surfy_v1.uniprot.txt    # Windows
+~/.cache/bindsight/surfy/surfy_v1.uniprot.txt                # Linux
+~/Library/Caches/bindsight/surfy/surfy_v1.uniprot.txt        # macOS
 ```
 
 One UniProt accession per line. Lines starting with `#` are ignored.
@@ -174,7 +174,7 @@ per AlphaFoldDB structure (mmCIF) and ~1–10 KB per Open Targets query.
 ## Step 4 — Run discovery
 
 ```bash
-xpr2bind discover my_config.yaml --out runs/my_first_run
+bindsight discover my_config.yaml --out runs/my_first_run
 ```
 
 What happens:
@@ -215,10 +215,10 @@ Once Phase 2 lands:
 
 ```bash
 # Estimate GPU cost before launching
-xpr2bind design runs/my_first_run --backend modal --dry-run
+bindsight design runs/my_first_run --backend modal --dry-run
 
 # Launch on Modal A100s, 50 trajectories per target
-xpr2bind design runs/my_first_run --backend modal --designer rfdiff_mpnn --trajectories 50
+bindsight design runs/my_first_run --backend modal --designer rfdiff_mpnn --trajectories 50
 ```
 
 The `--backend` choice is yours per command:
@@ -239,10 +239,10 @@ estimate.
 ## Step 6 — (v0.1+) Validate, rank, report, export
 
 ```bash
-xpr2bind validate runs/my_first_run --backend modal --validator boltz2
-xpr2bind rank     runs/my_first_run
-xpr2bind report   runs/my_first_run --format html --include-binders
-xpr2bind export   runs/my_first_run --format ro-crate --out runs/my_first_run.crate.zip
+bindsight validate runs/my_first_run --backend modal --validator boltz2
+bindsight rank     runs/my_first_run
+bindsight report   runs/my_first_run --format html --include-binders
+bindsight export   runs/my_first_run --format ro-crate --out runs/my_first_run.crate.zip
 ```
 
 The `--format html` report is a self-contained Quarto document with embedded
@@ -263,8 +263,8 @@ To ensure your run is byte-identical (modulo seeds) for someone else:
    ```bash
    docker run --rm \
        -v $PWD:/work \
-       ghcr.io/<your-handle>/xpr2bind@sha256:<digest> \
-       xpr2bind run /work/my_config.yaml --out /work/runs/repro
+       ghcr.io/<your-handle>/bindsight@sha256:<digest> \
+       bindsight run /work/my_config.yaml --out /work/runs/repro
    ```
 4. They compare manifests. SHA-256s of every artifact match.
 
@@ -274,18 +274,18 @@ To ensure your run is byte-identical (modulo seeds) for someone else:
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `xpr2bind doctor` shows `dep: pydeseq2 = not installed` | Discover extras not installed | `pip install -e ".[discover]"` |
+| `bindsight doctor` shows `dep: pydeseq2 = not installed` | Discover extras not installed | `pip install -e ".[discover]"` |
 | `discover` exits with `validation error` on the config | Pydantic rejected a field name or type | Read the error — it says exactly which field |
 | `discover` says `samples in counts but not design` | Sample IDs don't match between files | Check the first column of `design.tsv` |
 | `AlphaFoldDB has no model for X` | UniProt accession not in AlphaFoldDB | Expected for some predicted proteins; row gets tagged and continues |
 | Real cohort run with `surfy_allow_offline_fallback: true` returns suspiciously few targets | You're running against the 10-protein fallback | Populate the full SURFY cache (Step 3a) |
-| `discover` runs but `tractable_modalities` is always empty | Open Targets cache is from a previous schema | Delete `~/.cache/xpr2bind/opentargets/` and re-run |
+| `discover` runs but `tractable_modalities` is always empty | Open Targets cache is from a previous schema | Delete `~/.cache/bindsight/opentargets/` and re-run |
 
 ---
 
 ## Where to learn more
 
-- [What is xpr2bind?](what-is-xpr2bind.md) — the 5-minute pitch
+- [What is bindsight?](what-is-bindsight.md) — the 5-minute pitch
 - [Use cases](use-cases.md) — three concrete scenarios
 - [ARCHITECTURE.md](../ARCHITECTURE.md) — design rationale and module contracts
 - [LICENSING.md](../LICENSING.md) — per-component license inventory

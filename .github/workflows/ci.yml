@@ -30,7 +30,7 @@ jobs:
       - name: Ruff format
         run: ruff format --check .
       - name: mypy
-        run: mypy xpr2bind
+        run: mypy bindsight
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})

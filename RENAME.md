@@ -1,6 +1,6 @@
-# Renaming `xpr2bind` to your final name
+# Renaming `bindsight` to your final name
 
-`xpr2bind` is the working name used throughout this scaffold. When you pick the
+`bindsight` is the working name used throughout this scaffold. When you pick the
 real name (something special and different for your GitHub) you'll need to do a
 global rename. The list below is exhaustive — once these are done, `pytest -q`
 should still pass.
@@ -11,14 +11,14 @@ Pick one short identifier (`{newname}`) for the package, and use the same string
 everywhere. Conventions to follow:
 
 - All-lowercase, no underscores ideally (e.g. `bindscope`, `surfaceforge`,
-  `transbind`, `xpr2bind`, `targetforge`). PyPI prefers no dashes for new
+  `transbind`, `bindsight`, `targetforge`). PyPI prefers no dashes for new
   packages but allows them.
 - Display title can be different (e.g. package = `bindscope`, paper title =
   "BindScope: …").
 - Reserve the PyPI name early (`pip install build twine; python -m build;
   twine upload --repository testpypi dist/*`) before announcing.
 
-## Files to update (`xpr2bind` → `{newname}`)
+## Files to update (`bindsight` → `{newname}`)
 
 ```
 pyproject.toml                       # name, scripts entry, package, entry-points (5 occurrences)
@@ -28,16 +28,16 @@ ARCHITECTURE.md                      # all references
 LICENSING.md                         # all references
 CONTRIBUTING.md                      # all references
 CHANGELOG.md                         # latest entry
-LICENSE                              # copyright holder line stays; the comment block at the bottom mentions "xpr2bind itself" — update
+LICENSE                              # copyright holder line stays; the comment block at the bottom mentions "bindsight itself" — update
 data/surface_bind/README.md          # internal references
-envs/discover.yaml                   # name field (`xpr2bind-discover` → `{newname}-discover`)
+envs/discover.yaml                   # name field (`bindsight-discover` → `{newname}-discover`)
 envs/design.yaml                     # name field
 envs/validate.yaml                   # name field
 envs/report.yaml                     # name field
 examples/tcga_luad.yaml              # any prose references in comments
 Snakefile                            # any prose references in comments
-scripts/*.py                         # logger names ("xpr2bind.deg" → "{newname}.deg") + module docstrings
-xpr2bind/**/*.py                     # ALL imports, logger names, docstrings, error messages, user-agents
+scripts/*.py                         # logger names ("bindsight.deg" → "{newname}.deg") + module docstrings
+bindsight/**/*.py                     # ALL imports, logger names, docstrings, error messages, user-agents
 tests/**/*.py                        # imports
 .github/workflows/ci.yml             # any references
 .github/workflows/zenodo.yml         # any references
@@ -45,12 +45,12 @@ tests/**/*.py                        # imports
 
 ## The directory rename
 
-The Python package directory itself (`xpr2bind/`) needs to become `{newname}/`.
+The Python package directory itself (`bindsight/`) needs to become `{newname}/`.
 
 ## One-shot rename recipe (PowerShell)
 
 ```powershell
-$old = "xpr2bind"
+$old = "bindsight"
 $new = "yournewname"   # <-- edit this
 
 # 1. Rename the package directory
@@ -75,17 +75,17 @@ Get-ChildItem -Recurse -File `
 **Heads-up on side effects:**
 
 - The CLI entry-point name comes from `pyproject.toml`'s `[project.scripts]`. After
-  renaming, the binary moves from `.venv\Scripts\xpr2bind.exe` to
+  renaming, the binary moves from `.venv\Scripts\bindsight.exe` to
   `.venv\Scripts\{newname}.exe`. Step 3 above takes care of that.
-- The cache directory under `%LOCALAPPDATA%\xpr2bind\Cache` won't move — clear or
-  rename it: `Remove-Item -Recurse -Force "$env:LOCALAPPDATA\xpr2bind"`.
+- The cache directory under `%LOCALAPPDATA%\bindsight\Cache` won't move — clear or
+  rename it: `Remove-Item -Recurse -Force "$env:LOCALAPPDATA\bindsight"`.
 - `MANIFEST_SCHEMA_VERSION` doesn't need to change for a simple rename — only bump it
   if you change the schema shape.
 
 ## What does *not* need renaming
 
 - The `data/surface_bind/` directory — that name comes from the upstream
-  SURFACE-Bind project, not from `xpr2bind`.
+  SURFACE-Bind project, not from `bindsight`.
 - The `surfy_offline.txt` file inside the surfaceome module — that name comes from
   the upstream SURFY project.
 
@@ -97,9 +97,9 @@ Get-ChildItem -Recurse -File `
 .\.venv\Scripts\python.exe -m ruff format --check {newname} tests scripts
 .\.venv\Scripts\python.exe -m pytest -m "not gpu and not slow" -q
 
-# Sanity-check that no stale "xpr2bind" strings remain
+# Sanity-check that no stale "bindsight" strings remain
 Select-String -Path *.md,*.toml,*.cff,*.yaml,Snakefile,LICENSE,**\*.py `
-    -Pattern "xpr2bind" `
+    -Pattern "bindsight" `
     | Where-Object { $_.Path -notmatch '\\\.venv\\|\\\.git\\' }
 # expect: 0 matches
 ```

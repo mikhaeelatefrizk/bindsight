@@ -1,16 +1,16 @@
-# Contributing to xpr2bind
+# Contributing to bindsight
 
-Thanks for your interest. `xpr2bind` is in active development and contributions of all sizes are welcome.
+Thanks for your interest. `bindsight` is in active development and contributions of all sizes are welcome.
 
 ---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/mikhaeelatefrizk/xpr2bind.git
-cd xpr2bind
+git clone https://github.com/mikhaeelatefrizk/bindsight.git
+cd bindsight
 mamba env create -f envs/discover.yaml
-mamba activate xpr2bind-discover
+mamba activate bindsight-discover
 pip install -e ".[dev]"
 
 # Run tests
@@ -19,10 +19,10 @@ pytest -m "not gpu"
 # Run linters
 ruff check .
 ruff format --check .
-mypy xpr2bind
+mypy bindsight
 
 # Run the discovery-half smoke test on a tiny fixture
-xpr2bind discover tests/fixtures/tiny_config.yaml --out /tmp/xpr2bind_smoke
+bindsight discover tests/fixtures/tiny_config.yaml --out /tmp/bindsight_smoke
 ```
 
 ---
@@ -46,10 +46,10 @@ See [README.md § Repository layout](README.md#repository-layout) and [ARCHITECT
 ## Where to start
 
 - **First-time contributors:** look at issues tagged `good-first-issue`.
-- **Adding a new designer:** implement the `xpr2bind.design.Designer` Protocol; add an entry to `pyproject.toml` `[project.entry-points."xpr2bind.designers"]`. Boilerplate in `xpr2bind/design/_template.py`.
-- **Adding a new validator:** same pattern, `xpr2bind.validate.Validator` Protocol.
-- **Adding a new GPU runner:** implement `xpr2bind.runners.GPURunner`; example in `xpr2bind/runners/mock.py`.
-- **Adding a new data source:** implement a typed client in `xpr2bind/<module>/`; emit Parquet with documented schema; add a manifest entry.
+- **Adding a new designer:** implement the `bindsight.design.Designer` Protocol; add an entry to `pyproject.toml` `[project.entry-points."bindsight.designers"]`. Boilerplate in `bindsight/design/_template.py`.
+- **Adding a new validator:** same pattern, `bindsight.validate.Validator` Protocol.
+- **Adding a new GPU runner:** implement `bindsight.runners.GPURunner`; example in `bindsight/runners/mock.py`.
+- **Adding a new data source:** implement a typed client in `bindsight/<module>/`; emit Parquet with documented schema; add a manifest entry.
 
 ---
 

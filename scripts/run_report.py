@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
-LOG = logging.getLogger("xpr2bind.report")
+LOG = logging.getLogger("bindsight.report")
 
 
 def main() -> int:
@@ -22,8 +22,8 @@ def main() -> int:
     out_m = Path(snakemake.output.manifest_fragment)
     out_html.parent.mkdir(parents=True, exist_ok=True)
     out_html.write_text(
-        "<!doctype html><title>xpr2bind report (stub)</title>"
-        "<h1>xpr2bind report (stub)</h1>"
+        "<!doctype html><title>bindsight report (stub)</title>"
+        "<h1>bindsight report (stub)</h1>"
         "<p>This is a placeholder. Real Quarto report ships in v0.1.</p>\n"
     )
     out_m.parent.mkdir(parents=True, exist_ok=True)
