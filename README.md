@@ -2,13 +2,18 @@
 
 > **Expression → Binder.** The first open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein binder candidates, with full provenance back to the patient cohort.
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bindsight.streamlit.app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![Tests: 175+](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen.svg)]()
+[![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
 
-> 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation patterned for free Colab; web UI with Streamlit Cloud deploy.
+## 👉 Try it live: **[bindsight.streamlit.app](https://bindsight.streamlit.app/)**
+
+Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~30 seconds.
+
+> 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
 
 **New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
 
@@ -16,9 +21,9 @@
 
 ## Three ways to try it
 
-### 1. Web app (zero install)
+### 1. Web app — [bindsight.streamlit.app](https://bindsight.streamlit.app/) (zero install)
 
-After deployment to Streamlit Cloud (one click after `git push`), anyone visiting `https://bindsight.streamlit.app` gets:
+Anyone visiting the URL above gets:
 - The Home page with what bindsight is
 - A **Demo** button that runs the full pipeline live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
