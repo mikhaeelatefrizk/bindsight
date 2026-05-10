@@ -1,4 +1,4 @@
-"""CLI tests for `xpr2bind demo` and `xpr2bind report`."""
+"""CLI tests for `bindsight demo` and `bindsight report`."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from pathlib import Path
 import pandas as pd
 from click.testing import CliRunner
 
-from xpr2bind.cli import main
+from bindsight.cli import main
 
 
 def _seed_min_run(run: Path) -> None:
-    """Create a minimal valid run directory for `xpr2bind report`."""
+    """Create a minimal valid run directory for `bindsight report`."""
     (run / "deg").mkdir(parents=True)
     (run / "targets").mkdir(parents=True)
     (run / "epitopes").mkdir(parents=True)
@@ -58,7 +58,7 @@ def test_cli_report_html_renders(tmp_path: Path) -> None:
 
 
 def test_cli_demo_command_runs_to_completion(tmp_path: Path) -> None:
-    """Full xpr2bind demo, no skip, against tmp output dir."""
+    """Full bindsight demo, no skip, against tmp output dir."""
     out = tmp_path / "demo_out"
     r = CliRunner().invoke(main, ["demo", "--out", str(out)])
     assert r.exit_code == 0, r.output

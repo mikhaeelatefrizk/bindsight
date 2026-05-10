@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from xpr2bind.config import RunConfig
-from xpr2bind.pipelines import discover as discover_pipeline
-from xpr2bind.targets.open_targets import TargetEvidence
+from bindsight.config import RunConfig
+from bindsight.pipelines import discover as discover_pipeline
+from bindsight.targets.open_targets import TargetEvidence
 
 
 def _fake_evidence(gene_id: str, uniprot: str, symbol: str) -> TargetEvidence:
@@ -132,7 +132,7 @@ def test_discover_pipeline_end_to_end(tmp_path: Path, fixtures_dir: Path) -> Non
     fake_afdb = _FakeAlphaFoldDB({"P04626": fake_struct, "P00533": None})
 
     with patch(
-        "xpr2bind.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
         return_value=fake_deg,
     ):
         manifest = discover_pipeline.run(

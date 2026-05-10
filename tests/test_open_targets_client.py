@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import requests
 
-from xpr2bind.targets.open_targets import _TARGET_QUERY, OpenTargetsClient
+from bindsight.targets.open_targets import _TARGET_QUERY, OpenTargetsClient
 
 
 def _fake_data(ensembl_id: str) -> dict:

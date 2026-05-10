@@ -5,7 +5,7 @@ from __future__ import annotations
 import tarfile
 from pathlib import Path
 
-from xpr2bind.runners.mock import MockRunner
+from bindsight.runners.mock import MockRunner
 
 
 def test_mock_runner_round_trip(tmp_path: Path) -> None:

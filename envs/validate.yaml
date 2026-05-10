@@ -1,6 +1,6 @@
 # Placeholder env for the validation half. Validators run on remote GPU; the
 # local env just packages and unpacks results.
-name: xpr2bind-validate
+name: bindsight-validate
 channels:
   - conda-forge
 dependencies:

@@ -1,22 +1,22 @@
 # Licensing inventory
 
-> **Read this before any commercial use.** `xpr2bind` itself is MIT, but it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
+> **Read this before any commercial use.** `bindsight` itself is MIT, but it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
 >
 > Last reviewed: 2026-05-09. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
 ---
 
-## 1. xpr2bind itself
+## 1. bindsight itself
 
 **MIT.** See [LICENSE](LICENSE).
 
-You may use, modify, and redistribute `xpr2bind` for any purpose (commercial or academic) provided you keep the copyright notice. There are no patent grants beyond standard MIT.
+You may use, modify, and redistribute `bindsight` for any purpose (commercial or academic) provided you keep the copyright notice. There are no patent grants beyond standard MIT.
 
 ---
 
 ## 2. Default pipeline (commercial-friendly)
 
-The default `xpr2bind` configuration uses **only** components with permissive licenses suitable for commercial use:
+The default `bindsight` configuration uses **only** components with permissive licenses suitable for commercial use:
 
 | Component | License | Commercial use |
 |---|---|---|
@@ -65,7 +65,7 @@ These are **not** enabled by default. They require explicit opt-in via a CLI fla
 
 ## 4. Per-component verification checklist
 
-Before enabling a new component in `xpr2bind`, verify all of:
+Before enabling a new component in `bindsight`, verify all of:
 
 - [ ] License file in upstream repo at the pinned commit SHA
 - [ ] Weights license (if ML model) — separate from code license
@@ -75,7 +75,7 @@ Before enabling a new component in `xpr2bind`, verify all of:
 - [ ] Whether modification is permitted
 - [ ] Whether the data the component uses (training data, reference data) is itself license-clean
 
-Record the verification in the relevant `envs/*.yaml` or `xpr2bind/<module>/_LICENSING.md`.
+Record the verification in the relevant `envs/*.yaml` or `bindsight/<module>/_LICENSING.md`.
 
 ---
 
@@ -87,10 +87,10 @@ Everything is fine. Use whatever you want. Cite all upstream tools (the per-run 
 ### Industry / commercial users
 - **Default config** is commercially safe.
 - **Opt-in** components carry banners. Read them.
-- Use the `xpr2bind verify-licenses` command (planned for v0.1) to audit a specific run config and flag any non-commercial components.
+- Use the `bindsight verify-licenses` command (planned for v0.1) to audit a specific run config and flag any non-commercial components.
 
 ### Pharma / IND filings
-- Treat `xpr2bind` as an in-silico discovery aid, not a regulated tool.
+- Treat `bindsight` as an in-silico discovery aid, not a regulated tool.
 - The provenance graph (PROV-O / RO-Crate) is a starting point for an audit trail, not a substitute for GxP-validated systems.
 - Specific clinical-grade validation of any output binder is the user's responsibility.
 

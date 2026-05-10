@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from click.testing import CliRunner
 
-from xpr2bind import __version__
-from xpr2bind.cli import main
+from bindsight import __version__
+from bindsight.cli import main
 
 
 def test_cli_help() -> None:
@@ -23,7 +23,7 @@ def test_cli_version() -> None:
 def test_cli_verify_licenses() -> None:
     r = CliRunner().invoke(main, ["verify-licenses"])
     assert r.exit_code == 0
-    assert "xpr2bind" in r.output
+    assert "bindsight" in r.output
     assert "Boltz-2" in r.output
 
 
@@ -64,7 +64,9 @@ def test_cli_validate_prints_cost_panel(tmp_path) -> None:
     r = CliRunner().invoke(
         main, ["validate", str(run), "--backend", "modal", "--validator", "boltz2"]
     )
-    assert r.exit_code == 2
+    # validate prints the cost estimate, then a 'pending' panel pointing the
+    # user at the GPU step. Exit code is 0 (work to do but not an error).
+    assert r.exit_code == 0
     assert "Cost estimate" in r.output
 
 

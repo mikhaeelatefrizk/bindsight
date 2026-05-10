@@ -1,12 +1,12 @@
 # Architecture
 
-> Architectural source of truth for `xpr2bind`. Read this before changing module contracts. Last reviewed: 2026-05-09.
+> Architectural source of truth for `bindsight`. Read this before changing module contracts. Last reviewed: 2026-05-09.
 
 ---
 
 ## 1. The thesis
 
-The protein-design world starts at *"given a target."* The genomics world stops at *"here are interesting genes."* `xpr2bind` is the opinionated, reproducible, citable bridge.
+The protein-design world starts at *"given a target."* The genomics world stops at *"here are interesting genes."* `bindsight` is the opinionated, reproducible, citable bridge.
 
 The bridge is buildable as a one-person project in 2026 because three keystones already exist:
 
@@ -60,7 +60,7 @@ counts.tsv + design.tsv ─┐
 ## 3. Module decomposition
 
 ```
-xpr2bind/
+bindsight/
 ├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/             # pydeseq2 wrapper (+ optional R bridge)
 ├── targets/         # Open Targets GraphQL, HPA, GTEx, recount3
@@ -160,7 +160,7 @@ Every run emits a single PROV-O JSON-LD manifest. **This is the moat.** A review
 - the validator metrics,
 - the container digest of every step.
 
-Schema is in `xpr2bind/provenance/manifest.py`. Validated against a JSON Schema in `schemas/run_manifest.schema.json` on every run.
+Schema is in `bindsight/provenance/manifest.py`. Validated against a JSON Schema in `schemas/run_manifest.schema.json` on every run.
 
 Final RO-Crate bundles the manifest + all artifacts + a `software.bib` for citation.
 
@@ -216,9 +216,9 @@ rule export_crate:
 Click CLI is a thin wrapper that drives Snakemake with nice ergonomics:
 
 ```bash
-xpr2bind discover  ↔  snakemake --until discover
-xpr2bind design    ↔  snakemake --until design
-xpr2bind run       ↔  snakemake (full DAG)
+bindsight discover  ↔  snakemake --until discover
+bindsight design    ↔  snakemake --until design
+bindsight run       ↔  snakemake (full DAG)
 ```
 
 ---
@@ -260,7 +260,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 | [Tamarind.bio](https://www.tamarind.bio/) | Target | Binders (SaaS) | Open, reproducible, license-defensible |
 | [nf-binder-design](https://github.com/Australian-Protein-Design-Initiative/nf-binder-design) | Target | Binders (Nextflow) | Targets non-HPC users + adds genomics front-end |
 | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | UniProt ID | Sites + seeds | Data dependency, not competitor |
-| **`xpr2bind`** | **RNA-seq counts** | **Ranked binders + provenance** | **Only one that starts at counts** |
+| **`bindsight`** | **RNA-seq counts** | **Ranked binders + provenance** | **Only one that starts at counts** |
 
 ---
 
@@ -306,7 +306,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [ ] `structures/` (AlphaFoldDB pull)
 - [ ] `epitopes/` (SURFACE-Bind lookup; fail-soft for missing)
 - [ ] Manifest emission
-- [ ] `xpr2bind discover` end-to-end on TCGA-LUAD
+- [ ] `bindsight discover` end-to-end on TCGA-LUAD
 - [ ] **Milestone:** `v0.0.1` tag
 
 ### Phase 2 — GPU offload + design half (4–6 weeks)
@@ -314,7 +314,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [ ] `design/` RFdiffusion+ProteinMPNN wrapper (T4-friendly default)
 - [ ] `validate/` Boltz-2 wrapper
 - [ ] `rank/` multi-objective scoring
-- [ ] End-to-end `xpr2bind run`
+- [ ] End-to-end `bindsight run`
 - [ ] Mocked-runner CI for GPU half
 - [ ] **Milestone:** `v0.1.0-rc1`
 

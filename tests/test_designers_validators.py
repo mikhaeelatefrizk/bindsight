@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from xpr2bind.design import DesignSpec
-from xpr2bind.design.bindcraft import BindCraftDesigner
-from xpr2bind.design.boltzgen import BoltzGenDesigner
-from xpr2bind.design.rfdiff_mpnn import RFdiffMPNNDesigner
-from xpr2bind.runners.mock import MockRunner
-from xpr2bind.validate.af2_ig import AF2IGValidator
-from xpr2bind.validate.boltz2 import Boltz2Validator
-from xpr2bind.validate.chai1r import Chai1rValidator
+from bindsight.design import DesignSpec
+from bindsight.design.bindcraft import BindCraftDesigner
+from bindsight.design.boltzgen import BoltzGenDesigner
+from bindsight.design.rfdiff_mpnn import RFdiffMPNNDesigner
+from bindsight.runners.mock import MockRunner
+from bindsight.validate.af2_ig import AF2IGValidator
+from bindsight.validate.boltz2 import Boltz2Validator
+from bindsight.validate.chai1r import Chai1rValidator
 
 
 # ---------------------------------------------------------------------------
@@ -129,17 +129,42 @@ class TestStubDesigners:
 # Validators
 # ---------------------------------------------------------------------------
 class TestValidators:
-    def test_boltz2_returns_stub_result(self) -> None:
+    def test_boltz2_raises_when_no_output_dir(self, tmp_path, monkeypatch) -> None:
+        """Boltz2Validator looks for pre-computed Boltz output; raises if missing."""
+        from bindsight.validate.boltz2 import MissingValidationError
+
+        monkeypatch.chdir(tmp_path)
         v = Boltz2Validator()
-        result = v.validate(
-            target_uniprot="P04626",
-            binder_id="design_0",
-            binder_sequence="ACDEFGHIKLMN",
-            target_structure_path="/tmp/fake.cif",
+        with pytest.raises(MissingValidationError):
+            v.validate(
+                target_uniprot="P04626",
+                binder_id="design_0",
+                binder_sequence="ACDEFGHIKLMN",
+                target_structure_path="/tmp/fake.cif",
+            )
+
+    def test_boltz2_parses_real_output_jsons(self, tmp_path, monkeypatch) -> None:
+        """Drop fake but well-formed Boltz JSONs and verify parsing."""
+        import json
+
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        outdir = tmp_path / "validate" / "design_0"
+        outdir.mkdir(parents=True)
+        (outdir / "confidence_design_0_model_0.json").write_text(
+            json.dumps({"iptm": 0.78, "pae_interaction": 5.4, "ptm": 0.85})
         )
-        assert result.binder_id == "design_0"
+        (outdir / "affinity_design_0.json").write_text(
+            json.dumps({"affinity_pred_value": -7.3, "affinity_probability_binary": 0.91})
+        )
+        result = parse_boltz_output(
+            output_dir=outdir, binder_id="design_0", target_uniprot="P04626"
+        )
+        assert result.iptm == pytest.approx(0.78)
+        assert result.pae_interaction == pytest.approx(5.4)
+        assert result.affinity_pred_value == pytest.approx(-7.3)
+        assert result.affinity_probability_binary == pytest.approx(0.91)
         assert result.validator_name == "boltz2"
-        assert "stub" in (result.notes or "").lower()
 
     def test_chai1r_returns_stub_result(self) -> None:
         v = Chai1rValidator()
@@ -163,7 +188,7 @@ class TestValidators:
 # ---------------------------------------------------------------------------
 class TestPluginEntryPoints:
     def test_designer_entry_points_resolve(self) -> None:
-        eps = entry_points(group="xpr2bind.designers")
+        eps = entry_points(group="bindsight.designers")
         names = {ep.name for ep in eps}
         assert {"rfdiff_mpnn", "bindcraft", "boltzgen"} <= names
         # The default designer must actually load.
@@ -171,13 +196,13 @@ class TestPluginEntryPoints:
         assert klass is RFdiffMPNNDesigner
 
     def test_validator_entry_points_resolve(self) -> None:
-        eps = entry_points(group="xpr2bind.validators")
+        eps = entry_points(group="bindsight.validators")
         names = {ep.name for ep in eps}
         assert {"boltz2", "chai1r", "af2_ig"} <= names
         klass = next(ep for ep in eps if ep.name == "boltz2").load()
         assert klass is Boltz2Validator
 
     def test_runner_entry_points_resolve(self) -> None:
-        eps = entry_points(group="xpr2bind.runners")
+        eps = entry_points(group="bindsight.runners")
         names = {ep.name for ep in eps}
         assert {"colab", "modal", "kaggle", "local_docker", "mock"} <= names

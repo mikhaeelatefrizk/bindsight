@@ -4,7 +4,7 @@ Invoked by the ``deg`` rule in the Snakefile. Snakemake injects the
 ``snakemake`` global with ``input``, ``output``, ``params``, ``log``, and
 ``config`` attributes.
 
-This is now a real call into :class:`xpr2bind.deg.pydeseq2_runner.PyDESeq2Runner`.
+This is now a real call into :class:`bindsight.deg.pydeseq2_runner.PyDESeq2Runner`.
 """
 
 from __future__ import annotations
@@ -21,12 +21,12 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
 )
-LOG = logging.getLogger("xpr2bind.deg")
+LOG = logging.getLogger("bindsight.deg")
 
 
 def main() -> int:
-    from xpr2bind.config import DEGParams
-    from xpr2bind.deg.pydeseq2_runner import PyDESeq2Runner
+    from bindsight.config import DEGParams
+    from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 
     counts = Path(snakemake.input.counts)
     design = Path(snakemake.input.design)

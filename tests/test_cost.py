@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from xpr2bind.cost import (
+from bindsight.cost import (
     GPU_PRICE_USD_PER_HOUR,
     PRICE_TABLE_VERSION,
     estimate,

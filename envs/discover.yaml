@@ -1,4 +1,4 @@
-name: xpr2bind-discover
+name: bindsight-discover
 channels:
   - conda-forge
   - bioconda

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import requests
 
-from xpr2bind.structures.alphafolddb import AlphaFoldDBClient
+from bindsight.structures.alphafolddb import AlphaFoldDBClient
 
 
 def _make_client(

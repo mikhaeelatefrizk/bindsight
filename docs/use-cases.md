@@ -1,6 +1,6 @@
 # Use cases
 
-> Three concrete scenarios where `xpr2bind` saves serious time and produces
+> Three concrete scenarios where `bindsight` saves serious time and produces
 > defensible artifacts. Each is sized for a single user with a CPU laptop and
 > ≤$50 of cloud GPU budget.
 
@@ -14,7 +14,7 @@ shortlist of cell-surface antigens that are (a) over-expressed in tumor,
 (b) low in vital tissues, and (c) druggable with antibody-class binders. From
 that shortlist, you want designed binder candidates.
 
-**Without `xpr2bind`** (typical workflow today):
+**Without `bindsight`** (typical workflow today):
 - Week 1: Run DESeq2, manually filter, dump gene list.
 - Week 2: Cross-check against [SURFY](https://wlab.ethz.ch/surfaceome) by
   hand. Annotate UniProt accessions. Pull AlphaFoldDB structures one by one.
@@ -23,15 +23,15 @@ that shortlist, you want designed binder candidates.
 - Week 4: Run designs. Set up Boltz-2 separately. Validate. Rank in Excel.
 - Week 5: Realize you forgot to filter for safety liabilities. Restart.
 
-**With `xpr2bind`:**
+**With `bindsight`:**
 
 ```bash
-xpr2bind discover my_cohort.yaml --out runs/cohort_v01
-xpr2bind design   runs/cohort_v01 --backend modal --designer rfdiff_mpnn --trajectories 50
-xpr2bind validate runs/cohort_v01 --backend modal --validator boltz2
-xpr2bind rank     runs/cohort_v01
-xpr2bind report   runs/cohort_v01 --format html
-xpr2bind export   runs/cohort_v01 --format ro-crate --out cohort_v01.crate.zip
+bindsight discover my_cohort.yaml --out runs/cohort_v01
+bindsight design   runs/cohort_v01 --backend modal --designer rfdiff_mpnn --trajectories 50
+bindsight validate runs/cohort_v01 --backend modal --validator boltz2
+bindsight rank     runs/cohort_v01
+bindsight report   runs/cohort_v01 --format html
+bindsight export   runs/cohort_v01 --format ro-crate --out cohort_v01.crate.zip
 ```
 
 **Wall time:** ~30 min CPU + ~5–10 GPU-hours on Modal A100 (~$25–40), or
@@ -48,29 +48,29 @@ in your cohort, every one traceable back to the patients it came from.
 diffusion model and want to compare it against RFdiffusion, BindCraft, and
 BoltzGen on a held-out target set with a fair upstream pipeline.
 
-**Without `xpr2bind`:** you write 4 different driver scripts, hope you've
+**Without `bindsight`:** you write 4 different driver scripts, hope you've
 configured each fairly, and reviewers complain that the comparisons aren't
 apples-to-apples.
 
-**With `xpr2bind`:**
+**With `bindsight`:**
 
-1. Implement your designer as a `xpr2bind.design.Designer` plugin
-   (Protocol in `xpr2bind/design/protocol.py`, ~50 lines).
+1. Implement your designer as a `bindsight.design.Designer` plugin
+   (Protocol in `bindsight/design/protocol.py`, ~50 lines).
 2. Register it via `pyproject.toml`:
    ```toml
-   [project.entry-points."xpr2bind.designers"]
+   [project.entry-points."bindsight.designers"]
    my_designer = "my_package:MyDesigner"
    ```
 3. Run the same config four times with different `--designer` flags:
    ```bash
    for d in rfdiff_mpnn bindcraft boltzgen my_designer; do
-       xpr2bind run examples/benchmark_held_out.yaml --designer "$d" \
+       bindsight run examples/benchmark_held_out.yaml --designer "$d" \
            --out runs/bench_${d}
    done
    ```
 4. Compare via the bundled benchmark script:
    ```bash
-   xpr2bind benchmark runs/bench_*/  --known-antigens benchmarks/known.tsv \
+   bindsight benchmark runs/bench_*/  --known-antigens benchmarks/known.tsv \
        --out benchmark_report.html
    ```
 
@@ -88,14 +88,14 @@ and want one project that touches DEG analysis, structural biology, deep
 learning, software engineering, and reproducibility — all in a 12-week
 semester.
 
-**The lesson plan with `xpr2bind`:**
+**The lesson plan with `bindsight`:**
 
 | Week | Topic | Hands-on |
 |---|---|---|
-| 1–2 | RNA-seq + DEG | Run `xpr2bind discover` on a public TCGA cohort; interpret the volcano plot |
+| 1–2 | RNA-seq + DEG | Run `bindsight discover` on a public TCGA cohort; interpret the volcano plot |
 | 3 | Surfaceome + Open Targets | Inspect the `candidates.parquet`; understand each filter |
 | 4 | Protein structure | Pull a candidate's AlphaFoldDB mmCIF; visualize in PyMOL |
-| 5–6 | De novo design | Run `xpr2bind design --backend colab` (free); read the Colab notebook step by step |
+| 5–6 | De novo design | Run `bindsight design --backend colab` (free); read the Colab notebook step by step |
 | 7 | Validation | Boltz-2 vs Chai-1r — which agrees on which design? |
 | 8 | Multi-objective ranking | Modify the rank weights; see which targets move |
 | 9 | Reproducibility | Re-run with a different seed; diff the manifests |
@@ -114,7 +114,7 @@ expression" to "I added a custom plugin." Students get a portfolio piece.
 a few internal designers. You want a free, reproducible open-source pipeline
 to run alongside, both for sanity checks and for collaborator handoffs.
 
-**Why `xpr2bind` fits:**
+**Why `bindsight` fits:**
 
 - All defaults are MIT/Apache/BSD/CC-BY ([LICENSING.md](../LICENSING.md)).
 - Plugin interface lets you wrap your proprietary designer / validator
@@ -134,18 +134,18 @@ class InternalDesigner:
 
     def make_spec(self, ...) -> DesignSpec: ...
     def submit(self, spec, runner) -> DesignResult:
-        # call your internal model, package results to xpr2bind's schema
+        # call your internal model, package results to bindsight's schema
         ...
 ```
 
 Then in `pyproject.toml` of your private package:
 
 ```toml
-[project.entry-points."xpr2bind.designers"]
+[project.entry-points."bindsight.designers"]
 internal_designer = "your_company.internal_designer:InternalDesigner"
 ```
 
-`xpr2bind --designer internal_designer` Just Works alongside RFdiff+MPNN /
+`bindsight --designer internal_designer` Just Works alongside RFdiff+MPNN /
 BindCraft / BoltzGen in the same comparison.
 
 ---
@@ -155,7 +155,7 @@ BindCraft / BoltzGen in the same comparison.
 In every scenario above, the value isn't a single algorithm — it's the
 *opinionated, reproducible join* between genomics evidence and protein
 design, with provenance preserved. You bring the data and the question;
-`xpr2bind` brings the pipeline.
+`bindsight` brings the pipeline.
 
 If your use case isn't here, [open a discussion](../CONTRIBUTING.md) — we'd
 like to add it.

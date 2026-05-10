@@ -6,7 +6,7 @@ downloaded separately and placed (or symlinked) here.
 ## What goes here
 
 A vendored copy of the [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind)
-data tree at a pinned commit SHA. The `xpr2bind` SURFACE-Bind client expects to
+data tree at a pinned commit SHA. The `bindsight` SURFACE-Bind client expects to
 find a structure like:
 
 ```
@@ -40,10 +40,10 @@ cd .. && rm -rf tmp_clone
 Skip the `data/surface_bind/` subtree entirely and set:
 
 ```bash
-export XPR2BIND_SURFACE_BIND_DATA=/path/to/your/surface_bind/sites
+export bindsight_SURFACE_BIND_DATA=/path/to/your/surface_bind/sites
 ```
 
-The `xpr2bind` SURFACE-Bind client reads this environment variable in
+The `bindsight` SURFACE-Bind client reads this environment variable in
 preference to the local `data/surface_bind/sites` path.
 
 ## Why not auto-download?
@@ -57,5 +57,5 @@ preference to the local `data/surface_bind/sites` path.
 ## License
 
 SURFACE-Bind is BSD-3-Clause licensed. See the upstream repository for the
-full text. xpr2bind itself is MIT-licensed and does not redistribute
+full text. bindsight itself is MIT-licensed and does not redistribute
 SURFACE-Bind data.

@@ -1,7 +1,7 @@
-# xpr2bind — Snakemake DAG
+# bindsight — Snakemake DAG
 # ============================================================================
 # This Snakefile is the source of truth for pipeline execution. The Click CLI
-# (`xpr2bind discover` etc.) is a thin wrapper that calls Snakemake with
+# (`bindsight discover` etc.) is a thin wrapper that calls Snakemake with
 # `--until <rule>` and a config that this file consumes.
 #
 # Usage:

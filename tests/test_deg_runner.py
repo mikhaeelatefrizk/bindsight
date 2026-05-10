@@ -1,4 +1,4 @@
-"""Tests for ``xpr2bind.deg.pydeseq2_runner``.
+"""Tests for ``bindsight.deg.pydeseq2_runner``.
 
 The cheap tests exercise the I/O + filtering layer with mocked pydeseq2 so
 they run in CI without paying the pydeseq2 import cost. The ``slow`` test
@@ -13,8 +13,8 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from xpr2bind.config import DEGParams
-from xpr2bind.deg.pydeseq2_runner import PyDESeq2Runner
+from bindsight.config import DEGParams
+from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 
 
 @pytest.fixture

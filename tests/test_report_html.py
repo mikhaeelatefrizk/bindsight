@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from xpr2bind.provenance import (
+from bindsight.provenance import (
     InputRef,
     OutputRef,
     StageRecord,
     ToolRef,
     new_manifest,
 )
-from xpr2bind.report.html import _df_to_records, render_run
+from bindsight.report.html import _df_to_records, render_run
 
 
 def _make_run(tmp_path: Path) -> Path:
@@ -93,7 +93,7 @@ def _make_run(tmp_path: Path) -> Path:
     m.append(
         StageRecord(
             name="discover",
-            tool=ToolRef(name="xpr2bind/0.0.1.dev0", version="0.0.1.dev0", license="MIT"),
+            tool=ToolRef(name="bindsight/0.0.1.dev0", version="0.0.1.dev0", license="MIT"),
         )
     )
     m.stages[1].mark_completed()
@@ -111,7 +111,7 @@ def test_render_run_produces_self_contained_html(tmp_path: Path) -> None:
     assert out.stat().st_size > 5000
 
     text = out.read_text(encoding="utf-8")
-    assert "<title>xpr2bind report" in text
+    assert "<title>bindsight report" in text
     assert ":root {" in text  # CSS embedded
     assert "data:image/png;base64," in text  # volcano embedded
     assert "ERBB2" in text  # candidate row rendered
@@ -126,7 +126,7 @@ def test_render_run_handles_missing_optional_files(tmp_path: Path) -> None:
     assert out.exists()
     text = out.read_text(encoding="utf-8")
     # No crash; report explains the empty state
-    assert "<title>xpr2bind report" in text
+    assert "<title>bindsight report" in text
 
 
 def test_render_run_custom_out_path(tmp_path: Path) -> None:

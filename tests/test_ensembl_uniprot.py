@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from xpr2bind.targets.ensembl_uniprot import is_known, lookup
+from bindsight.targets.ensembl_uniprot import is_known, lookup
 
 
 def test_known_oncoprotein_lookups() -> None:

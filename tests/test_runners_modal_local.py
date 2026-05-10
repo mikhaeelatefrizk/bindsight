@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from xpr2bind.runners.kaggle import KaggleRunner
-from xpr2bind.runners.local_docker import LocalDockerRunner
-from xpr2bind.runners.modal_runner import ModalRunner
+from bindsight.runners.kaggle import KaggleRunner
+from bindsight.runners.local_docker import LocalDockerRunner
+from bindsight.runners.modal_runner import ModalRunner
 
 
 def test_modal_cost_estimate_works_today() -> None:

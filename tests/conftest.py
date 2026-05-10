@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for xpr2bind tests."""
+"""Shared pytest fixtures for bindsight tests."""
 
 from __future__ import annotations
 
@@ -16,6 +16,6 @@ def fixtures_dir() -> Path:
 @pytest.fixture
 def tmp_run_dir(tmp_path: pytest.TempPathFactory) -> Path:
     """A fresh, empty pytest tmp_path with the standard run subdirs."""
-    from xpr2bind.io.paths import run_dir
+    from bindsight.io.paths import run_dir
 
     return run_dir(tmp_path)

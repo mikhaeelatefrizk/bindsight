@@ -1,4 +1,4 @@
-name: xpr2bind-report
+name: bindsight-report
 channels:
   - conda-forge
 dependencies:

@@ -1,4 +1,4 @@
-"""End-to-end test: `xpr2bind demo` runs to completion on the shipped example.
+"""End-to-end test: `bindsight demo` runs to completion on the shipped example.
 
 This is the most important integration test in the suite — if it fails,
 new users will hit the failure too. Runs the actual discovery pipeline
@@ -13,8 +13,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from xpr2bind.config import RunConfig
-from xpr2bind.pipelines import discover as discover_pipeline
+from bindsight.config import RunConfig
+from bindsight.pipelines import discover as discover_pipeline
 
 REPO_ROOT = Path(__file__).parent.parent
 EXAMPLES = REPO_ROOT / "examples" / "demo"
@@ -33,7 +33,7 @@ def demo_cfg(tmp_path: Path) -> RunConfig:
 def test_demo_config_validates() -> None:
     """The shipped demo config validates against RunConfig."""
     cfg = RunConfig.from_yaml(EXAMPLES / "config.yaml")
-    assert cfg.name == "xpr2bind_demo"
+    assert cfg.name == "bindsight_demo"
     assert cfg.params.target_discovery.surfy_allow_offline_fallback is True
     assert cfg.params.target_discovery.use_open_targets is False
 
@@ -86,7 +86,7 @@ def test_demo_runs_end_to_end(demo_cfg: RunConfig, tmp_path: Path) -> None:
 @pytest.mark.slow
 def test_demo_report_renders(demo_cfg: RunConfig, tmp_path: Path) -> None:
     """HTML report renders to a non-empty self-contained file."""
-    from xpr2bind.report import render_run
+    from bindsight.report import render_run
 
     out = tmp_path / "demo_out"
     discover_pipeline.run(demo_cfg, out_dir=out)
@@ -95,7 +95,7 @@ def test_demo_report_renders(demo_cfg: RunConfig, tmp_path: Path) -> None:
     assert report_path.exists()
     assert report_path.stat().st_size > 5000, "report.html is suspiciously small"
     text = report_path.read_text(encoding="utf-8")
-    assert "<title>xpr2bind report" in text
+    assert "<title>bindsight report" in text
     # Embedded CSS, not a stylesheet link
     assert ":root {" in text
     # PNG volcano embedded as base64
@@ -134,7 +134,7 @@ def test_manifest_jsonld_is_valid_json(demo_cfg: RunConfig, tmp_path: Path, monk
     from unittest.mock import patch
 
     with patch(
-        "xpr2bind.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
         return_value=fake_deg,
     ):
         out = tmp_path / "demo_out"
