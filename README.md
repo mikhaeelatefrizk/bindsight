@@ -9,6 +9,8 @@
 
 > ⚠️ **Pre-release.** v0.0.1-dev. APIs and outputs are subject to change. See [CHANGELOG.md](CHANGELOG.md).
 
+**New here?** → [What is xpr2bind?](docs/what-is-xpr2bind.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md)
+
 ---
 
 ## Why this exists
