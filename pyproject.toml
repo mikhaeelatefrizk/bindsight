@@ -61,6 +61,7 @@ dependencies = [
     "rich>=13.7",          # CLI output formatting
     "tenacity>=8.4",       # API retry policies
     "platformdirs>=4.2",   # cache locations
+    "jinja2>=3.1",         # Colab/Modal notebook templating
 ]
 
 [project.optional-dependencies]
@@ -169,6 +170,11 @@ convention = "google"
 "tests/**/*" = ["D", "S101"]
 "xpr2bind/**/__init__.py" = ["D", "F401"]
 "scripts/**/*" = ["D", "PLW0127"]    # Snakemake injects globals; doc-strings live in module docstring
+# Stub plugin files in v0.0.x — Protocol already documents the methods. Drop
+# this ignore as each plugin gets a real implementation in v0.1.0-rc2.
+"xpr2bind/design/{bindcraft,boltzgen}.py" = ["D102"]
+"xpr2bind/validate/{chai1r,af2_ig}.py" = ["D102"]
+"xpr2bind/runners/{local_docker,modal_runner,kaggle}.py" = ["D102"]
 
 [tool.mypy]
 python_version = "3.11"

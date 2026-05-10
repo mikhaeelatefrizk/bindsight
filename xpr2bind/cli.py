@@ -182,13 +182,46 @@ def design(
     trajectories: int,
     dry_run: bool,
 ) -> None:
-    """Generate de novo binder backbones + sequences (offloaded to GPU)."""
+    """Generate de novo binder backbones + sequences (offloaded to GPU).
+
+    With --dry-run, prints a per-target cost estimate without launching anything.
+    Without --dry-run, the actual launch lands in v0.1.0-rc2 alongside the
+    runner integrations; v0.0.x prints the plan and exits.
+    """
+    from xpr2bind.cost import estimate_full_run
+
+    # Try to read the per-run epitopes table to count targets accurately.
+    epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
+    n_targets = _count_top_targets(epitopes_parquet)
+
     console.print(f"[dim]run-dir:[/dim] {run_dir}")
     console.print(f"[dim]backend:[/dim] {backend}")
     console.print(f"[dim]designer:[/dim] {designer}")
     console.print(f"[dim]trajectories:[/dim] {trajectories}")
-    console.print(f"[dim]dry-run:[/dim] {dry_run}")
-    _not_implemented("design")
+    console.print(f"[dim]targets:[/dim] {n_targets}")
+
+    # Cost estimate works today regardless of --dry-run.
+    d_cost, _v_cost, _c_cost = estimate_full_run(
+        backend=backend,
+        designer=designer,
+        validator="boltz2",
+        n_targets=n_targets,
+        n_trajectories=trajectories,
+    )
+    _print_cost_panel(d_cost, label=f"design ({designer})")
+
+    if dry_run:
+        console.print(
+            Panel(
+                "[green]--dry-run:[/green] no jobs launched. "
+                "Drop --dry-run to launch (live submit lands in v0.1.0-rc2).",
+                title="Dry run",
+                border_style="green",
+            )
+        )
+        return
+
+    _not_implemented("design (live submit)")
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +246,8 @@ def design(
 )
 def validate(run_dir: Path, backend: str, validator: str) -> None:
     """Validate designed binders by predicting structure and binding affinity."""
+    from xpr2bind.cost import estimate
+
     if validator == "af2_ig":
         console.print(
             Panel(
@@ -222,7 +257,15 @@ def validate(run_dir: Path, backend: str, validator: str) -> None:
                 border_style="red",
             )
         )
-    _not_implemented("validate")
+
+    # Best-effort: count designs to validate from a design results manifest;
+    # fall back to an estimate.
+    design_dir = run_dir / "design"
+    n_designs = _count_designs(design_dir)
+    cost = estimate(backend=backend, stage="validate", plugin=validator, n_units=n_designs)
+    _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
+
+    _not_implemented("validate (live submit)")
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +419,48 @@ def verify_licenses(config: Path | None) -> None:
 
     console.print(
         "\n[dim]See LICENSING.md for the full inventory and commercial-use guidance.[/dim]"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CLI helpers used by design + validate
+# ---------------------------------------------------------------------------
+def _count_top_targets(epitopes_parquet: Path) -> int:
+    """Count top-N targets from a discover-stage epitopes Parquet, default 5."""
+    if not epitopes_parquet.exists():
+        return 5
+    try:
+        import pandas as pd
+
+        return len(pd.read_parquet(epitopes_parquet))
+    except Exception:
+        return 5
+
+
+def _count_designs(design_dir: Path) -> int:
+    """Count design tarballs / metrics for cost estimation; fall back to 250."""
+    if not design_dir.exists():
+        return 250
+    pdbs = list(design_dir.rglob("*.pdb"))
+    return max(1, len(pdbs)) if pdbs else 250
+
+
+def _print_cost_panel(cost, label: str) -> None:
+    """Render a CostEstimate as a Rich panel with the user-relevant fields."""
+    usd = cost.usd_estimate or 0.0
+    dollars = "free" if usd == 0 else f"~${usd:.2f}"
+    console.print(
+        Panel(
+            f"[bold]{label}[/bold]\n"
+            f"backend     {cost.backend}\n"
+            f"GPU         {cost.gpu_type}\n"
+            f"GPU-hours   {cost.gpu_hours:.2f}\n"
+            f"USD         {dollars}\n"
+            f"queue ~{cost.queue_minutes_estimate or 0:.0f} min  ·  "
+            f"{cost.notes or ''}",
+            title="Cost estimate",
+            border_style="cyan",
+        )
     )
 
 
