@@ -27,7 +27,32 @@ from rich.table import Table
 
 from xpr2bind import __version__
 
-console = Console()
+
+def _force_utf8_io() -> None:
+    """Reconfigure stdout/stderr to UTF-8.
+
+    Rich uses Unicode box-drawing characters for panels (┃ ━ etc.) and the
+    pipeline log messages contain ≥, ×, → and other non-cp1252 glyphs. The
+    default Windows console is cp1252 and will raise UnicodeEncodeError when
+    asked to write those. ``sys.stdout.reconfigure(encoding='utf-8')`` is the
+    one-line fix that works on Python 3.7+ on all platforms.
+    """
+    import contextlib
+
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is not None and hasattr(stream, "reconfigure"):
+            # Tests sometimes wrap sys.stdout in a non-reconfigurable buffer;
+            # tolerate that and fall back to silently dropping bad chars.
+            with contextlib.suppress(Exception):
+                stream.reconfigure(encoding="utf-8", errors="replace")
+
+
+_force_utf8_io()
+
+# Rich console; legacy-windows mode off so box-drawing chars work after the
+# UTF-8 reconfigure above.
+console = Console(force_terminal=True, legacy_windows=False, soft_wrap=False)
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -302,8 +327,49 @@ def rank(run_dir: Path) -> None:
     help="Embed designed binder structures (requires GPU stages to have run).",
 )
 def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
-    """Render the run as a Quarto HTML report or launch the Streamlit dashboard."""
-    _not_implemented(f"report ({fmt})")
+    """Render the run as a self-contained HTML report or launch the Streamlit dashboard.
+
+    HTML output is one self-contained file (CSS + plot + tables embedded) you
+    can email or attach to a paper. Streamlit launches a local dev server for
+    interactive browsing.
+    """
+    if fmt == "html":
+        from xpr2bind.report import render_run
+
+        out_path = render_run(run_dir)
+        console.print(
+            Panel(
+                f"[green]Report rendered.[/green]\n[bold]Open:[/bold] {out_path}",
+                title="xpr2bind report",
+                border_style="green",
+            )
+        )
+        return
+
+    if fmt == "streamlit":
+        import subprocess
+        import sys as _sys
+
+        from xpr2bind.report import streamlit_app
+
+        app_path = Path(streamlit_app.__file__)
+        console.print(f"[dim]launching Streamlit:[/dim] {app_path} {run_dir}")
+        try:
+            subprocess.run(
+                [_sys.executable, "-m", "streamlit", "run", str(app_path), "--", str(run_dir)],
+                check=True,
+            )
+        except FileNotFoundError:
+            console.print(
+                Panel(
+                    "[yellow]Streamlit not installed.[/yellow] Install the report extras:\n"
+                    '  [bold]pip install -e ".[report]"[/bold]',
+                    title="Missing dependency",
+                    border_style="yellow",
+                )
+            )
+            sys.exit(2)
+        return
 
 
 # ---------------------------------------------------------------------------
@@ -460,6 +526,107 @@ def _print_cost_panel(cost, label: str) -> None:
             f"{cost.notes or ''}",
             title="Cost estimate",
             border_style="cyan",
+        )
+    )
+
+
+# ---------------------------------------------------------------------------
+# demo — one-command end-to-end against the shipped tiny example
+# ---------------------------------------------------------------------------
+@main.command()
+@click.option(
+    "--out",
+    "out_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=Path("runs/demo"),
+    show_default=True,
+    help="Where to write the demo output.",
+)
+@click.option(
+    "--no-report",
+    is_flag=True,
+    help="Skip rendering the HTML report at the end.",
+)
+def demo(out_dir: Path, no_report: bool) -> None:
+    """Run the full discovery half on the shipped 10-gene synthetic cohort.
+
+    Takes ~30 seconds on a CPU laptop. Produces a real HTML report you can
+    open in a browser. Internet not required (Open Targets enrichment is
+    skipped; SURFY uses the bundled offline fallback).
+    """
+    from xpr2bind.config import RunConfig
+    from xpr2bind.pipelines import discover as discover_pipeline
+
+    _setup_logging(verbose=False)
+
+    # Resolve the bundled config relative to the package install root.
+    repo_root = Path(__file__).parent.parent
+    cfg_path = repo_root / "examples" / "demo" / "config.yaml"
+    if not cfg_path.exists():
+        # Editable installs: try CWD as a fallback.
+        cfg_path = Path("examples/demo/config.yaml")
+    if not cfg_path.exists():
+        console.print(
+            Panel(
+                "[red]Could not find examples/demo/config.yaml.[/red] "
+                "Re-install with `pip install -e .` from the repo root.",
+                title="demo failed",
+                border_style="red",
+            )
+        )
+        sys.exit(2)
+
+    console.print(
+        Panel(
+            "[bold]xpr2bind demo[/bold]\n\n"
+            f"config: {cfg_path}\nout:    {out_dir}\n\n"
+            "Synthetic 10-gene tumor-vs-normal cohort. The pipeline should\n"
+            "rediscover ERBB2 (HER2) and EGFR as top antibody-tractable surface\n"
+            "antigens. Takes ~30s on a CPU laptop.",
+            title="Demo run",
+            border_style="cyan",
+        )
+    )
+
+    cfg = RunConfig.from_yaml(cfg_path)
+    cfg.out_dir = out_dir
+    # Override input paths to be absolute relative to where the config lives.
+    cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
+    cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
+
+    manifest = discover_pipeline.run(cfg, out_dir=out_dir)
+    failed = [s for s in manifest.stages if s.status == "failed"]
+    if failed:
+        console.print(
+            Panel(
+                "\n".join(f"[red]{s.name}[/red]: {s.error}" for s in failed),
+                title="Demo stage failures",
+                border_style="red",
+            )
+        )
+        sys.exit(1)
+
+    # Render the report unless asked not to.
+    report_path: Path | None = None
+    if not no_report:
+        from xpr2bind.report import render_run
+
+        report_path = render_run(out_dir)
+
+    console.print(
+        Panel(
+            f"[green]Demo complete![/green]\n\n"
+            f"Manifest:    {out_dir / 'run_manifest.jsonld'}\n"
+            f"Targets:     {out_dir / 'targets' / 'candidates.parquet'}\n"
+            f"Epitopes:    {out_dir / 'epitopes' / 'epitopes.parquet'}"
+            + (f"\nReport HTML: {report_path}" if report_path else "")
+            + "\n\nNext steps:\n"
+            "  1. Open the HTML report in a browser to see the results.\n"
+            "  2. Inspect the Parquet outputs with pandas / DuckDB.\n"
+            "  3. Read docs/how-to-use.md to swap in your own RNA-seq cohort.\n"
+            "  4. See docs/what-is-xpr2bind.md for the full pitch.",
+            title="xpr2bind demo",
+            border_style="green",
         )
     )
 

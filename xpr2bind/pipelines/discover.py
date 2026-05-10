@@ -265,7 +265,11 @@ def _do_discover(
     afdb = alphafolddb_client or AlphaFoldDBClient()
     surfy_set = surfy or load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
 
-    # 2. For each significant gene, enrich via Open Targets.
+    # 2. For each significant gene, enrich via Open Targets (or fall back to
+    #    the bundled offline map for well-known genes — used by the demo and
+    #    when Open Targets is unreachable).
+    from xpr2bind.targets import ensembl_uniprot
+
     enriched_rows: list[dict[str, object]] = []
     for _, row in sig.iterrows():
         gene_id = str(row["gene_id"])
@@ -281,11 +285,25 @@ def _do_discover(
 
         uniprot_ids = ev.uniprot_ids if ev else []
         modalities = ev.tractability_modalities if ev else []
+        symbol = ev.symbol if ev else None
+
+        # Offline / fallback path: consult the bundled ENSG → UniProt map for
+        # well-known genes so the demo (and other offline runs) still produce
+        # candidates.
+        if not uniprot_ids:
+            fb_symbol, fb_uniprot = ensembl_uniprot.lookup(gene_id)
+            if fb_uniprot:
+                uniprot_ids = [fb_uniprot]
+                if symbol is None:
+                    symbol = fb_symbol
+                if ot_status == "skipped":
+                    ot_status = "bundled_fallback"
+
         for uniprot_id in uniprot_ids or [None]:
             enriched_rows.append(
                 {
                     "gene_id": gene_id,
-                    "symbol": ev.symbol if ev else None,
+                    "symbol": symbol,
                     "uniprot_id": uniprot_id,
                     "log2fc": float(row["log2fc"]),
                     "padj": float(row["padj"]) if pd.notna(row["padj"]) else None,
