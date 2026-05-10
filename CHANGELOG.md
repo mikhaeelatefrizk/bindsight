@@ -8,6 +8,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — Phase 2 GPU-half scaffold (2026-05-10)
+- `xpr2bind.cost` — real GPU cost estimator. Pricing table for Modal /
+  Colab Pro+ / Kaggle / local across A100 / H100 / L4 / T4 / RTX4090 etc.
+  Per-designer + per-validator timing tables (45 s/trajectory for
+  RFdiff+MPNN, 240 s for BindCraft, 20 s/design for Boltz-2). Powers
+  `--dry-run`. 15 tests.
+- `xpr2bind.runners.notebook` — Jinja2-backed Jupyter notebook builder
+  (envelope, code/markdown cells, strict-undefined rendering).
+- `xpr2bind.runners.colab` — real Colab runner. Builds a self-contained
+  `.ipynb` Jupyter notebook with Colab GPU metadata, install + spec +
+  designer + package cells; user runs it and drops the resulting tarball
+  back into the results directory for `poll`/`fetch` to detect. 6 tests.
+- `xpr2bind.runners.modal_runner`, `xpr2bind.runners.kaggle`,
+  `xpr2bind.runners.local_docker` — runner stubs with working cost
+  estimators. Live `submit` lands in v0.1.0-rc2. 5 tests.
+- Designer plugins (entry-point registered):
+  - `xpr2bind.design.rfdiff_mpnn` — default designer. Real cache-key
+    construction; mock-runner round-trip works today (real RFdiffusion in
+    v0.1.0-rc2).
+  - `xpr2bind.design.bindcraft` — premium designer (≥32 GB VRAM), stub.
+  - `xpr2bind.design.boltzgen` — newest designer (MIT weights), stub.
+- Validator plugins (entry-point registered):
+  - `xpr2bind.validate.boltz2` — default validator.
+  - `xpr2bind.validate.chai1r` — alt for cross-model agreement.
+  - `xpr2bind.validate.af2_ig` — opt-in (non-commercial weights, license
+    banner shown by CLI).
+- 14 designer/validator tests including entry-point loader checks against
+  pyproject.toml.
+- `xpr2bind design` now prints a Rich cost panel before exiting; with
+  `--dry-run` it returns 0 cleanly.
+- `xpr2bind validate` now prints a Rich cost panel.
+- Total: 124 fast tests + 1 slow real-pydeseq2 test, all green.
+
+### Added — docs (2026-05-10)
+- `docs/what-is-xpr2bind.md` — 5-minute pitch / "deal-breaker" explanation.
+- `docs/how-to-use.md` — end-to-end user guide with troubleshooting.
+- `docs/use-cases.md` — four sized scenarios.
+- README links the three docs at the top.
+
 ### Added — Phase 1 wiring (2026-05-09 batch 2)
 - `xpr2bind.config` — Pydantic v2 `RunConfig` + per-stage param models with
   YAML loader. Validates the bundled `examples/tcga_luad.yaml` and rejects

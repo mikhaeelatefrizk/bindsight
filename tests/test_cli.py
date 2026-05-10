@@ -38,13 +38,34 @@ def test_cli_discover_rejects_invalid_config(tmp_path) -> None:
     assert isinstance(r.exception, ValidationError)
 
 
-def test_cli_design_not_implemented(tmp_path) -> None:
-    """``design`` is still a stub in v0.0.x — kept for the CLI surface."""
+def test_cli_design_dry_run_prints_cost_and_exits_zero(tmp_path) -> None:
+    """``design --dry-run`` prints a cost estimate and exits cleanly without launching."""
     run = tmp_path / "run"
     run.mkdir()
-    r = CliRunner().invoke(main, ["design", str(run)])
+    r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal", "--dry-run"])
+    assert r.exit_code == 0
+    assert "Cost estimate" in r.output
+    assert "modal" in r.output
+
+
+def test_cli_design_without_dry_run_prints_cost_then_not_implemented(tmp_path) -> None:
+    """Without --dry-run, design still shows the cost panel before exiting 2."""
+    run = tmp_path / "run"
+    run.mkdir()
+    r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal"])
     assert r.exit_code == 2
+    assert "Cost estimate" in r.output
     assert "Not implemented" in r.output
+
+
+def test_cli_validate_prints_cost_panel(tmp_path) -> None:
+    run = tmp_path / "run"
+    run.mkdir()
+    r = CliRunner().invoke(
+        main, ["validate", str(run), "--backend", "modal", "--validator", "boltz2"]
+    )
+    assert r.exit_code == 2
+    assert "Cost estimate" in r.output
 
 
 def test_cli_validate_af2_ig_shows_license_banner(tmp_path) -> None:
