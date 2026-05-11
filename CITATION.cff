@@ -15,7 +15,7 @@ authors:
     given-names: "Mikhaeel"
     email: "mikhaeelatefrizk@proton.me"
     affiliation: "Independent Researcher, Rotterdam, NL"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"  # TODO: add ORCID
+    orcid: "https://orcid.org/0009-0006-1069-9558"
 repository-code: "https://github.com/mikhaeelatefrizk/bindsight"
 url: "https://github.com/mikhaeelatefrizk/bindsight"
 license: MIT
@@ -34,5 +34,5 @@ keywords:
   - RO-Crate
   - target-discovery
   - cancer-immunotherapy
-version: 0.0.1-dev
-date-released: "2026-05-09"
+version: 0.1.0
+date-released: "2026-05-11"
