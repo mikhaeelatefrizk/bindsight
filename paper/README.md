@@ -5,11 +5,11 @@ This directory contains two ready-to-submit academic manuscripts about
 
 ```
 paper/
-├── joss/
-│   ├── paper.md       ← JOSS-style ~1000-word software paper
-│   └── paper.bib      ← BibTeX bibliography
+├── paper.md           ← JOSS-style ~1000-word software paper (standard path)
+├── paper.bib          ← BibTeX bibliography (for JOSS)
 └── biorxiv/
     ├── manuscript.tex ← Full bioRxiv preprint (LaTeX)
+    ├── manuscript.pdf ← Compiled (7 pages, 322 KB) — ready for direct upload
     └── references.bib ← BibTeX bibliography (same content + a few extras)
 ```
 
@@ -46,7 +46,7 @@ review happens transparently on GitHub.
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
    - **Version:** `v0.1.0`
-   - **Path to paper:** `paper/joss/paper.md`
+   - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
    - **Software archive:** `https://doi.org/10.5281/zenodo.20121496`
 4. Submit. The JOSS editor assigns a handling editor and at least two
    reviewers. Reviewers open issues in your GitHub repo with comments;
