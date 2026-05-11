@@ -3,6 +3,7 @@
 > **Expression → Binder.** The first open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein binder candidates, with full provenance back to the patient cohort.
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bindsight.streamlit.app/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![Tests: 175+](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen.svg)]()
@@ -253,7 +254,28 @@ pyproject.toml            # Python packaging
 
 ## Citation
 
-If you use `bindsight` in your work, please cite it via [CITATION.cff](CITATION.cff). Once a Zenodo DOI is issued (on first tagged release), it will appear here. Please also cite the upstream tools you used (the per-run manifest emits a `software.bib` to make this easy).
+If you use `bindsight` in your work, please cite it via the Zenodo DOI:
+
+> Atef Rizk, M. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.20121496
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
+
+BibTeX:
+
+```bibtex
+@software{atefrizk_bindsight_2026,
+  author       = {Atef Rizk, Mikhaeel},
+  title        = {bindsight: a reproducible bridge from RNA-seq to de novo protein binder design},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v0.1.0},
+  doi          = {10.5281/zenodo.20121496},
+  url          = {https://doi.org/10.5281/zenodo.20121496},
+  orcid        = {https://orcid.org/0009-0006-1069-9558}
+}
+```
+
+GitHub also exposes a "Cite this repository" button on the right sidebar of the [repo page](https://github.com/mikhaeelatefrizk/bindsight) that auto-generates citations in BibTeX, APA, and other formats from [CITATION.cff](CITATION.cff). Please also cite the upstream tools you used (the per-run manifest emits a `software.bib` to make this easy).
 
 ## License
 
