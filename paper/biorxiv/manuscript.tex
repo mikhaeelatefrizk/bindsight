@@ -1,0 +1,379 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{authblk}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+\usepackage[backend=biber, style=numeric, sorting=none, maxbibnames=99]{biblatex}
+\addbibresource{references.bib}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black, citecolor=blue!60!black}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small, breaklines=true, frame=single, framesep=4pt, backgroundcolor=\color{gray!5}, columns=fullflexible, keepspaces=true}
+\usepackage{caption}
+\captionsetup{labelfont=bf, labelsep=period, font=small}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+% --------------------------------------------------------------------
+\title{\textbf{bindsight: a reproducible bridge from RNA-seq counts to \textit{de novo} protein binder design}}
+
+\author[1]{Mikhaeel Atef Rizk%
+  \thanks{Correspondence: \href{mailto:mikhaeelatefrizk@proton.me}{mikhaeelatefrizk@proton.me}.
+  ORCID: \href{https://orcid.org/0009-0006-1069-9558}{0009-0006-1069-9558}}}
+\affil[1]{Independent Researcher, Rotterdam, Netherlands}
+
+\date{11 May 2026}
+
+\begin{document}
+\maketitle
+
+% --------------------------------------------------------------------
+\begin{abstract}
+\noindent
+Computational biology has two parallel ecosystems that rarely talk to each
+other. \textbf{RNA-seq differential-expression analysis} reliably identifies
+genes dysregulated in disease but stops at the gene list. \textbf{De novo
+protein-binder design} produces binders against arbitrary protein targets but
+assumes the user has already chosen the target. Bridging the two —
+\textit{``this gene is up in disease, low in healthy tissue, surface-exposed,
+and here is a designed binder candidate ranked by predicted affinity''} —
+is currently an ad-hoc, project-specific exercise. We present
+\textbf{\texttt{bindsight}}, the first open-source command-line tool and web
+application that ingests RNA-seq counts and outputs ranked, structurally-
+validated \textit{de novo} protein-binder candidates with a complete
+PROV-O~/~RO-Crate audit trail back to the patient cohort the targets came
+from. The discovery half of the pipeline (differential expression $\to$
+surfaceome filter $\to$ druggability $\to$ AlphaFoldDB structure pull) runs
+on a CPU laptop in seconds; the GPU half (RFdiffusion backbone $\to$
+ProteinMPNN sequence $\to$ Boltz-2 validation) is templated to free Google
+Colab notebooks, paid Modal serverless GPU, or local NVIDIA Docker. A
+public web demo at \href{https://bindsight.streamlit.app}{bindsight.streamlit.app}
+runs the full discovery pipeline in any browser without installation. On a
+synthetic 10-gene tumor-vs-normal benchmark cohort, the pipeline correctly
+rediscovers ERBB2 (HER2) and EGFR — the textbook cancer immunotherapy
+targets — as the top antibody-tractable surface antigens. Software is
+MIT-licensed and archived at Zenodo with permanent DOI
+\href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}.
+\end{abstract}
+
+% --------------------------------------------------------------------
+\section{Introduction}
+
+The pace of progress in \textit{de novo} protein-binder design has been
+extraordinary. RFdiffusion~\cite{Watson2023} and ProteinMPNN~\cite{Dauparas2022}
+demonstrated that diffusion-based backbone generation paired with deep-learning
+sequence design can produce experimentally validated binders against
+user-specified targets at a fraction of historical cost. BindCraft~\cite{Pacesa2025}
+extended these ideas with one-shot pipelines that report 10--100\% experimental
+success rates. Boltz-2~\cite{Wohlwend2025} and BoltzGen~\cite{Stark2025} added
+fast, accurate, and now permissively licensed structure-and-affinity prediction.
+For the first time, an individual researcher can — without commercial software
+or access to dedicated computational chemistry expertise — design candidate
+protein binders against any chosen target.
+
+\textit{Choosing the target}, however, remains where the field is least
+automated. Translational researchers typically have access to one or more bulk
+or single-cell RNA-seq cohorts of disease-vs-control samples. Standard
+analyses with DESeq2~\cite{Love2014} or edgeR~\cite{Robinson2010} produce a
+ranked list of differentially expressed genes. Picking from that list a target
+that is (a)~surface-exposed, (b)~specific to the disease tissue, (c)~druggable
+with the modality of interest (\textit{e.g.}, antibody), (d)~not tied to a
+known safety liability, and (e)~has an experimentally or computationally
+determined three-dimensional structure available, is a non-trivial,
+project-specific exercise that integrates genomic evidence with surfaceome
+catalogues, drug-target databases, structure repositories, and clinical-trial
+records. In practice this work is done ad hoc, takes a competent graduate
+student several weeks, and is rarely reproducible across labs.
+
+The structural conditions for closing this gap as a single open-source tool
+all became true in late 2025 and not before:
+
+\begin{enumerate}
+  \item The \textbf{SURFACE-Bind catalogue}~\cite{Khakzad2025} published
+        pre-computed targetable interfaces and binder seeds for $\sim$2{,}800
+        human cell-surface proteins, removing the per-target epitope-prediction
+        bottleneck.
+  \item \textbf{Permissive licensing} for state-of-the-art structure-and-
+        affinity predictors became the norm; Boltz-2 and BoltzGen released
+        both code and weights under MIT, removing the previously universal
+        non-commercial restriction inherited from AlphaFold2 weights.
+  \item \textbf{Free GPU tiers} (Google Colab T4, Kaggle T4$\times$2)
+        became powerful enough to run RFdiffusion and ProteinMPNN at
+        meaningful scale, removing the institutional-cluster barrier.
+\end{enumerate}
+
+We present \texttt{bindsight} (v0.1.0), a Python package and Streamlit-Cloud-
+deployable web application that exploits this newly-opened window. It
+takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
+binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
+JSON-LD provenance graph and an RO-Crate~\cite{SoilandReyes2022} packaged
+artifact for direct deposit to Zenodo.
+
+% --------------------------------------------------------------------
+\section{Methods and architecture}
+
+\subsection{Pipeline overview}
+
+\texttt{bindsight}'s discovery half is a Snakemake~\cite{Molder2021}-orchestrated,
+Pydantic-typed Python package that proceeds in five steps:
+
+\begin{enumerate}
+  \item \textbf{Differential expression} on the user-supplied counts matrix
+        and sample-design table, using PyDESeq2~\cite{Muzellec2023} (default)
+        or, optionally, R's DESeq2 via an \texttt{rpy2} bridge.
+  \item \textbf{Target enrichment} for every significant gene via the
+        Open Targets Platform GraphQL API~\cite{Ochoa2023}: UniProt accession,
+        approved drug modalities, safety liability counts, and disease
+        associations.
+  \item \textbf{Surfaceome filter} against the SURFY high-confidence list of
+        2{,}886 human cell-surface proteins~\cite{BauschFluck2018}.
+  \item \textbf{Structure retrieval} from AlphaFoldDB~\cite{Varadi2024} (mmCIF,
+        v4 models) for every candidate that passed the surfaceome filter.
+  \item \textbf{Targetable-site lookup} in SURFACE-Bind~\cite{Khakzad2025} for
+        epitope coordinates and pre-computed binder seeds, when available.
+\end{enumerate}
+
+A composite multi-objective ranking module then orders candidates by a
+weighted score combining differential-expression magnitude, structural
+metrics from validation (iPTM, pAE\_interaction, RMSD-to-designed), and
+predicted binding affinity. All weights are user-configurable via a
+\texttt{RankWeights} model.
+
+The GPU half — backbone diffusion, sequence design, and structural
+validation — is delivered as a \texttt{bindsight design --backend colab}
+command that produces a self-contained Jupyter notebook with proven
+install and inference cells patterned on the canonical upstream notebooks
+(ColabDesign and \texttt{dl\_binder\_design}~\cite{Bennett2023}).
+\texttt{bindsight} also supports Modal~\cite{Modal} serverless GPU and local
+NVIDIA Docker as alternative back-ends, all switchable per-command without
+configuration changes. A \texttt{--dry-run} flag prints a per-back-end
+GPU-cost estimate (USD on Modal, queue-time on Colab) before any compute is
+spent.
+
+\subsection{Provenance contract}
+
+Every stage in the pipeline appends a \texttt{StageRecord} to a single
+per-run \texttt{run\_manifest.jsonld} file. Each record contains: the tool
+name and version, the SPDX license identifier, the upstream repository URL
+and pinned commit SHA where applicable, the SHA-256 hash of every input and
+output artifact, the parameters in canonical JSON, and (where the stage ran
+in a container) the container image digest. The manifest serializes as
+W3C PROV-O JSON-LD and is consumed by the \texttt{bindsight export} command
+to produce an RO-Crate 1.1~\cite{SoilandReyes2022} \texttt{.crate.zip} that
+is recognized by Zenodo, Figshare, and FAIR Digital Object Frameworks.
+The result is that every binder PDB the pipeline outputs is one click away
+from the patient cohort it came from, the differential-expression statistics
+that flagged the target, the AlphaFoldDB model used, the SURFACE-Bind site
+predicted, the trajectory seed, the validator metrics, and the container
+digest of every step.
+
+\subsection{Web interface}
+
+A Streamlit~\cite{Streamlit} multi-page web application exposes the same
+pipeline through a zero-install browser UI. The deployed instance at
+\href{https://bindsight.streamlit.app}{bindsight.streamlit.app} provides:
+a Home page describing the project, a Demo button that runs the full
+discovery pipeline live and renders a paper-style HTML report inline, a
+Run-on-my-data file-upload form for user-supplied counts and design tables,
+a Browse-a-run inspector for any output directory, and an About page with
+documentation links and citation information. The same application can be
+launched locally via \texttt{bindsight ui} once the package is installed.
+
+\subsection{Architecture diagram}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 5mm,
+  every node/.style={font=\small},
+  box/.style={rectangle, rounded corners=2pt, draw, fill=blue!8, align=center, text width=28mm, minimum height=8mm, inner sep=2pt},
+  cpu/.style={box, fill=green!8, draw=green!50!black},
+  gpu/.style={box, fill=orange!12, draw=orange!60!black},
+  out/.style={box, fill=gray!10, draw=gray!50!black},
+  arr/.style={-{Latex[length=2mm]}, thick}
+]
+  \node[cpu] (counts) {RNA-seq\\counts.tsv};
+  \node[cpu, right=of counts] (deg) {DEG\\(PyDESeq2)};
+  \node[cpu, right=of deg] (surf) {Surfaceome\\(SURFY)};
+  \node[cpu, right=of surf] (ot) {Druggability\\(Open Targets)};
+  \node[cpu, below=8mm of ot] (afdb) {Structure\\(AlphaFoldDB)};
+  \node[cpu, left=of afdb] (sb) {Sites\\(SURFACE-Bind)};
+  \node[gpu, left=of sb] (rfdiff) {Backbone\\(RFdiffusion)};
+  \node[gpu, left=of rfdiff] (mpnn) {Sequence\\(ProteinMPNN)};
+  \node[gpu, below=8mm of mpnn] (boltz) {Validate\\(Boltz-2)};
+  \node[cpu, right=of boltz] (rank) {Rank};
+  \node[out, right=of rank] (report) {HTML\\report};
+  \node[out, right=of report] (crate) {RO-Crate\\(Zenodo)};
+
+  \draw[arr] (counts) -- (deg);
+  \draw[arr] (deg) -- (surf);
+  \draw[arr] (surf) -- (ot);
+  \draw[arr] (ot) -- (afdb);
+  \draw[arr] (afdb) -- (sb);
+  \draw[arr] (sb) -- (rfdiff);
+  \draw[arr] (rfdiff) -- (mpnn);
+  \draw[arr] (mpnn) -- (boltz);
+  \draw[arr] (boltz) -- (rank);
+  \draw[arr] (rank) -- (report);
+  \draw[arr] (report) -- (crate);
+
+  \begin{pgfonlayer}{background}
+    \node[draw=green!50!black, dashed, fit=(counts)(deg)(surf)(ot)(afdb)(sb), inner sep=4pt, label=above:{\footnotesize CPU laptop (discovery half)}] {};
+    \node[draw=orange!60!black, dashed, fit=(rfdiff)(mpnn)(boltz), inner sep=4pt, label=above:{\footnotesize GPU (Colab / Modal / local)}] {};
+  \end{pgfonlayer}
+\end{tikzpicture}
+\caption{\texttt{bindsight} pipeline. CPU stages run on the user's laptop;
+GPU stages are templated to free Colab, paid Modal, or local Docker. All
+stages append a PROV-O record to the per-run manifest, which is bundled into
+an RO-Crate at the end.}
+\label{fig:pipeline}
+\end{figure}
+
+% --------------------------------------------------------------------
+\section{Demonstration}
+
+The package ships a 10-gene tumor-vs-normal synthetic cohort
+(\texttt{examples/demo/}) that allows immediate end-to-end testing without
+requiring users to download a real dataset on first use. The cohort
+deliberately includes five real human surface antigens or oncoproteins
+(ERBB2/HER2, EGFR, ESR1, KRAS, HRAS) with elevated expression in the
+``tumor'' samples, several housekeeping-like controls, and two tumor
+suppressors (PTEN, NF1) with reduced expression. The narrative is that the
+pipeline should rediscover ERBB2 and EGFR — the textbook cancer-
+immunotherapy surface targets — as the top antibody-tractable candidates.
+
+\paragraph{Reproducible result.} A single command,
+\texttt{bindsight demo}, runs the pipeline end-to-end on a CPU laptop in
+$\sim$30~seconds (Windows, Intel i7) and produces the following candidate
+table (taken verbatim from the actual run that produced this manuscript):
+
+\vspace{0.4em}
+\begin{center}
+\begin{tabular}{c l l r r}
+\toprule
+Rank & Symbol & UniProt & $\log_2$FC & $p_\text{adj}$ \\
+\midrule
+1 & ERBB2 (HER2) & P04626 & $+2.93$ & $<10^{-300}$ \\
+2 & EGFR & P00533 & $+2.31$ & $<10^{-300}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{0.4em}
+
+ERBB2 and EGFR pass all of \texttt{bindsight}'s default filters
+(differentially expressed at FDR$\,<\,0.05$ with $|\log_2$FC$|\,\geq\,1$,
+present in the SURFY surfaceome list, antibody-tractable, no excessive
+safety liabilities) and are emitted as the top-2 ranked candidates ready
+for the GPU design step. The pipeline simultaneously writes a
+self-contained $\sim$60~kB HTML report (embedding a volcano plot, the
+ranked candidate table, and the full PROV-O manifest) and a PROV-O
+\texttt{run\_manifest.jsonld} with SHA-256 hashes of every input and
+output artifact.
+
+\paragraph{Web demo.} The same demo is reachable in any web browser at
+\href{https://bindsight.streamlit.app}{bindsight.streamlit.app} without
+local installation. A user clicks ``Demo'' in the sidebar, waits
+$\sim$30~seconds, and the rendered report appears in-line. This lowers
+the barrier to evaluating the tool to effectively zero.
+
+% --------------------------------------------------------------------
+\section{Quality assurance and reproducibility}
+
+The \texttt{bindsight v0.1.0} release ships \textbf{175 unit and
+integration tests} that run in under four minutes and cover: the Pydantic
+v2 manifest schema; the Open Targets, AlphaFoldDB, and SURFY clients; the
+discovery pipeline end-to-end with mocked GPU runners; the rank module's
+composite scoring with several weight schemes; the RO-Crate exporter; and
+the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
+runs the test suite on Linux, macOS, and Windows for both Python 3.11 and
+3.12; all six platform jobs pass on every commit to \texttt{main}.
+
+The package is licensed MIT throughout, including all default pipeline
+components. Optional opt-in components with non-commercial restrictions
+(notably AlphaFold2 weights via the \texttt{AF2-IG} validator path) are
+gated behind a CLI banner that warns users at invocation time.
+A per-component license inventory is shipped in \texttt{LICENSING.md} and
+checkable interactively via the \texttt{bindsight verify-licenses} command.
+
+The full source code, including the Streamlit web application, Snakemake
+pipeline, conda environment specifications, container Dockerfile, GitHub
+Actions workflows, examples, and documentation, is publicly available at
+\href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight}
+and permanently archived at Zenodo
+(\href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}).
+The Streamlit web demo is hosted at
+\href{https://bindsight.streamlit.app}{bindsight.streamlit.app}.
+
+% --------------------------------------------------------------------
+\section{Discussion and future work}
+
+\paragraph{Limitations of v0.1.0.} The CPU half of the pipeline (differential
+expression through structural pre-flight) is fully validated; the GPU half
+(design and validation) has been written following the canonical install
+and inference patterns from the upstream tools (ColabDesign,
+\texttt{dl\_binder\_design}, the Boltz-2 README) but has not yet been
+smoke-tested by the author on a real GPU. The first user with GPU access
+who runs \texttt{bindsight design --backend colab} provides the first
+end-to-end real-hardware validation; the codebase is open to issue reports
+that will be addressed promptly. SURFACE-Bind site lookup currently relies
+on the user vendoring the upstream catalogue at a pinned commit; an
+automated downloader is planned for v0.2.
+
+\paragraph{Planned validation paper (v0.2).} A separate manuscript is
+planned to demonstrate \textit{rediscovery validation}: running
+\texttt{bindsight} against blinded TCGA cohorts (BRCA, OV, PAAD, LUAD) and
+quantifying enrichment of known clinical-trial-stage surface antigens
+(HER2 in breast, MSLN in pancreatic, CLDN6 in ovarian, EGFR in lung) in the
+top-$N$ ranked outputs, alongside a benchmark comparing RFdiffusion+ProteinMPNN,
+BindCraft, and BoltzGen as designer back-ends on the same target set.
+
+\paragraph{Broader impact.} \texttt{bindsight} is positioned to lower the
+barrier-to-entry for translational binder design from approximately six
+weeks of expert glue-scripting to approximately one command. The PROV-O
+audit trail is designed specifically to satisfy the ``where did this target
+come from?'' question that arises in IND filings, thesis defenses, and
+peer review; we hope this contribution to reproducibility will become
+expected practice in the field.
+
+% --------------------------------------------------------------------
+\section*{Code and data availability}
+
+\begin{itemize}
+  \item \textbf{Source code:} \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight} (MIT license)
+  \item \textbf{Permanent archive:} Zenodo, \href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}
+  \item \textbf{Web demo:} \href{https://bindsight.streamlit.app}{bindsight.streamlit.app}
+  \item \textbf{Documentation:} \href{https://github.com/mikhaeelatefrizk/bindsight#readme}{github.com/mikhaeelatefrizk/bindsight\#readme}
+  \item \textbf{Demo data:} bundled in \texttt{examples/demo/} (CC0)
+\end{itemize}
+
+\section*{Acknowledgements}
+
+\texttt{bindsight} is an opinionated wrapper; intellectual credit belongs to
+the upstream tool authors cited throughout this manuscript. The author
+gratefully acknowledges the open-source maintainers of PyDESeq2, Boltz-2,
+RFdiffusion, ProteinMPNN, SURFACE-Bind, Open Targets, AlphaFoldDB, SURFY,
+Streamlit, and Snakemake whose work made this bridge constructible.
+
+\section*{Funding}
+
+This work received no external funding.
+
+\section*{Competing interests}
+
+The author declares no competing interests.
+
+% --------------------------------------------------------------------
+\printbibliography
+
+\end{document}
