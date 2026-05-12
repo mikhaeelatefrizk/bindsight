@@ -1,0 +1,45 @@
+name: Keep Streamlit demo warm
+
+# Streamlit Community Cloud auto-sleeps apps after a few days of inactivity.
+# Once asleep, the next visitor sees a "Zzzz" page and waits 60-120 s for the
+# container to rebuild — a bad first impression for cold-outreach traffic
+# from academic PIs.  This workflow keeps the demo warm by pinging the URL
+# every 6 hours from GitHub's scheduler.
+#
+# It runs on the free public-repo Actions tier, costs nothing, and is fully
+# transparent (the cron + curl are right here).
+
+on:
+  schedule:
+    # Every 6 hours, on the hour (00:00, 06:00, 12:00, 18:00 UTC).
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # also allow manual triggering from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the live Streamlit demo
+        run: |
+          set -euo pipefail
+          URL="https://bindsight.streamlit.app/"
+          echo "Pinging $URL to keep Streamlit Community Cloud container warm…"
+          # -s silent, -L follow redirects, --max-time 120 s (wake-up can be slow),
+          # --retry 2 with 30 s backoff in case the first hit lands on a cold
+          # container that's still booting.  We only care that the URL responds;
+          # we don't care about the body.
+          HTTP_CODE=$(curl -sL --max-time 120 --retry 2 --retry-delay 30 \
+                          -o /dev/null -w "%{http_code}" "$URL")
+          echo "HTTP $HTTP_CODE"
+          # Treat any 2xx/3xx as success.  Streamlit's wake-up page returns 200
+          # even when the underlying app is still booting, which is what we want.
+          if [[ "$HTTP_CODE" =~ ^[23][0-9][0-9]$ ]]; then
+            echo "Demo is reachable."
+          else
+            echo "Demo returned unexpected status $HTTP_CODE" >&2
+            exit 1
+          fi
