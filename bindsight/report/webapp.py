@@ -131,7 +131,6 @@ def _page_home() -> None:
     )
 
 
-@st.cache_resource(show_spinner=False)
 def _run_demo_cached() -> tuple[Path, object, float, Path]:
     """Run the demo pipeline once per server process and cache the full result.
 
@@ -162,7 +161,6 @@ def _run_demo_cached() -> tuple[Path, object, float, Path]:
     return out_dir, manifest, elapsed, report_path
 
 
-@st.cache_data(show_spinner=False)
 def _load_parquet_cached(path_str: str):
     """Cached parquet read so revisiting a run page doesn't re-read from disk."""
     import pandas as pd
@@ -171,6 +169,15 @@ def _load_parquet_cached(path_str: str):
     if not p.exists():
         return None
     return pd.read_parquet(p)
+
+
+# Apply Streamlit caching decorators only if streamlit is available.  The
+# module must remain importable in test environments where streamlit isn't
+# installed (see tests/test_package_imports.py), so we wrap rather than
+# decorate at the def site.
+if st is not None:
+    _run_demo_cached = st.cache_resource(show_spinner=False)(_run_demo_cached)
+    _load_parquet_cached = st.cache_data(show_spinner=False)(_load_parquet_cached)
 
 
 def _page_demo() -> None:
@@ -343,7 +350,6 @@ def _find_repo_root() -> Path:
 
 def _show_run_summary(run_dir: Path, manifest, report_path: Path | None) -> None:
     """Render KPIs, tables, and inline-report-iframe for a finished run."""
-
     candidates_p = run_dir / "targets" / "candidates.parquet"
     epitopes_p = run_dir / "epitopes" / "epitopes.parquet"
     deg_p = run_dir / "deg" / "results.parquet"
