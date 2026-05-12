@@ -12,11 +12,11 @@
 
 ## 👉 Try it live: **[bindsight.streamlit.app](https://bindsight.streamlit.app/)**
 
-Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~30 seconds.
+Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~60 seconds (cached for ~0.1 s on every revisit).
 
 > 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
 
-**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
+**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md)
 
 ---
 
