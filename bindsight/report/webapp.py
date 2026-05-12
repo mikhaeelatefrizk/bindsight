@@ -131,6 +131,48 @@ def _page_home() -> None:
     )
 
 
+@st.cache_resource(show_spinner=False)
+def _run_demo_cached() -> tuple[Path, object, float, Path]:
+    """Run the demo pipeline once per server process and cache the full result.
+
+    The demo always uses the same shipped 10-gene cohort, so the output is
+    fully deterministic and safe to share across visitors.  Caching the run
+    means only the first visitor on a fresh container pays the
+    pydeseq2 + Open Targets + AlphaFoldDB cost; every subsequent visitor sees
+    the same result instantly, and the per-visitor RAM spike drops to ~0.
+    This is the difference between "the app crashes after the first demo" and
+    "the app stays up indefinitely under heavy load".
+    """
+    from bindsight.config import RunConfig
+    from bindsight.pipelines import discover as discover_pipeline
+    from bindsight.report import render_run
+
+    out_dir = Path(tempfile.mkdtemp(prefix="bindsight_demo_")) / "demo_run"
+    repo_root = _find_repo_root()
+    cfg_path = repo_root / "examples" / "demo" / "config.yaml"
+    cfg = RunConfig.from_yaml(cfg_path)
+    cfg.out_dir = out_dir
+    cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
+    cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
+
+    t0 = time.time()
+    manifest = discover_pipeline.run(cfg, out_dir=out_dir)
+    elapsed = time.time() - t0
+    report_path = render_run(out_dir)
+    return out_dir, manifest, elapsed, report_path
+
+
+@st.cache_data(show_spinner=False)
+def _load_parquet_cached(path_str: str):
+    """Cached parquet read so revisiting a run page doesn't re-read from disk."""
+    import pandas as pd
+
+    p = Path(path_str)
+    if not p.exists():
+        return None
+    return pd.read_parquet(p)
+
+
 def _page_demo() -> None:
     st.title("Demo: 60-second guided run")
     st.markdown(
@@ -142,35 +184,12 @@ def _page_demo() -> None:
     )
 
     if st.button("▶  Run demo now", type="primary", use_container_width=True):
-        out_dir = Path(tempfile.mkdtemp(prefix="bindsight_demo_")) / "demo_run"
-        with st.spinner("Loading config and shipped data…"):
-            from bindsight.config import RunConfig
+        # The pipeline result is cached per server process via
+        # @st.cache_resource, so only the first visitor pays the cold-run cost.
+        with st.spinner("Running demo pipeline (cached after first run)…"):
+            out_dir, manifest, elapsed, report_path = _run_demo_cached()
 
-            repo_root = _find_repo_root()
-            cfg_path = repo_root / "examples" / "demo" / "config.yaml"
-            cfg = RunConfig.from_yaml(cfg_path)
-            cfg.out_dir = out_dir
-            cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
-            cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
-
-        progress = st.progress(0.0, text="DEG analysis (pydeseq2)…")
-        time.sleep(0.05)
-
-        with st.spinner("Running pipeline…"):
-            from bindsight.pipelines import discover as discover_pipeline
-
-            t0 = time.time()
-            manifest = discover_pipeline.run(cfg, out_dir=out_dir)
-            elapsed = time.time() - t0
-
-        progress.progress(1.0, text=f"Done in {elapsed:.1f} s")
-
-        # Render the report inline
-        with st.spinner("Rendering report…"):
-            from bindsight.report import render_run
-
-            report_path = render_run(out_dir)
-
+        st.progress(1.0, text=f"Done in {elapsed:.1f} s")
         st.success(f"Demo complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
 
@@ -324,15 +343,16 @@ def _find_repo_root() -> Path:
 
 def _show_run_summary(run_dir: Path, manifest, report_path: Path | None) -> None:
     """Render KPIs, tables, and inline-report-iframe for a finished run."""
-    import pandas as pd
 
     candidates_p = run_dir / "targets" / "candidates.parquet"
     epitopes_p = run_dir / "epitopes" / "epitopes.parquet"
     deg_p = run_dir / "deg" / "results.parquet"
 
-    cand = pd.read_parquet(candidates_p) if candidates_p.exists() else None
-    epi = pd.read_parquet(epitopes_p) if epitopes_p.exists() else None
-    deg = pd.read_parquet(deg_p) if deg_p.exists() else None
+    # Cached parquet reads (see @st.cache_data on _load_parquet_cached) keep
+    # repeat visits to the same run free of disk I/O and pandas re-allocation.
+    cand = _load_parquet_cached(str(candidates_p))
+    epi = _load_parquet_cached(str(epitopes_p))
+    deg = _load_parquet_cached(str(deg_p))
 
     cols = st.columns(4)
     cols[0].metric("Genes tested", len(deg) if deg is not None else 0)
