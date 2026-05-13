@@ -32,7 +32,8 @@ jobs:
           # --retry 2 with 30 s backoff in case the first hit lands on a cold
           # container that's still booting.  We only care that the URL responds;
           # we don't care about the body.
-          HTTP_CODE=$(curl -sL --max-time 120 --retry 2 --retry-delay 30 \
+          HTTP_CODE=$(curl -sL --max-redirs 100 --max-time 120 \
+                          --retry 2 --retry-delay 30 \
                           -o /dev/null -w "%{http_code}" "$URL")
           echo "HTTP $HTTP_CODE"
           # Treat any 2xx/3xx as success.  Streamlit's wake-up page returns 200
