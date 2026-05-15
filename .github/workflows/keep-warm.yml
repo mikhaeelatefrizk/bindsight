@@ -3,17 +3,23 @@ name: Keep Streamlit demo warm
 # Streamlit Community Cloud auto-sleeps apps after a few days of inactivity.
 # Once asleep, the next visitor sees a "Zzzz" page and waits 60-120 s for the
 # container to rebuild — a bad first impression for cold-outreach traffic
-# from academic PIs.  This workflow keeps the demo warm by pinging the URL
-# every 6 hours from GitHub's scheduler.
+# from academic PIs.  This workflow originally pinged the URL every 6 hours
+# from GitHub's scheduler.
 #
-# It runs on the free public-repo Actions tier, costs nothing, and is fully
-# transparent (the cron + curl are right here).
+# **Schedule disabled 2026-05-15.**  GitHub Actions on this account is
+# currently blocked by an upstream billing-config issue (the cron-triggered
+# runs were failing with "Actions blocked by billing issue", which generated
+# email noise without doing useful work).  The workflow is left in the repo
+# as documentation + manual-trigger fallback (workflow_dispatch).
+#
+# Since the cron is off, the durable demo URL going forward is the
+# **Hugging Face Space mirror**: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
+# (16 GB CPU, no auto-sleep).  The Streamlit demo will still respond
+# whenever someone visits but may show a 60–120 s wake-up screen on first
+# hit after several days of inactivity.
 
 on:
-  schedule:
-    # Every 6 hours, on the hour (00:00, 06:00, 12:00, 18:00 UTC).
-    - cron: '0 */6 * * *'
-  workflow_dispatch:  # also allow manual triggering from the Actions tab
+  workflow_dispatch:  # manual triggering only — schedule disabled (see header)
 
 permissions:
   contents: read
