@@ -94,3 +94,6 @@ secrets/
 
 # OS
 desktop.ini
+
+# Private outreach campaign data — must NEVER be pushed to public repo
+outreach/
