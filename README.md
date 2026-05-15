@@ -2,6 +2,7 @@
 
 > **Expression → Binder.** The first open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein binder candidates, with full provenance back to the patient cohort.
 
+[![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-bindsight-yellow.svg)](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bindsight.streamlit.app/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,7 +11,10 @@
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
 
-## 👉 Try it live: **[bindsight.streamlit.app](https://bindsight.streamlit.app/)**
+## 👉 Try it live
+
+**Primary** (16 GB CPU, no auto-sleep): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
+**Mirror** (1 GB CPU, may briefly wake from sleep): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
 
 Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~60 seconds (cached for ~0.1 s on every revisit).
 
@@ -22,13 +26,15 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 ## Three ways to try it
 
-### 1. Web app — [bindsight.streamlit.app](https://bindsight.streamlit.app/) (zero install)
+### 1. Web app — [Hugging Face Space](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) (zero install) · [Streamlit mirror](https://bindsight.streamlit.app/)
 
-Anyone visiting the URL above gets:
+Anyone visiting either URL above gets:
 - The Home page with what bindsight is
 - A **Demo** button that runs the full pipeline live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
+
+The Hugging Face Space is the primary mirror (16 GB CPU, no auto-sleep). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on free-tier infrastructure (1 GB CPU); it may take ~60–120 s to wake from sleep on its first visit after a quiet stretch.
 
 ### 2. Local web app (one command)
 
@@ -276,6 +282,24 @@ BibTeX:
 ```
 
 GitHub also exposes a "Cite this repository" button on the right sidebar of the [repo page](https://github.com/mikhaeelatefrizk/bindsight) that auto-generates citations in BibTeX, APA, and other formats from [CITATION.cff](CITATION.cff). Please also cite the upstream tools you used (the per-run manifest emits a `software.bib` to make this easy).
+
+## About the author
+
+`bindsight` is built and maintained by **Mikhaeel Atef Rizk** — PharmD graduate of the German University in Cairo (GUC), currently finishing the Egyptian post-PharmD applied-pharmacy term (Imtiyaz). Earlier in 2026 he had a research rotation at the German International University in Berlin (GIU Berlin) where he picked up R / RStudio.
+
+- ORCID: [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
+- GitHub: [@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk)
+- Email: `mikhaeelatefrizk@proton.me`
+- Languages: English (fluent), German (A1/A2)
+
+### Sister projects (also on GitHub)
+
+`bindsight` sits at the deep end of an ongoing bioinformatics portfolio. Other projects published on the same GitHub account:
+
+- **TCGA-KIRC survival analysis** — identifies EPAS1 / HIF-2α as a prognostic biomarker for kidney renal clear cell carcinoma (target of FDA-approved belzutifan)
+- **Seurat v5 PBMC 3k scRNA-seq workflow** — standard 10x PBMC pipeline recovering 8 immune populations
+- **Silver-Fox-domestication RNA-seq DE study** — replicates the Kukekova et al. PNAS 2018 differential-expression analysis
+- **Pre-registered systematic review + meta-analysis** — PROSPERO-registered, k = 9, PRISMA 2020 reporting standard
 
 ## License
 
