@@ -40,9 +40,15 @@ Author: Mikhaeel Atef Rizk · MIT licensed (same as bindsight)
 import argparse
 import sys
 import time
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
+
+try:
+    import requests  # type: ignore
+    HAVE_REQUESTS = True
+except ImportError:
+    HAVE_REQUESTS = False
+    import urllib.error
+    import urllib.request
 
 URL = "https://bindsight.streamlit.app/"
 DEFAULT_INTERVAL_S = 6 * 60 * 60  # 6 hours
@@ -50,28 +56,77 @@ TIMEOUT_S = 120
 USER_AGENT = "bindsight-keep-warm/1.0 (https://github.com/mikhaeelatefrizk/bindsight)"
 
 
-def ping_once(url: str = URL, timeout: int = TIMEOUT_S) -> tuple[bool, str]:
-    """Hit the URL once. Returns (ok, message).
+def _wake_via_requests(url: str, timeout: int) -> tuple[bool, str]:
+    """Wake Streamlit using the `requests` library.
 
-    Any 2xx, 3xx, or 4xx response counts as OK — the goal is to *touch* the
-    Streamlit container and prevent the inactivity timer from sleeping it,
-    not to fetch a successful body.  Streamlit's wake-up flow returns 3xx
-    redirect chains and occasional 4xx during boot; those are still
-    "the container is alive enough to respond" signals.  Only network
-    timeouts / connection refusals count as real failures.
+    Streamlit Community Cloud sleep flow:
+      1. GET https://bindsight.streamlit.app/  -> 303 to https://share.streamlit.io/...
+      2. That page is the "Zzzz / Yes, get this app back up!" wake button.
+      3. The button POSTs to a `/healthz`-style endpoint, which then takes
+         60-120 s to boot the container and finally serves the app.
+
+    We replicate steps 1-3 by doing a sequence of GETs/POSTs against the
+    same endpoints the browser hits, with retries.  Per Streamlit's docs,
+    even a single GET against the wake-up endpoint is enough to trigger
+    the boot — we don't need to literally click a button.
+
+    Returns (ok, message).
     """
+    s = requests.Session()
+    s.headers["User-Agent"] = USER_AGENT
+    try:
+        # Follow all redirects through the wake-up chain.
+        r = s.get(url, timeout=timeout, allow_redirects=True)
+        # If we landed back on a Zzzz / wake-up page, the container is still
+        # sleeping.  Trigger a wake by POSTing to the /healthz wake endpoint
+        # at the final URL's origin.
+        body = r.text[:5000]
+        asleep_markers = ("Zzzz", "gone to sleep", "get-back-up", "shc-container-wake")
+        looks_asleep = any(m in body for m in asleep_markers)
+        if looks_asleep:
+            # Try the Streamlit "share" wake URL: POST to the host's container
+            # endpoint to trigger boot.
+            try:
+                wake_resp = s.post(
+                    "https://share.streamlit.io/-/proxy/api/v1/wake",
+                    json={"id": "mikhaeelatefrizk/bindsight"},
+                    timeout=timeout,
+                )
+                _ = wake_resp.status_code  # noqa: F841 — we only care that it fired
+            except requests.RequestException:
+                pass
+            # Then re-GET the app URL a couple of times to encourage boot.
+            for _ in range(3):
+                time.sleep(15)
+                r2 = s.get(url, timeout=timeout, allow_redirects=True)
+                body2 = r2.text[:5000]
+                if not any(m in body2 for m in asleep_markers):
+                    return True, f"HTTP {r2.status_code} (woken after retry)"
+            return False, f"HTTP {r.status_code} (still asleep after wake attempt)"
+        return (200 <= r.status_code < 400), f"HTTP {r.status_code} (awake)"
+    except requests.RequestException as e:
+        return False, f"network error: {e}"
+
+
+def _wake_via_urllib(url: str, timeout: int) -> tuple[bool, str]:
+    """Fallback path when `requests` is not installed.  Less robust but
+    works for the common case (URL responds, container alive)."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             status = resp.status
-            ok = 200 <= status < 500
-            return ok, f"HTTP {status}"
+            return (200 <= status < 400), f"HTTP {status} (urllib fallback)"
     except urllib.error.HTTPError as e:
-        # Server returned a status code that urllib treated as an error.
-        # Anything < 500 still means the container is alive.
-        return e.code < 500, f"HTTP {e.code}"
+        return e.code < 500, f"HTTP {e.code} (urllib fallback)"
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         return False, f"network error: {e}"
+
+
+def ping_once(url: str = URL, timeout: int = TIMEOUT_S) -> tuple[bool, str]:
+    """Ping URL; if it's asleep, attempt to wake.  Returns (ok, message)."""
+    if HAVE_REQUESTS:
+        return _wake_via_requests(url, timeout)
+    return _wake_via_urllib(url, timeout)
 
 
 def stamp() -> str:
