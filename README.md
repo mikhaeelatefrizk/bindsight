@@ -290,16 +290,19 @@ GitHub also exposes a "Cite this repository" button on the right sidebar of the 
 - ORCID: [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
 - GitHub: [@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk)
 - Email: `mikhaeelatefrizk@proton.me`
-- Languages: English (fluent), German (A1/A2)
+- Languages: Arabic (native), English (full professional), German (professional working ≈ B2), French, Russian
 
-### Sister projects (also on GitHub)
+### Sister projects on GitHub
 
-`bindsight` sits at the deep end of an ongoing bioinformatics portfolio. Other projects published on the same GitHub account:
+`bindsight` sits at the deep end of an ongoing bioinformatics portfolio:
 
-- **TCGA-KIRC survival analysis** — identifies EPAS1 / HIF-2α as a prognostic biomarker for kidney renal clear cell carcinoma (target of FDA-approved belzutifan)
-- **Seurat v5 PBMC 3k scRNA-seq workflow** — standard 10x PBMC pipeline recovering 8 immune populations
-- **Silver-Fox-domestication RNA-seq DE study** — replicates the Kukekova et al. PNAS 2018 differential-expression analysis
-- **Pre-registered systematic review + meta-analysis** — PROSPERO-registered, k = 9, PRISMA 2020 reporting standard
+- **[bioinformatics-portfolio](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio)** — an end-to-end bioinformatics portfolio with three subprojects, each fully reproducible from raw data to figures:
+  - [`01-rnaseq-fox-domestication`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/01-rnaseq-fox-domestication) — RNA-seq differential expression on GEO GSE76517, replicating the Kukekova et al. *PNAS* 2018 silver-fox domestication study
+  - [`02-tcga-survival-kidney-cancer`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/02-tcga-survival-kidney-cancer) — TCGA-KIRC clinical survival analysis identifying EPAS1 / HIF-2α as a prognostic biomarker (target of FDA-approved belzutifan)
+  - [`03-scrnaseq-pbmc-seurat`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/03-scrnaseq-pbmc-seurat) — Seurat v5 single-cell RNA-seq workflow on the 10x PBMC 3k dataset, recovering 8 immune populations
+- **[affect-labeling-review](https://github.com/mikhaeelatefrizk/affect-labeling-review)** — a pre-registered systematic review + meta-analysis of affect labeling (Lieberman et al. 2007 paradigm). Real random-effects meta-analysis (k=9), PRISMA 2020, RoB 2 / ROBINS-I, ~14,000-word manuscript, open data + open code, `.zenodo.json` for citable archival
+- **[awesome-protein-design-software](https://github.com/mikhaeelatefrizk/awesome-protein-design-software)** — curated list of protein-design / structure-prediction software (RFdiffusion, ProteinMPNN, Boltz, AlphaFold, ESMFold, etc.)
+- **[Awesome-Bioinformatics](https://github.com/mikhaeelatefrizk/Awesome-Bioinformatics)** — curated list of bioinformatics libraries and tools
 
 ## License
 
