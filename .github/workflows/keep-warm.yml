@@ -1,23 +1,31 @@
 name: Keep demo warm
 
 # Both bindsight live demos run on free-tier hosts that sleep after inactivity:
-#   - Hugging Face Spaces (free CPU): sleeps after ~48 h of no traffic
-#   - Streamlit Community Cloud:     sleeps after ~7 d of no traffic
+#   - Hugging Face Spaces (free CPU basic): sleeps after ~48 h of no traffic
+#   - Streamlit Community Cloud:           sleeps after ~7 d of no traffic
 # Once asleep, the next visitor sees a wake-up screen and waits 60-120 s for
 # the container to rebuild — a bad first impression for cold-outreach traffic.
 #
-# This workflow pings both URLs every 6 h so the README's "live, click and go"
-# promise actually holds for a stranger who finds the link.
+# This workflow pings both URLs every 6 h, but more importantly it CHECKS
+# the actual run-time stage of each demo via the platform's status API,
+# rather than relying on a 200 from the sleep page (which is what naïve
+# curl-based pingers do, including this workflow's own previous iteration).
 #
-# If the cron fails (e.g. GitHub Actions billing block), fall back to an
-# external uptime monitor pointed at the same two URLs — UptimeRobot, Better
-# Uptime, etc.  The job is fast and idempotent; re-running it does no harm.
+# If a demo is found in a non-running stage, the workflow attempts a
+# wake-up GET with a long timeout, then re-checks.  Persistent failure
+# fails the workflow so the email notification surfaces.
+#
+# If GitHub Actions billing ever blocks the cron, fall back to an external
+# uptime monitor (UptimeRobot / BetterStack / Cronitor) pointed at the
+# same two URLs.
 
 on:
   schedule:
-    # Every 6 hours, on the hour.  Well under both hosts' sleep windows.
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *'   # every 6 hours
   workflow_dispatch: {}
+  push:
+    paths:
+      - '.github/workflows/keep-warm.yml'
 
 permissions:
   contents: read
@@ -27,38 +35,121 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ping:
-    name: Ping live demos
+  hf-space:
+    name: HF Space (primary)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - name: Hugging Face Space (primary)
-            url: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
-          - name: Streamlit Cloud (mirror)
-            url: https://bindsight.streamlit.app/
     steps:
-      - name: Ping ${{ matrix.target.name }}
+      - name: Check stage + warm if asleep
+        env:
+          SPACE: Mikhaeelatefrizk/bindsight
+          APP_URL: https://mikhaeelatefrizk-bindsight.hf.space
+          UI_URL: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
         run: |
           set -euo pipefail
-          URL='${{ matrix.target.url }}'
-          echo "Pinging ${URL} to keep container warm…"
-          # -s silent, -L follow redirects, --max-time 180 s because a cold
-          # container can take 60-120 s to boot, plus we may go through a
-          # Streamlit Cloud auth-redirect bounce.  --retry 3 with 30 s
-          # backoff handles transient flaps.  We only care that the URL
-          # responds with a 2xx/3xx; the body shape isn't load-bearing.
-          HTTP_CODE=$(curl -sL --max-redirs 100 --max-time 180 \
-                          --retry 3 --retry-delay 30 \
-                          --retry-connrefused \
-                          -A 'bindsight-keep-warm/1 (+https://github.com/mikhaeelatefrizk/bindsight)' \
-                          -o /dev/null -w '%{http_code}' "${URL}")
-          echo "HTTP ${HTTP_CODE}"
-          if [[ "${HTTP_CODE}" =~ ^[23][0-9][0-9]$ ]]; then
-            echo "::notice::${URL} is reachable (HTTP ${HTTP_CODE})."
-          else
-            echo "::error::${URL} returned unexpected status ${HTTP_CODE}." >&2
+
+          # Hugging Face exposes per-Space runtime state at
+          # https://huggingface.co/api/spaces/<user>/<name>.  The
+          # `runtime.stage` field is RUNNING / SLEEPING / BUILDING /
+          # STOPPED / RUNTIME_ERROR / etc.
+          api_stage() {
+            curl -sSL --max-time 30 \
+              "https://huggingface.co/api/spaces/${SPACE}" \
+              | python3 -c "import json,sys; print(json.load(sys.stdin).get('runtime',{}).get('stage','UNKNOWN'))"
+          }
+
+          stage="$(api_stage)"
+          echo "Initial stage: ${stage}"
+          echo "::notice title=HF stage::${stage}"
+
+          # SLEEPING is the routine case: visiting the UI URL kicks off
+          # the wake-up.  Hit the UI URL once with a long timeout and
+          # then verify the embed app's /_stcore/health.
+          if [ "${stage}" = "SLEEPING" ] || [ "${stage}" = "STOPPED" ]; then
+            echo "Triggering wake by visiting the UI URL..."
+            curl -sSL --max-time 240 --retry 2 --retry-delay 30 \
+                 --max-redirs 100 \
+                 -A 'bindsight-keep-warm/2 (+https://github.com/mikhaeelatefrizk/bindsight)' \
+                 -o /dev/null -w "wake-visit HTTP %{http_code} in %{time_total}s\n" \
+                 "${UI_URL}" || true
+
+            # Poll the API for up to 4 min for RUNNING + READY domain.
+            for i in $(seq 1 16); do
+              sleep 15
+              stage="$(api_stage)"
+              echo "poll ${i}: stage=${stage}"
+              if [ "${stage}" = "RUNNING" ]; then break; fi
+            done
+          fi
+
+          if [ "${stage}" != "RUNNING" ]; then
+            echo "::error title=HF Space stuck::Stage is '${stage}', expected RUNNING."
             exit 1
           fi
+
+          # Final health probe on the actual Streamlit app port.
+          code=$(curl -sSL --max-time 60 --retry 3 --retry-delay 10 \
+                      -o /dev/null -w "%{http_code}" \
+                      -A 'bindsight-keep-warm/2' \
+                      "${APP_URL}/_stcore/health")
+          echo "Streamlit /_stcore/health -> ${code}"
+          if [ "${code}" != "200" ]; then
+            echo "::error title=HF health unhealthy::/_stcore/health returned ${code}"
+            exit 1
+          fi
+          echo "::notice title=HF demo healthy::stage=RUNNING, health=200"
+
+  streamlit-cloud:
+    name: Streamlit Cloud (mirror)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Streamlit Cloud doesn't publish a stable public stage API, and its
+    # wake-up flow requires an interactive button click that curl cannot
+    # easily replicate.  The cron still keeps an already-awake app warm
+    # (which is what matters most cases), but if we find it asleep we
+    # surface that as a warning rather than failing the job — a human
+    # needs to click the wake-up button once.
+    steps:
+      - name: Probe Streamlit health
+        env:
+          APP_URL: https://bindsight.streamlit.app
+        run: |
+          set -euo pipefail
+
+          # When the app is awake, /_stcore/health returns HTTP 200.
+          # When asleep, Streamlit Cloud 303-redirects to a login/wake
+          # handshake; that's our "asleep" signal.
+          code=$(curl -sS --max-time 60 -o /dev/null -w "%{http_code}" \
+                      -A 'bindsight-keep-warm/2' \
+                      "${APP_URL}/_stcore/health" || echo "000")
+          echo "/_stcore/health -> ${code}"
+
+          if [ "${code}" = "200" ]; then
+            echo "::notice title=Streamlit demo warm::health=200"
+            exit 0
+          fi
+
+          # Asleep / unreachable.  Hit the root URL with redirects
+          # followed to give Streamlit Cloud a chance to wake; this
+          # doesn't always work without browser-side JS, but it's the
+          # best we can do from a stateless GET.
+          echo "Health probe returned ${code}; attempting wake visit..."
+          curl -sSL --max-time 240 --max-redirs 100 --retry 2 --retry-delay 30 \
+               -A 'Mozilla/5.0 (bindsight-keep-warm/2)' \
+               -o /dev/null -w "wake-visit HTTP %{http_code} in %{time_total}s\n" \
+               "${APP_URL}/" || true
+
+          # Re-probe.
+          code=$(curl -sS --max-time 60 -o /dev/null -w "%{http_code}" \
+                      -A 'bindsight-keep-warm/2' \
+                      "${APP_URL}/_stcore/health" || echo "000")
+          if [ "${code}" = "200" ]; then
+            echo "::notice title=Streamlit demo recovered::health=200 after wake"
+            exit 0
+          fi
+
+          # Streamlit Cloud's wake-up is interactive; a stateless cron
+          # cannot always wake a fully-asleep app.  Warn but don't fail
+          # the job — the HF Space is the primary mirror and that
+          # branch fails loudly above if it's broken.
+          echo "::warning title=Streamlit mirror asleep::health=${code} after wake attempt; the HF Space mirror is the primary demo. If this state persists, click the wake-up button once at ${APP_URL}/ and the cron will keep it warm thereafter."
