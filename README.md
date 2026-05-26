@@ -22,7 +22,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 > 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
 
-**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md)
+**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md) · [Keeping the demo warm (free playbook)](docs/keeping-the-demo-warm.md)
 
 ---
 
