@@ -21,7 +21,12 @@ name: Keep demo warm
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # every 6 hours
+    # Every hour, on the hour.  GitHub Actions for public repos costs $0
+    # and bindsight is public, so we can be generous.  Hourly traffic is
+    # ~48x under HF's free-tier 48 h sleep threshold, giving a huge margin
+    # against GitHub's documented occasional schedule skips during peak
+    # times (see github.com/orgs/community/discussions/53658).
+    - cron: '0 * * * *'
   workflow_dispatch: {}
   push:
     paths:
