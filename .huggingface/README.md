@@ -29,6 +29,11 @@ This Hugging Face Space hosts the live web demo of bindsight.  The
 canonical source repo, full documentation, JOSS submission, and bioRxiv
 preprint live at <https://github.com/mikhaeelatefrizk/bindsight>.
 
+> Free-tier Spaces sleep after about 48 h of no traffic. A GitHub Actions
+> cron in the source repo pings this URL every 6 h to keep the container
+> warm, so most visits land on a hot app; if you arrive after a long quiet
+> stretch, the wake-up screen typically clears in 30–60 s.
+
 ## Quick start
 
 Click **Demo** in the sidebar for a 60-second guided run on a shipped

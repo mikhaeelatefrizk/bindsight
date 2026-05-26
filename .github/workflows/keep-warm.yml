@@ -1,52 +1,64 @@
-name: Keep Streamlit demo warm
+name: Keep demo warm
 
-# Streamlit Community Cloud auto-sleeps apps after a few days of inactivity.
-# Once asleep, the next visitor sees a "Zzzz" page and waits 60-120 s for the
-# container to rebuild — a bad first impression for cold-outreach traffic
-# from academic PIs.  This workflow originally pinged the URL every 6 hours
-# from GitHub's scheduler.
+# Both bindsight live demos run on free-tier hosts that sleep after inactivity:
+#   - Hugging Face Spaces (free CPU): sleeps after ~48 h of no traffic
+#   - Streamlit Community Cloud:     sleeps after ~7 d of no traffic
+# Once asleep, the next visitor sees a wake-up screen and waits 60-120 s for
+# the container to rebuild — a bad first impression for cold-outreach traffic.
 #
-# **Schedule disabled 2026-05-15.**  GitHub Actions on this account is
-# currently blocked by an upstream billing-config issue (the cron-triggered
-# runs were failing with "Actions blocked by billing issue", which generated
-# email noise without doing useful work).  The workflow is left in the repo
-# as documentation + manual-trigger fallback (workflow_dispatch).
+# This workflow pings both URLs every 6 h so the README's "live, click and go"
+# promise actually holds for a stranger who finds the link.
 #
-# Since the cron is off, the durable demo URL going forward is the
-# **Hugging Face Space mirror**: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
-# (16 GB CPU, no auto-sleep).  The Streamlit demo will still respond
-# whenever someone visits but may show a 60–120 s wake-up screen on first
-# hit after several days of inactivity.
+# If the cron fails (e.g. GitHub Actions billing block), fall back to an
+# external uptime monitor pointed at the same two URLs — UptimeRobot, Better
+# Uptime, etc.  The job is fast and idempotent; re-running it does no harm.
 
 on:
-  workflow_dispatch:  # manual triggering only — schedule disabled (see header)
+  schedule:
+    # Every 6 hours, on the hour.  Well under both hosts' sleep windows.
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   ping:
+    name: Ping live demos
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: Hugging Face Space (primary)
+            url: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
+          - name: Streamlit Cloud (mirror)
+            url: https://bindsight.streamlit.app/
     steps:
-      - name: Ping the live Streamlit demo
+      - name: Ping ${{ matrix.target.name }}
         run: |
           set -euo pipefail
-          URL="https://bindsight.streamlit.app/"
-          echo "Pinging $URL to keep Streamlit Community Cloud container warm…"
-          # -s silent, -L follow redirects, --max-time 120 s (wake-up can be slow),
-          # --retry 2 with 30 s backoff in case the first hit lands on a cold
-          # container that's still booting.  We only care that the URL responds;
-          # we don't care about the body.
-          HTTP_CODE=$(curl -sL --max-redirs 100 --max-time 120 \
-                          --retry 2 --retry-delay 30 \
-                          -o /dev/null -w "%{http_code}" "$URL")
-          echo "HTTP $HTTP_CODE"
-          # Treat any 2xx/3xx as success.  Streamlit's wake-up page returns 200
-          # even when the underlying app is still booting, which is what we want.
-          if [[ "$HTTP_CODE" =~ ^[23][0-9][0-9]$ ]]; then
-            echo "Demo is reachable."
+          URL='${{ matrix.target.url }}'
+          echo "Pinging ${URL} to keep container warm…"
+          # -s silent, -L follow redirects, --max-time 180 s because a cold
+          # container can take 60-120 s to boot, plus we may go through a
+          # Streamlit Cloud auth-redirect bounce.  --retry 3 with 30 s
+          # backoff handles transient flaps.  We only care that the URL
+          # responds with a 2xx/3xx; the body shape isn't load-bearing.
+          HTTP_CODE=$(curl -sL --max-redirs 100 --max-time 180 \
+                          --retry 3 --retry-delay 30 \
+                          --retry-connrefused \
+                          -A 'bindsight-keep-warm/1 (+https://github.com/mikhaeelatefrizk/bindsight)' \
+                          -o /dev/null -w '%{http_code}' "${URL}")
+          echo "HTTP ${HTTP_CODE}"
+          if [[ "${HTTP_CODE}" =~ ^[23][0-9][0-9]$ ]]; then
+            echo "::notice::${URL} is reachable (HTTP ${HTTP_CODE})."
           else
-            echo "Demo returned unexpected status $HTTP_CODE" >&2
+            echo "::error::${URL} returned unexpected status ${HTTP_CODE}." >&2
             exit 1
           fi

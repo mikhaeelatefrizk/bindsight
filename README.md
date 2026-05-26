@@ -7,16 +7,18 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
-[![Tests: 175+](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen.svg)]()
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
+[![Keep demo warm](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
 
 ## 👉 Try it live
 
-**Primary** (16 GB CPU, no auto-sleep): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
-**Mirror** (1 GB CPU, may briefly wake from sleep): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
+**Primary** (Hugging Face Space, 16 GB CPU): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
+**Mirror** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
 
 Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~60 seconds (cached for ~0.1 s on every revisit).
+
+> Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
 > 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
 
@@ -34,7 +36,7 @@ Anyone visiting either URL above gets:
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
-The Hugging Face Space is the primary mirror (16 GB CPU, no auto-sleep). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on free-tier infrastructure (1 GB CPU); it may take ~60–120 s to wake from sleep on its first visit after a quiet stretch.
+The Hugging Face Space is the primary mirror (16 GB CPU). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on smaller free-tier infrastructure (1 GB CPU). Both hosts sleep after several days of inactivity; a 6-hourly GitHub Actions ping keeps them warm, but the very first visit after a long quiet period can still take ~30–120 s to wake.
 
 ### 2. Local web app (one command)
 
