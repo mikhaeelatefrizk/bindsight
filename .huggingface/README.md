@@ -3,13 +3,13 @@ title: bindsight
 emoji: 🧬
 colorFrom: blue
 colorTo: green
-sdk: streamlit
-sdk_version: 1.36.0
-app_file: streamlit_app.py
+sdk: docker
+app_port: 8501
 pinned: false
 license: mit
 short_description: RNA-seq counts → ranked de novo protein binder candidates
 tags:
+  - streamlit
   - bioinformatics
   - rna-seq
   - protein-design
@@ -25,16 +25,48 @@ tags:
 > RNA-seq counts and outputs ranked de novo protein binder candidates,
 > with full provenance back to the patient cohort.
 
-This Hugging Face Space hosts the live web demo of bindsight.  The
-canonical source repo, full documentation, JOSS submission, and bioRxiv
-preprint live at <https://github.com/mikhaeelatefrizk/bindsight>.
+This Hugging Face Space is the **primary** hosted demo of bindsight.
+The canonical source repo, full documentation, JOSS submission, and
+bioRxiv preprint live at <https://github.com/mikhaeelatefrizk/bindsight>;
+a Streamlit Community Cloud mirror lives at
+<https://bindsight.streamlit.app/>.
+
+> Free-tier Spaces sleep after about 48 h of no traffic. A GitHub Actions
+> cron in the source repo pings this URL every 6 h *and* checks the
+> Space's runtime stage via the HF API, so most visits land on a hot
+> app; if you arrive after a long quiet stretch, the wake-up screen
+> typically clears in 30–60 s. Upgrading the Space hardware tier in
+> Settings disables auto-sleep entirely.
+
+## Deployment
+
+This Space is a Docker-based deployment that pulls `bindsight` from the
+GitHub `main` branch at build time (see `requirements.txt` and
+`Dockerfile` on this Space). To update the deployed code:
+
+1. Push to <https://github.com/mikhaeelatefrizk/bindsight> `main`.
+2. On this Space: Settings → "Factory rebuild" (forces a fresh `pip
+   install` from the new `main`).
+
+The `.huggingface/README.md` in the source repo is a **documentation
+mirror** of the metadata block above; the file actually rendered on
+this page lives in the Space's own git repo at
+`https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight`. Keep the
+two in sync by hand when you change wording.
 
 ## Quick start
 
 Click **Demo** in the sidebar for a 60-second guided run on a shipped
-10-gene tumor-vs-normal cohort.  The pipeline rediscovers HER2 (ERBB2)
-and EGFR — the textbook cancer immunotherapy targets — as the top-2
-antibody-tractable surface antigens.
+10-gene tumor-vs-normal cohort.  The pipeline rediscovers HER2 (ERBB2,
+UniProt P04626) and EGFR (UniProt P00533) — the textbook cancer
+immunotherapy targets — as the top-2 antibody-tractable surface
+antigens.
+
+The first visitor on a fresh container pays a ~60 s cold-run cost
+(real PyDESeq2 + Open Targets + AlphaFoldDB pulls); every subsequent
+visitor gets the cached result in ~0.1 s thanks to
+`@st.cache_resource` / `@st.cache_data` in
+`bindsight/report/webapp.py`.
 
 ## What this is
 
