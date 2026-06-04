@@ -31,6 +31,9 @@ jobs:
   ping:
     name: Lightweight ping to refuse HF sleep
     runs-on: ubuntu-latest
+    # Pure best-effort keepalive — it has no monitoring value (that lives in
+    # keep-warm.yml), so it must never be able to fail the run / email.
+    continue-on-error: true
     timeout-minutes: 5
     steps:
       - name: Visit HF Space UI
@@ -38,14 +41,21 @@ jobs:
           UI_URL: https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight
           APP_URL: https://mikhaeelatefrizk-bindsight.hf.space
         run: |
-          set -euo pipefail
+          set -uo pipefail
           # Two GETs: the UI URL (resets the HF inactivity timer on the
           # Space's runtime) and the app URL (resets activity on the
           # actual Streamlit container).
+          #
+          # NOTE: no `set -e`, and every curl ends in `|| true`. A failed
+          # ping here is meaningless — the previous iteration let a single
+          # transient `curl: exit 23` (write error on /dev/null) abort the
+          # whole job and email a false alarm. The ping is fire-and-forget;
+          # we record the HTTP code (or a marker on curl error) and move on.
           for url in "${UI_URL}" "${APP_URL}/"; do
             code=$(curl -sSL --max-time 60 --retry 2 --retry-delay 20 \
                         -o /dev/null -w "%{http_code}" \
                         -A 'bindsight-keep-warm-redundant/1' \
-                        "${url}")
-            echo "${url} -> HTTP ${code}"
+                        "${url}" || true)
+            echo "${url} -> HTTP ${code:-<curl-error>}"
           done
+          exit 0

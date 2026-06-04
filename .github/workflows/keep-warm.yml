@@ -43,6 +43,12 @@ jobs:
   hf-space:
     name: HF Space (primary)
     runs-on: ubuntu-latest
+    # Keepalive + monitor: a transient curl/network/API blip must never fail
+    # the run and email. A genuine outage still surfaces as a ::warning::/
+    # ::error:: annotation in the Actions tab (pull, not push). For real push
+    # outage alerts, use a free external uptime monitor (UptimeRobot /
+    # BetterStack / Cronitor) on the same URLs instead of a failing cron.
+    continue-on-error: true
     timeout-minutes: 10
     steps:
       - name: Check stage + warm if asleep
@@ -107,6 +113,8 @@ jobs:
   streamlit-cloud:
     name: Streamlit Cloud (mirror)
     runs-on: ubuntu-latest
+    # See note on hf-space: best-effort, never fail the run / email.
+    continue-on-error: true
     timeout-minutes: 10
     # Streamlit Cloud doesn't publish a stable public stage API, and its
     # wake-up flow requires an interactive button click that curl cannot
