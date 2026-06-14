@@ -40,7 +40,7 @@ _OFFLINE_FALLBACK_UNIPROT = frozenset(
     {
         "P04626",  # ERBB2 / HER2
         "P00533",  # EGFR
-        "Q14953",  # CLDN6
+        "P56747",  # CLDN6
         "Q13421",  # MSLN (mesothelin)
         "P10747",  # CD28
         "P16410",  # CTLA-4
