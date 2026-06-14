@@ -104,9 +104,10 @@ The intended user audiences:
 `pydeseq2` [@Muzellec2023] for differential expression analysis, the
 Open Targets Platform [@Ochoa2023] for druggability and safety annotation,
 the `SURFY` surfaceome list [@BauschFluck2018] for surface-protein
-filtering, the `AlphaFoldDB` [@Varadi2024] REST API for structure
-retrieval, and `SURFACE-Bind` [@Khakzad2025] for targetable-site
-enumeration. Outputs are written as Apache Parquet with a single
+filtering, and the `AlphaFoldDB` [@Varadi2024] REST API for structure
+retrieval. (Targetable-site prediction via `SURFACE-Bind` [@Khakzad2025] is a
+planned enhancement; the design step currently targets the whole surface.)
+Outputs are written as Apache Parquet with a single
 PROV-O JSON-LD `run_manifest.jsonld` enumerating every stage's tool,
 version, license, container digest, parameters, and SHA-256 of all input
 and output artifacts. A final RO-Crate 1.1 [@SoilandReyes2022] zip,
