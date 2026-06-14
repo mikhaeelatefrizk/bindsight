@@ -36,7 +36,7 @@ def test_build_rfdiff_cmd() -> None:
         contig="[A1-200/0 50-100]",
     )
     assert cmd[0] == "python"
-    assert cmd[1].endswith("scripts/run_inference.py")
+    assert cmd[1].replace("\\", "/").endswith("scripts/run_inference.py")  # OS-agnostic
     assert "inference.num_designs=8" in cmd
     assert "ppi.hotspot_res=[A30,A31]" in cmd
     assert "contigmap.contigs=[A1-200/0 50-100]" in cmd
@@ -85,7 +85,7 @@ def test_build_chai_boltzgen_bindcraft_af2ig_cmds() -> None:
     af2 = tools.build_af2ig_cmd(
         dl_binder_design_dir=Path("/opt/dl"), silent_or_pdb=Path("/w/b.pdb"), out_dir=Path("/w/o")
     )
-    assert af2[1].endswith("af2_initial_guess/predict.py")
+    assert af2[1].replace("\\", "/").endswith("af2_initial_guess/predict.py")  # OS-agnostic
 
 
 # ---------------------------------------------------------------------------
