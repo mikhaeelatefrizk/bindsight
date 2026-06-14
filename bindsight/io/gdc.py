@@ -81,11 +81,20 @@ def _list_cohort_files(project: str, condition: str, n: int) -> list[dict[str, A
         "op": "and",
         "content": [
             {"op": "in", "content": {"field": "cases.project.project_id", "value": [project]}},
-            {"op": "in", "content": {"field": "data_type", "value": ["Gene Expression Quantification"]}},
-            {"op": "in", "content": {"field": "analysis.workflow_type", "value": ["STAR - Counts"]}},
             {
                 "op": "in",
-                "content": {"field": "cases.samples.sample_type", "value": [_SAMPLE_TYPES[condition]]},
+                "content": {"field": "data_type", "value": ["Gene Expression Quantification"]},
+            },
+            {
+                "op": "in",
+                "content": {"field": "analysis.workflow_type", "value": ["STAR - Counts"]},
+            },
+            {
+                "op": "in",
+                "content": {
+                    "field": "cases.samples.sample_type",
+                    "value": [_SAMPLE_TYPES[condition]],
+                },
             },
         ],
     }

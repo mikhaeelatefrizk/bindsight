@@ -59,7 +59,9 @@ def test_build_boltz_cmd_msa_flag() -> None:
     cmd = tools.build_boltz_cmd(yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"))
     assert cmd[:2] == ["boltz", "predict"]
     assert "--use_msa_server" in cmd
-    no_msa = tools.build_boltz_cmd(yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"), use_msa_server=False)
+    no_msa = tools.build_boltz_cmd(
+        yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"), use_msa_server=False
+    )
     assert "--use_msa_server" not in no_msa
 
 
@@ -68,7 +70,9 @@ def test_build_chai_boltzgen_bindcraft_af2ig_cmds() -> None:
         "chai-lab",
         "fold",
     ]
-    bg = tools.build_boltzgen_cmd(target_pdb=Path("/w/t.pdb"), out_dir=Path("/w/o"), num_designs=4, hotspot="[A1]")
+    bg = tools.build_boltzgen_cmd(
+        target_pdb=Path("/w/t.pdb"), out_dir=Path("/w/o"), num_designs=4, hotspot="[A1]"
+    )
     assert bg[:2] == ["boltzgen", "design"]
     assert "--num_designs" in bg
     bc = tools.build_bindcraft_cmd(

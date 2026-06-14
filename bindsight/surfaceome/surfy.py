@@ -157,9 +157,7 @@ def populate_surfy_cache(*, url: str = SURFY_XLSX_URL, force: bool = False) -> P
         ) from e
 
     label = df["Surfaceome Label"].astype(str).str.strip().str.lower()
-    accessions = (
-        df.loc[label == "surface", "UniProt accession"].dropna().astype(str).str.strip()
-    )
+    accessions = df.loc[label == "surface", "UniProt accession"].dropna().astype(str).str.strip()
     accs = sorted({a for a in accessions if a})
     if not accs:
         raise RuntimeError("parsed 0 surface proteins from SURFY table; format changed?")

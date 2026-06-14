@@ -59,7 +59,9 @@ def _run(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProc
     LOG.info("exec: %s", " ".join(cmd))
     proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
     if proc.returncode != 0:
-        LOG.error("command failed (%d): %s\n%s", proc.returncode, " ".join(cmd), proc.stderr[-2000:])
+        LOG.error(
+            "command failed (%d): %s\n%s", proc.returncode, " ".join(cmd), proc.stderr[-2000:]
+        )
         raise RuntimeError(f"{cmd[0]} failed with code {proc.returncode}")
     return proc
 
@@ -106,7 +108,9 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
         num_designs=int(spec.get("n_trajectories", 5)),
         hotspot=tools.build_hotspot_str(chain, residues),
         contig=tools.build_contig_str(
-            chain, lo, hi,
+            chain,
+            lo,
+            hi,
             int(spec.get("binder_length_min", 50)),
             int(spec.get("binder_length_max", 100)),
         ),
@@ -172,7 +176,9 @@ def _design_bindcraft(spec: dict[str, Any], work: Path, tools_root: Path) -> lis
                 "binder_name": spec.get("target_uniprot", "binder"),
                 "starting_pdb": str(work / "target.pdb"),
                 "chains": spec.get("epitope_chain", "A"),
-                "target_hotspot_residues": ",".join(str(r) for r in spec.get("epitope_residues", [])),
+                "target_hotspot_residues": ",".join(
+                    str(r) for r in spec.get("epitope_residues", [])
+                ),
                 "lengths": [
                     int(spec.get("binder_length_min", 50)),
                     int(spec.get("binder_length_max", 100)),
@@ -203,7 +209,9 @@ _DESIGNERS = {
 # ---------------------------------------------------------------------------
 # Validators
 # ---------------------------------------------------------------------------
-def _validate_boltz2(spec: dict[str, Any], designs: list[Design], work: Path) -> list[dict[str, Any]]:
+def _validate_boltz2(
+    spec: dict[str, Any], designs: list[Design], work: Path
+) -> list[dict[str, Any]]:
     target_seq = tools.chain_sequence_from_pdb(work / "target.pdb", spec.get("epitope_chain", "A"))
     boltz_root = work / "boltz_out"
     validate_root = work / "validate"
@@ -231,7 +239,9 @@ def _validate_boltz2(spec: dict[str, Any], designs: list[Design], work: Path) ->
     return metrics
 
 
-def _validate_chai1r(spec: dict[str, Any], designs: list[Design], work: Path) -> list[dict[str, Any]]:
+def _validate_chai1r(
+    spec: dict[str, Any], designs: list[Design], work: Path
+) -> list[dict[str, Any]]:
     target_seq = tools.chain_sequence_from_pdb(work / "target.pdb", spec.get("epitope_chain", "A"))
     chai_root = work / "chai_out"
     metrics: list[dict[str, Any]] = []
@@ -248,7 +258,9 @@ def _validate_chai1r(spec: dict[str, Any], designs: list[Design], work: Path) ->
     return metrics
 
 
-def _validate_af2_ig(spec: dict[str, Any], designs: list[Design], work: Path) -> list[dict[str, Any]]:
+def _validate_af2_ig(
+    spec: dict[str, Any], designs: list[Design], work: Path
+) -> list[dict[str, Any]]:
     tools_root = work / "_tools"
     dl = _git_clone(
         tools.DL_BINDER_DESIGN_REPO, tools.DL_BINDER_DESIGN_COMMIT, tools_root / "dl_binder_design"
@@ -258,7 +270,11 @@ def _validate_af2_ig(spec: dict[str, Any], designs: list[Design], work: Path) ->
     for d in designs:
         out_dir = af2_root / d.binder_id
         out_dir.mkdir(parents=True, exist_ok=True)
-        _run(tools.build_af2ig_cmd(dl_binder_design_dir=dl, silent_or_pdb=d.pdb_path, out_dir=out_dir))
+        _run(
+            tools.build_af2ig_cmd(
+                dl_binder_design_dir=dl, silent_or_pdb=d.pdb_path, out_dir=out_dir
+            )
+        )
         result = tools.parse_af2ig_output(
             out_dir / "af2_scores.sc",
             binder_id=d.binder_id,
@@ -307,11 +323,7 @@ def _collect_designs_from_dir(out: Path, work: Path, *, prefix: str) -> list[Des
 
 
 def _last_chain(pdb_path: Path) -> str:
-    chains = [
-        line[21]
-        for line in pdb_path.read_text().splitlines()
-        if line.startswith("ATOM")
-    ]
+    chains = [line[21] for line in pdb_path.read_text().splitlines() if line.startswith("ATOM")]
     return chains[-1] if chains else "A"
 
 
@@ -348,7 +360,9 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
     if validator not in _VALIDATORS:
         raise ValueError(f"unknown validator: {validator}")
 
-    LOG.info("job: designer=%s validator=%s target=%s", designer, validator, spec.get("target_uniprot"))
+    LOG.info(
+        "job: designer=%s validator=%s target=%s", designer, validator, spec.get("target_uniprot")
+    )
     designs = _DESIGNERS[designer](spec, work_dir, tools_root)
     LOG.info("designer produced %d designs", len(designs))
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
