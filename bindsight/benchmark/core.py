@@ -227,6 +227,7 @@ def render_benchmark_html(
     # Per-run detail tables.
     detail_blocks = ""
     topk_headers = "".join(f"<th>top{k}</th>" for k in ks)
+
     def _rank_key(a: dict[str, object]) -> tuple[bool, int]:
         r = a["rank"]
         return (r is None, r if isinstance(r, int) else 0)

@@ -57,10 +57,26 @@ DL_BINDER_DESIGN_REPO = "https://github.com/nrbennet/dl_binder_design"
 DL_BINDER_DESIGN_COMMIT = "cafa3853ac94dceb1b908c8d9e6954d71749871a"
 
 _AA3TO1 = {
-    "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLN": "Q",
-    "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
-    "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
-    "TYR": "Y", "VAL": "V",
+    "ALA": "A",
+    "ARG": "R",
+    "ASN": "N",
+    "ASP": "D",
+    "CYS": "C",
+    "GLN": "Q",
+    "GLU": "E",
+    "GLY": "G",
+    "HIS": "H",
+    "ILE": "I",
+    "LEU": "L",
+    "LYS": "K",
+    "MET": "M",
+    "PHE": "F",
+    "PRO": "P",
+    "SER": "S",
+    "THR": "T",
+    "TRP": "W",
+    "TYR": "Y",
+    "VAL": "V",
 }
 
 
@@ -125,11 +141,16 @@ def build_mpnn_cmd(
     return [
         "python",
         str(Path(mpnn_dir) / "protein_mpnn_run.py"),
-        "--pdb_path", str(pdb_path),
-        "--out_folder", str(out_folder),
-        "--num_seq_per_target", str(num_seq_per_target),
-        "--sampling_temp", str(sampling_temp),
-        "--seed", str(seed),
+        "--pdb_path",
+        str(pdb_path),
+        "--out_folder",
+        str(out_folder),
+        "--num_seq_per_target",
+        str(num_seq_per_target),
+        "--sampling_temp",
+        str(sampling_temp),
+        "--seed",
+        str(seed),
     ]
 
 
@@ -153,9 +174,12 @@ def build_bindcraft_cmd(
     return [
         "python",
         str(Path(bindcraft_dir) / "bindcraft.py"),
-        "--settings", str(settings_json),
-        "--filters", str(filters_json),
-        "--advanced", str(advanced_json),
+        "--settings",
+        str(settings_json),
+        "--filters",
+        str(filters_json),
+        "--advanced",
+        str(advanced_json),
     ]
 
 
@@ -166,10 +190,14 @@ def build_boltzgen_cmd(
     return [
         "boltzgen",
         "design",
-        "--target", str(target_pdb),
-        "--out_dir", str(out_dir),
-        "--num_designs", str(num_designs),
-        "--hotspots", hotspot,
+        "--target",
+        str(target_pdb),
+        "--out_dir",
+        str(out_dir),
+        "--num_designs",
+        str(num_designs),
+        "--hotspots",
+        hotspot,
     ]
 
 
@@ -178,9 +206,12 @@ def build_af2ig_cmd(*, dl_binder_design_dir: Path, silent_or_pdb: Path, out_dir:
     return [
         "python",
         str(Path(dl_binder_design_dir) / "af2_initial_guess" / "predict.py"),
-        "-pdbdir", str(silent_or_pdb),
-        "-outpdbdir", str(out_dir),
-        "-scorefilename", str(Path(out_dir) / "af2_scores.sc"),
+        "-pdbdir",
+        str(silent_or_pdb),
+        "-outpdbdir",
+        str(out_dir),
+        "-scorefilename",
+        str(Path(out_dir) / "af2_scores.sc"),
     ]
 
 
@@ -240,9 +271,7 @@ def mpnn_design_sequences(fasta_path: Path) -> list[str]:
     return [seq.split("/")[-1] for _, seq in designs if seq]
 
 
-def parse_chai_output(
-    output_dir: Path, *, binder_id: str, target_uniprot: str
-) -> ValidationResult:
+def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) -> ValidationResult:
     """Parse Chai-1 output scores into a ValidationResult (lazy NumPy import)."""
     iptm = ptm = None
     npz = next(Path(output_dir).rglob("scores*.npz"), None)
