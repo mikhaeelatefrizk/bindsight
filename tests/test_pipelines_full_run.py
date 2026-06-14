@@ -30,7 +30,9 @@ def demo_cfg(tmp_path: Path) -> RunConfig:
     return cfg
 
 
-def test_full_run_with_only_discover(offline_real_data, demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_with_only_discover(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     """Full run with no GPU artifacts: discover OK, design/validate skipped, report+crate produced."""
     fake_deg = pd.DataFrame(
         {
@@ -72,7 +74,9 @@ def test_full_run_with_only_discover(offline_real_data, demo_cfg: RunConfig, tmp
     assert result.crate_path.exists()
 
 
-def test_full_run_skips_export_when_requested(offline_real_data, demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_skips_export_when_requested(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     fake_deg = pd.DataFrame(
         {
             "log2FoldChange": [3.5, 2.8, 0.1, 0.0, 0.05, -2.5, -2.8, 4.0, 3.0, 0.0],
@@ -106,7 +110,9 @@ def test_full_run_skips_export_when_requested(offline_real_data, demo_cfg: RunCo
     assert result.crate_path is None
 
 
-def test_full_run_picks_up_existing_validated_for_rank(offline_real_data, demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_picks_up_existing_validated_for_rank(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     """If user dropped validate/validated.parquet from Colab, rank stage runs."""
     fake_deg = pd.DataFrame(
         {

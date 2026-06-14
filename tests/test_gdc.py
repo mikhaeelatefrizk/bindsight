@@ -55,7 +55,9 @@ def mock_gdc(monkeypatch: pytest.MonkeyPatch):
             "cases": [
                 {
                     "submitter_id": f"TCGA-XX-{tag}001",
-                    "samples": [{"submitter_id": f"TCGA-XX-{tag}001-01", "sample_type": sample_type}],
+                    "samples": [
+                        {"submitter_id": f"TCGA-XX-{tag}001-01", "sample_type": sample_type}
+                    ],
                 }
             ],
         }
@@ -127,7 +129,9 @@ def test_gdc_source_config_roundtrips() -> None:
                 "design": "d.tsv",
                 "download": {"project": "TCGA-BRCA", "n_tumor": 5, "n_normal": 5},
             },
-            "params": {"deg": {"design_formula": "~ condition", "contrast": ["condition", "t", "n"]}},
+            "params": {
+                "deg": {"design_formula": "~ condition", "contrast": ["condition", "t", "n"]}
+            },
         }
     )
     assert isinstance(cfg.inputs.download, GDCSource)

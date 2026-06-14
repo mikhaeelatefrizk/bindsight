@@ -86,15 +86,26 @@ class LocalDockerRunner:
         else:
             spec_dir = spec_path.parent.resolve()
             cmd = [
-                "docker", "run", "--rm", "--gpus", "all",
-                "-v", f"{spec_dir}:/spec",
-                "-v", f"{results_dir.resolve()}:/results",
+                "docker",
+                "run",
+                "--rm",
+                "--gpus",
+                "all",
+                "-v",
+                f"{spec_dir}:/spec",
+                "-v",
+                f"{results_dir.resolve()}:/results",
                 self.image,
-                "python", "-m", "bindsight.runners.job_exec",
-                f"/spec/{spec_path.name}", f"/results/{handle_id}.tar.gz",
+                "python",
+                "-m",
+                "bindsight.runners.job_exec",
+                f"/spec/{spec_path.name}",
+                f"/results/{handle_id}.tar.gz",
             ]
 
-        LOG.info("local_docker submit (%s): %s", "native" if self.native else "docker", " ".join(cmd))
+        LOG.info(
+            "local_docker submit (%s): %s", "native" if self.native else "docker", " ".join(cmd)
+        )
         try:
             proc = subprocess.Popen(cmd)
         except FileNotFoundError as e:

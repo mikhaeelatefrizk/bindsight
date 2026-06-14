@@ -612,9 +612,7 @@ def benchmark(
     from bindsight.benchmark import run_benchmark
 
     cutoffs = tuple(ks) if ks else (5, 10, 20)
-    out, scores = run_benchmark(
-        list(run_dirs), known_antigens, out_html=out_path, ks=cutoffs
-    )
+    out, scores = run_benchmark(list(run_dirs), known_antigens, out_html=out_path, ks=cutoffs)
 
     table = Table(title="rediscovery benchmark", show_lines=False, title_style="bold")
     table.add_column("run", style="cyan", no_wrap=True)

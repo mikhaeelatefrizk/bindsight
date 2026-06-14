@@ -21,9 +21,7 @@ _TINY_PDB = (
     "ATOM      2  CA  ALA A   2      0.0  0.0  0.0  1.0  0.0           C\n"
     "ATOM      3  CA  GLY A   3      0.0  0.0  0.0  1.0  0.0           C\n"
 )
-_MPNN_FASTA = (
-    ">native, score=2.0\nMAG\n>T=0.1, sample=1, score=0.8\nGSHMSLEQKKGADII\n"
-)
+_MPNN_FASTA = ">native, score=2.0\nMAG\n>T=0.1, sample=1, score=0.8\nGSHMSLEQKKGADII\n"
 
 
 def _fake_run(cmd, *, cwd=None):
@@ -82,7 +80,9 @@ def test_run_job_rfdiff_boltz_produces_correct_layout(mock_run, tmp_path: Path) 
     assert tar.exists()
 
     # metrics.jsonl has one ValidationResult-shaped row per design, parsed real.
-    metrics = [json.loads(ln) for ln in (work / "metrics.jsonl").read_text().splitlines() if ln.strip()]
+    metrics = [
+        json.loads(ln) for ln in (work / "metrics.jsonl").read_text().splitlines() if ln.strip()
+    ]
     assert len(metrics) == 2  # 2 backbones × 1 design each
     assert metrics[0]["iptm"] == 0.77
     assert metrics[0]["affinity_pred_value"] == -7.0

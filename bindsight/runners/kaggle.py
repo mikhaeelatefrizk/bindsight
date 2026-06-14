@@ -90,9 +90,7 @@ class KaggleRunner:
         work = results_dir / f"kaggle_{handle_id}"
         work.mkdir(parents=True, exist_ok=True)
         slug = f"bindsight-{handle_id}"
-        (work / "kernel.py").write_text(
-            _KERNEL_TEMPLATE.format(dataset=slug, handle_id=handle_id)
-        )
+        (work / "kernel.py").write_text(_KERNEL_TEMPLATE.format(dataset=slug, handle_id=handle_id))
         (work / "kernel-metadata.json").write_text(
             json.dumps(
                 {
@@ -124,7 +122,11 @@ class KaggleRunner:
         """Query the kernel's run status."""
         api = _require_kaggle()
         status = api.kernels_status(handle.id)
-        s = str(status.get("status", "")).lower() if isinstance(status, dict) else str(status).lower()
+        s = (
+            str(status.get("status", "")).lower()
+            if isinstance(status, dict)
+            else str(status).lower()
+        )
         mapping = {
             "queued": "queued",
             "running": "running",
