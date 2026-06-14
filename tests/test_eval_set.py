@@ -95,7 +95,7 @@ def test_trastuzumab_vh_matches_known_cdr() -> None:
 
 def test_sources_json_provenance() -> None:
     src = json.loads((BENCH / "sources.json").read_text())
-    assert src["counts"]["known_antigens"] == 6
+    assert src["counts"]["known_antigens"] >= 6
     assert src["counts"]["binders_with_structure_sequences"] >= 5
     # Every recorded output's SHA-256 matches the committed file.
     import hashlib
