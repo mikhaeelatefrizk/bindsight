@@ -63,7 +63,7 @@ counts.tsv + design.tsv ─┐
 bindsight/
 ├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/             # pydeseq2 wrapper (+ optional R bridge)
-├── targets/         # Open Targets GraphQL, HPA, GTEx, recount3
+├── targets/         # Open Targets GraphQL client + bundled ENSG→UniProt fallback
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
 ├── structures/      # AlphaFoldDB + RCSB/PDBe fetch
 ├── epitopes/        # SURFACE-Bind site lookup; v0.2 fpocket fallback
@@ -105,7 +105,7 @@ This keeps modules swappable. If someone wants to plug a different DEG backend (
 ### 4.1 What runs locally (CPU)
 
 - DEG analysis (pydeseq2; or R bridge for DESeq2/edgeR)
-- All database queries (Open Targets, HPA, GTEx, recount3)
+- Database queries (Open Targets) + the bundled ENSG→UniProt fallback
 - SURFACE-Bind site lookup
 - AlphaFoldDB / RCSB structure fetching
 - Multi-objective ranking
@@ -294,47 +294,46 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 ## 11. Phased roadmap
 
-### Phase 0 — Preflight (1 week, current)
+### Phase 0 — Preflight ✅ done
 - [x] Confirm SURFACE-Bind / RFdiffusion / BindCraft licenses
 - [x] Repo skeleton, foundational docs
 - [x] Pydantic manifest schema
 - [x] Click CLI shell
-- [ ] Pin TCGA-LUAD via recount3 as canonical example
+- [x] Canonical TCGA-LUAD example (auto-downloaded from NIH/GDC)
 
-### Phase 1 — Discovery half, no GPU (3–4 weeks)
-- [ ] Snakemake skeleton with conda envs
-- [ ] `deg/` (pydeseq2 wrapper)
-- [ ] `targets/` (Open Targets GraphQL client)
-- [ ] `surfaceome/` (SURFY filter + SURFACE-Bind client)
-- [ ] `structures/` (AlphaFoldDB pull)
-- [ ] `epitopes/` (SURFACE-Bind lookup; fail-soft for missing)
-- [ ] Manifest emission
-- [ ] `bindsight discover` end-to-end on TCGA-LUAD
-- [ ] **Milestone:** `v0.0.1` tag
+### Phase 1 — Discovery half, no GPU ✅ done
+- [x] Snakemake front-end (rules call the same functions as the CLI)
+- [x] `deg/` (pydeseq2 wrapper)
+- [x] `targets/` (Open Targets GraphQL client + bundled ENSG→UniProt fallback)
+- [x] `surfaceome/` (SURFY filter; full list auto-populated)
+- [x] `structures/` (AlphaFoldDB pull)
+- [x] Manifest emission (PROV-O JSON-LD)
+- [x] `bindsight discover` end-to-end on a real TCGA cohort
+- [ ] `epitopes/` SURFACE-Bind targetable-site lookup (stub today; design targets the whole surface)
 
-### Phase 2 — GPU offload + design half (4–6 weeks)
-- [ ] `runners/` abstraction (Colab + Modal)
-- [ ] `design/` RFdiffusion+ProteinMPNN wrapper (T4-friendly default)
-- [ ] `validate/` Boltz-2 wrapper
-- [ ] `rank/` multi-objective scoring
-- [ ] End-to-end `bindsight run`
-- [ ] Mocked-runner CI for GPU half
-- [ ] **Milestone:** `v0.1.0-rc1`
+### Phase 2 — GPU design half ✅ done
+- [x] `runners/` (Colab, Modal, Kaggle, local-Docker, mock) over one executor (`job_exec`)
+- [x] `design/` RFdiffusion+ProteinMPNN (+ BindCraft, BoltzGen)
+- [x] `validate/` Boltz-2 (+ Chai-1r, AF2-IG)
+- [x] `rank/` multi-objective scoring
+- [x] End-to-end `bindsight run` + Snakemake DAG
+- [x] Mocked-runner CI for the GPU half
 
-### Phase 3 — Provenance, report, polish (3 weeks)
-- [ ] RO-Crate output
+### Phase 3 — Provenance, report, polish ✅ done
+- [x] RO-Crate output
 - [x] Self-contained HTML report (jinja2; no Quarto dependency)
-- [ ] Streamlit dashboard
-- [ ] `--cheap` profile and `--dry-run` cost estimator
-- [ ] Docker image with pinned digests
+- [x] Streamlit dashboard / web UI
+- [x] `--dry-run` GPU cost estimator
+- [x] Held-out evaluation set + `bindsight benchmark`
+- [x] `v0.1.0`, Zenodo DOI
+- [ ] Published Docker image with pinned digests
 - [ ] mkdocs-material documentation site
-- [ ] **Milestone:** `v0.1.0`, Zenodo DOI
 
-### Phase 4 — Validation paper (4–6 weeks)
-- [ ] Rediscovery experiment: 3–5 TCGA cohorts → known antigens (HER2, CLDN6, MSLN, EGFR)
-- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen
+### Phase 4 — Validation paper (in progress)
+- [ ] Rediscovery experiment: 3–5 TCGA cohorts → known antigens (HER2, CLDN6, MSLN, EGFR) — eval set + benchmark tooling ship in `benchmarks/`; the multi-cohort study is pending
+- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen (all three wired; the comparison run is pending)
 - [ ] Negative-result taxonomy on full DEG list
-- [ ] bioRxiv preprint
+- [ ] single-cell RNA-seq input + async Modal submission
 - [ ] **Milestone:** preprint DOI + `v0.2.0`
 
 ### Phase 5 — Coverage and community (post-preprint, ongoing)
