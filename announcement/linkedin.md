@@ -136,7 +136,7 @@ Reply to your own post with comments tagging:
 
 - The maintainers of upstream tools (look up their LinkedIn profiles)
 - Any PI / lab in your network whose research aligns
-- LUMC, Erasmus MC, EMBL-EBI (since you're in Rotterdam)
+- EMBL-EBI and bioinformatics / protein-design groups whose work aligns with bindsight
 
 This both gives proper credit AND multiplies your post's reach into adjacent
 audiences.

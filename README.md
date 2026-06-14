@@ -264,15 +264,15 @@ pyproject.toml            # Python packaging
 
 If you use `bindsight` in your work, please cite it via the Zenodo DOI:
 
-> Atef Rizk, M. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.20121496
+> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.20121496
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
 
 BibTeX:
 
 ```bibtex
-@software{atefrizk_bindsight_2026,
-  author       = {Atef Rizk, Mikhaeel},
+@software{wahba_bindsight_2026,
+  author       = {Wahba, Mikhaeel Atef Rizk},
   title        = {bindsight: a reproducible bridge from RNA-seq to de novo protein binder design},
   year         = {2026},
   publisher    = {Zenodo},
@@ -287,7 +287,7 @@ GitHub also exposes a "Cite this repository" button on the right sidebar of the 
 
 ## About the author
 
-`bindsight` is built and maintained by **Mikhaeel Atef Rizk** — PharmD graduate of the German University in Cairo (GUC), currently finishing the Egyptian post-PharmD applied-pharmacy term (Imtiyaz). Earlier in 2026 he had a research rotation at the German International University in Berlin (GIU Berlin) where he picked up R / RStudio.
+`bindsight` is built and maintained by **Mikhaeel Atef Rizk Wahba** — PharmD graduate of the German University in Cairo (GUC), currently finishing the Egyptian post-PharmD applied-pharmacy term (Imtiyaz). Earlier in 2026 he had a research rotation at the German International University in Berlin (GIU Berlin) where he picked up R / RStudio.
 
 - ORCID: [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
 - GitHub: [@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk)

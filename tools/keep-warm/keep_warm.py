@@ -34,7 +34,7 @@ https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight has no auto-sleep
 and remains the durable demo URL regardless. This script just keeps the
 secondary Streamlit URL warm for visitors who got the older link.
 
-Author: Mikhaeel Atef Rizk · MIT licensed (same as bindsight)
+Author: Mikhaeel Atef Rizk Wahba · MIT licensed (same as bindsight)
 """
 
 import argparse

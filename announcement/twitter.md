@@ -102,7 +102,7 @@ that match your audience.)
 ## When to post
 
 **Best windows for science Twitter / X:**
-- Tuesday–Thursday, 09:00–11:00 EST (16:00–18:00 CET — perfect for you in Rotterdam)
+- Tuesday–Thursday, 09:00–11:00 EST (16:00–18:00 EET — a good evening window from Cairo)
 - Avoid Mondays (weekend backlog), Fridays after 14:00 (people leaving), weekends.
 
 ---
