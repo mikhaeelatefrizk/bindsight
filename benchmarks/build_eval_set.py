@@ -107,6 +107,17 @@ KNOWN_ANTIGENS: list[dict[str, str]] = [
         "note": "Oncofetal claudin-6; target of BNT211 CLDN6 CAR-T. (NB: the "
         "canonical accession is P56747 — NOT Q14953, which is KIR2DS5.)",
     },
+    {
+        "symbol": "FOLH1",
+        "aka": "PSMA",
+        "uniprot": "Q04609",
+        "ensembl_gene": "ENSG00000086205",
+        "disease": "Prostate adenocarcinoma",
+        "tumor_type": "PRAD",
+        "expected_direction": "up",
+        "note": "Prostate-specific membrane antigen; target of J591 and of "
+        "[177Lu]Lu-PSMA-617 (Pluvicto, FDA-approved).",
+    },
 ]
 
 

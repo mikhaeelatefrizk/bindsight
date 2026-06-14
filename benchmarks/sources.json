@@ -1,7 +1,7 @@
 {
   "schema": "bindsight-eval-set/1",
   "generated_by": "benchmarks/build_eval_set.py",
-  "retrieved_utc": "2026-06-14T21:05:59+00:00",
+  "retrieved_utc": "2026-06-14T23:20:32+00:00",
   "databases": {
     "UniProt": "https://www.uniprot.org/ (CC BY 4.0)",
     "Ensembl": "https://www.ensembl.org/ (open)",
@@ -11,14 +11,14 @@
     "PubMed": "https://pubmed.ncbi.nlm.nih.gov/ (public domain)"
   },
   "counts": {
-    "known_antigens": 6,
+    "known_antigens": 7,
     "binders": 14,
     "binders_with_structure_sequences": 5
   },
   "outputs": {
     "known.tsv": {
-      "sha256": "30be843ae03717a7d2f17728015f6cbcd5d868ca1532cffbef6c38a53191eb7a",
-      "bytes": 900
+      "sha256": "e543ebafb2e7a673a016190e6972bb36b7d00ada9a8dd2f2e56a9b3eecb9cc55",
+      "bytes": 1069
     },
     "binders.tsv": {
       "sha256": "d262b58c7b5c41407c49fea681f6fbbc10991938ca4fd253eb3d66c8f60d657d",

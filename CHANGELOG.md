@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — docs site, container image, eval-set enrichment
+- **mkdocs-material documentation site** (`mkdocs.yml` + `docs/index.md`) with a
+  GitHub Pages deploy workflow (`.github/workflows/docs.yml`) and a `docs` extra.
+- **Dockerfile** (CPU image for the discovery half + CLI) + a `Docker` workflow
+  that builds it on every PR and publishes to GHCR on `main`/tags.
+- Held-out eval set extended with **FOLH1/PSMA** (prostate, `Q04609`); the
+  bundled ENSG→UniProt map gained FOLH1, CD33, and CD123/IL3RA so offline runs
+  resolve those real targets.
+
 ### Changed — the demo now runs on REAL data
 - **`bindsight demo` runs on a real TCGA-BRCA cohort** (NIH/GDC), not synthetic
   counts. A new GDC fetcher (`bindsight.io.gdc`) auto-downloads a tumor-vs-
