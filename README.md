@@ -222,7 +222,7 @@ bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
 bindsight/                 # Python package
 ├── io/                   # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/                  # pydeseq2 wrapper (+ optional R bridge)
-├── targets/              # Open Targets, HPA, GTEx, recount3 clients
+├── targets/              # Open Targets client + bundled ENSG→UniProt fallback
 ├── surfaceome/           # SURFY filter + SURFACE-Bind client
 ├── structures/           # AlphaFoldDB + RCSB/PDBe fetch
 ├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (v0.2)
