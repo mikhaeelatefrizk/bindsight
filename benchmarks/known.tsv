@@ -5,3 +5,4 @@ ERBB2	HER2	P04626	ENSG00000141736	Breast carcinoma	BRCA	up	HER2-amplified breast
 EGFR	HER1	P00533	ENSG00000146648	Lung adenocarcinoma	LUAD	up	EGFR-driven carcinoma; target of cetuximab/panitumumab.
 MSLN	mesothelin	Q13421	ENSG00000102854	Pancreatic adenocarcinoma	PAAD	up	Mesothelin; target of amatuximab/anetumab ravtansine.
 CLDN6	claudin-6	P56747	ENSG00000184697	Ovarian carcinoma	OV	up	Oncofetal claudin-6; target of BNT211 CLDN6 CAR-T. (NB: the canonical accession is P56747 — NOT Q14953, which is KIR2DS5.)
+FOLH1	PSMA	Q04609	ENSG00000086205	Prostate adenocarcinoma	PRAD	up	Prostate-specific membrane antigen; target of J591 and of [177Lu]Lu-PSMA-617 (Pluvicto, FDA-approved).

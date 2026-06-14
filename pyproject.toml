@@ -88,6 +88,9 @@ runners = [
 workflow = [
     "snakemake>=8.0",  # optional Snakemake front-end (same pipeline as the CLI)
 ]
+docs = [
+    "mkdocs-material>=9.5,<10",  # MIT line; builds the docs site (mkdocs.yml)
+]
 all = [
     "bindsight[discover,report,runners,workflow]",
 ]
