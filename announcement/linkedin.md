@@ -69,7 +69,7 @@ thought-leadership / job search visibility).
 > bindsight runs on a CPU laptop. Discovery (differential expression →
 > surfaceome filter → druggability → AlphaFoldDB structure pull) takes ~30
 > seconds. The GPU half (RFdiffusion backbone → ProteinMPNN sequence →
-> Boltz-2 validation) is templated to free Google Colab notebooks, paid Modal
+> Boltz-2 validation) runs end-to-end on free Google Colab notebooks, paid Modal
 > serverless GPU, or local NVIDIA Docker.
 >
 > Every output is one click away from its evidence chain — the patient cohort,

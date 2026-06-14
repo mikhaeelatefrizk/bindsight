@@ -99,7 +99,7 @@ semester.
 | 7 | Validation | Boltz-2 vs Chai-1r — which agrees on which design? |
 | 8 | Multi-objective ranking | Modify the rank weights; see which targets move |
 | 9 | Reproducibility | Re-run with a different seed; diff the manifests |
-| 10 | Report writing | Customize the Quarto template |
+| 10 | Report writing | Customize the HTML report template |
 | 11 | Plugin development | Each student adds a custom filter or scorer |
 | 12 | Final projects | Apply to a different cohort or disease |
 

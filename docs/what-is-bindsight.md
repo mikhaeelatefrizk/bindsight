@@ -78,9 +78,9 @@ unlocks the bridge for a one-person team — exactly the right moment to build.
 
 ### 3. CPU laptop is enough
 
-The orchestrator runs on the user's machine. GPU work is templated onto free
-Colab T4s, free Kaggle T4×2s, paid Modal A100s, or local NVIDIA Docker — the
-user picks per command. The user's $0/month research budget is no longer the
+The orchestrator runs on the user's machine. GPU work runs end-to-end on free
+Colab T4s, free Kaggle T4×2s, paid Modal A100s, or a local NVIDIA GPU — the
+user picks the backend per command. The user's $0/month research budget is no longer the
 bottleneck; the same setup that works for a PhD student in Cairo works for
 a clinician in Lagos.
 
@@ -152,7 +152,7 @@ Adds:
 - Per-target de novo binder PDBs from RFdiffusion + ProteinMPNN
 - Boltz-2 affinity + iPTM scores per design
 - Composite ranking
-- Quarto HTML report with embedded NGL viewers
+- Self-contained HTML report (embedded volcano plot + tables + PROV-O manifest)
 - RO-Crate export for Zenodo deposit
 
 ### v1.0 (validation paper)

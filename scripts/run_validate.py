@@ -1,7 +1,11 @@
-"""Snakemake script: validate designed binders. Stub in v0.0.x."""
+"""Snakemake script: validate designed binders.
 
-from __future__ import annotations
+Invoked by the ``validate`` rule. Materialises ``validate/validated.parquet``
+from the design step's per-binder metrics — the same code path as
+``bindsight validate`` (``bindsight.cli._finalize_validate``).
+"""
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -17,13 +21,21 @@ LOG = logging.getLogger("bindsight.validate")
 
 
 def main() -> int:
-    LOG.warning("Validate stub — implement in v0.1 (Phase 2).")
+    from bindsight.cli import _finalize_validate
+
     out_v = Path(snakemake.output.validated)
+    run_dir = out_v.parent.parent
+    n = _finalize_validate(run_dir)
+    LOG.info("validated %d design(s) -> %s", n, out_v)
+
     out_m = Path(snakemake.output.manifest_fragment)
-    out_v.parent.mkdir(parents=True, exist_ok=True)
-    out_v.write_bytes(b"")
     out_m.parent.mkdir(parents=True, exist_ok=True)
-    out_m.write_text('{"stage": "validate", "status": "stub"}\n')
+    out_m.write_text(
+        json.dumps(
+            {"stage": "validate", "status": "completed", "metrics": {"n_validated": n}},
+            indent=2,
+        )
+    )
     return 0
 
 
