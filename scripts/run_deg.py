@@ -7,8 +7,6 @@ Invoked by the ``deg`` rule in the Snakefile. Snakemake injects the
 This is now a real call into :class:`bindsight.deg.pydeseq2_runner.PyDESeq2Runner`.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import sys

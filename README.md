@@ -20,7 +20,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 > Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
+> 🚀 **v0.1.0** — discovery half end-to-end on CPU (real TCGA data); design + validation run end-to-end on a GPU backend (Modal / local Docker / Kaggle / Colab); web UI deployed on Streamlit Cloud.
 
 **New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md) · [Keeping the demo warm (free playbook)](docs/keeping-the-demo-warm.md)
 
@@ -107,7 +107,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                                   Multi-objective ranking
                                                               │
                                                               ▼
-                                       Quarto report + RO-Crate (Zenodo)
+                                       HTML report + RO-Crate (Zenodo)
                                        with full PROV-O provenance
 ```
 
@@ -143,18 +143,24 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#compari
 | **`bindsight report --format streamlit`** — interactive dashboard for one run | ✅ ready | `bindsight report runs/x --format streamlit` |
 | **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 (and BindCraft / BoltzGen / Chai-1r / AF2-IG) run end-to-end on a GPU backend | ✅ ready | `bindsight design runs/x --backend modal` (or `local_docker` / `kaggle` / `colab`) |
 | **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
+| **`bindsight validate`** — materialise structure/affinity metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
+| **`bindsight benchmark`** — score rediscovery of the held-out known antigens (recall@k) | ✅ ready | `bindsight benchmark runs/x --known-antigens benchmarks/known.tsv` |
+| **Snakemake front-end** — same pipeline as the CLI, end-to-end | ✅ ready | `snakemake --configfile my.yaml --cores 4` (`pip install -e ".[workflow]"`) |
 | **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
 | **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
-| **GPU design notebook** — RFdiffusion + ProteinMPNN + Boltz-2 wired in templated Colab notebook | ✅ ready | `bindsight design runs/x --backend colab` opens a notebook with real install + inference cells |
-| **Manual Colab recipe** — step-by-step for the GPU half | ✅ ready | [docs/colab-design-howto.md](docs/colab-design-howto.md) |
+
+> **Note on GPU stages.** The design/validation models require CUDA, so they
+> run on the GPU backend you choose (Modal / local Docker / Kaggle, or a
+> generated Colab notebook), not on the CPU host. The held-out evaluation set
+> lives in [`benchmarks/`](benchmarks/) with full provenance.
 
 ## Status & roadmap
 
-- ✅ **v0.1.0** (current) — discovery + rank + report + export + web UI + real Colab notebook patterns
-- 🔬 **v0.1.x** — first-user GPU validation (someone with a real GPU runs the Colab notebook end-to-end and reports any install/inference issues; we patch fast)
-- ⏳ **v0.2.0** — live Modal/Colab job submission via API, BindCraft + BoltzGen plugins fully wired, scRNA-seq input
-- ⏳ **v1.0.0** — JOSS submission + validation paper (rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA cohorts)
+- ✅ **v0.1.0** (current) — discovery on real TCGA data; full design half (RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG) on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI.
+- ⏳ **v0.2.0** — SURFACE-Bind targetable-site epitope prediction (today the design step targets the whole surface), single-cell RNA-seq input, async (non-blocking) Modal job submission.
+- ⏳ **v1.0.0** — JOSS submission + validation paper (blinded rediscovery of HER2/EGFR/MSLN/CLDN6 across TCGA cohorts + a three-way designer benchmark).
 
 See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
 
@@ -225,7 +231,7 @@ bindsight/                 # Python package
 ├── validate/             # Boltz-2 default; Chai-1r, AF2-IG opt-in
 ├── rank/                 # Multi-objective scoring
 ├── provenance/           # PROV-O JSON-LD schema + RO-Crate emitter
-├── report/               # Quarto template + Streamlit app
+├── report/               # HTML report template + Streamlit app
 └── cli.py                # Click entrypoint
 
 envs/                     # Conda environment files (one per stage)

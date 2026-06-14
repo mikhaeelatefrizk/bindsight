@@ -49,7 +49,7 @@ counts.tsv + design.tsv ─┐
         ▼                │
    provenance.jsonld     │
         ▼                │
-   Quarto report +       │
+   HTML report +       │
    Streamlit dashboard   │
         ▼                │
    RO-Crate zip (Zenodo) │
@@ -72,7 +72,7 @@ bindsight/
 ├── validate/        # Boltz-2 (default), Chai-1r, AF2-IG (opt-in)
 ├── rank/            # Multi-objective scoring
 ├── provenance/      # Pydantic schema for run_manifest.jsonld, RO-Crate emitter
-├── report/          # Quarto template + Streamlit app
+├── report/          # HTML report template + Streamlit app
 └── cli.py           # Click entrypoint
 ```
 
@@ -109,7 +109,7 @@ This keeps modules swappable. If someone wants to plug a different DEG backend (
 - SURFACE-Bind site lookup
 - AlphaFoldDB / RCSB structure fetching
 - Multi-objective ranking
-- Quarto + Streamlit reports
+- self-contained HTML + Streamlit reports
 - Provenance emission
 
 ### 4.2 What runs remotely (GPU, offloaded)
@@ -213,12 +213,15 @@ rule export_crate:
     script: "scripts/export_crate.py"
 ```
 
-Click CLI is a thin wrapper that drives Snakemake with nice ergonomics:
+The Click CLI and the Snakefile are two equivalent front-ends over the same
+``bindsight.*`` pipeline functions — the CLI calls them directly, and each
+Snakemake rule's ``scripts/`` wrapper calls the same functions — so you get
+identical artifacts whichever you use:
 
 ```bash
-bindsight discover  ↔  snakemake --until discover
-bindsight design    ↔  snakemake --until design
-bindsight run       ↔  snakemake (full DAG)
+bindsight discover   ≡  snakemake --until discover
+bindsight design     ≡  snakemake --until design
+bindsight run <cfg>  ≡  snakemake (full DAG)
 ```
 
 ---
@@ -243,7 +246,7 @@ bindsight run       ↔  snakemake (full DAG)
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | DAG, conda envs, --report |
 | Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | |
-| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Embed in Quarto + Streamlit |
+| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Embed in HTML + Streamlit |
 
 See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guidance.
 
@@ -270,7 +273,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
 3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy.
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
-5. **Streamlit + Quarto dual-output dashboard with embedded NGL.** The artifact that sells the tool in a 5-minute talk.
+5. **Streamlit + self-contained HTML report with embedded py3Dmol.** The artifact that sells the tool in a 5-minute talk.
 
 ---
 
@@ -320,7 +323,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 ### Phase 3 — Provenance, report, polish (3 weeks)
 - [ ] RO-Crate output
-- [ ] Quarto report template
+- [x] Self-contained HTML report (jinja2; no Quarto dependency)
 - [ ] Streamlit dashboard
 - [ ] `--cheap` profile and `--dry-run` cost estimator
 - [ ] Docker image with pinned digests

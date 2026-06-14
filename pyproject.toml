@@ -85,8 +85,11 @@ runners = [
     "google-api-python-client>=2.0",  # Colab/Drive
     "kaggle>=1.6",
 ]
+workflow = [
+    "snakemake>=8.0",  # optional Snakemake front-end (same pipeline as the CLI)
+]
 all = [
-    "bindsight[discover,report,runners]",
+    "bindsight[discover,report,runners,workflow]",
 ]
 dev = [
     "pytest>=8.0",

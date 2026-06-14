@@ -22,6 +22,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   DEGs and AlphaFold structures are fetched only for the carried-forward
   candidates.
 
+### Changed — Snakemake front-end is now real
+- The `Snakefile` + `scripts/run_*.py` were stubs (they wrote
+  `"This is a placeholder"`) and never actually ran (a `from __future__` import
+  ordering bug broke them under Snakemake's script wrapper). They now call the
+  same `bindsight.*` pipeline functions as the CLI, so `snakemake --configfile
+  <cfg> --cores N` runs discover → design → validate → rank → report → manifest
+  end-to-end. Added a `workflow` extra and a Snakemake E2E test. Docs corrected:
+  the CLI and Snakemake are two equivalent front-ends over the same functions
+  (the CLI does **not** "drive Snakemake").
+- The `mock` backend now emits a realistically-shaped results tarball
+  (metrics.jsonl + per-binder dirs) so the whole orchestration runs E2E in CI.
+
+### Docs
+- Swept the docs/README/paper/announcements for stale claims now that the
+  design half and Snakemake are real: removed "v0.1+/coming/stub/templated"
+  language, fixed the version (`0.0.1.dev0` → `0.1.0`), "Quarto" → the actual
+  self-contained HTML report, and the "synthetic 10-gene demo" → the real
+  TCGA-BRCA demo. SURFACE-Bind targetable-site prediction is stated honestly as
+  a roadmap item (the design step targets the whole surface today).
+
 ### Added — real design pipeline (all plugins, zero stubs)
 - **RFdiffusion → ProteinMPNN → Boltz-2 run end-to-end for real** via a single
   executor (`bindsight.runners.job_exec`) shared by every backend. The Modal,

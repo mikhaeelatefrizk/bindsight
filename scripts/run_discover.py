@@ -4,8 +4,6 @@ Wraps :func:`bindsight.pipelines.discover._do_discover` so the work survives
 either as a Snakemake rule or as a direct Python call from the CLI.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import sys
