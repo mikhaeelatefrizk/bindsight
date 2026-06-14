@@ -11,12 +11,12 @@ tags:
   - PROV-O
   - RO-Crate
 authors:
-  - name: Mikhaeel Atef Rizk
+  - name: Mikhaeel Atef Rizk Wahba
     orcid: 0009-0006-1069-9558
     corresponding: true
     affiliation: 1
 affiliations:
-  - name: Independent Researcher, Rotterdam, Netherlands
+  - name: Independent Researcher, Cairo, Egypt
     index: 1
 date: 11 May 2026
 bibliography: paper.bib

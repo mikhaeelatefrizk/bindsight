@@ -81,7 +81,7 @@ unlocks the bridge for a one-person team — exactly the right moment to build.
 The orchestrator runs on the user's machine. GPU work is templated onto free
 Colab T4s, free Kaggle T4×2s, paid Modal A100s, or local NVIDIA Docker — the
 user picks per command. The user's $0/month research budget is no longer the
-bottleneck; the same setup that works for a PhD student in Rotterdam works for
+bottleneck; the same setup that works for a PhD student in Cairo works for
 a clinician in Lagos.
 
 ### 4. Provenance is the moat

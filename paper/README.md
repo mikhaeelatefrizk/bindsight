@@ -14,7 +14,7 @@ paper/
 ```
 
 Both target the same v0.1.0 release (Zenodo DOI `10.5281/zenodo.20121496`).
-Same author (Mikhaeel Atef Rizk, ORCID `0009-0006-1069-9558`). Same code
+Same author (Mikhaeel Atef Rizk Wahba, ORCID `0009-0006-1069-9558`). Same code
 and demo. Different audiences and review processes.
 
 ---
@@ -110,8 +110,8 @@ compile.
    - **Title:** *bindsight: a reproducible bridge from RNA-seq counts to
      de novo protein binder design*
    - **Abstract:** copy from manuscript.tex (the `\begin{abstract}` block)
-   - **Authors:** Mikhaeel Atef Rizk (single author), affiliation
-     "Independent Researcher, Rotterdam, Netherlands", ORCID
+   - **Authors:** Mikhaeel Atef Rizk Wahba (single author), affiliation
+     "Independent Researcher, Cairo, Egypt", ORCID
      `0009-0006-1069-9558`, email `mikhaeelatefrizk@proton.me`
 5. Upload `manuscript.pdf` as the primary file
 6. Optional: add the LaTeX source as supplementary
