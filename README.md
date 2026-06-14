@@ -96,7 +96,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                      │                       │
                                      ▼                       ▼
                               Targetable sites          Sequence design
-                              (SURFACE-Bind)            (ProteinMPNN)
+                              (SURFACE-Bind, v0.2)      (ProteinMPNN)
                                      │                       │
                                      ▼                       ▼
                               AlphaFoldDB structure     Affinity + structure
