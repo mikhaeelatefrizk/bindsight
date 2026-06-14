@@ -8,6 +8,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — held-out evaluation set + benchmark tooling
+- **Real held-out evaluation set** under `benchmarks/`: literature-validated
+  binders for the AML targets **CD33** (P20138) and **CD123/IL3RA** (P26951) —
+  gemtuzumab ozogamicin, lintuzumab, vadastuximab talirine, tagraxofusp,
+  talacotuzumab/CSL362, flotetuzumab — plus the solid-tumor antigens HER2, EGFR,
+  MSLN and CLDN6. Every binder carries a verifiable citation (ChEMBL / NCT /
+  PMID / DOI / PDB); five structurally-resolved binders ship byte-exact VH/VL
+  sequences pulled from their PDB co-crystals (`9VL2`, `4JZJ`, `1N8Z`, `1S78`,
+  `1YY9`). `benchmarks/build_eval_set.py` regenerates everything from the public
+  sources with full provenance + SHA-256 (`benchmarks/sources.json`,
+  `benchmarks/PROVENANCE.md`).
+- **`bindsight benchmark` command** (`bindsight.benchmark`): scores one or more
+  finished run dirs by the rank of each known antigen in the candidate
+  shortlist, computes recall@k, and renders a side-by-side HTML report — the
+  workflow `docs/use-cases.md` referenced but never shipped.
+- **`examples/benchmark_held_out.yaml`**: the held-out benchmark run config the
+  docs referenced (previously missing).
+
+### Fixed
+- **CLDN6 accession corrected**: the bundled map listed `Q14953` for CLDN6, but
+  `Q14953` is **KIR2DS5**. The correct CLDN6 accession is **`P56747`**
+  (`ENSG00000184697`), verified against UniProt.
+
 ## [0.1.0] - 2026-05-11
 
 The "real invention" release. Every CLI command works end-to-end (no

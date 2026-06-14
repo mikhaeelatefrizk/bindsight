@@ -1,14 +1,15 @@
 """bindsight command-line interface.
 
-The CLI is a thin Click wrapper around the Snakemake DAG. Subcommands map to
-``snakemake --until <rule>`` calls so users get nice ergonomics
-(``bindsight discover ...``) while the actual orchestration stays in
-``Snakefile``.
+A Click app exposing the pipeline stages as subcommands: ``discover`` (CPU
+genomics → target shortlist), ``design`` / ``validate`` (GPU binder design +
+structure/affinity prediction, dispatched to a runner backend), ``rank``,
+``report``, ``export``, ``benchmark`` (rediscovery scoring against the held-out
+known-antigen set), plus ``run`` (full pipeline), ``demo``, ``ui``, ``doctor``
+and ``verify-licenses``.
 
-Most commands are stubs in v0.0.x — they print the planned action and exit
-with code 2 (not implemented) so callers can detect that we haven't run a real
-pipeline. The exceptions are :func:`version` and :func:`verify_licenses`,
-which are pure-Python and work today.
+GPU stages require a CUDA backend (``--backend modal|local_docker|kaggle`` for
+headless execution, or ``--backend colab`` to generate a notebook). The CPU
+stages run anywhere; ``--backend mock`` exercises the full chain in CI.
 """
 
 from __future__ import annotations
@@ -532,6 +533,81 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
             f"[green]RO-Crate written.[/green]\n[bold]File:[/bold] {out}\n\n"
             "Upload to Zenodo (https://zenodo.org/uploads/new) for a citable DOI.",
             title="bindsight export",
+            border_style="green",
+        )
+    )
+
+
+# ---------------------------------------------------------------------------
+# benchmark — score rediscovery of held-out known antigens across runs
+# ---------------------------------------------------------------------------
+@main.command()
+@click.argument(
+    "run_dirs",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--known-antigens",
+    "known_antigens",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=Path("benchmarks/known.tsv"),
+    show_default=True,
+    help="TSV of held-out known antigens (symbol, uniprot, tumor_type, ...).",
+)
+@click.option(
+    "--out",
+    "out_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=Path("benchmark_report.html"),
+    show_default=True,
+    help="Where to write the HTML benchmark report.",
+)
+@click.option(
+    "--k",
+    "ks",
+    multiple=True,
+    type=int,
+    help="Top-k cutoffs for recall@k (repeatable). Default: 5, 10, 20.",
+)
+def benchmark(
+    run_dirs: tuple[Path, ...],
+    known_antigens: Path,
+    out_path: Path,
+    ks: tuple[int, ...],
+) -> None:
+    """Benchmark how well runs rediscover the held-out known antigens.
+
+    Scores each RUN_DIR (a finished ``bindsight discover``/``run`` output) by the
+    rank of every known antigen in its candidate shortlist, computes recall@k,
+    and renders a side-by-side HTML report. The known set ships in
+    ``benchmarks/known.tsv`` (see ``benchmarks/PROVENANCE.md``).
+    """
+    from bindsight.benchmark import run_benchmark
+
+    cutoffs = tuple(ks) if ks else (5, 10, 20)
+    out, scores = run_benchmark(
+        list(run_dirs), known_antigens, out_html=out_path, ks=cutoffs
+    )
+
+    table = Table(title="rediscovery benchmark", show_lines=False, title_style="bold")
+    table.add_column("run", style="cyan", no_wrap=True)
+    table.add_column("found")
+    for k in cutoffs:
+        table.add_column(f"recall@{k}")
+    for s in scores:
+        table.add_row(
+            s.run_name,
+            f"{s.n_found}/{s.n_known}",
+            *[f"{s.recall_at[k]:.0%}" for k in cutoffs],
+        )
+    console.print(table)
+    console.print(
+        Panel(
+            f"[green]Benchmark written.[/green]\n[bold]Report:[/bold] {out}\n"
+            f"Known set: {known_antigens}",
+            title="bindsight benchmark",
             border_style="green",
         )
     )

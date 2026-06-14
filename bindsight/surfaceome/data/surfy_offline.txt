@@ -7,7 +7,7 @@
 # One UniProt accession per line. Lines starting with '#' are ignored.
 P04626
 P00533
-Q14953
+P56747
 Q13421
 P10747
 P16410
