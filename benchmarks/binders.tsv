@@ -1,0 +1,15 @@
+binder_id	name	target_symbol	target_uniprot	disease	modality	status	max_phase	chembl_id	nct_id	pmid	doi	pdb_id	sequence_source	sequence_ids
+gemtuzumab_ozogamicin	Gemtuzumab ozogamicin (Mylotarg)	CD33	P20138	AML	antibody-drug conjugate	approved	4	CHEMBL1201506	NCT03531918	22482940	10.1016/S0140-6736(12)60485-1		not_public	
+lintuzumab	Lintuzumab (HuM195 / SGN-33)	CD33	P20138	AML	monoclonal antibody	phase 3	3	CHEMBL2109150	NCT00006045	15961759	10.1200/JCO.2005.09.133		not_public	
+vadastuximab_talirine	Vadastuximab talirine (SGN-CD33A)	CD33	P20138	AML	antibody-drug conjugate	phase 2	2	CHEMBL3990021	NCT02326584	29534618	10.1080/13543784.2018.1452911		not_public	
+fab_10C8_anti_CD33	Fab-10C8 (anti-CD33, structurally resolved)	CD33	P20138	AML	Fab	research						9VL2	PDB:9VL2	fab_10C8_anti_CD33|H|PDB_9VL2;fab_10C8_anti_CD33|L|PDB_9VL2
+tagraxofusp	Tagraxofusp (SL-401 / Elzonris)	IL3RA	P26951	AML	cytokine-toxin fusion (IL-3/diphtheria toxin)	approved	4	CHEMBL4297573	NCT04342962	31018069	10.1056/NEJMoa1815105		not_public	
+talacotuzumab	Talacotuzumab (CSL362 / JNJ-56022473)	IL3RA	P26951	AML	monoclonal antibody (Fc-engineered, humanized 7G3)	phase 2/3	2	CHEMBL4297837	NCT02472145	26130514	10.3324/haematol.2014.113092		not_public	
+fab_7G3_anti_CD123	Fab 7G3 (murine parent of CSL362/talacotuzumab)	IL3RA	P26951	AML	Fab	research				25043189	10.1016/j.celrep.2014.06.038	4JZJ	PDB:4JZJ	fab_7G3_anti_CD123|H|PDB_4JZJ;fab_7G3_anti_CD123|L|PDB_4JZJ
+flotetuzumab	Flotetuzumab (MGD006 / S80880)	IL3RA	P26951	AML	bispecific DART (CD123 x CD3)	phase 2	2	CHEMBL3990038	NCT03739606	32929488	10.1182/blood.2020007732		not_public	
+trastuzumab	Trastuzumab (Herceptin)	ERBB2	P04626	BRCA	monoclonal antibody	approved	4	CHEMBL1201585		12610629	10.1038/nature01392	1N8Z	PDB:1N8Z	trastuzumab|H|PDB_1N8Z;trastuzumab|L|PDB_1N8Z
+pertuzumab	Pertuzumab (Perjeta)	ERBB2	P04626	BRCA	monoclonal antibody	approved	4	CHEMBL1201827		15093539	10.1016/j.ccr.2004.03.020	1S78	PDB:1S78	pertuzumab|H|PDB_1S78;pertuzumab|L|PDB_1S78
+cetuximab	Cetuximab (Erbitux)	EGFR	P00533	LUAD	monoclonal antibody	approved	4	CHEMBL1201577		15837620	10.1016/j.ccr.2005.03.003	1YY9	PDB:1YY9	cetuximab|H|PDB_1YY9;cetuximab|L|PDB_1YY9
+amatuximab	Amatuximab (MORAb-009)	MSLN	Q13421	PAAD	monoclonal antibody	phase 2	2			29184420			not_public	
+anetumab_ravtansine	Anetumab ravtansine (BAY 94-9343)	MSLN	Q13421	PAAD	antibody-drug conjugate	phase 2	2			39197359			not_public	
+bnt211_cldn6	BNT211 (CLDN6 CAR-T)	CLDN6	P56747	OV	CAR-T cell therapy	phase 1/2	1			37872225			not_public	

@@ -16,8 +16,8 @@ _BUNDLED: dict[str, tuple[str, str]] = {
     # ---- Surface antigens (also in the SURFY offline fallback) ----
     "ENSG00000141736": ("ERBB2", "P04626"),  # HER2
     "ENSG00000146648": ("EGFR", "P00533"),
-    "ENSG00000111799": ("CLDN6", "Q14953"),  # mismatched in older annotations; use canonical
-    "ENSG00000133110": ("MSLN", "Q13421"),
+    "ENSG00000184697": ("CLDN6", "P56747"),  # (was wrongly ENSG00000111799/Q14953 = COL12A1/KIR2DS5)
+    "ENSG00000102854": ("MSLN", "Q13421"),  # (was wrongly ENSG00000133110 = POSTN)
     "ENSG00000178562": ("CD28", "P10747"),
     "ENSG00000163599": ("CTLA4", "P16410"),
     "ENSG00000120217": ("CD274", "Q9NZQ7"),  # PD-L1
