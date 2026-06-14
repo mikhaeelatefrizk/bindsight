@@ -172,11 +172,10 @@ To stay honest:
   (ColabDesign, dl_binder_design); the author has not personally smoke-
   tested them on a real GPU. The papers describe the design and explicitly
   flag this in the Discussion as the limitation that v0.2 will close.
-- **No TCGA validation.** The planned v0.2 manuscript will demonstrate
-  rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA cohorts plus a
-  three-way designer benchmark. v0.1.0 only reports the synthetic 10-gene
-  rediscovery as a sanity-check demo (with verbatim CLI output, not
-  fabricated numbers).
+- **No formal rediscovery validation.** The demo runs on a real TCGA-BRCA
+  cohort (auto-downloaded from NIH/GDC, verbatim CLI output), but a rigorous
+  blinded multi-cohort rediscovery study of HER2/EGFR/MSLN/CLDN6 plus a
+  three-way designer benchmark remains the planned v0.2 manuscript.
 - **No claims of experimental validation.** Wet-lab work is out of scope
   and would require a separate paper with real biochemistry data.
 

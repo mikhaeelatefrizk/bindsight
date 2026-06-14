@@ -51,6 +51,17 @@ from bindsight.targets.open_targets import OpenTargetsClient
 
 LOG = logging.getLogger(__name__)
 
+# Cap on how many top candidates (by |log2fc|) get an AlphaFoldDB structure
+# fetch. Only the top-N proceed to design, so fetching for every surface DE gene
+# on a real cohort (hundreds) is wasted work; this keeps discovery fast.
+_STRUCTURE_FETCH_CAP = 25
+
+# Cap on how many up-regulated significant DEGs are carried into target
+# enrichment (Open Targets / UniProt mapping). A real cohort yields thousands of
+# significant genes; antibody targets need tumor over-expression, so we enrich
+# the most up-regulated and bound the (per-gene) Open Targets calls.
+_ENRICH_TOP_K = 300
+
 
 # ---------------------------------------------------------------------------
 # Public entry point
@@ -70,6 +81,11 @@ def run(
     """
     root = run_dir(out_dir or config.out_dir)
     LOG.info("bindsight discover: out=%s name=%s", root, config.name)
+
+    # Stage 0: ensure real reference data is present (auto-download TCGA cohort
+    # from GDC if configured + missing; populate the full SURFY surfaceome cache
+    # for production runs). No-ops when data is already present or injected.
+    _ensure_reference_data(config, surfy=surfy)
 
     manifest = new_manifest(name=config.name, config_path=str(config.inputs.counts.parent))
 
@@ -98,6 +114,60 @@ def run(
     manifest.write(root / "run_manifest.jsonld")
     LOG.info("bindsight discover complete; manifest=%s", root / "run_manifest.jsonld")
     return manifest
+
+
+# ---------------------------------------------------------------------------
+# Stage 0: ensure real reference data (GDC cohort + SURFY surfaceome)
+# ---------------------------------------------------------------------------
+def _ensure_reference_data(config: RunConfig, *, surfy: frozenset[str] | None) -> None:
+    """Auto-download the real input cohort from NIH/GDC when configured + missing.
+
+    Only fires when ``inputs.download`` is set and the counts/design files don't
+    exist yet. (The SURFY surfaceome cache is populated later, inside the
+    discover stage, so a missing-inputs run fails fast on DEG without any
+    network calls.)
+    """
+    counts_p = Path(config.inputs.counts)
+    design_p = Path(config.inputs.design)
+    dl = config.inputs.download
+    if dl is not None and (not counts_p.exists() or not design_p.exists()):
+        from bindsight.io.gdc import fetch_cohort
+
+        LOG.info("inputs missing; auto-downloading %s cohort from GDC", dl.project)
+        fetch_cohort(
+            project=dl.project,
+            n_tumor=dl.n_tumor,
+            n_normal=dl.n_normal,
+            counts_out=counts_p,
+            design_out=design_p,
+            gene_types=tuple(dl.gene_types),
+        )
+
+
+def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
+    """Return the SURFY surface set, populating the full cache on first use.
+
+    If an explicit set was injected (tests), use it. Otherwise populate the full
+    canonical SURFY cache when empty, falling back to the bundled offline list
+    only if allowed.
+    """
+    from bindsight.config import TargetDiscoveryParams
+
+    assert isinstance(p, TargetDiscoveryParams)
+    if surfy is not None:
+        return surfy
+    if p.require_surfy:
+        from bindsight.surfaceome.surfy import _surfy_cache_path, populate_surfy_cache
+
+        if not _surfy_cache_path().exists():
+            LOG.info("SURFY cache empty; populating the full surfaceome list")
+            try:
+                populate_surfy_cache()
+            except Exception as e:  # network/parse failure
+                if not p.surfy_allow_offline_fallback:
+                    raise
+                LOG.warning("SURFY populate failed (%s); using bundled offline fallback", e)
+    return load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
 
 
 # ---------------------------------------------------------------------------
@@ -255,15 +325,24 @@ def _do_discover(
     """Pure-data discovery logic; returns (candidates_df, epitopes_df)."""
     p = config.params.target_discovery
 
-    # 1. Load DEGs and keep significant ones.
+    # 1. Load DEGs and keep significant ones. Antibody targets need tumor
+    #    over-expression, so carry the most up-regulated significant genes into
+    #    enrichment (bounded — a real cohort has thousands of significant DEGs).
     deg = pd.read_parquet(deg_table_path)
     sig = deg[deg["significant"]].copy()
-    LOG.info("DEGs: %d total, %d significant", len(deg), len(sig))
+    n_sig = len(sig)
+    sig = sig.sort_values("log2fc", ascending=False).head(_ENRICH_TOP_K)
+    LOG.info(
+        "DEGs: %d total, %d significant; enriching top %d up-regulated",
+        len(deg),
+        n_sig,
+        len(sig),
+    )
 
     # Default clients
     ot = open_targets_client or OpenTargetsClient()
     afdb = alphafolddb_client or AlphaFoldDBClient()
-    surfy_set = surfy or load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
+    surfy_set = _resolve_surfy(p, surfy)
 
     # 2. For each significant gene, enrich via Open Targets (or fall back to
     #    the bundled offline map for well-known genes — used by the demo and
@@ -351,11 +430,20 @@ def _do_discover(
             "safety filter (≤%d events): %d → %d", p.max_safety_events, before, len(candidates)
         )
 
-    # 6. Pull AlphaFoldDB structures + tag.
+    # 6. Pull AlphaFoldDB structures + tag. Only the strongest candidates carry
+    #    forward to design, so we fetch structures for the top ones by |log2fc|
+    #    (capped) rather than every surface DE gene — on a real cohort that can
+    #    be hundreds, and the rest are never used downstream.
     if not candidates.empty:
-        unique_uniprots = sorted({u for u in candidates["uniprot_id"].dropna().unique() if u})
+        candidates = candidates.sort_values(
+            by="log2fc", key=lambda s: s.abs(), ascending=False
+        ).reset_index(drop=True)
+        n_fetch = max(p.top_n, _STRUCTURE_FETCH_CAP)
+        fetch_uniprots = sorted(
+            {u for u in candidates.head(n_fetch)["uniprot_id"].dropna().unique() if u}
+        )
         struct_paths: dict[str, Path | None] = {}
-        for uid in unique_uniprots:
+        for uid in fetch_uniprots:
             try:
                 struct_paths[uid] = afdb.fetch(uid)
             except Exception as e:

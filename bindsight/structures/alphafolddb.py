@@ -4,8 +4,8 @@ Pulls predicted structures by UniProt ID from EBI's AlphaFold Database.
 All AlphaFoldDB models are CC BY 4.0; we cache them locally to avoid
 hammering the public API.
 
-Endpoint pattern (mmCIF, v4):
-    https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v4.cif
+Endpoint pattern (mmCIF):
+    https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v6.cif
 
 API docs: https://alphafold.ebi.ac.uk/api-docs
 """
@@ -28,7 +28,9 @@ from bindsight.io.paths import cache_dir
 LOG = logging.getLogger(__name__)
 
 ALPHAFOLDDB_BASE = "https://alphafold.ebi.ac.uk/files"
-DEFAULT_MODEL_VERSION = "v4"
+# AlphaFoldDB bumps the model version periodically (v4 → v6 as of 2026); the old
+# URLs 404. Track the current release.
+DEFAULT_MODEL_VERSION = "v6"
 
 
 class AlphaFoldDBClient:

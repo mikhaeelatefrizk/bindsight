@@ -72,6 +72,7 @@ discover = [
     "numpy>=1.26",
     "biopython>=1.83",
     "gql[requests]>=3.5",  # Open Targets GraphQL
+    "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [
     "py3Dmol>=2.0",
@@ -109,6 +110,9 @@ Changelog = "https://github.com/mikhaeelatefrizk/bindsight/blob/main/CHANGELOG.m
 
 [project.scripts]
 bindsight = "bindsight.cli:main"
+# Headless design+validation executor — entry point used by the Docker image and
+# the local/native GPU runner (and importable as python -m bindsight.runners.job_exec).
+bindsight-design = "bindsight.runners.job_exec:main"
 
 # -----------------------------------------------------------------------------
 # Plugin entry points — designers, validators, runners can be added by 3rd
@@ -180,11 +184,6 @@ convention = "google"
 "tests/**/*" = ["D", "S101"]
 "bindsight/**/__init__.py" = ["D", "F401"]
 "scripts/**/*" = ["D", "PLW0127"]    # Snakemake injects globals; doc-strings live in module docstring
-# Stub plugin files in v0.0.x — Protocol already documents the methods. Drop
-# this ignore as each plugin gets a real implementation in v0.1.0-rc2.
-"bindsight/design/{bindcraft,boltzgen}.py" = ["D102"]
-"bindsight/validate/{chai1r,af2_ig}.py" = ["D102"]
-"bindsight/runners/{local_docker,modal_runner,kaggle}.py" = ["D102"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -193,8 +192,11 @@ plugins = ["pydantic.mypy"]
 exclude = ["tests/fixtures", "build", "dist"]
 
 [[tool.mypy.overrides]]
-module = ["pydeseq2.*", "Bio.*", "py3Dmol.*", "modal.*", "snakemake.*"]
+module = ["pydeseq2.*", "Bio.*", "py3Dmol.*", "modal.*", "snakemake.*", "kaggle.*"]
 ignore_missing_imports = true
+# These third-party libs ship no type info; don't follow into them so calls
+# aren't flagged as untyped in our (strict) code.
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 minversion = "8.0"

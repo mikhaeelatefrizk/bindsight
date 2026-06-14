@@ -22,7 +22,10 @@ class DesignSpec(BaseModel):
     target_uniprot: str
     target_structure_path: str = Field(..., description="Local path to mmCIF/PDB.")
     epitope_chain: str = "A"
-    epitope_residues: list[int] = Field(..., min_length=1)
+    # Hotspot residues to focus the binder on. Empty = whole-target design
+    # (valid before SURFACE-Bind epitope prediction is wired); RFdiffusion then
+    # runs without ``ppi.hotspot_res``.
+    epitope_residues: list[int] = Field(default_factory=list)
     binder_length_min: int = 50
     binder_length_max: int = 100
     n_trajectories: int = 50

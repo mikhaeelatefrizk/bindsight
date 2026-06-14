@@ -8,6 +8,43 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — the demo now runs on REAL data
+- **`bindsight demo` runs on a real TCGA-BRCA cohort** (NIH/GDC), not synthetic
+  counts. A new GDC fetcher (`bindsight.io.gdc`) auto-downloads a tumor-vs-
+  adjacent-normal STAR-Counts cohort on first run (cached after), the full
+  ~2,886-protein SURFY surfaceome is auto-populated
+  (`surfaceome.populate_surfy_cache`), and the top up-regulated DEGs are enriched
+  via Open Targets — a genuine surfaceome-wide discovery with full provenance
+  (`provenance.json` with GDC UUIDs + SHA-256). The fabricated
+  `examples/demo/counts.tsv`/`design.tsv` are deleted. Config gains
+  `inputs.download` (`bindsight.config.GDCSource`).
+- Discovery scales to real cohorts: enrichment is capped to the top up-regulated
+  DEGs and AlphaFold structures are fetched only for the carried-forward
+  candidates.
+
+### Added — real design pipeline (all plugins, zero stubs)
+- **RFdiffusion → ProteinMPNN → Boltz-2 run end-to-end for real** via a single
+  executor (`bindsight.runners.job_exec`) shared by every backend. The Modal,
+  local/Docker, and Kaggle runners now genuinely submit + fetch (no more
+  `NotImplementedError`); the Colab notebook is a thin wrapper over the same
+  executor. Commands + parsers live once in `bindsight.runners.tools` (pinned
+  real upstream commit SHAs). `bindsight design`/`validate` actually launch and
+  materialise `validated.parquet`.
+- **All alternative plugins implemented for real** (no stubs): BindCraft +
+  BoltzGen designers, Chai-1r + AF2-IG validators (AF2-IG keeps its
+  non-commercial banner), and the Kaggle runner.
+
+### Fixed
+- **CLDN6 accession corrected**: the bundled map listed `Q14953` for CLDN6, but
+  `Q14953` is **KIR2DS5**. The correct CLDN6 accession is **`P56747`**
+  (`ENSG00000184697`); MSLN's gene id is corrected to `ENSG00000102854`
+  (was `ENSG00000133110` = POSTN). Both verified against UniProt/Ensembl.
+- **AlphaFoldDB model version** bumped `v4 → v6` (the old URLs now 404), so
+  structure fetching works again.
+- `parse_boltz_output` searches recursively (Boltz writes to
+  `predictions/<name>/`), the target structure is now actually shipped to the
+  GPU, and the designer's `metrics.jsonl` path is populated.
+
 ### Added — held-out evaluation set + benchmark tooling
 - **Real held-out evaluation set** under `benchmarks/`: literature-validated
   binders for the AML targets **CD33** (P20138) and **CD123/IL3RA** (P26951) —

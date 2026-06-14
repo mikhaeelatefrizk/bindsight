@@ -51,10 +51,11 @@ serverless GPU, or local NVIDIA Docker.
 
 A **public web demo** at <https://bindsight.streamlit.app> lets anyone run
 the full discovery pipeline in their browser without installing anything. A
-60-second guided demo over a synthetic 10-gene tumor-vs-normal cohort
-demonstrates that the pipeline correctly rediscovers ERBB2 (HER2) and EGFR —
-the textbook cancer immunotherapy targets — as the top antibody-tractable
-surface antigens.
+guided demo over a **real TCGA breast-carcinoma cohort** (tumor vs. adjacent
+normal, auto-downloaded from NIH/GDC) shows the pipeline discovering
+antibody-tractable cell-surface antigens over-expressed in tumor, with full
+provenance; established targets such as ERBB2 (HER2) appear among the
+candidates when their expression signal is present in the sampled cohort.
 
 # Statement of need
 

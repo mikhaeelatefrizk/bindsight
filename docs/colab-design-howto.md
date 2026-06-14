@@ -121,12 +121,12 @@ from google.colab import files
 files.download("binders.tar.gz")
 ```
 
-Drop `binders.tar.gz` into your local `runs/demo/design/` (creating the
-directory if needed). When `bindsight validate` and `bindsight rank` ship
-their live implementations in v0.1.0-rc2, they'll pick up the tarball
+Drop the results tarball into your local `runs/demo/design/` (creating the
+directory if needed). `bindsight validate` then materialises
+`validate/validated.parquet` from it and `bindsight rank` ranks the binders
 automatically.
 
-For now, you can still inspect the binders manually:
+You can also inspect the binders manually:
 
 ```bash
 mkdir -p runs/demo/design && tar -xzf binders.tar.gz -C runs/demo/design/
@@ -178,14 +178,22 @@ supports both — pick per command via `--backend`.
 
 ---
 
-## When this becomes a single command
+## The one-command versions
 
-In v0.1.0-rc2 the live runner integration lands and you'll be able to do:
+`bindsight design` writes this notebook for you (and the headless backends run
+it for you end-to-end):
 
 ```bash
+# Colab: writes a ready-to-run notebook per target (the manual recipe above)
 bindsight design runs/demo --backend colab --designer rfdiff_mpnn
-# → templates a notebook, opens it in your browser, polls for results
+
+# Headless GPU: runs RFdiffusion → ProteinMPNN → Boltz-2 and pulls results back
+bindsight design   runs/demo --backend modal        --designer rfdiff_mpnn
+bindsight design   runs/demo --backend local_docker --designer rfdiff_mpnn  # your GPU
+bindsight validate runs/demo
+bindsight rank     runs/demo
 ```
 
-Until then, the recipe above is the manual version. Same end result, just a
-few extra clicks.
+The Colab notebook itself is just a thin wrapper over the same executor
+(`bindsight.runners.job_exec`) the headless backends run, so the result is
+identical whichever path you choose.
