@@ -57,21 +57,21 @@ def test_cli_report_html_renders(tmp_path: Path) -> None:
     assert "Report rendered" in r.output
 
 
-def test_cli_demo_command_runs_to_completion(tmp_path: Path) -> None:
-    """Full bindsight demo, no skip, against tmp output dir."""
+def test_cli_demo_command_runs_to_completion(offline_real_data, tmp_path: Path) -> None:
+    """Full bindsight demo, no skip, against tmp output dir (real-data path mocked)."""
     out = tmp_path / "demo_out"
     r = CliRunner().invoke(main, ["demo", "--out", str(out)])
     assert r.exit_code == 0, r.output
     assert "Demo complete" in r.output
     assert (out / "run_manifest.jsonld").exists()
     assert (out / "report.html").exists()
-    # Pipeline should rediscover HER2 + EGFR via the bundled fallback
+    # Pipeline should rediscover HER2 + EGFR from the (mocked) TCGA-BRCA cohort.
     candidates = pd.read_parquet(out / "targets" / "candidates.parquet")
     assert "P04626" in set(candidates["uniprot_id"].dropna())
     assert "P00533" in set(candidates["uniprot_id"].dropna())
 
 
-def test_cli_demo_no_report_skips_html(tmp_path: Path) -> None:
+def test_cli_demo_no_report_skips_html(offline_real_data, tmp_path: Path) -> None:
     out = tmp_path / "demo_out"
     r = CliRunner().invoke(main, ["demo", "--out", str(out), "--no-report"])
     assert r.exit_code == 0, r.output

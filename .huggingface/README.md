@@ -56,11 +56,11 @@ two in sync by hand when you change wording.
 
 ## Quick start
 
-Click **Demo** in the sidebar for a 60-second guided run on a shipped
-10-gene tumor-vs-normal cohort.  The pipeline rediscovers HER2 (ERBB2,
-UniProt P04626) and EGFR (UniProt P00533) — the textbook cancer
-immunotherapy targets — as the top-2 antibody-tractable surface
-antigens.
+Click **Demo** in the sidebar for a guided run on a real TCGA breast-cancer
+cohort (NIH/GDC, tumor vs. adjacent normal).  The pipeline discovers
+antibody-tractable cell-surface antigens over-expressed in tumor, with full
+provenance; known targets such as HER2 (ERBB2, UniProt P04626) appear among
+the candidates when their expression signal is present.
 
 The first visitor on a fresh container pays a ~60 s cold-run cost
 (real PyDESeq2 + Open Targets + AlphaFoldDB pulls); every subsequent

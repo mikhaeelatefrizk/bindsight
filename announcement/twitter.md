@@ -75,9 +75,9 @@ Total length: 280 characters per tweet. Below are 3 options + a thread.
 > All true now. Not before.
 
 ### 4/5
-> The pipeline rediscovers HER2 + EGFR — the textbook cancer immunotherapy
-> targets — from a synthetic 10-gene cohort in 30 seconds on a CPU laptop. No
-> internet, no GPU. Try it: https://bindsight.streamlit.app/ (click Demo)
+> The pipeline discovers antibody-tractable cell-surface antigens from a real
+> TCGA-BRCA cohort (NIH/GDC) on a CPU laptop — no GPU. Known targets like HER2
+> surface among the hits. Try it: https://bindsight.streamlit.app/ (click Demo)
 
 ### 5/5
 > 175 tests passing across Linux/macOS/Windows × Python 3.11/3.12.

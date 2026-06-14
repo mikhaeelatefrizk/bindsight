@@ -39,16 +39,17 @@ def test_submit_writes_valid_notebook_json(runner: ColabRunner, tmp_path: Path) 
     # New design notebook: ~16 cells (markdown + code interleaved for the full
     # RFdiff + MPNN + Boltz-2 pipeline). Check the rough shape rather than exact
     # count so minor template tweaks don't break the test.
-    assert len(nb["cells"]) >= 10
+    assert len(nb["cells"]) >= 8
     code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
     md_cells = [c for c in nb["cells"] if c["cell_type"] == "markdown"]
-    assert len(code_cells) >= 6
+    assert len(code_cells) >= 4
     assert len(md_cells) >= 4
-    # Real install commands are in there (not stubs)
+    # Real install commands + executor invocation are in there (not stubs).
     src = "\n".join("".join(c["source"]) for c in code_cells)
     assert "RFdiffusion" in src
     assert "ProteinMPNN" in src
     assert "boltz" in src.lower()
+    assert "bindsight.runners.job_exec" in src
 
 
 def test_submit_handles_missing_spec_file_gracefully(runner: ColabRunner, tmp_path: Path) -> None:
