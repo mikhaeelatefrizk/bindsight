@@ -29,7 +29,7 @@ keywords = [
     "target-discovery",
 ]
 authors = [
-    { name = "Mikhaeel Atef Rizk", email = "mikhaeelatefrizk@proton.me" },
+    { name = "Mikhaeel Atef Rizk Wahba", email = "mikhaeelatefrizk@proton.me" },
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",

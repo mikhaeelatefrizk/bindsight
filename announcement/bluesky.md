@@ -111,7 +111,7 @@ If a tagged account isn't on BlueSky, don't force it.
 
 BlueSky engagement is highest:
 - US morning (US science Twitter exodus → BlueSky)
-- Tuesday–Thursday, 12:00–14:00 UTC (= 14:00–16:00 CET in Rotterdam)
+- Tuesday–Thursday, 12:00–14:00 UTC (= 14:00–16:00 EET in Cairo)
 
 ---
 

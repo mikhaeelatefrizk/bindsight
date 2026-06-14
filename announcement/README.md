@@ -19,11 +19,11 @@ Each file contains:
 
 ## Suggested launch order
 
-1. **Tuesday or Wednesday morning** (your local time, Rotterdam):
-2. **08:30 CET — X / Twitter** (single tweet, attach a Streamlit screenshot)
-3. **09:30 CET — BlueSky** (single post)
-4. **11:00 CET — LinkedIn** (short version + screenshot)
-5. **14:00 CET — Reply to your own tweets/posts tagging upstream authors**
+1. **Tuesday or Wednesday morning** (your local time, Cairo):
+2. **08:30 EET — X / Twitter** (single tweet, attach a Streamlit screenshot)
+3. **09:30 EET — BlueSky** (single post)
+4. **11:00 EET — LinkedIn** (short version + screenshot)
+5. **14:00 EET — Reply to your own tweets/posts tagging upstream authors**
 6. **Throughout the day — engage with replies, retweets, comments**
 
 Optional: post the long-form LinkedIn version 24 hours later as a
