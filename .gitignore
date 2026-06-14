@@ -13,6 +13,7 @@ results/
 data/surface_bind/
 data/alphafolddb_cache/
 data/recount3_cache/
+data/gdc_cache/
 data/colabfold_msa_cache/
 
 # Generated reports

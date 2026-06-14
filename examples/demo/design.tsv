@@ -1,9 +1,0 @@
-sample	condition	batch
-tumor_1	tumor	A
-tumor_2	tumor	A
-tumor_3	tumor	B
-tumor_4	tumor	B
-normal_1	normal	A
-normal_2	normal	A
-normal_3	normal	B
-normal_4	normal	B

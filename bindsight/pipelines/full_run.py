@@ -20,6 +20,10 @@ from bindsight.provenance import Manifest
 
 LOG = logging.getLogger(__name__)
 
+# Backends that execute the design+validation job headlessly (vs. `colab`, which
+# only generates a notebook the user runs by hand).
+_HEADLESS_BACKENDS = {"mock", "local_docker", "modal", "kaggle"}
+
 
 @dataclass
 class FullRunResult:
@@ -59,12 +63,34 @@ def run(
     manifest = discover_pipeline.run(config, out_dir=out)
     discover_ok = all(s.status == "completed" for s in manifest.stages)
 
-    # ---- 2. Design (GPU; we don't launch — we check if the user has
-    #         already produced a tarball at out/design/results.tar.gz). ----
-    design_ok = (out / "design" / "results.tar.gz").exists() if not skip_design else False
+    # ---- 2. Design (GPU). Headless backends (mock/local_docker/modal/kaggle)
+    #         launch the executor now; `colab` just generates notebooks, so we
+    #         fall back to checking for an already-produced tarball. ----
+    design_tarball = out / "design" / "results.tar.gz"
+    if not skip_design and discover_ok and config.backend in _HEADLESS_BACKENDS:
+        try:
+            from bindsight.cli import _launch_design
 
-    # ---- 3. Validate (GPU; same — check for validate/validated.parquet) ----
+            _launch_design(
+                out,
+                backend=config.backend,
+                designer=config.params.design.designer,
+                validator=config.params.validate_.validator,
+                trajectories=config.params.design.n_trajectories,
+            )
+        except Exception as e:
+            LOG.warning("design stage failed: %s", e)
+    design_ok = design_tarball.exists() if not skip_design else False
+
+    # ---- 3. Validate (GPU): materialise validated.parquet from design output. ----
     validated_path = out / "validate" / "validated.parquet"
+    if design_ok and not skip_validate:
+        try:
+            from bindsight.cli import _finalize_validate
+
+            _finalize_validate(out)
+        except Exception as e:
+            LOG.warning("validate stage failed: %s", e)
     validate_ok = (
         validated_path.exists() and validated_path.stat().st_size > 0
         if not skip_validate

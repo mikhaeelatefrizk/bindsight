@@ -34,6 +34,9 @@ LOG = logging.getLogger(__name__)
 # Used as a sanity check after parsing.
 SURFY_PROTEIN_COUNT = 2886
 
+# Canonical SURFY surfaceome table (CC-BY), Bausch-Fluck et al. PNAS 2018.
+SURFY_XLSX_URL = "https://wlab.ethz.ch/surfaceome/table_S3_surfaceome.xlsx"
+
 # Bundled fallback for offline tests — a small set of well-characterized
 # surface antigens. NOT a substitute for the full SURFY list in production.
 _OFFLINE_FALLBACK_UNIPROT = frozenset(
@@ -107,6 +110,75 @@ def load_surfy(*, allow_offline_fallback: bool = True) -> frozenset[str]:
         cache_path,
     )
     return _bundled_uniprot_set()
+
+
+def populate_surfy_cache(*, url: str = SURFY_XLSX_URL, force: bool = False) -> Path:
+    """Download the full canonical SURFY surfaceome table into the cache.
+
+    Parses the ~2,886 ``surface``-labelled UniProt accessions from the SURFY
+    master table (Bausch-Fluck et al., PNAS 2018; CC-BY) and writes them to the
+    on-disk cache so ``require_surfy`` runs against the real surfaceome instead
+    of the tiny bundled offline fallback. Idempotent: returns the existing
+    cache unless ``force=True``.
+
+    Requires the ``discover`` extra (``openpyxl``).
+    """
+    cache_path = _surfy_cache_path()
+    if cache_path.exists() and not force:
+        return cache_path
+
+    import requests
+
+    try:
+        import pandas as pd
+    except ImportError as e:  # pragma: no cover - import guard
+        raise RuntimeError(
+            "populate_surfy_cache needs the 'discover' extra (pandas + openpyxl). "
+            'Install with: pip install -e ".[discover]"'
+        ) from e
+
+    LOG.info("downloading SURFY surfaceome table from %s …", url)
+    resp = requests.get(url, timeout=120)
+    resp.raise_for_status()
+
+    import io
+
+    try:
+        df = pd.read_excel(
+            io.BytesIO(resp.content),
+            sheet_name="SurfaceomeMasterTable",
+            header=1,
+            engine="openpyxl",
+        )
+    except ImportError as e:  # pragma: no cover - import guard
+        raise RuntimeError(
+            "reading the SURFY .xlsx needs openpyxl (in the 'discover' extra). "
+            'Install with: pip install -e ".[discover]"'
+        ) from e
+
+    label = df["Surfaceome Label"].astype(str).str.strip().str.lower()
+    accessions = (
+        df.loc[label == "surface", "UniProt accession"].dropna().astype(str).str.strip()
+    )
+    accs = sorted({a for a in accessions if a})
+    if not accs:
+        raise RuntimeError("parsed 0 surface proteins from SURFY table; format changed?")
+    if len(accs) != SURFY_PROTEIN_COUNT:
+        LOG.warning(
+            "SURFY surface count %d != expected %d (upstream table may have been revised)",
+            len(accs),
+            SURFY_PROTEIN_COUNT,
+        )
+
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(
+        "# SURFY surfaceome (Bausch-Fluck et al., PNAS 2018; CC-BY).\n"
+        f"# {len(accs)} UniProt accessions labelled 'surface'. Source: {url}\n"
+        + "\n".join(accs)
+        + "\n"
+    )
+    LOG.info("wrote %d surface accessions to %s", len(accs), cache_path)
+    return cache_path
 
 
 def is_surface_protein(uniprot_id: str, *, surfy: frozenset[str] | None = None) -> bool:

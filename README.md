@@ -16,7 +16,7 @@
 **Primary** (Hugging Face Space, 16 GB CPU): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
 **Mirror** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
 
-Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~60 seconds (cached for ~0.1 s on every revisit).
+Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline discover antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance.
 
 > Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
@@ -46,28 +46,31 @@ bindsight ui
 # → opens http://localhost:8501 with the same multi-page interface
 ```
 
-### 3. CLI (60 seconds)
+### 3. CLI
 
 ```bash
 bindsight demo
 ```
 
-Runs the full discovery half on a shipped 10-gene tumor-vs-normal cohort, produces a real HTML report you can open in a browser. The pipeline rediscovers HER2 (ERBB2) and EGFR as the top antibody-tractable surface antigens — entirely from RNA-seq counts. ~30 seconds, no internet, no GPU.
+Runs the full discovery half on a **real TCGA-BRCA tumor-vs-adjacent-normal cohort** auto-downloaded from NIH/GDC, and produces a real HTML report you can open in a browser. The pipeline discovers antibody-tractable cell-surface antigens over-expressed in tumor — entirely from RNA-seq counts, with full provenance (well-known targets such as ERBB2/HER2 surface among the candidates when their signal is present). First run needs internet (cohort + SURFY downloaded, then cached) and takes a few minutes of real DESeq2 + enrichment; CPU-only, no GPU.
 
 ```
 $ bindsight demo
-╭───────────── Demo run ──────────────╮
-│ The pipeline should rediscover      │
-│ ERBB2 (HER2) and EGFR as top        │
-│ antibody-tractable surface antigens.│
-╰─────────────────────────────────────╯
-INFO  DEGs: 10 total, 5 significant
-INFO  surfaceome filter: 5 → 2
+╭──────────────── Demo run ────────────────╮
+│ Real TCGA-BRCA tumor-vs-adjacent-normal  │
+│ cohort (NIH/GDC). Discovers antibody-    │
+│ tractable cell-surface antigens, with    │
+│ full provenance.                         │
+╰──────────────────────────────────────────╯
+INFO  GDC: downloading TCGA-BRCA cohort (20 tumor + 20 normal)…
+INFO  SURFY cache empty; populating the full surfaceome list (2886)
+INFO  DEGs: 17019 total, 4011 significant; enriching top 300 up-regulated
+INFO  surfaceome filter: 300 → 42
 INFO  wrote runs/demo/report.html
-╭───────── bindsight demo ─────────────╮
-│ Demo complete!                      │
-│ Report HTML: runs/demo/report.html  │
-╰─────────────────────────────────────╯
+╭───────────── bindsight demo ─────────────╮
+│ Demo complete!                           │
+│ Report HTML: runs/demo/report.html       │
+╰──────────────────────────────────────────╯
 ```
 
 ---

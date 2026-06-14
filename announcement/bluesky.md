@@ -59,8 +59,8 @@ BlueSky.
 > All true now.
 
 ### 3/4
-> The pipeline rediscovers HER2 + EGFR from synthetic counts in 30 seconds on
-> a CPU laptop. Try it in your browser (no install, no GPU):
+> The pipeline discovers surface-antigen targets from a real TCGA-BRCA cohort
+> (NIH/GDC) on a CPU laptop. Try it in your browser (no install, no GPU):
 >
 > https://bindsight.streamlit.app/
 >

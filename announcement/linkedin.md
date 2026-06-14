@@ -23,8 +23,9 @@ thought-leadership / job search visibility).
 > 📄 Citable: https://doi.org/10.5281/zenodo.20121496
 >
 > The pipeline rediscovers HER2 (ERBB2) and EGFR — the textbook cancer
-> immunotherapy targets — entirely from synthetic RNA-seq counts in 30
-> seconds. 175 tests passing across Linux/macOS/Windows. MIT licensed.
+> immunotherapy targets — appear among the candidates when their signal is
+> present, discovered from a real TCGA breast-cancer cohort (NIH/GDC) with full
+> provenance. 200+ tests passing across Linux/macOS/Windows. MIT licensed.
 >
 > Built solo over the past few weeks. Particularly grateful to the upstream
 > open-source teams whose work made this constructible: PyDESeq2, RFdiffusion,

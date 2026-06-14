@@ -48,14 +48,14 @@ def test_cli_design_dry_run_prints_cost_and_exits_zero(tmp_path) -> None:
     assert "modal" in r.output
 
 
-def test_cli_design_without_dry_run_prints_cost_then_not_implemented(tmp_path) -> None:
-    """Without --dry-run, design still shows the cost panel before exiting 2."""
+def test_cli_design_without_targets_exits_2(tmp_path) -> None:
+    """Without --dry-run on a run with no designable targets, design exits 2."""
     run = tmp_path / "run"
     run.mkdir()
     r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal"])
     assert r.exit_code == 2
     assert "Cost estimate" in r.output
-    assert "Not implemented" in r.output
+    assert "nothing to do" in r.output.lower()
 
 
 def test_cli_validate_prints_cost_panel(tmp_path) -> None:
