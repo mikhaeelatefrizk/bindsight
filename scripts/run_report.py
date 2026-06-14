@@ -1,6 +1,8 @@
-"""Snakemake script: render Quarto HTML report. Stub in v0.0.x."""
+"""Snakemake script: render the self-contained HTML report.
 
-from __future__ import annotations
+Invoked by the ``report`` rule. Delegates to :func:`bindsight.report.render_run`
+(the same renderer the CLI uses) to write ``report.html`` for the run.
+"""
 
 import logging
 import sys
@@ -17,17 +19,16 @@ LOG = logging.getLogger("bindsight.report")
 
 
 def main() -> int:
-    LOG.warning("Report stub — implement in v0.1 (Phase 3).")
+    from bindsight.report import render_run
+
     out_html = Path(snakemake.output.html)
+    run_dir = out_html.parent
+    rendered = render_run(run_dir, out_html)
+    LOG.info("rendered report -> %s", rendered)
+
     out_m = Path(snakemake.output.manifest_fragment)
-    out_html.parent.mkdir(parents=True, exist_ok=True)
-    out_html.write_text(
-        "<!doctype html><title>bindsight report (stub)</title>"
-        "<h1>bindsight report (stub)</h1>"
-        "<p>This is a placeholder. Real Quarto report ships in v0.1.</p>\n"
-    )
     out_m.parent.mkdir(parents=True, exist_ok=True)
-    out_m.write_text('{"stage": "report", "status": "stub"}\n')
+    out_m.write_text('{"stage": "report", "status": "completed"}\n')
     return 0
 
 

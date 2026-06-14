@@ -20,7 +20,10 @@ def test_mock_runner_round_trip(tmp_path: Path) -> None:
     assert archive.exists()
     with tarfile.open(archive, "r:gz") as tf:
         members = tf.getnames()
-    assert "PLACEHOLDER.txt" in members
+    # Realistically-shaped mock result so the whole pipeline runs E2E.
+    assert "metrics.jsonl" in members
+    assert any(m.startswith("validate/") for m in members)
+    assert any(m.startswith("design/") for m in members)
     MockRunner.cleanup(archive)
 
 

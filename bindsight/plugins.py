@@ -62,5 +62,15 @@ def get_validator(name: str) -> Any:
 
 
 def get_runner(name: str, **kwargs: Any) -> Any:
-    """Instantiate a runner backend by name (kwargs forwarded to the runner)."""
-    return _load("bindsight.runners", name)(**kwargs)
+    """Instantiate a runner backend by name.
+
+    Runners have heterogeneous constructors (e.g. ``MockRunner`` takes none of
+    the design kwargs), so only the kwargs a given runner actually accepts are
+    forwarded.
+    """
+    import inspect
+
+    cls = _load("bindsight.runners", name)
+    params = inspect.signature(cls).parameters
+    accepted = {k: v for k, v in kwargs.items() if k in params}
+    return cls(**accepted)

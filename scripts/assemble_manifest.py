@@ -7,8 +7,6 @@ v0.0.x: minimal placeholder — full assembly logic lands in v0.0.2 once the
 discovery half emits real fragments.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import sys

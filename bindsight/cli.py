@@ -116,7 +116,8 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
 
     Runs the discovery half of the pipeline (CPU only):
     DEG → surfaceome filter → Open Targets enrichment → AlphaFoldDB pull.
-    SURFACE-Bind site lookup is wired in v0.0.3.
+    (SURFACE-Bind targetable-site prediction is a roadmap item; until then the
+    design step targets the whole surface.)
     """
     _setup_logging(verbose)
     from bindsight.config import RunConfig
@@ -381,7 +382,7 @@ def rank(run_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# report — Quarto / Streamlit
+# report — self-contained HTML / Streamlit
 # ---------------------------------------------------------------------------
 @main.command()
 @click.argument(
@@ -949,12 +950,25 @@ def _finalize_validate(run_dir: Path) -> int:
                 LOG_CLI.warning("could not unpack %s: %s", tar_path, e)
 
     metrics_path = design_dir / "metrics.jsonl"
-    if not metrics_path.exists() or not metrics_path.read_text().strip():
-        return 0
-    rows = [json.loads(ln) for ln in metrics_path.read_text().splitlines() if ln.strip()]
-    df = pd.DataFrame(rows)
-    out = validate_dir / "validated.parquet"
-    df.to_parquet(out, index=False)
+    rows = (
+        [json.loads(ln) for ln in metrics_path.read_text().splitlines() if ln.strip()]
+        if metrics_path.exists()
+        else []
+    )
+    # Always write validated.parquet (with the expected schema even when empty)
+    # so downstream rank / the Snakemake `validate` output always exists.
+    cols = [
+        "binder_id",
+        "target_uniprot",
+        "iptm",
+        "pae_interaction",
+        "affinity_pred_value",
+        "affinity_probability_binary",
+        "validator_name",
+        "validator_version",
+    ]
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+    df.to_parquet(validate_dir / "validated.parquet", index=False)
     return len(df)
 
 
