@@ -635,8 +635,8 @@ def _render_results_md(summary: dict[str, Any]) -> str:
             f"cohort, **{best['cohort']['expected_symbol']}** is rediscovered at "
             f"**rank {br}** in {bc['project']}"
             + (f" ({bc['subtype']} subtype)" if bc["subtype"] else "")
-            + f" — log2fc {best['deg_expected']['log2fc']:.1f}, "
-            f"padj {best['deg_expected']['padj']:.0e}."
+            + f" — log2fc {best['deg_expected']['log2fc']:.2f}, "
+            f"padj {best['deg_expected']['padj']:.1e}."
         )
     a(
         "- **recall@k over over-expressed antigens:** "
