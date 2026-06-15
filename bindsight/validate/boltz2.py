@@ -51,7 +51,7 @@ def build_boltz_yaml(
     binder_id: str,
     binder_sequence: str,
     predict_affinity: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Build the YAML config Boltz-2 expects on stdin.
 
     See https://github.com/jwohlwend/boltz/blob/main/docs/prediction.md for
@@ -71,7 +71,7 @@ def build_boltz_yaml(
     return spec
 
 
-def write_boltz_yaml(spec: dict, path: Path) -> Path:
+def write_boltz_yaml(spec: dict[str, Any], path: Path) -> Path:
     """Write a Boltz-2 spec dict to disk as YAML."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(spec, sort_keys=False))
@@ -96,8 +96,10 @@ def parse_boltz_output(
     Both files are read; missing fields become ``None`` (not an error — the
     user may have disabled affinity prediction).
     """
-    confidence_path = next(output_dir.glob("confidence_*.json"), None)
-    affinity_path = next(output_dir.glob("affinity_*.json"), None)
+    # Boltz writes to <out_dir>/predictions/<name>/confidence_*.json, so search
+    # recursively (rglob) rather than only the top level.
+    confidence_path = next(output_dir.rglob("confidence_*.json"), None)
+    affinity_path = next(output_dir.rglob("affinity_*.json"), None)
 
     iptm = pae_interaction = affinity_value = affinity_prob = None
 

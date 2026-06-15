@@ -49,7 +49,7 @@ counts.tsv + design.tsv ─┐
         ▼                │
    provenance.jsonld     │
         ▼                │
-   Quarto report +       │
+   HTML report +       │
    Streamlit dashboard   │
         ▼                │
    RO-Crate zip (Zenodo) │
@@ -63,7 +63,7 @@ counts.tsv + design.tsv ─┐
 bindsight/
 ├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/             # pydeseq2 wrapper (+ optional R bridge)
-├── targets/         # Open Targets GraphQL, HPA, GTEx, recount3
+├── targets/         # Open Targets GraphQL client + bundled ENSG→UniProt fallback
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
 ├── structures/      # AlphaFoldDB + RCSB/PDBe fetch
 ├── epitopes/        # SURFACE-Bind site lookup; v0.2 fpocket fallback
@@ -72,7 +72,7 @@ bindsight/
 ├── validate/        # Boltz-2 (default), Chai-1r, AF2-IG (opt-in)
 ├── rank/            # Multi-objective scoring
 ├── provenance/      # Pydantic schema for run_manifest.jsonld, RO-Crate emitter
-├── report/          # Quarto template + Streamlit app
+├── report/          # HTML report template + Streamlit app
 └── cli.py           # Click entrypoint
 ```
 
@@ -105,11 +105,11 @@ This keeps modules swappable. If someone wants to plug a different DEG backend (
 ### 4.1 What runs locally (CPU)
 
 - DEG analysis (pydeseq2; or R bridge for DESeq2/edgeR)
-- All database queries (Open Targets, HPA, GTEx, recount3)
+- Database queries (Open Targets) + the bundled ENSG→UniProt fallback
 - SURFACE-Bind site lookup
 - AlphaFoldDB / RCSB structure fetching
 - Multi-objective ranking
-- Quarto + Streamlit reports
+- self-contained HTML + Streamlit reports
 - Provenance emission
 
 ### 4.2 What runs remotely (GPU, offloaded)
@@ -213,12 +213,15 @@ rule export_crate:
     script: "scripts/export_crate.py"
 ```
 
-Click CLI is a thin wrapper that drives Snakemake with nice ergonomics:
+The Click CLI and the Snakefile are two equivalent front-ends over the same
+``bindsight.*`` pipeline functions — the CLI calls them directly, and each
+Snakemake rule's ``scripts/`` wrapper calls the same functions — so you get
+identical artifacts whichever you use:
 
 ```bash
-bindsight discover  ↔  snakemake --until discover
-bindsight design    ↔  snakemake --until design
-bindsight run       ↔  snakemake (full DAG)
+bindsight discover   ≡  snakemake --until discover
+bindsight design     ≡  snakemake --until design
+bindsight run <cfg>  ≡  snakemake (full DAG)
 ```
 
 ---
@@ -243,7 +246,7 @@ bindsight run       ↔  snakemake (full DAG)
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | DAG, conda envs, --report |
 | Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | |
-| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Embed in Quarto + Streamlit |
+| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Embed in HTML + Streamlit |
 
 See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guidance.
 
@@ -270,7 +273,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
 3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy.
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
-5. **Streamlit + Quarto dual-output dashboard with embedded NGL.** The artifact that sells the tool in a 5-minute talk.
+5. **Streamlit + self-contained HTML report with embedded py3Dmol.** The artifact that sells the tool in a 5-minute talk.
 
 ---
 
@@ -291,47 +294,46 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 ## 11. Phased roadmap
 
-### Phase 0 — Preflight (1 week, current)
+### Phase 0 — Preflight ✅ done
 - [x] Confirm SURFACE-Bind / RFdiffusion / BindCraft licenses
 - [x] Repo skeleton, foundational docs
 - [x] Pydantic manifest schema
 - [x] Click CLI shell
-- [ ] Pin TCGA-LUAD via recount3 as canonical example
+- [x] Canonical TCGA-LUAD example (auto-downloaded from NIH/GDC)
 
-### Phase 1 — Discovery half, no GPU (3–4 weeks)
-- [ ] Snakemake skeleton with conda envs
-- [ ] `deg/` (pydeseq2 wrapper)
-- [ ] `targets/` (Open Targets GraphQL client)
-- [ ] `surfaceome/` (SURFY filter + SURFACE-Bind client)
-- [ ] `structures/` (AlphaFoldDB pull)
-- [ ] `epitopes/` (SURFACE-Bind lookup; fail-soft for missing)
-- [ ] Manifest emission
-- [ ] `bindsight discover` end-to-end on TCGA-LUAD
-- [ ] **Milestone:** `v0.0.1` tag
+### Phase 1 — Discovery half, no GPU ✅ done
+- [x] Snakemake front-end (rules call the same functions as the CLI)
+- [x] `deg/` (pydeseq2 wrapper)
+- [x] `targets/` (Open Targets GraphQL client + bundled ENSG→UniProt fallback)
+- [x] `surfaceome/` (SURFY filter; full list auto-populated)
+- [x] `structures/` (AlphaFoldDB pull)
+- [x] Manifest emission (PROV-O JSON-LD)
+- [x] `bindsight discover` end-to-end on a real TCGA cohort
+- [ ] `epitopes/` SURFACE-Bind targetable-site lookup (stub today; design targets the whole surface)
 
-### Phase 2 — GPU offload + design half (4–6 weeks)
-- [ ] `runners/` abstraction (Colab + Modal)
-- [ ] `design/` RFdiffusion+ProteinMPNN wrapper (T4-friendly default)
-- [ ] `validate/` Boltz-2 wrapper
-- [ ] `rank/` multi-objective scoring
-- [ ] End-to-end `bindsight run`
-- [ ] Mocked-runner CI for GPU half
-- [ ] **Milestone:** `v0.1.0-rc1`
+### Phase 2 — GPU design half ✅ done
+- [x] `runners/` (Colab, Modal, Kaggle, local-Docker, mock) over one executor (`job_exec`)
+- [x] `design/` RFdiffusion+ProteinMPNN (+ BindCraft, BoltzGen)
+- [x] `validate/` Boltz-2 (+ Chai-1r, AF2-IG)
+- [x] `rank/` multi-objective scoring
+- [x] End-to-end `bindsight run` + Snakemake DAG
+- [x] Mocked-runner CI for the GPU half
 
-### Phase 3 — Provenance, report, polish (3 weeks)
-- [ ] RO-Crate output
-- [ ] Quarto report template
-- [ ] Streamlit dashboard
-- [ ] `--cheap` profile and `--dry-run` cost estimator
-- [ ] Docker image with pinned digests
+### Phase 3 — Provenance, report, polish ✅ done
+- [x] RO-Crate output
+- [x] Self-contained HTML report (jinja2; no Quarto dependency)
+- [x] Streamlit dashboard / web UI
+- [x] `--dry-run` GPU cost estimator
+- [x] Held-out evaluation set + `bindsight benchmark`
+- [x] `v0.1.0`, Zenodo DOI
+- [ ] Published Docker image with pinned digests
 - [ ] mkdocs-material documentation site
-- [ ] **Milestone:** `v0.1.0`, Zenodo DOI
 
-### Phase 4 — Validation paper (4–6 weeks)
-- [ ] Rediscovery experiment: 3–5 TCGA cohorts → known antigens (HER2, CLDN6, MSLN, EGFR)
-- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen
+### Phase 4 — Validation paper (in progress)
+- [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); specificity confirmed (EGFR/CEA correctly not surfaced). Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
+- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen — runnable, CPU-tested harness + protocol ship in `benchmarks/designer_benchmark/`; the GPU comparison run is pending
 - [ ] Negative-result taxonomy on full DEG list
-- [ ] bioRxiv preprint
+- [ ] single-cell RNA-seq input + async Modal submission
 - [ ] **Milestone:** preprint DOI + `v0.2.0`
 
 ### Phase 5 — Coverage and community (post-preprint, ongoing)

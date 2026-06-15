@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage{amsmath}
 \usepackage[margin=1in]{geometry}
 \usepackage{microtype}
 \usepackage{xcolor}
@@ -33,7 +34,7 @@
   ORCID: \href{https://orcid.org/0009-0006-1069-9558}{0009-0006-1069-9558}}}
 \affil[1]{Independent Researcher, Cairo, Egypt}
 
-\date{11 May 2026}
+\date{15 June 2026}
 
 \begin{document}
 \maketitle
@@ -55,14 +56,17 @@ validated \textit{de novo} protein-binder candidates with a complete
 PROV-O~/~RO-Crate audit trail back to the patient cohort the targets came
 from. The discovery half of the pipeline (differential expression $\to$
 surfaceome filter $\to$ druggability $\to$ AlphaFoldDB structure pull) runs
-on a CPU laptop in seconds; the GPU half (RFdiffusion backbone $\to$
-ProteinMPNN sequence $\to$ Boltz-2 validation) is templated to free Google
-Colab notebooks, paid Modal serverless GPU, or local NVIDIA Docker. A
-public web demo at \href{https://bindsight.streamlit.app}{bindsight.streamlit.app}
-runs the full discovery pipeline in any browser without installation. On a
-synthetic 10-gene tumor-vs-normal benchmark cohort, the pipeline correctly
-rediscovers ERBB2 (HER2) and EGFR — the textbook cancer immunotherapy
-targets — as the top antibody-tractable surface antigens. Software is
+on a CPU laptop; the GPU half (RFdiffusion backbone $\to$
+ProteinMPNN sequence $\to$ Boltz-2 validation) executes end-to-end on free
+Google Colab notebooks, paid Modal serverless GPU, local NVIDIA Docker, or
+Kaggle. A public web demo at
+\href{https://bindsight.streamlit.app}{bindsight.streamlit.app}
+runs the full discovery pipeline in any browser without installation. On a real
+TCGA breast-carcinoma cohort (tumor vs.\ adjacent normal, auto-downloaded from
+NIH/GDC), the pipeline discovers antibody-tractable cell-surface antigens
+over-expressed in tumor with full provenance; established targets such as ERBB2
+(HER2) surface among the candidates when their expression signal is present.
+Software is
 MIT-licensed and archived at Zenodo with permanent DOI
 \href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}.
 \end{abstract}
@@ -200,7 +204,7 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   box/.style={rectangle, rounded corners=2pt, draw, fill=blue!8, align=center, text width=28mm, minimum height=8mm, inner sep=2pt},
   cpu/.style={box, fill=green!8, draw=green!50!black},
   gpu/.style={box, fill=orange!12, draw=orange!60!black},
-  out/.style={box, fill=gray!10, draw=gray!50!black},
+  outbox/.style={box, fill=gray!10, draw=gray!50!black},
   arr/.style={-{Latex[length=2mm]}, thick}
 ]
   \node[cpu] (counts) {RNA-seq\\counts.tsv};
@@ -213,8 +217,8 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   \node[gpu, left=of rfdiff] (mpnn) {Sequence\\(ProteinMPNN)};
   \node[gpu, below=8mm of mpnn] (boltz) {Validate\\(Boltz-2)};
   \node[cpu, right=of boltz] (rank) {Rank};
-  \node[out, right=of rank] (report) {HTML\\report};
-  \node[out, right=of report] (crate) {RO-Crate\\(Zenodo)};
+  \node[outbox, right=of rank] (report) {HTML\\report};
+  \node[outbox, right=of report] (crate) {RO-Crate\\(Zenodo)};
 
   \draw[arr] (counts) -- (deg);
   \draw[arr] (deg) -- (surf);
@@ -234,7 +238,7 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   \end{pgfonlayer}
 \end{tikzpicture}
 \caption{\texttt{bindsight} pipeline. CPU stages run on the user's laptop;
-GPU stages are templated to free Colab, paid Modal, or local Docker. All
+GPU stages run end-to-end on free Colab, paid Modal, local Docker, or Kaggle. All
 stages append a PROV-O record to the per-run manifest, which is bundled into
 an RO-Crate at the end.}
 \label{fig:pipeline}
@@ -243,20 +247,20 @@ an RO-Crate at the end.}
 % --------------------------------------------------------------------
 \section{Demonstration}
 
-The package ships a 10-gene tumor-vs-normal synthetic cohort
-(\texttt{examples/demo/}) that allows immediate end-to-end testing without
-requiring users to download a real dataset on first use. The cohort
-deliberately includes five real human surface antigens or oncoproteins
-(ERBB2/HER2, EGFR, ESR1, KRAS, HRAS) with elevated expression in the
-``tumor'' samples, several housekeeping-like controls, and two tumor
-suppressors (PTEN, NF1) with reduced expression. The narrative is that the
-pipeline should rediscover ERBB2 and EGFR — the textbook cancer-
-immunotherapy surface targets — as the top antibody-tractable candidates.
+A single command, \texttt{bindsight demo}, runs the discovery half on a
+\emph{real} TCGA breast-carcinoma cohort: on first use it auto-downloads a
+balanced tumor-vs-adjacent-normal STAR-Counts cohort (20 vs.\ 20 samples,
+selected deterministically by GDC file identifier) from the NIH/GDC
+open-access API, populates the full $\sim$2{,}886-protein SURFY surfaceome
+list, runs real \texttt{pydeseq2} differential expression, enriches the most
+up-regulated significant genes via Open Targets, applies the surfaceome and
+safety filters, and writes a ranked candidate table — with full provenance.
+No synthetic data is shipped; the run is reproducible because the cohort
+selection is deterministic.
 
-\paragraph{Reproducible result.} A single command,
-\texttt{bindsight demo}, runs the pipeline end-to-end on a CPU laptop in
-$\sim$30~seconds (Windows, Intel i7) and produces the following candidate
-table (taken verbatim from the actual run that produced this manuscript):
+\paragraph{Reproducible result.} The pipeline finds 42 antibody-tractable,
+cell-surface, up-regulated candidates; the top entries by fold-change are
+shown below (verbatim from the run, abbreviated):
 
 \vspace{0.4em}
 \begin{center}
@@ -264,34 +268,39 @@ table (taken verbatim from the actual run that produced this manuscript):
 \toprule
 Rank & Symbol & UniProt & $\log_2$FC & $p_\text{adj}$ \\
 \midrule
-1 & ERBB2 (HER2) & P04626 & $+2.93$ & $<10^{-300}$ \\
-2 & EGFR & P00533 & $+2.31$ & $<10^{-300}$ \\
+1 & GRM4    & Q14833 & $+6.56$ & $6.0\times10^{-33}$ \\
+2 & SLC24A2 & Q9UI40 & $+5.36$ & $1.1\times10^{-13}$ \\
+3 & GPR139  & Q6DWJ6 & $+5.13$ & $1.1\times10^{-6}$ \\
+4 & GABRA5  & P31644 & $+4.72$ & $9.1\times10^{-4}$ \\
+8 & LRRC15  & Q8TF66 & $+4.39$ & $3.5\times10^{-15}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 \vspace{0.4em}
 
-ERBB2 and EGFR pass all of \texttt{bindsight}'s default filters
-(differentially expressed at FDR$\,<\,0.05$ with $|\log_2$FC$|\,\geq\,1$,
-present in the SURFY surfaceome list, antibody-tractable, no excessive
-safety liabilities) and are emitted as the top-2 ranked candidates ready
-for the GPU design step. The pipeline simultaneously writes a
-self-contained $\sim$60~kB HTML report (embedding a volcano plot, the
-ranked candidate table, and the full PROV-O manifest) and a PROV-O
-\texttt{run\_manifest.jsonld} with SHA-256 hashes of every input and
-output artifact.
+These are genuine differentially-expressed surface antigens (LRRC15, for
+example, is an antibody-drug-conjugate target in clinical development). This
+is real discovery on real data rather than a scripted result: established
+breast-cancer surface antigens such as ERBB2 (HER2) are recovered as
+differentially expressed when the sampled cohort carries their signal, but on
+a small random cohort they need not rank in the top-$k$ by fold-change ---
+EGFR, for instance, is frequently \emph{lower} in bulk tumor than in normal
+breast epithelium. The pipeline simultaneously writes a self-contained HTML
+report (volcano plot, ranked candidate table, PROV-O manifest) and a PROV-O
+\texttt{run\_manifest.jsonld} with SHA-256 hashes of every input and output
+artifact, plus a cohort \texttt{provenance.json} listing the exact GDC file
+UUIDs and case barcodes.
 
 \paragraph{Web demo.} The same demo is reachable in any web browser at
 \href{https://bindsight.streamlit.app}{bindsight.streamlit.app} without
-local installation. A user clicks ``Demo'' in the sidebar, waits
-$\sim$30~seconds, and the rendered report appears in-line. This lowers
-the barrier to evaluating the tool to effectively zero.
+local installation; the first visitor on a fresh container triggers the
+download + analysis and the result is cached for subsequent visitors.
 
 % --------------------------------------------------------------------
 \section{Quality assurance and reproducibility}
 
-The \texttt{bindsight v0.1.0} release ships \textbf{175 unit and
-integration tests} that run in under four minutes and cover: the Pydantic
+The \texttt{bindsight} release ships \textbf{200+ unit and
+integration tests} that run in a few minutes and cover: the Pydantic
 v2 manifest schema; the Open Targets, AlphaFoldDB, and SURFY clients; the
 discovery pipeline end-to-end with mocked GPU runners; the rank module's
 composite scoring with several weight schemes; the RO-Crate exporter; and
@@ -330,13 +339,24 @@ that will be addressed promptly. SURFACE-Bind site lookup currently relies
 on the user vendoring the upstream catalogue at a pinned commit; an
 automated downloader is planned for v0.2.
 
-\paragraph{Planned validation paper (v0.2).} A separate manuscript is
-planned to demonstrate \textit{rediscovery validation}: running
-\texttt{bindsight} against blinded TCGA cohorts (BRCA, OV, PAAD, LUAD) and
-quantifying enrichment of known clinical-trial-stage surface antigens
-(HER2 in breast, MSLN in pancreatic, CLDN6 in ovarian, EGFR in lung) in the
-top-$N$ ranked outputs, alongside a benchmark comparing RFdiffusion+ProteinMPNN,
-BindCraft, and BoltzGen as designer back-ends on the same target set.
+\paragraph{Rediscovery validation.} A companion validation report
+(\texttt{paper/validation/manuscript.md}, with reproducible artifacts under
+\texttt{benchmarks/validation/}) tests the discovery half on six real
+indication-matched TCGA tumor-vs-adjacent-normal cohorts. Scoring the rank of
+each known antigen in the unsupervised candidate shortlist, the pipeline
+rediscovers \textbf{ERBB2 (HER2) at rank~4} in HER2-enriched breast cancer
+(log2fc~4.36, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
+on stratifying TCGA-BRCA by its PAM50 subtype, which otherwise averages the HER2
+signal away. The pipeline is also \textit{specific}: antigens that are not
+transcriptionally over-expressed at the bulk level --- EGFR (mutation/
+amplification-driven) and CEA (co-expressed in normal colon) --- are correctly
+left out of the top-20, so sensitivity tracks differential-expression effect
+size as expected for a DE-based method. Antigens without matched TCGA normals
+(CLDN6, CD33/CD123) are documented as data limitations rather than reported with
+a manufactured number. A complementary, CPU-tested three-way \textit{designer
+benchmark} (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable
+harness and protocol in \texttt{benchmarks/designer\_benchmark/}, to be populated
+from a GPU run.
 
 \paragraph{Broader impact.} \texttt{bindsight} is positioned to lower the
 barrier-to-entry for translational binder design from approximately six

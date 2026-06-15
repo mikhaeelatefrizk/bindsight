@@ -6,7 +6,7 @@ deployment to use the tool entirely in a browser.
 Pages:
 
 - **Home** — what this is, why it matters, "Try the demo" CTA
-- **Demo** — one-click run of the bundled 10-gene cohort with live progress
+- **Demo** — one-click run on a real TCGA-BRCA cohort with live progress
 - **Run with my data** — upload counts.tsv + design.tsv, run the pipeline
 - **Browse a run** — open a run directory, inspect tables, view the report
 - **About** — links to docs, source, citation
@@ -134,11 +134,11 @@ def _page_home() -> None:
 def _run_demo_cached() -> tuple[Path, object, float, Path]:
     """Run the demo pipeline once per server process and cache the full result.
 
-    The demo always uses the same shipped 10-gene cohort, so the output is
-    fully deterministic and safe to share across visitors.  Caching the run
+    The demo always uses the same real TCGA-BRCA cohort (deterministic by GDC
+    file id), so the output is safe to share across visitors. Caching the run
     means only the first visitor on a fresh container pays the
-    pydeseq2 + Open Targets + AlphaFoldDB cost; every subsequent visitor sees
-    the same result instantly, and the per-visitor RAM spike drops to ~0.
+    download + pydeseq2 + Open Targets + AlphaFoldDB cost; every subsequent
+    visitor sees the same result instantly, and the per-visitor RAM spike → ~0.
     This is the difference between "the app crashes after the first demo" and
     "the app stays up indefinitely under heavy load".
     """
@@ -181,13 +181,15 @@ if st is not None:
 
 
 def _page_demo() -> None:
-    st.title("Demo: 60-second guided run")
+    st.title("Demo: real TCGA-BRCA discovery")
     st.markdown(
-        "This runs the full discovery half against a shipped 10-gene tumor-vs-normal "
-        "cohort. Real pydeseq2 differential expression, real SURFY surfaceome filter, "
-        "real ranked output. Internet not required, GPU not required.\n\n"
-        "**Expected:** ERBB2 (HER2) and EGFR — the textbook cancer immunotherapy "
-        "targets — should be the top two antibody-tractable surface antigens."
+        "This runs the full discovery half against a **real TCGA breast-cancer "
+        "cohort** (NIH/GDC, tumor vs. adjacent normal). Real pydeseq2 differential "
+        "expression, the full SURFY surfaceome filter, Open Targets enrichment, and "
+        "ranked output — with full provenance. GPU not required.\n\n"
+        "**Result:** antibody-tractable cell-surface antigens over-expressed in "
+        "tumor; well-known targets such as ERBB2 (HER2) appear among the candidates "
+        "when their signal is present in the cohort."
     )
 
     if st.button("▶  Run demo now", type="primary", use_container_width=True):

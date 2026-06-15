@@ -22,6 +22,26 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # ---------------------------------------------------------------------------
 # Inputs
 # ---------------------------------------------------------------------------
+class GDCSource(BaseModel):
+    """Auto-download spec for a real TCGA cohort from NIH/GDC.
+
+    When set on :class:`InputsConfig` and the ``counts``/``design`` files are
+    absent, ``bindsight discover`` fetches the cohort (STAR - Counts) from the
+    GDC open-access API and writes the files before running DESeq2.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    project: str = Field(..., description="GDC project id, e.g. 'TCGA-BRCA'.")
+    n_tumor: int = Field(20, ge=2, description="Number of Primary Tumor samples to fetch.")
+    n_normal: int = Field(20, ge=2, description="Number of Solid Tissue Normal samples to fetch.")
+    gene_types: list[str] = Field(
+        default_factory=lambda: ["protein_coding"],
+        description="Gene biotypes to keep ([] keeps all). Protein-coding covers the "
+        "surface-antigen targets and keeps DESeq2 tractable.",
+    )
+
+
 class InputsConfig(BaseModel):
     """Input file paths."""
 
@@ -36,6 +56,11 @@ class InputsConfig(BaseModel):
         ...,
         description="Path to the sample design TSV. Rows are samples, columns include "
         "at least the factors named in ``params.deg.design_formula``.",
+    )
+    download: GDCSource | None = Field(
+        None,
+        description="Optional: auto-download a real TCGA cohort from GDC when the "
+        "counts/design files are missing.",
     )
 
 

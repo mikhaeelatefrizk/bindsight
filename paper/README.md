@@ -9,7 +9,7 @@ paper/
 ├── paper.bib          ← BibTeX bibliography (for JOSS)
 └── biorxiv/
     ├── manuscript.tex ← Full bioRxiv preprint (LaTeX)
-    ├── manuscript.pdf ← Compiled (7 pages, 322 KB) — ready for direct upload
+    ├── manuscript.pdf ← Compiled (7 pages, 328 KB) — ready for direct upload
     └── references.bib ← BibTeX bibliography (same content + a few extras)
 ```
 
@@ -159,7 +159,8 @@ For v0.1.0, **JOSS + bioRxiv** is the right combination.
      journal: bioRxiv
      year: 2026
    ```
-3. **Tweet/LinkedIn/BlueSky announcement** — drafts in `announcement/`.
+3. **Announce the preprint** through the usual channels (lab page, mailing
+   lists, social media) once the DOI is live.
 
 ---
 
@@ -172,11 +173,13 @@ To stay honest:
   (ColabDesign, dl_binder_design); the author has not personally smoke-
   tested them on a real GPU. The papers describe the design and explicitly
   flag this in the Discussion as the limitation that v0.2 will close.
-- **No TCGA validation.** The planned v0.2 manuscript will demonstrate
-  rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA cohorts plus a
-  three-way designer benchmark. v0.1.0 only reports the synthetic 10-gene
-  rediscovery as a sanity-check demo (with verbatim CLI output, not
-  fabricated numbers).
+- **Rediscovery validation: done (discovery half).** A companion report
+  (`paper/validation/manuscript.md`, artifacts in `benchmarks/validation/`)
+  runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
+  is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified), with
+  confirmed specificity (EGFR/CEA correctly not surfaced). The three-way
+  *designer* benchmark is GPU-only; a runnable, CPU-tested harness + protocol
+  ship in `benchmarks/designer_benchmark/`, pending a GPU run.
 - **No claims of experimental validation.** Wet-lab work is out of scope
   and would require a separate paper with real biochemistry data.
 

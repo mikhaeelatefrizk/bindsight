@@ -1,15 +1,15 @@
 # bindsight — Snakemake DAG
 # ============================================================================
-# This Snakefile is the source of truth for pipeline execution. The Click CLI
-# (`bindsight discover` etc.) is a thin wrapper that calls Snakemake with
-# `--until <rule>` and a config that this file consumes.
+# A Snakemake front-end over the same bindsight pipeline functions the Click
+# CLI uses (each rule's script calls into `bindsight.*`), so `snakemake` and the
+# `bindsight` CLI are two equivalent ways to run the pipeline end-to-end:
+# discover -> design -> validate -> rank -> report (+ provenance manifest).
 #
-# Usage:
+# Usage (needs a headless backend for the GPU stages — mock/modal/local_docker/
+# kaggle; use the CLI's `--backend colab` for interactive Colab runs):
 #   snakemake --configfile examples/tcga_luad.yaml --cores 4 --use-conda
+#   snakemake --configfile examples/demo/config.yaml --config backend=mock --cores 4
 #   snakemake --configfile examples/tcga_luad.yaml --until discover --cores 4
-#
-# v0.0.x scope: only the `discover` rule is wired up. Design / validate /
-# rank / report rules ship as stubs.
 # ============================================================================
 
 import os
@@ -36,6 +36,7 @@ ENV_REPORT   = "envs/report.yaml"     # v0.1
 rule all:
     input:
         OUT / "report.html",
+        OUT / "run_manifest.jsonld",
 
 # ---------------------------------------------------------------------------
 # Discovery half (CPU only)
@@ -75,7 +76,7 @@ rule discover:
 
 
 # ---------------------------------------------------------------------------
-# Design half (GPU offloaded). Stubs in v0.0.x.
+# Design half (GPU; dispatched to the selected runner backend).
 # ---------------------------------------------------------------------------
 rule design:
     input:

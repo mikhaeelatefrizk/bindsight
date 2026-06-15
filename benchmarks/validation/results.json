@@ -1,0 +1,298 @@
+{
+  "schema": "bindsight-validation/1",
+  "generated_utc": "2026-06-15T01:17:07+00:00",
+  "bindsight_version": "0.1.0",
+  "cbioportal_study": "brca_tcga_pan_can_atlas_2018",
+  "known_set": "benchmarks/known.tsv",
+  "ks": [
+    5,
+    10,
+    20
+  ],
+  "overexpression_rule": "FDR<0.05 and log2fc>=1.0",
+  "recall_at_k": {
+    "recall@5": 0.3333,
+    "recall@10": 0.3333,
+    "recall@20": 0.3333
+  },
+  "specificity": {
+    "n": 2,
+    "correctly_excluded": 2,
+    "fraction": 1.0,
+    "k": 20
+  },
+  "cohorts": [
+    {
+      "cohort": {
+        "key": "brca_her2",
+        "label": "BRCA HER2-enriched",
+        "project": "TCGA-BRCA",
+        "expected_symbol": "ERBB2",
+        "expected_uniprot": "P04626",
+        "expected_ensembl": "ENSG00000141736",
+        "subtype": "BRCA_Her2",
+        "n_tumor": 50,
+        "n_normal": 40,
+        "expectation": "positive",
+        "note": "PAM50 HER2-enriched tumors are ERBB2-amplified, so ERBB2 mRNA is high."
+      },
+      "n_tumor": 50,
+      "n_normal": 40,
+      "n_candidates": 27,
+      "deg": {
+        "n_genes_tested": 17471,
+        "n_significant": 6087
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": 4.363304469431895,
+        "padj": 1.6950382025881024e-59,
+        "significant": true
+      },
+      "expected": {
+        "symbol": "ERBB2",
+        "uniprot": "P04626",
+        "tumor_type": "BRCA",
+        "found": true,
+        "rank": 4,
+        "log2fc": 4.363304469431895,
+        "padj": 1.6950382025881024e-59,
+        "in_top_5": true,
+        "in_top_10": true,
+        "in_top_20": true
+      },
+      "category": "over_expressed",
+      "run_dir": "runs/validation/brca_her2",
+      "gdc_provenance": {}
+    },
+    {
+      "cohort": {
+        "key": "coad",
+        "label": "COAD",
+        "project": "TCGA-COAD",
+        "expected_symbol": "CEACAM5",
+        "expected_uniprot": "P06731",
+        "expected_ensembl": "ENSG00000105388",
+        "subtype": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "expectation": "positive",
+        "note": "CEA (target of tusamitamab ravtansine / labetuzumab govitecan) is a classic colorectal marker, but it is also abundantly expressed in normal colon epithelium, so the bulk tumor-vs-adjacent-normal fold-change is ~0."
+      },
+      "n_tumor": 50,
+      "n_normal": 40,
+      "n_candidates": 46,
+      "deg": {
+        "n_genes_tested": 16987,
+        "n_significant": 5158
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": -0.30788902687272024,
+        "padj": 0.18558835736134172,
+        "significant": false
+      },
+      "expected": {
+        "symbol": "CEACAM5",
+        "uniprot": "P06731",
+        "tumor_type": "COAD",
+        "found": false,
+        "rank": null,
+        "log2fc": null,
+        "padj": null,
+        "in_top_5": false,
+        "in_top_10": false,
+        "in_top_20": false
+      },
+      "category": "not_over_expressed",
+      "run_dir": "runs/validation/coad",
+      "gdc_provenance": {}
+    },
+    {
+      "cohort": {
+        "key": "blca",
+        "label": "BLCA",
+        "project": "TCGA-BLCA",
+        "expected_symbol": "NECTIN4",
+        "expected_uniprot": "Q96NY8",
+        "expected_ensembl": "ENSG00000143217",
+        "subtype": null,
+        "n_tumor": 50,
+        "n_normal": 19,
+        "expectation": "positive",
+        "note": "Nectin-4 (target of enfortumab vedotin, Padcev) is elevated in urothelial carcinoma, but only modestly at the bulk-mRNA level (log2fc ~1.6), below the discovery shortlist."
+      },
+      "n_tumor": 50,
+      "n_normal": 19,
+      "n_candidates": 26,
+      "deg": {
+        "n_genes_tested": 17289,
+        "n_significant": 4409
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": 1.592878427550153,
+        "padj": 0.003936171214340757,
+        "significant": true
+      },
+      "expected": {
+        "symbol": "NECTIN4",
+        "uniprot": "Q96NY8",
+        "tumor_type": "BLCA",
+        "found": false,
+        "rank": null,
+        "log2fc": null,
+        "padj": null,
+        "in_top_5": false,
+        "in_top_10": false,
+        "in_top_20": false
+      },
+      "category": "over_expressed",
+      "run_dir": "runs/validation/blca",
+      "gdc_provenance": {}
+    },
+    {
+      "cohort": {
+        "key": "luad",
+        "label": "LUAD (EGFR negative control)",
+        "project": "TCGA-LUAD",
+        "expected_symbol": "EGFR",
+        "expected_uniprot": "P00533",
+        "expected_ensembl": "ENSG00000146648",
+        "subtype": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "expectation": "negative_control",
+        "note": "EGFR drives LUAD via mutation/amplification, not bulk mRNA over-expression, so a specificity-respecting pipeline should NOT surface it on expression alone."
+      },
+      "n_tumor": 50,
+      "n_normal": 40,
+      "n_candidates": 33,
+      "deg": {
+        "n_genes_tested": 17488,
+        "n_significant": 4912
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": 0.41933868385342293,
+        "padj": 0.13245855665111786,
+        "significant": false
+      },
+      "expected": {
+        "symbol": "EGFR",
+        "uniprot": "P00533",
+        "tumor_type": "LUAD",
+        "found": false,
+        "rank": null,
+        "log2fc": null,
+        "padj": null,
+        "in_top_5": false,
+        "in_top_10": false,
+        "in_top_20": false
+      },
+      "category": "not_over_expressed",
+      "run_dir": "runs/validation/luad",
+      "gdc_provenance": {}
+    },
+    {
+      "cohort": {
+        "key": "paad",
+        "label": "PAAD (MSLN, limited)",
+        "project": "TCGA-PAAD",
+        "expected_symbol": "MSLN",
+        "expected_uniprot": "Q13421",
+        "expected_ensembl": "ENSG00000102854",
+        "subtype": null,
+        "n_tumor": 50,
+        "n_normal": 4,
+        "expectation": "limited",
+        "note": "Mesothelin is over-expressed in PDAC, but TCGA-PAAD ships only 4 matched normals, so the contrast is underpowered (reported for transparency)."
+      },
+      "n_tumor": 50,
+      "n_normal": 4,
+      "n_candidates": 62,
+      "deg": {
+        "n_genes_tested": 17203,
+        "n_significant": 604
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": 2.3080859358592374,
+        "padj": 0.13138514952817248,
+        "significant": false
+      },
+      "expected": {
+        "symbol": "MSLN",
+        "uniprot": "Q13421",
+        "tumor_type": "PAAD",
+        "found": false,
+        "rank": null,
+        "log2fc": null,
+        "padj": null,
+        "in_top_5": false,
+        "in_top_10": false,
+        "in_top_20": false
+      },
+      "category": "underpowered",
+      "run_dir": "runs/validation/paad",
+      "gdc_provenance": {}
+    },
+    {
+      "cohort": {
+        "key": "prad",
+        "label": "PRAD (FOLH1, limited)",
+        "project": "TCGA-PRAD",
+        "expected_symbol": "FOLH1",
+        "expected_uniprot": "Q04609",
+        "expected_ensembl": "ENSG00000086205",
+        "subtype": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "expectation": "limited",
+        "note": "PSMA (FOLH1) is highly expressed but also abundant in normal prostate, so the tumor-vs-normal fold-change is modest (reported for transparency)."
+      },
+      "n_tumor": 50,
+      "n_normal": 40,
+      "n_candidates": 49,
+      "deg": {
+        "n_genes_tested": 17231,
+        "n_significant": 2763
+      },
+      "deg_expected": {
+        "tested": true,
+        "log2fc": 1.3234579589780577,
+        "padj": 0.00033745976377097514,
+        "significant": true
+      },
+      "expected": {
+        "symbol": "FOLH1",
+        "uniprot": "Q04609",
+        "tumor_type": "PRAD",
+        "found": false,
+        "rank": null,
+        "log2fc": null,
+        "padj": null,
+        "in_top_5": false,
+        "in_top_10": false,
+        "in_top_20": false
+      },
+      "category": "over_expressed",
+      "run_dir": "runs/validation/prad",
+      "gdc_provenance": {}
+    }
+  ],
+  "data_limited": [
+    {
+      "symbol": "CLDN6",
+      "uniprot": "P56747",
+      "project": "TCGA-OV",
+      "reason": "TCGA-OV ships 0 solid-tissue-normal RNA-seq samples; a clean tumor-vs-normal contrast is impossible without an external (GTEx) normal, which would introduce a cross-study batch confound."
+    },
+    {
+      "symbol": "CD33 / IL3RA (CD123)",
+      "uniprot": "P20138 / P26951",
+      "project": "TCGA-LAML",
+      "reason": "TCGA-LAML ships 0 solid-tissue-normal samples; an AML-vs-normal contrast needs a normal haematopoietic reference (e.g. GTEx whole blood / normal bone marrow), again a cross-study batch confound."
+    }
+  ]
+}

@@ -39,6 +39,8 @@ class TestRFdiffMPNNDesigner:
         assert "rfdiff_commit" in spec.extra_params
 
     def test_cache_key_is_deterministic(self, tmp_path: Path) -> None:
+        from bindsight.design._common import make_cache_key
+
         struct = tmp_path / "P04626.cif"
         struct.write_text("# fake\n")
         d = RFdiffMPNNDesigner()
@@ -57,9 +59,11 @@ class TestRFdiffMPNNDesigner:
             seed=42,
         )
         # Same epitope residues (order-independent) => same cache key.
-        assert RFdiffMPNNDesigner._cache_key(spec_a) == RFdiffMPNNDesigner._cache_key(spec_b)
+        assert make_cache_key(spec_a) == make_cache_key(spec_b)
 
     def test_cache_key_changes_with_seed(self, tmp_path: Path) -> None:
+        from bindsight.design._common import make_cache_key
+
         struct = tmp_path / "P04626.cif"
         struct.write_text("# fake\n")
         d = RFdiffMPNNDesigner()
@@ -77,7 +81,7 @@ class TestRFdiffMPNNDesigner:
             n_trajectories=1,
             seed=43,
         )
-        assert RFdiffMPNNDesigner._cache_key(a) != RFdiffMPNNDesigner._cache_key(b)
+        assert make_cache_key(a) != make_cache_key(b)
 
     def test_submit_with_mock_runner_round_trip(self, tmp_path: Path, monkeypatch) -> None:
         """End-to-end: spec → mock runner → DesignResult, cache key intact."""
@@ -99,30 +103,29 @@ class TestRFdiffMPNNDesigner:
         assert Path(result.results_archive_path).exists()
 
 
-class TestStubDesigners:
-    def test_bindcraft_submit_raises(self, tmp_path: Path) -> None:
-        struct = tmp_path / "P04626.cif"
-        struct.write_text("# fake\n")
-        d = BindCraftDesigner()
-        spec = d.make_spec(
-            target_uniprot="P04626",
-            target_structure_path=struct,
-            epitope_residues=[1],
-        )
-        with pytest.raises(NotImplementedError, match=r"v0\.1\.0-rc2"):
-            d.submit(spec, MockRunner())
+class TestAltDesigners:
+    """BindCraft + BoltzGen are real designers (submit via a runner, no stubs)."""
 
-    def test_boltzgen_submit_raises(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(
+        ("cls", "name"),
+        [(BindCraftDesigner, "bindcraft"), (BoltzGenDesigner, "boltzgen")],
+    )
+    def test_submit_round_trip(self, cls, name, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.chdir(tmp_path)
         struct = tmp_path / "P04626.cif"
         struct.write_text("# fake\n")
-        d = BoltzGenDesigner()
+        d = cls()
         spec = d.make_spec(
             target_uniprot="P04626",
             target_structure_path=struct,
-            epitope_residues=[1],
+            epitope_residues=[1, 2, 3],
+            n_trajectories=1,
         )
-        with pytest.raises(NotImplementedError, match=r"v0\.1\.0-rc2"):
-            d.submit(spec, MockRunner())
+        assert spec.extra_params["designer"] == name
+        result = d.submit(spec, MockRunner())
+        assert result.designer_name == name
+        assert result.cache_key
+        assert Path(result.results_archive_path).exists()
 
 
 # ---------------------------------------------------------------------------
@@ -166,15 +169,19 @@ class TestValidators:
         assert result.affinity_probability_binary == pytest.approx(0.91)
         assert result.validator_name == "boltz2"
 
-    def test_chai1r_returns_stub_result(self) -> None:
+    def test_chai1r_raises_when_no_output_dir(self, tmp_path, monkeypatch) -> None:
+        """Chai-1r parses pre-computed output; raises if missing (no stub result)."""
+        from bindsight.validate.boltz2 import MissingValidationError
+
+        monkeypatch.chdir(tmp_path)
         v = Chai1rValidator()
-        result = v.validate(
-            target_uniprot="P04626",
-            binder_id="design_0",
-            binder_sequence="ACDEFGHIKLMN",
-            target_structure_path="/tmp/fake.cif",
-        )
-        assert result.validator_name == "chai1r"
+        with pytest.raises(MissingValidationError):
+            v.validate(
+                target_uniprot="P04626",
+                binder_id="design_0",
+                binder_sequence="ACDEFGHIKLMN",
+                target_structure_path="/tmp/fake.cif",
+            )
 
     def test_af2_ig_license_notice_warns(self) -> None:
         v = AF2IGValidator()
