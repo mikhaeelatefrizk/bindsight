@@ -108,8 +108,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mikhaeelatefrizk/bindsight"
-Documentation = "https://github.com/mikhaeelatefrizk/bindsight#readme"
+Homepage = "https://mikhaeelatefrizk.github.io/bindsight/"
+Documentation = "https://mikhaeelatefrizk.github.io/bindsight/"
 Repository = "https://github.com/mikhaeelatefrizk/bindsight"
 Issues = "https://github.com/mikhaeelatefrizk/bindsight/issues"
 Changelog = "https://github.com/mikhaeelatefrizk/bindsight/blob/main/CHANGELOG.md"

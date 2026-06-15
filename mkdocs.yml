@@ -32,8 +32,6 @@ nav:
   - How to use: how-to-use.md
   - Use cases: use-cases.md
   - Designing on Colab: colab-design-howto.md
-  - Deploy on Hugging Face: hf-spaces-deploy.md
-  - Keeping the demo warm: keeping-the-demo-warm.md
   - Positioning: positioning.md
 
 markdown_extensions:

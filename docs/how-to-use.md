@@ -200,7 +200,7 @@ The GPU work runs in `bindsight.runners.job_exec` on the backend you pick:
 | `kaggle` | Free (T4×2, quota) | Headless via the Kaggle API |
 | `modal` | ~$0.6–4/GPU-hr | Headless cloud GPUs, no queue |
 | `local_docker` | Your hardware | A local NVIDIA GPU (native or Docker) |
-| `mock` | Free, instant | CI / testing (synthetic results) |
+| `mock` | Free, instant | CI / testing (mock results only) |
 
 Designers: `rfdiff_mpnn` (default), `bindcraft`, `boltzgen`. Validators:
 `boltz2` (default), `chai1r`, `af2_ig` (non-commercial AF2 weights — a banner is
