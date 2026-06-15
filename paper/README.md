@@ -9,7 +9,7 @@ paper/
 ├── paper.bib          ← BibTeX bibliography (for JOSS)
 └── biorxiv/
     ├── manuscript.tex ← Full bioRxiv preprint (LaTeX)
-    ├── manuscript.pdf ← Compiled (7 pages, 322 KB) — ready for direct upload
+    ├── manuscript.pdf ← Compiled (7 pages, 328 KB) — ready for direct upload
     └── references.bib ← BibTeX bibliography (same content + a few extras)
 ```
 
