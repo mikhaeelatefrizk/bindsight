@@ -1,11 +1,10 @@
 # Example bindsight config: TCGA-LUAD (lung adenocarcinoma) primary tumor vs.
-# matched solid normal. Sourced from recount3 (counts already aligned and
-# uniformly processed).
+# adjacent solid normal, from NIH/GDC (STAR - Counts).
 #
-# This is the v0.1 canonical example — used in CI and in the rediscovery
-# validation paper. The expected output is a ranked list of binder candidates
-# against tumor-specific surface antigens, with EGFR (a known LUAD target)
-# expected to appear in the top 10.
+# Canonical full-pipeline example. On first run, `bindsight discover` (or
+# `bindsight run`) auto-downloads the cohort from the GDC open-access API into
+# the cache below (then it's offline). EGFR — a known LUAD target — is expected
+# among the differentially-expressed surface antigens.
 
 name: tcga_luad_v01
 out_dir: runs/tcga_luad_v01
@@ -14,12 +13,14 @@ out_dir: runs/tcga_luad_v01
 # Inputs
 # ---------------------------------------------------------------------------
 inputs:
-  # Counts matrix: gene × sample, integer counts. Will be downloaded from
-  # recount3 by `bindsight discover` if the path doesn't exist locally.
-  counts: data/recount3_cache/tcga_luad/counts.tsv.gz
-  # Sample design: one row per sample with at minimum a ``condition`` column
-  # encoding tumor vs. normal.
-  design: data/recount3_cache/tcga_luad/design.tsv
+  # Auto-downloaded from NIH/GDC if absent (see bindsight/io/gdc.py); cached here.
+  counts: data/gdc_cache/tcga_luad/counts.tsv.gz
+  design: data/gdc_cache/tcga_luad/design.tsv
+  download:
+    project: TCGA-LUAD
+    n_tumor: 40
+    n_normal: 40
+    gene_types: ["protein_coding"]
 
 # ---------------------------------------------------------------------------
 # Stage parameters
@@ -33,11 +34,11 @@ params:
     min_replicates: 3
 
   target_discovery:
-    # Surfaceome filter
+    # Surfaceome filter (the full SURFY list auto-populates on first use).
     require_surfy: true
-    surfy_allow_offline_fallback: false  # In production, fail fast if SURFY isn't cached
+    surfy_allow_offline_fallback: false  # production: fail fast if SURFY can't be fetched
 
-    # Specificity filter (low expression in vital tissues)
+    # Specificity baseline (vital-tissue expression).
     vital_tissues:
       - heart_left_ventricle
       - brain_cortex
@@ -45,16 +46,16 @@ params:
       - lung
     vital_tissue_max_tpm: 5.0
 
-    # Pull tractability + safety from Open Targets
+    # Tractability + safety from Open Targets.
     use_open_targets: true
-    require_tractable_modality: ["Antibody"]    # Filter to antibody-tractable
+    require_tractable_modality: ["Antibody"]
     max_safety_events: 5
 
-    # SURFACE-Bind site lookup
-    require_surface_bind_site: true
-    min_surface_bind_score: 0.5
+    # SURFACE-Bind targetable-site filtering is a roadmap item; until then the
+    # design step targets the whole surface, so leave this off.
+    require_surface_bind_site: false
 
-    # Top-N targets carried forward to design
+    # Top-N targets carried forward to design.
     top_n: 5
 
   design:
@@ -79,5 +80,5 @@ params:
 # ---------------------------------------------------------------------------
 # Runtime
 # ---------------------------------------------------------------------------
-backend: colab          # colab | modal | kaggle | local_docker | mock
-cheap_profile: false    # If true, drops to T4 / 10 trajectories / ESM-2 pre-screen
+backend: modal          # GPU backend: colab | modal | kaggle | local_docker | mock
+cheap_profile: false    # If true, drops to T4 / fewer trajectories

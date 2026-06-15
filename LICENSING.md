@@ -2,7 +2,7 @@
 
 > **Read this before any commercial use.** `bindsight` itself is MIT, but it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
 >
-> Last reviewed: 2026-05-09. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
+> Last reviewed: 2026-06-15 — upstream code `LICENSE` files re-verified on this date for every GitHub-hosted component (designers, validators, surfaceome, viewers, workflow tooling); all match the table below. Model-weights and data-source terms (AF2/RFdiffusion weights, TCGA/GTEx/Open Targets/HPA/SURFY/AlphaFoldDB/RCSB) are unchanged from the prior review. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
 ---
 
@@ -87,7 +87,7 @@ Everything is fine. Use whatever you want. Cite all upstream tools (the per-run 
 ### Industry / commercial users
 - **Default config** is commercially safe.
 - **Opt-in** components carry banners. Read them.
-- Use the `bindsight verify-licenses` command (planned for v0.1) to audit a specific run config and flag any non-commercial components.
+- Use the `bindsight verify-licenses` command (available since v0.1) to audit a specific run config and flag any non-commercial components.
 
 ### Pharma / IND filings
 - Treat `bindsight` as an in-silico discovery aid, not a regulated tool.

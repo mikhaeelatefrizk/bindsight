@@ -1,23 +1,26 @@
 """bindsight command-line interface.
 
-The CLI is a thin Click wrapper around the Snakemake DAG. Subcommands map to
-``snakemake --until <rule>`` calls so users get nice ergonomics
-(``bindsight discover ...``) while the actual orchestration stays in
-``Snakefile``.
+A Click app exposing the pipeline stages as subcommands: ``discover`` (CPU
+genomics → target shortlist), ``design`` / ``validate`` (GPU binder design +
+structure/affinity prediction, dispatched to a runner backend), ``rank``,
+``report``, ``export``, ``benchmark`` (rediscovery scoring against the held-out
+known-antigen set), plus ``run`` (full pipeline), ``demo``, ``ui``, ``doctor``
+and ``verify-licenses``.
 
-Most commands are stubs in v0.0.x — they print the planned action and exit
-with code 2 (not implemented) so callers can detect that we haven't run a real
-pipeline. The exceptions are :func:`version` and :func:`verify_licenses`,
-which are pure-Python and work today.
+GPU stages require a CUDA backend (``--backend modal|local_docker|kaggle`` for
+headless execution, or ``--backend colab`` to generate a notebook). The CPU
+stages run anywhere; ``--backend mock`` exercises the full chain in CI.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkg_version
 from pathlib import Path
+from typing import Any
 
 import click
 from rich.console import Console
@@ -50,6 +53,8 @@ def _force_utf8_io() -> None:
 
 _force_utf8_io()
 
+LOG_CLI = logging.getLogger(__name__)
+
 # Rich console; legacy-windows mode off so box-drawing chars work after the
 # UTF-8 reconfigure above.
 console = Console(force_terminal=True, legacy_windows=False, soft_wrap=False)
@@ -62,23 +67,6 @@ def _setup_logging(verbose: bool) -> None:
         datefmt="[%X]",
         handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)],
     )
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _not_implemented(stage: str) -> None:
-    """Print a stage-not-yet-implemented banner and exit with code 2."""
-    console.print(
-        Panel(
-            f"[bold yellow]{stage}[/bold yellow] is not implemented in this dev build "
-            f"(bindsight {__version__}).\n\n"
-            "Track progress at https://github.com/mikhaeelatefrizk/bindsight/blob/main/CHANGELOG.md",
-            title="Not implemented yet",
-            border_style="yellow",
-        )
-    )
-    sys.exit(2)
 
 
 # ---------------------------------------------------------------------------
@@ -128,7 +116,8 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
 
     Runs the discovery half of the pipeline (CPU only):
     DEG → surfaceome filter → Open Targets enrichment → AlphaFoldDB pull.
-    SURFACE-Bind site lookup is wired in v0.0.3.
+    (SURFACE-Bind targetable-site prediction is a roadmap item; until then the
+    design step targets the whole surface.)
     """
     _setup_logging(verbose)
     from bindsight.config import RunConfig
@@ -189,6 +178,13 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
     show_default=True,
 )
 @click.option(
+    "--validator",
+    type=click.Choice(["boltz2", "chai1r", "af2_ig"]),
+    default="boltz2",
+    show_default=True,
+    help="Validator run on each design (structure + affinity prediction).",
+)
+@click.option(
     "--trajectories",
     type=int,
     default=50,
@@ -204,32 +200,33 @@ def design(
     run_dir: Path,
     backend: str,
     designer: str,
+    validator: str,
     trajectories: int,
     dry_run: bool,
 ) -> None:
-    """Generate de novo binder backbones + sequences (offloaded to GPU).
+    """Generate de novo binder backbones + sequences (offloaded to a GPU runner).
 
-    With --dry-run, prints a per-target cost estimate without launching anything.
-    Without --dry-run, the actual launch lands in v0.1.0-rc2 alongside the
-    runner integrations; v0.0.x prints the plan and exits.
+    With ``--dry-run``, prints a per-target cost estimate without launching.
+    Otherwise: ``--backend colab`` writes a ready-to-run notebook per target;
+    the headless backends (``modal``/``local_docker``/``kaggle``/``mock``)
+    execute the design+validation job and pull results back into ``<run>/design``.
     """
     from bindsight.cost import estimate_full_run
 
-    # Try to read the per-run epitopes table to count targets accurately.
     epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
     n_targets = _count_top_targets(epitopes_parquet)
 
     console.print(f"[dim]run-dir:[/dim] {run_dir}")
     console.print(f"[dim]backend:[/dim] {backend}")
     console.print(f"[dim]designer:[/dim] {designer}")
+    console.print(f"[dim]validator:[/dim] {validator}")
     console.print(f"[dim]trajectories:[/dim] {trajectories}")
     console.print(f"[dim]targets:[/dim] {n_targets}")
 
-    # Cost estimate works today regardless of --dry-run.
     d_cost, _v_cost, _c_cost = estimate_full_run(
         backend=backend,
         designer=designer,
-        validator="boltz2",
+        validator=validator,
         n_targets=n_targets,
         n_trajectories=trajectories,
     )
@@ -238,15 +235,49 @@ def design(
     if dry_run:
         console.print(
             Panel(
-                "[green]--dry-run:[/green] no jobs launched. "
-                "Drop --dry-run to launch (live submit lands in v0.1.0-rc2).",
+                "[green]--dry-run:[/green] no jobs launched. Drop --dry-run to run.",
                 title="Dry run",
                 border_style="green",
             )
         )
         return
 
-    _not_implemented("design (live submit)")
+    if backend == "colab":
+        n = _write_design_notebooks(run_dir, designer=designer, trajectories=trajectories)
+        console.print(
+            Panel(
+                f"[green]Wrote {n} Colab notebook(s)[/green] to {run_dir / 'design'}.\n"
+                "Open each in Colab (GPU runtime), Run all, download the results "
+                "tarball into <run>/design/, then run [bold]bindsight validate[/bold].",
+                title="design: notebooks ready",
+                border_style="green",
+            )
+        )
+        return
+
+    launched = _launch_design(
+        run_dir, backend=backend, designer=designer, validator=validator, trajectories=trajectories
+    )
+    if launched == 0:
+        console.print(
+            Panel(
+                "[yellow]No targets with a structure to design against.[/yellow] "
+                "Run [bold]bindsight discover[/bold] first (and ensure AlphaFold "
+                "structures were fetched).",
+                title="design: nothing to do",
+                border_style="yellow",
+            )
+        )
+        sys.exit(2)
+    console.print(
+        Panel(
+            f"[green]Design complete for {launched} target(s).[/green]\n"
+            f"Results: {run_dir / 'design'}\n"
+            f"Next: [bold]bindsight validate {run_dir}[/bold]",
+            title="bindsight design",
+            border_style="green",
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -283,22 +314,21 @@ def validate(run_dir: Path, backend: str, validator: str) -> None:
             )
         )
 
-    # Best-effort: count designs to validate from a design results manifest;
-    # fall back to an estimate.
     design_dir = run_dir / "design"
     n_designs = _count_designs(design_dir)
     cost = estimate(backend=backend, stage="validate", plugin=validator, n_units=n_designs)
     _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
 
-    # The actual validation runs in the GPU notebook (Colab/Modal). Once the
-    # user pulls the validated.parquet back into <run_dir>/validate/, the
-    # `bindsight rank` and `bindsight report` commands consume it.
+    # The design step (headless backends) runs design + validation together via
+    # the executor, writing per-design metrics into the design tarballs. Here we
+    # materialise those into validate/validated.parquet (+ per-binder dirs).
+    n = _finalize_validate(run_dir)
     validated = run_dir / "validate" / "validated.parquet"
-    if validated.exists():
+    if n > 0:
         console.print(
             Panel(
-                f"[green]Validation output already present:[/green] {validated}\n"
-                "Next: [bold]bindsight rank " + str(run_dir) + "[/bold]",
+                f"[green]Validated {n} design(s).[/green]\n"
+                f"Output: {validated}\nNext: [bold]bindsight rank {run_dir}[/bold]",
                 title="validate: ready",
                 border_style="green",
             )
@@ -307,13 +337,10 @@ def validate(run_dir: Path, backend: str, validator: str) -> None:
 
     console.print(
         Panel(
-            "Validation runs on a GPU. Two paths:\n\n"
-            "  1. [bold]Colab[/bold] — open the notebook bindsight wrote during "
-            "[bold]bindsight design[/bold] (`<run>/design/<id>.ipynb`); the "
-            "validation cells are included.\n"
-            "  2. [bold]docs/colab-design-howto.md[/bold] — manual recipe.\n\n"
-            "Drop the resulting validated.parquet into <run>/validate/ when done, "
-            "then re-run this command.",
+            "No design results to validate yet. Run [bold]bindsight design[/bold] on a\n"
+            "headless backend (modal/local_docker/kaggle), or for --backend colab open the\n"
+            "generated notebook (GPU), download the results tarball into <run>/design/,\n"
+            "then re-run this command. See docs/colab-design-howto.md.",
             title="validate: GPU step pending",
             border_style="cyan",
         )
@@ -355,7 +382,7 @@ def rank(run_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# report — Quarto / Streamlit
+# report — self-contained HTML / Streamlit
 # ---------------------------------------------------------------------------
 @main.command()
 @click.argument(
@@ -538,6 +565,79 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# benchmark — score rediscovery of held-out known antigens across runs
+# ---------------------------------------------------------------------------
+@main.command()
+@click.argument(
+    "run_dirs",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--known-antigens",
+    "known_antigens",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=Path("benchmarks/known.tsv"),
+    show_default=True,
+    help="TSV of held-out known antigens (symbol, uniprot, tumor_type, ...).",
+)
+@click.option(
+    "--out",
+    "out_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=Path("benchmark_report.html"),
+    show_default=True,
+    help="Where to write the HTML benchmark report.",
+)
+@click.option(
+    "--k",
+    "ks",
+    multiple=True,
+    type=int,
+    help="Top-k cutoffs for recall@k (repeatable). Default: 5, 10, 20.",
+)
+def benchmark(
+    run_dirs: tuple[Path, ...],
+    known_antigens: Path,
+    out_path: Path,
+    ks: tuple[int, ...],
+) -> None:
+    """Benchmark how well runs rediscover the held-out known antigens.
+
+    Scores each RUN_DIR (a finished ``bindsight discover``/``run`` output) by the
+    rank of every known antigen in its candidate shortlist, computes recall@k,
+    and renders a side-by-side HTML report. The known set ships in
+    ``benchmarks/known.tsv`` (see ``benchmarks/PROVENANCE.md``).
+    """
+    from bindsight.benchmark import run_benchmark
+
+    cutoffs = tuple(ks) if ks else (5, 10, 20)
+    out, scores = run_benchmark(list(run_dirs), known_antigens, out_html=out_path, ks=cutoffs)
+
+    table = Table(title="rediscovery benchmark", show_lines=False, title_style="bold")
+    table.add_column("run", style="cyan", no_wrap=True)
+    table.add_column("found")
+    for k in cutoffs:
+        table.add_column(f"recall@{k}")
+    for s in scores:
+        table.add_row(
+            s.run_name,
+            f"{s.n_found}/{s.n_known}",
+            *[f"{s.recall_at[k]:.0%}" for k in cutoffs],
+        )
+    console.print(table)
+    console.print(
+        Panel(
+            f"[green]Benchmark written.[/green]\n[bold]Report:[/bold] {out}\n"
+            f"Known set: {known_antigens}",
+            title="bindsight benchmark",
+            border_style="green",
+        )
+    )
+
+
+# ---------------------------------------------------------------------------
 # ui — launch the local Streamlit web app
 # ---------------------------------------------------------------------------
 @main.command()
@@ -628,43 +728,98 @@ def verify_licenses(config: Path | None) -> None:
     With a config path, audits the components selected by that config and
     flags any non-commercial choices.
     """
-    table = Table(
-        title="bindsight component licenses (default config)",
-        show_lines=False,
-        title_style="bold",
-    )
-    table.add_column("Component", style="cyan", no_wrap=True)
-    table.add_column("License")
-    table.add_column("Commercial?", style="bold")
-    table.add_column("Role")
-
-    rows = [
-        ("bindsight", "MIT", "[green]yes[/green]", "this package"),
-        ("pydeseq2", "MIT", "[green]yes[/green]", "DEG analysis (default)"),
-        ("Open Targets", "CC0 / Apache-2", "[green]yes[/green]", "target evidence"),
-        ("HPA", "CC BY-SA 3.0", "[green]yes[/green]", "tissue baselines"),
-        ("GTEx (v8 public)", "Open", "[green]yes[/green]", "tissue baselines"),
-        ("SURFY", "CC BY", "[green]yes[/green]", "surfaceome filter"),
-        ("SURFACE-Bind", "BSD-3", "[green]yes[/green]", "targetable sites"),
-        ("AlphaFoldDB", "CC BY 4.0", "[green]yes[/green]", "structures"),
-        ("RCSB / PDBe", "CC0 / Open", "[green]yes[/green]", "structures"),
-        ("RFdiffusion", "BSD-3", "[green]yes[/green]", "default backbone designer"),
-        ("ProteinMPNN", "MIT", "[green]yes[/green]", "sequence design"),
-        ("Boltz-2", "MIT (code+weights)", "[green]yes[/green]", "default validator"),
-        ("Chai-1r", "Apache-2", "[green]yes[/green]", "alt validator"),
-        ("BoltzGen", "MIT (code+weights)", "[green]yes[/green]", "alt designer (v0.2)"),
-        ("BindCraft", "MIT", "[green]yes[/green]", "premium designer"),
-        ("Snakemake", "MIT", "[green]yes[/green]", "workflow"),
-        ("AF2-IG (opt-in)", "AF2 weights NC", "[red]no[/red]", "alt validator (banner)"),
+    # Single source of truth: (component, license, commercial?, role).
+    # `commercial` is True when the component is usable in commercial work.
+    components: list[tuple[str, str, bool, str]] = [
+        ("bindsight", "MIT", True, "this package"),
+        ("pydeseq2", "MIT", True, "DEG analysis (default)"),
+        ("Open Targets", "CC0 / Apache-2", True, "target evidence"),
+        ("HPA", "CC BY-SA 3.0", True, "tissue baselines"),
+        ("GTEx (v8 public)", "Open", True, "tissue baselines"),
+        ("SURFY", "CC BY", True, "surfaceome filter"),
+        ("SURFACE-Bind", "BSD-3", True, "targetable sites"),
+        ("AlphaFoldDB", "CC BY 4.0", True, "structures"),
+        ("RCSB / PDBe", "CC0 / Open", True, "structures"),
+        ("RFdiffusion", "BSD-3", True, "default backbone designer"),
+        ("ProteinMPNN", "MIT", True, "sequence design"),
+        ("Boltz-2", "MIT (code+weights)", True, "default validator"),
+        ("Chai-1r", "Apache-2", True, "alt validator"),
+        ("BoltzGen", "MIT (code+weights)", True, "alt designer"),
+        ("BindCraft", "MIT", True, "premium designer"),
+        ("Snakemake", "MIT", True, "workflow"),
+        ("AF2-IG (opt-in)", "AF2 weights NC", False, "alt validator (banner)"),
     ]
-    for r in rows:
-        table.add_row(*r)
-    console.print(table)
+    by_name = {c[0]: c for c in components}
 
-    if config is not None:
-        console.print(f"\n[dim]config audit for {config}:[/dim]")
-        # Real audit lands in v0.1; for now a stub.
-        console.print("[yellow]Per-config audit not yet implemented.[/yellow]")
+    def _commercial_cell(ok: bool) -> str:
+        return "[green]yes[/green]" if ok else "[red]no[/red]"
+
+    def _render(title: str, rows: list[tuple[str, str, bool, str]]) -> None:
+        t = Table(title=title, show_lines=False, title_style="bold")
+        t.add_column("Component", style="cyan", no_wrap=True)
+        t.add_column("License")
+        t.add_column("Commercial?", style="bold")
+        t.add_column("Role")
+        for name, lic, ok, role in rows:
+            t.add_row(name, lic, _commercial_cell(ok), role)
+        console.print(t)
+
+    if config is None:
+        _render("bindsight component licenses (default config)", components)
+    else:
+        from bindsight.config import RunConfig
+
+        cfg = RunConfig.from_yaml(config)
+        designer = cfg.params.design.designer
+        validator = cfg.params.validate_.validator
+        backend = cfg.backend
+
+        # Map the config's plugin choices to the components they pull in.
+        designer_components = {
+            "rfdiff_mpnn": ["RFdiffusion", "ProteinMPNN"],
+            "bindcraft": ["BindCraft"],
+            "boltzgen": ["BoltzGen"],
+        }[designer]
+        validator_components = {
+            "boltz2": ["Boltz-2"],
+            "chai1r": ["Chai-1r"],
+            "af2_ig": ["AF2-IG (opt-in)"],
+        }[validator]
+
+        # Core discovery components are always pulled in, regardless of config.
+        core = [
+            "bindsight",
+            "pydeseq2",
+            "Open Targets",
+            "HPA",
+            "GTEx (v8 public)",
+            "SURFY",
+            "SURFACE-Bind",
+            "AlphaFoldDB",
+            "RCSB / PDBe",
+        ]
+        selected = [by_name[n] for n in core + designer_components + validator_components]
+
+        _render(
+            f"Components selected by {Path(config).name} "
+            f"(designer={designer}, validator={validator}, backend={backend})",
+            selected,
+        )
+
+        nc = [r for r in selected if not r[2]]
+        if nc:
+            names = ", ".join(r[0] for r in nc)
+            console.print(
+                f"\n[red bold]⚠ Non-commercial component(s) selected:[/red bold] {names}.\n"
+                "[yellow]This configuration is NOT cleared for commercial use. Switch the "
+                "offending stage (e.g. validator -> boltz2 or chai1r) for a fully "
+                "commercial-friendly run.[/yellow]"
+            )
+        else:
+            console.print(
+                "\n[green bold]✓ All components selected by this config are "
+                "commercial-friendly.[/green bold]"
+            )
 
     console.print(
         "\n[dim]See LICENSING.md for the full inventory and commercial-use guidance.[/dim]"
@@ -692,6 +847,184 @@ def _count_designs(design_dir: Path) -> int:
         return 250
     pdbs = list(design_dir.rglob("*.pdb"))
     return max(1, len(pdbs)) if pdbs else 250
+
+
+def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
+    """Return top-N targets (uniprot, structure_path, chain, residues) to design."""
+    import pandas as pd
+
+    epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
+    if not epitopes_parquet.exists():
+        return []
+    df = pd.read_parquet(epitopes_parquet)
+    targets: list[dict[str, Any]] = []
+    for _, row in df.iterrows():
+        struct = str(row.get("structure_path") or "")
+        uni = row.get("uniprot_id")
+        if not struct or not uni:
+            continue
+        residues = row.get("residues")
+        residues = list(residues) if residues is not None and len(residues) else []
+        targets.append(
+            {
+                "uniprot": str(uni),
+                "structure_path": struct,
+                "chain": str(row.get("chain") or "A"),
+                "residues": [int(r) for r in residues],
+            }
+        )
+    return targets
+
+
+def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) -> int:
+    """Write one Colab design+validate notebook per top target. Returns count."""
+    from bindsight.plugins import get_designer
+    from bindsight.runners.notebook_content import write_design_notebook
+
+    design_dir = run_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    plugin = get_designer(designer)
+    n = 0
+    for t in _top_targets(run_dir):
+        spec = plugin.make_spec(
+            target_uniprot=t["uniprot"],
+            target_structure_path=Path(t["structure_path"]),
+            epitope_residues=t["residues"],
+            epitope_chain=t["chain"],
+            n_trajectories=trajectories,
+        )
+        spec_dict = spec.model_dump()
+        # Embed the target structure (converted to PDB) so the Colab notebook is
+        # self-contained — RFdiffusion needs PDB; AlphaFold ships mmCIF.
+        b64 = _structure_pdb_b64(Path(t["structure_path"]))
+        if b64:
+            spec_dict["target_structure_b64"] = b64
+            spec_dict.setdefault("extra_params", {})["target_structure_name"] = "target.pdb"
+        handle_id = f"{designer}_{t['uniprot']}"
+        write_design_notebook(
+            design_dir / f"{handle_id}.ipynb",
+            handle_id=handle_id,
+            designer=designer,
+            gpu_type="T4",
+            spec=spec_dict,
+        )
+        n += 1
+    return n
+
+
+def _structure_pdb_b64(structure_path: Path) -> str | None:
+    """Return base64 PDB bytes for a structure (converting mmCIF → PDB)."""
+    import base64
+    import tempfile
+
+    if not structure_path.exists():
+        return None
+    if structure_path.suffix.lower() in {".cif", ".mmcif"}:
+        from bindsight.runners.job_exec import _cif_to_pdb
+
+        tmp = Path(tempfile.mkdtemp()) / "target.pdb"
+        try:
+            _cif_to_pdb(structure_path, tmp)
+            data = tmp.read_bytes()
+        except Exception as e:  # pragma: no cover - biopython parse edge cases
+            LOG_CLI.warning("could not convert %s to PDB: %s", structure_path, e)
+            return None
+        return base64.b64encode(data).decode()
+    return base64.b64encode(structure_path.read_bytes()).decode()
+
+
+def _launch_design(
+    run_dir: Path, *, backend: str, designer: str, validator: str, trajectories: int
+) -> int:
+    """Run design+validation for each top target via a headless runner backend."""
+    import shutil
+
+    from bindsight.plugins import get_designer, get_runner
+
+    targets = _top_targets(run_dir)
+    if not targets:
+        return 0
+    plugin = get_designer(designer)
+    runner = get_runner(backend, designer=designer, n_units_per_target=trajectories)
+    design_dir = run_dir / "design"
+    targets_dir = design_dir / "_targets"
+    targets_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics_lines: list[str] = []
+    launched = 0
+    for t in targets:
+        spec = plugin.make_spec(
+            target_uniprot=t["uniprot"],
+            target_structure_path=Path(t["structure_path"]),
+            epitope_residues=t["residues"],
+            epitope_chain=t["chain"],
+            n_trajectories=trajectories,
+        )
+        spec = spec.model_copy(
+            update={"extra_params": {**spec.extra_params, "validator": validator}}
+        )
+        result = plugin.submit(spec, runner)
+        shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")
+        mpath = Path(result.metrics_jsonl_path)
+        if mpath.exists():
+            metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]
+        launched += 1
+
+    (design_dir / "metrics.jsonl").write_text(
+        "\n".join(metrics_lines) + ("\n" if metrics_lines else "")
+    )
+    # A top-level results.tar.gz marks design completion for `bindsight run`.
+    import tarfile
+
+    with tarfile.open(design_dir / "results.tar.gz", "w:gz") as tf:
+        tf.add(design_dir / "metrics.jsonl", arcname="metrics.jsonl")
+        tf.add(targets_dir, arcname="_targets")
+    return launched
+
+
+def _finalize_validate(run_dir: Path) -> int:
+    """Build validate/validated.parquet from design metrics; unpack per-binder dirs."""
+    import tarfile
+
+    import pandas as pd
+
+    design_dir = run_dir / "design"
+    validate_dir = run_dir / "validate"
+    validate_dir.mkdir(parents=True, exist_ok=True)
+
+    # Unpack each per-target tarball's validate/<binder_id>/ into <run>/validate/.
+    targets_dir = design_dir / "_targets"
+    if targets_dir.exists():
+        for tar_path in targets_dir.glob("*.tar.gz"):
+            try:
+                with tarfile.open(tar_path, "r:gz") as tf:
+                    for m in tf.getmembers():
+                        if m.name.startswith("validate/"):
+                            tf.extract(m, validate_dir.parent, filter="data")
+            except (tarfile.TarError, OSError) as e:
+                LOG_CLI.warning("could not unpack %s: %s", tar_path, e)
+
+    metrics_path = design_dir / "metrics.jsonl"
+    rows = (
+        [json.loads(ln) for ln in metrics_path.read_text().splitlines() if ln.strip()]
+        if metrics_path.exists()
+        else []
+    )
+    # Always write validated.parquet (with the expected schema even when empty)
+    # so downstream rank / the Snakemake `validate` output always exists.
+    cols = [
+        "binder_id",
+        "target_uniprot",
+        "iptm",
+        "pae_interaction",
+        "affinity_pred_value",
+        "affinity_probability_binary",
+        "validator_name",
+        "validator_version",
+    ]
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+    df.to_parquet(validate_dir / "validated.parquet", index=False)
+    return len(df)
 
 
 def _print_cost_panel(cost, label: str) -> None:
@@ -731,11 +1064,13 @@ def _print_cost_panel(cost, label: str) -> None:
     help="Skip rendering the HTML report at the end.",
 )
 def demo(out_dir: Path, no_report: bool) -> None:
-    """Run the full discovery half on the shipped 10-gene synthetic cohort.
+    """Run the full discovery half on a real TCGA breast-cancer cohort.
 
-    Takes ~30 seconds on a CPU laptop. Produces a real HTML report you can
-    open in a browser. Internet not required (Open Targets enrichment is
-    skipped; SURFY uses the bundled offline fallback).
+    Auto-downloads an authentic TCGA-BRCA tumor-vs-adjacent-normal RNA-seq
+    cohort (STAR - Counts) from NIH/GDC on first run, runs real DESeq2, and
+    rediscovers ERBB2 (HER2) and EGFR as top antibody-tractable surface
+    antigens. Needs network the first time (cohort + SURFY downloaded, then
+    cached); takes a few minutes on real data. Produces an HTML report.
     """
     from bindsight.config import RunConfig
     from bindsight.pipelines import discover as discover_pipeline
@@ -763,9 +1098,12 @@ def demo(out_dir: Path, no_report: bool) -> None:
         Panel(
             "[bold]bindsight demo[/bold]\n\n"
             f"config: {cfg_path}\nout:    {out_dir}\n\n"
-            "Synthetic 10-gene tumor-vs-normal cohort. The pipeline should\n"
-            "rediscover ERBB2 (HER2) and EGFR as top antibody-tractable surface\n"
-            "antigens. Takes ~30s on a CPU laptop.",
+            "Real TCGA-BRCA tumor-vs-adjacent-normal cohort (NIH/GDC). The\n"
+            "pipeline discovers antibody-tractable cell-surface antigens that are\n"
+            "over-expressed in tumor (known targets such as ERBB2/HER2 appear when\n"
+            "their signal is present), with full provenance. First run downloads\n"
+            "the cohort + SURFY and enriches via Open Targets (cached afterwards)\n"
+            "and runs real DESeq2 — a few minutes, not seconds.",
             title="Demo run",
             border_style="cyan",
         )
@@ -773,9 +1111,14 @@ def demo(out_dir: Path, no_report: bool) -> None:
 
     cfg = RunConfig.from_yaml(cfg_path)
     cfg.out_dir = out_dir
-    # Override input paths to be absolute relative to where the config lives.
-    cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
-    cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
+    # Cache the auto-downloaded cohort under the OS user-cache dir (like the
+    # SURFY/AlphaFold/Open Targets caches) so the one-button demo works from any
+    # working directory and is downloaded only once.
+    from bindsight.io.paths import cache_dir
+
+    cohort_dir = cache_dir("gdc") / "tcga_brca"
+    cfg.inputs.counts = cohort_dir / "counts.tsv.gz"
+    cfg.inputs.design = cohort_dir / "design.tsv"
 
     manifest = discover_pipeline.run(cfg, out_dir=out_dir)
     failed = [s for s in manifest.stages if s.status == "failed"]

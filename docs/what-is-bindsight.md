@@ -78,9 +78,9 @@ unlocks the bridge for a one-person team — exactly the right moment to build.
 
 ### 3. CPU laptop is enough
 
-The orchestrator runs on the user's machine. GPU work is templated onto free
-Colab T4s, free Kaggle T4×2s, paid Modal A100s, or local NVIDIA Docker — the
-user picks per command. The user's $0/month research budget is no longer the
+The orchestrator runs on the user's machine. GPU work runs end-to-end on free
+Colab T4s, free Kaggle T4×2s, paid Modal A100s, or a local NVIDIA GPU — the
+user picks the backend per command. The user's $0/month research budget is no longer the
 bottleneck; the same setup that works for a PhD student in Cairo works for
 a clinician in Lagos.
 
@@ -152,15 +152,27 @@ Adds:
 - Per-target de novo binder PDBs from RFdiffusion + ProteinMPNN
 - Boltz-2 affinity + iPTM scores per design
 - Composite ranking
-- Quarto HTML report with embedded NGL viewers
+- Self-contained HTML report (embedded volcano plot + tables + PROV-O manifest)
 - RO-Crate export for Zenodo deposit
 
-### v1.0 (validation paper)
+### Validation (done — discovery half)
 
-A bioRxiv preprint demonstrating that the pipeline rediscovers known cancer
-antigens (HER2 in breast, EGFR in lung, MSLN in pancreatic, CLDN6 in ovarian)
-from blinded TCGA inputs, plus a benchmark of three designer choices on the
-same target set.
+A [companion report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md)
+runs the discovery half on six real indication-matched TCGA cohorts. It
+rediscovers **ERBB2 at rank 4** in HER2-enriched breast cancer (using PAM50
+subtype stratification — versus rank 25 in the unsplit BRCA cohort, where the
+HER2 signal is averaged away) and is **specific**: antigens that are not
+transcriptionally over-expressed at the bulk level (EGFR, which is
+mutation-driven; CEA, co-expressed in normal colon) are correctly not surfaced.
+Reproducible artifacts are in `benchmarks/validation/`. The three-way *designer*
+benchmark is GPU-only; a runnable, CPU-tested harness + protocol ship in
+`benchmarks/designer_benchmark/`.
+
+### v1.0
+
+Multi-modal tumor-selectivity scoring (single-cell + co-expression +
+immunopeptidomics) to extend discovery beyond bulk differential expression,
+plus the populated designer benchmark.
 
 ---
 
@@ -234,10 +246,11 @@ That's the window.
 Anyone with a GPU can run the existing tools. The work `bindsight` does is the
 *opinionated, validated, reproducible join*. Specifically:
 
-1. **Empirical defense of every default.** Which DE thresholds × surfaceome
-   filter × specificity penalty × designer × validator combination produces
-   designs that pass an orthogonal check on held-out known antigens (HER2,
-   CLDN6, MSLN, EGFR)? That's the v0.2 validation paper.
+1. **Empirical defense of the defaults.** The discovery half is validated by
+   rediscovery on six real TCGA cohorts (`benchmarks/validation/`): it surfaces
+   ERBB2 at rank 4 in HER2-enriched breast and is specific against antigens that
+   aren't transcriptionally over-expressed. See the
+   [validation report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md).
 2. **Container-pinned, seed-pinned, weights-pinned reproducibility.** Two runs
    of the same config on the same data should produce byte-identical outputs
    modulo logged stochastic seeds.
