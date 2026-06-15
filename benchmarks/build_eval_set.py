@@ -97,6 +97,28 @@ KNOWN_ANTIGENS: list[dict[str, str]] = [
         "note": "Mesothelin; target of amatuximab/anetumab ravtansine.",
     },
     {
+        "symbol": "CEACAM5",
+        "aka": "CEA",
+        "uniprot": "P06731",
+        "ensembl_gene": "ENSG00000105388",
+        "disease": "Colorectal carcinoma",
+        "tumor_type": "COAD",
+        "expected_direction": "up",
+        "note": "Carcinoembryonic antigen; over-expressed in colorectal and other "
+        "epithelial carcinomas; target of tusamitamab ravtansine and labetuzumab govitecan.",
+    },
+    {
+        "symbol": "NECTIN4",
+        "aka": "PVRL4",
+        "uniprot": "Q96NY8",
+        "ensembl_gene": "ENSG00000143217",
+        "disease": "Urothelial (bladder) carcinoma",
+        "tumor_type": "BLCA",
+        "expected_direction": "up",
+        "note": "Nectin-4; over-expressed in urothelial carcinoma; target of "
+        "enfortumab vedotin (Padcev, FDA-approved).",
+    },
+    {
         "symbol": "CLDN6",
         "aka": "claudin-6",
         "uniprot": "P56747",

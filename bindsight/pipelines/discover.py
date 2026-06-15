@@ -30,6 +30,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from bindsight import __version__
@@ -331,9 +332,14 @@ def _do_discover(
     deg = pd.read_parquet(deg_table_path)
     sig = deg[deg["significant"]].copy()
     n_sig = len(sig)
-    sig = sig.sort_values("log2fc", ascending=False).head(_ENRICH_TOP_K)
+    # Carry the most *confidently* over-expressed genes into enrichment, ranked
+    # by the combined DE score π = log2fc × −log10(padj) rather than raw
+    # fold-change — so a highly-significant, abundant antigen with a moderate
+    # ratio (e.g. PSMA) is not crowded out by noisy high-fold-change genes.
+    sig["pi_score"] = _pi_score(sig)
+    sig = sig.sort_values("pi_score", ascending=False).head(_ENRICH_TOP_K)
     LOG.info(
-        "DEGs: %d total, %d significant; enriching top %d up-regulated",
+        "DEGs: %d total, %d significant; enriching top %d by combined score (π)",
         len(deg),
         n_sig,
         len(sig),
@@ -435,8 +441,9 @@ def _do_discover(
     #    (capped) rather than every surface DE gene — on a real cohort that can
     #    be hundreds, and the rest are never used downstream.
     if not candidates.empty:
+        candidates["pi_score"] = _pi_score(candidates)
         candidates = candidates.sort_values(
-            by="log2fc", key=lambda s: s.abs(), ascending=False
+            by="pi_score", ascending=False
         ).reset_index(drop=True)
         n_fetch = max(p.top_n, _STRUCTURE_FETCH_CAP)
         fetch_uniprots = sorted(
@@ -457,9 +464,13 @@ def _do_discover(
         candidates["alphafold_structure_path"] = ""
         candidates["has_alphafold_structure"] = False
 
-    # 7. Rank: composite score over (log2fc, -log10(padj)). Higher is better.
+    # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
+    #    2014), structures first (only structure-bearing candidates can proceed
+    #    to design). Higher π = more confidently over-expressed.
+    if "pi_score" not in candidates.columns:
+        candidates["pi_score"] = _pi_score(candidates)
     candidates = candidates.sort_values(
-        by=["has_alphafold_structure", "log2fc"],
+        by=["has_alphafold_structure", "pi_score"],
         ascending=[False, False],
     ).reset_index(drop=True)
     candidates["rank"] = range(1, len(candidates) + 1)
@@ -487,6 +498,18 @@ def _do_discover(
     epitopes = pd.DataFrame(epitopes_rows) if epitopes_rows else _empty_epitopes_frame()
 
     return candidates, epitopes
+
+
+def _pi_score(df: pd.DataFrame) -> pd.Series:
+    """Combined DE ranking score π = log2fc × −log10(padj) (Xiao et al. 2014).
+
+    Rewards genes that are both strongly and *confidently* up-regulated. Genes
+    with a large fold-change but weak significance, or down-regulated genes
+    (negative log2fc → negative score), are naturally de-prioritised. A missing
+    padj maps to π = 0.
+    """
+    padj = df["padj"].astype(float).fillna(1.0).clip(lower=1e-300)
+    return df["log2fc"].astype(float) * -np.log10(padj)
 
 
 def _empty_candidates_frame() -> pd.DataFrame:
