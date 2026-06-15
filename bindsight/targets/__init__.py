@@ -1,4 +1,4 @@
-"""Target evidence aggregation: Open Targets, HPA, GTEx, recount3."""
+"""Target evidence: Open Targets enrichment + a bundled ENSG→UniProt fallback."""
 
 from bindsight.targets.open_targets import OpenTargetsClient, TargetEvidence
 

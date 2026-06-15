@@ -1,0 +1,46 @@
+site_name: bindsight
+site_description: A reproducible bridge from RNA-seq counts to de novo protein binder design.
+site_url: https://mikhaeelatefrizk.github.io/bindsight/
+repo_url: https://github.com/mikhaeelatefrizk/bindsight
+repo_name: mikhaeelatefrizk/bindsight
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+nav:
+  - Home: index.md
+  - What is bindsight?: what-is-bindsight.md
+  - How to use: how-to-use.md
+  - Use cases: use-cases.md
+  - Designing on Colab: colab-design-howto.md
+  - Positioning: positioning.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search

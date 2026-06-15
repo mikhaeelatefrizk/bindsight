@@ -1,4 +1,4 @@
-# Placeholder env for the validation half. Validators run on remote GPU; the
+# Minimal local conda env for the validation half. Validators run on remote GPU; the
 # local env just packages and unpacks results.
 name: bindsight-validate
 channels:

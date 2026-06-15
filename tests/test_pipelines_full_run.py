@@ -17,14 +17,22 @@ EXAMPLES = REPO_ROOT / "examples" / "demo"
 
 @pytest.fixture
 def demo_cfg(tmp_path: Path) -> RunConfig:
+    from tests.conftest import write_mock_cohort
+
     cfg = RunConfig.from_yaml(EXAMPLES / "config.yaml")
     cfg.out_dir = tmp_path / "full_out"
-    cfg.inputs.counts = (EXAMPLES / "counts.tsv").resolve()
-    cfg.inputs.design = (EXAMPLES / "design.tsv").resolve()
+    counts = tmp_path / "cache" / "counts.tsv.gz"
+    design = tmp_path / "cache" / "design.tsv"
+    write_mock_cohort(counts, design)
+    cfg.inputs.counts = counts
+    cfg.inputs.design = design
+    cfg.inputs.download = None  # cohort already materialised above
     return cfg
 
 
-def test_full_run_with_only_discover(demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_with_only_discover(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     """Full run with no GPU artifacts: discover OK, design/validate skipped, report+crate produced."""
     fake_deg = pd.DataFrame(
         {
@@ -66,7 +74,9 @@ def test_full_run_with_only_discover(demo_cfg: RunConfig, tmp_path: Path) -> Non
     assert result.crate_path.exists()
 
 
-def test_full_run_skips_export_when_requested(demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_skips_export_when_requested(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     fake_deg = pd.DataFrame(
         {
             "log2FoldChange": [3.5, 2.8, 0.1, 0.0, 0.05, -2.5, -2.8, 4.0, 3.0, 0.0],
@@ -100,7 +110,9 @@ def test_full_run_skips_export_when_requested(demo_cfg: RunConfig, tmp_path: Pat
     assert result.crate_path is None
 
 
-def test_full_run_picks_up_existing_validated_for_rank(demo_cfg: RunConfig, tmp_path: Path) -> None:
+def test_full_run_picks_up_existing_validated_for_rank(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path
+) -> None:
     """If user dropped validate/validated.parquet from Colab, rank stage runs."""
     fake_deg = pd.DataFrame(
         {

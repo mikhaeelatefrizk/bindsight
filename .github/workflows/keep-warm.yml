@@ -13,20 +13,15 @@ name: Keep demo warm
 #
 # If a demo is found in a non-running stage, the workflow attempts a
 # wake-up GET with a long timeout, then re-checks.  Persistent failure
-# fails the workflow so the email notification surfaces.
-#
-# If GitHub Actions billing ever blocks the cron, fall back to an external
-# uptime monitor (UptimeRobot / BetterStack / Cronitor) pointed at the
-# same two URLs.
+# surfaces as an annotation in the Actions tab.
 
 on:
   schedule:
-    # Every hour, on the hour.  GitHub Actions for public repos costs $0
-    # and bindsight is public, so we can be generous.  Hourly traffic is
-    # ~48x under HF's free-tier 48 h sleep threshold, giving a huge margin
-    # against GitHub's documented occasional schedule skips during peak
+    # Every 6 hours.  GitHub Actions for public repos costs $0, and a
+    # 6-hourly ping sits ~8x under HF's free-tier 48 h sleep threshold —
+    # ample margin against GitHub's occasional schedule skips during peak
     # times (see github.com/orgs/community/discussions/53658).
-    - cron: '0 * * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch: {}
   push:
     paths:

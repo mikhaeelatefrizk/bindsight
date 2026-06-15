@@ -1,0 +1,61 @@
+{
+  "schema": "bindsight-validation-provenance/1",
+  "generated_utc": "2026-06-15T01:17:07+00:00",
+  "bindsight_version": "0.1.0",
+  "cbioportal_study": "brca_tcga_pan_can_atlas_2018",
+  "sources": {
+    "rna_seq": "NIH/GDC TCGA STAR-Counts (GENCODE v36), open access",
+    "subtypes": "cBioPortal PAM50 (Parker et al. 2009)",
+    "known_antigens": "benchmarks/known.tsv"
+  },
+  "cohorts": [
+    {
+      "key": "brca_her2",
+      "project": "TCGA-BRCA",
+      "subtype": "BRCA_Her2",
+      "n_tumor": 50,
+      "n_normal": 40,
+      "gdc": {}
+    },
+    {
+      "key": "coad",
+      "project": "TCGA-COAD",
+      "subtype": null,
+      "n_tumor": 50,
+      "n_normal": 40,
+      "gdc": {}
+    },
+    {
+      "key": "blca",
+      "project": "TCGA-BLCA",
+      "subtype": null,
+      "n_tumor": 50,
+      "n_normal": 19,
+      "gdc": {}
+    },
+    {
+      "key": "luad",
+      "project": "TCGA-LUAD",
+      "subtype": null,
+      "n_tumor": 50,
+      "n_normal": 40,
+      "gdc": {}
+    },
+    {
+      "key": "paad",
+      "project": "TCGA-PAAD",
+      "subtype": null,
+      "n_tumor": 50,
+      "n_normal": 4,
+      "gdc": {}
+    },
+    {
+      "key": "prad",
+      "project": "TCGA-PRAD",
+      "subtype": null,
+      "n_tumor": 50,
+      "n_normal": 40,
+      "gdc": {}
+    }
+  ]
+}

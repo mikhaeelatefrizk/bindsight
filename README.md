@@ -8,7 +8,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
-[![Keep demo warm](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
 
 ## 👉 Try it live
@@ -16,13 +15,13 @@
 **Primary** (Hugging Face Space, 16 GB CPU): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
 **Mirror** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
 
-Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline rediscover HER2 + EGFR from synthetic RNA-seq counts in ~60 seconds (cached for ~0.1 s on every revisit).
+Zero install — runs in your browser. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those locally via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
 
 > Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.1.0** — discovery half end-to-end on CPU; design + validation wired for free Colab; web UI deployed on Streamlit Cloud.
+> 🚀 **v0.1.0** — discovery half end-to-end on CPU (real TCGA data); design + validation run end-to-end on a GPU backend (Modal / local Docker / Kaggle / Colab); web UI deployed on Streamlit Cloud.
 
-**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md) · [Keeping the demo warm (free playbook)](docs/keeping-the-demo-warm.md)
+**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
 
 ---
 
@@ -32,7 +31,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 Anyone visiting either URL above gets:
 - The Home page with what bindsight is
-- A **Demo** button that runs the full pipeline live and renders a report
+- A **Demo** button that runs the discovery half live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
@@ -46,28 +45,31 @@ bindsight ui
 # → opens http://localhost:8501 with the same multi-page interface
 ```
 
-### 3. CLI (60 seconds)
+### 3. CLI
 
 ```bash
 bindsight demo
 ```
 
-Runs the full discovery half on a shipped 10-gene tumor-vs-normal cohort, produces a real HTML report you can open in a browser. The pipeline rediscovers HER2 (ERBB2) and EGFR as the top antibody-tractable surface antigens — entirely from RNA-seq counts. ~30 seconds, no internet, no GPU.
+Runs the full discovery half on a **real TCGA-BRCA tumor-vs-adjacent-normal cohort** auto-downloaded from NIH/GDC, and produces a real HTML report you can open in a browser. The pipeline discovers antibody-tractable cell-surface antigens over-expressed in tumor — entirely from RNA-seq counts, with full provenance (well-known targets such as ERBB2/HER2 surface among the candidates when their signal is present). First run needs internet (cohort + SURFY downloaded, then cached) and takes a few minutes of real DESeq2 + enrichment; CPU-only, no GPU.
 
 ```
 $ bindsight demo
-╭───────────── Demo run ──────────────╮
-│ The pipeline should rediscover      │
-│ ERBB2 (HER2) and EGFR as top        │
-│ antibody-tractable surface antigens.│
-╰─────────────────────────────────────╯
-INFO  DEGs: 10 total, 5 significant
-INFO  surfaceome filter: 5 → 2
+╭──────────────── Demo run ────────────────╮
+│ Real TCGA-BRCA tumor-vs-adjacent-normal  │
+│ cohort (NIH/GDC). Discovers antibody-    │
+│ tractable cell-surface antigens, with    │
+│ full provenance.                         │
+╰──────────────────────────────────────────╯
+INFO  GDC: downloading TCGA-BRCA cohort (20 tumor + 20 normal)…
+INFO  SURFY cache empty; populating the full surfaceome list (2886)
+INFO  DEGs: 17019 total, 4011 significant; enriching top 300 up-regulated
+INFO  surfaceome filter: 300 → 42
 INFO  wrote runs/demo/report.html
-╭───────── bindsight demo ─────────────╮
-│ Demo complete!                      │
-│ Report HTML: runs/demo/report.html  │
-╰─────────────────────────────────────╯
+╭───────────── bindsight demo ─────────────╮
+│ Demo complete!                           │
+│ Report HTML: runs/demo/report.html       │
+╰──────────────────────────────────────────╯
 ```
 
 ---
@@ -93,7 +95,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                      │                       │
                                      ▼                       ▼
                               Targetable sites          Sequence design
-                              (SURFACE-Bind)            (ProteinMPNN)
+                              (SURFACE-Bind, v0.2)      (ProteinMPNN)
                                      │                       │
                                      ▼                       ▼
                               AlphaFoldDB structure     Affinity + structure
@@ -104,7 +106,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                                   Multi-objective ranking
                                                               │
                                                               ▼
-                                       Quarto report + RO-Crate (Zenodo)
+                                       HTML report + RO-Crate (Zenodo)
                                        with full PROV-O provenance
 ```
 
@@ -126,7 +128,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
 | Citability | Code dump | DOI per release, JSON-Schema-validated outputs, JOSS-style |
 
-For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#comparison-vs-existing-tools).
+For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-comparison-vs-existing-tools).
 
 ## What works today (v0.1.0)
 
@@ -140,20 +142,27 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#compari
 | **`bindsight report --format streamlit`** — interactive dashboard for one run | ✅ ready | `bindsight report runs/x --format streamlit` |
 | **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 (and BindCraft / BoltzGen / Chai-1r / AF2-IG) run end-to-end on a GPU backend | ✅ ready | `bindsight design runs/x --backend modal` (or `local_docker` / `kaggle` / `colab`) |
 | **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
+| **`bindsight validate`** — materialise structure/affinity metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
+| **`bindsight benchmark`** — score rediscovery of the held-out known antigens (recall@k) | ✅ ready | `bindsight benchmark runs/x --known-antigens benchmarks/known.tsv` |
+| **Snakemake front-end** — same pipeline as the CLI, end-to-end | ✅ ready | `snakemake --configfile my.yaml --cores 4` (`pip install -e ".[workflow]"`) |
 | **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
 | **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
-| **GPU design notebook** — RFdiffusion + ProteinMPNN + Boltz-2 wired in templated Colab notebook | ✅ ready | `bindsight design runs/x --backend colab` opens a notebook with real install + inference cells |
-| **Manual Colab recipe** — step-by-step for the GPU half | ✅ ready | [docs/colab-design-howto.md](docs/colab-design-howto.md) |
+
+> **Note on GPU stages.** The design/validation models require CUDA, so they
+> run on the GPU backend you choose (Modal / local Docker / Kaggle, or a
+> generated Colab notebook), not on the CPU host. The held-out evaluation set
+> lives in [`benchmarks/`](benchmarks/) with full provenance.
 
 ## Status & roadmap
 
-- ✅ **v0.1.0** (current) — discovery + rank + report + export + web UI + real Colab notebook patterns
-- 🔬 **v0.1.x** — first-user GPU validation (someone with a real GPU runs the Colab notebook end-to-end and reports any install/inference issues; we patch fast)
-- ⏳ **v0.2.0** — live Modal/Colab job submission via API, BindCraft + BoltzGen plugins fully wired, scRNA-seq input
-- ⏳ **v1.0.0** — JOSS submission + validation paper (rediscovery of HER2/EGFR/MSLN/CLDN6 from blinded TCGA cohorts)
+- ✅ **v0.1.0** (current) — discovery on real TCGA data; full design half (RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG) on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI.
+- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
+- ⏳ **v0.2.0** — SURFACE-Bind targetable-site epitope prediction (today the design step targets the whole surface), single-cell RNA-seq input, async (non-blocking) Modal job submission; populate the [three-way designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from a GPU run.
+- ⏳ **v1.0.0** — JOSS submission; multi-modal tumor-selectivity scoring (single-cell + co-expression + immunopeptidomics) to extend discovery beyond bulk differential expression.
 
-See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
+See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#11-phased-roadmap) for details.
 
 ## Install
 
@@ -185,7 +194,7 @@ mamba activate bindsight-discover
 pip install -e ".[dev,report]"
 ```
 
-## Quickstart (target: v0.0.x)
+## Quickstart
 
 ```bash
 # 1. Discover targets from a TCGA cohort (CPU only, ~10 minutes on a laptop)
@@ -213,7 +222,7 @@ bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
 bindsight/                 # Python package
 ├── io/                   # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/                  # pydeseq2 wrapper (+ optional R bridge)
-├── targets/              # Open Targets, HPA, GTEx, recount3 clients
+├── targets/              # Open Targets client + bundled ENSG→UniProt fallback
 ├── surfaceome/           # SURFY filter + SURFACE-Bind client
 ├── structures/           # AlphaFoldDB + RCSB/PDBe fetch
 ├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (v0.2)
@@ -221,12 +230,16 @@ bindsight/                 # Python package
 ├── runners/              # Colab / Modal / Kaggle / local-Docker adapters
 ├── validate/             # Boltz-2 default; Chai-1r, AF2-IG opt-in
 ├── rank/                 # Multi-objective scoring
+├── benchmark/            # Rediscovery + designer-benchmark scoring harness
 ├── provenance/           # PROV-O JSON-LD schema + RO-Crate emitter
-├── report/               # Quarto template + Streamlit app
+├── report/               # HTML report template + Streamlit app
 └── cli.py                # Click entrypoint
 
 envs/                     # Conda environment files (one per stage)
 examples/                 # Example pipeline configs (TCGA-LUAD, etc.)
+benchmarks/               # Held-out known-antigen eval set + validation & designer-benchmark harnesses
+paper/                    # JOSS + bioRxiv manuscripts and the validation write-up
+data/                     # Local cache for auto-downloaded TCGA cohorts (gitignored)
 tests/                    # Pytest smoke + integration tests + fixtures
 docs/                     # mkdocs-material site source
 .github/workflows/        # CI + Zenodo deposit on tag

@@ -1,7 +1,10 @@
-"""Snakemake script: multi-objective ranking. Stub in v0.0.x."""
+"""Snakemake script: multi-objective ranking.
 
-from __future__ import annotations
+Invoked by the ``rank`` rule. Delegates to :func:`bindsight.rank.rank_run`,
+the same real ranking the CLI uses, writing ``rank/ranking.parquet``.
+"""
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -17,13 +20,21 @@ LOG = logging.getLogger("bindsight.rank")
 
 
 def main() -> int:
-    LOG.warning("Rank stub — implement in v0.1 (Phase 2).")
+    import pandas as pd
+
+    from bindsight.rank import rank_run
+
     out_r = Path(snakemake.output.ranking)
+    run_dir = out_r.parent.parent
+    out = rank_run(run_dir)
+    n = len(pd.read_parquet(out))
+    LOG.info("ranked %d binder(s) -> %s", n, out)
+
     out_m = Path(snakemake.output.manifest_fragment)
-    out_r.parent.mkdir(parents=True, exist_ok=True)
-    out_r.write_bytes(b"")
     out_m.parent.mkdir(parents=True, exist_ok=True)
-    out_m.write_text('{"stage": "rank", "status": "stub"}\n')
+    out_m.write_text(
+        json.dumps({"stage": "rank", "status": "completed", "metrics": {"n_ranked": n}}, indent=2)
+    )
     return 0
 
 

@@ -8,6 +8,129 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — rediscovery validation + designer benchmark
+- **Rediscovery validation** on six real indication-matched TCGA cohorts
+  (`bindsight/benchmark/rediscovery.py`, driver `benchmarks/run_validation.py`,
+  artifacts in `benchmarks/validation/`, write-up in `paper/validation/`). The
+  discovery half resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer
+  (PAM50-stratified) and is specific — antigens not transcriptionally
+  over-expressed at the bulk level (EGFR, CEA) are correctly not surfaced.
+  Results are grouped by *measured* over-expression under a uniform pre-stated
+  rule; every number is produced by the runs, none hand-set.
+- **cBioPortal PAM50 fetcher** (`bindsight/io/cbioportal.py`) and a GDC fetcher
+  extension to select STAR-Counts by explicit case barcodes (subtype-stratified
+  cohorts). Eval set extended with CEACAM5 (CEA) and NECTIN4 (Padcev target).
+- **Three-way designer benchmark** harness + protocol
+  (`bindsight/benchmark/designer_bench.py`, `benchmarks/designer_benchmark/`):
+  RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target set,
+  CPU-tested with the mock backend, runnable for real on a GPU backend; ships an
+  empty results template (no fabricated numbers).
+
+### Changed — discovery ranking, license audit
+- Discovery now ranks candidates by the combined DE score π = log2fc × −log10(padj)
+  (Xiao et al. 2014), matching the documented intent (the code previously sorted
+  by raw fold-change only). This moves strongly-and-confidently over-expressed
+  antigens up the shortlist (e.g. ERBB2 in HER2-enriched breast: rank 25 → 4).
+- `bindsight verify-licenses --config <cfg>` now performs a real per-config
+  audit (resolves the chosen designer/validator/backend and flags any
+  non-commercial component) instead of a stub.
+
+### Removed — repository cleanup
+- Removed ops/marketing residue not meant for a public scientific repo:
+  `GO_LIVE.ps1`, `tools/keep-warm/`, `announcement/`, `CUSTOM_DOMAIN.md`,
+  `PUBLISH_PYPI.md`, a redundant keep-warm workflow, and `docs/hf-spaces-deploy.md`
+  / `docs/keeping-the-demo-warm.md` (with their dangling references). Fixed the
+  PyPI `Homepage`/`Documentation` URLs to point at the live docs site.
+
+### Added — docs site, container image, eval-set enrichment
+- **mkdocs-material documentation site** (`mkdocs.yml` + `docs/index.md`) with a
+  GitHub Pages deploy workflow (`.github/workflows/docs.yml`) and a `docs` extra.
+- **Dockerfile** (CPU image for the discovery half + CLI) + a `Docker` workflow
+  that builds it on every PR and publishes to GHCR on `main`/tags.
+- Held-out eval set extended with **FOLH1/PSMA** (prostate, `Q04609`); the
+  bundled ENSG→UniProt map gained FOLH1, CD33, and CD123/IL3RA so offline runs
+  resolve those real targets.
+
+### Changed — the demo now runs on REAL data
+- **`bindsight demo` runs on a real TCGA-BRCA cohort** (NIH/GDC), not synthetic
+  counts. A new GDC fetcher (`bindsight.io.gdc`) auto-downloads a tumor-vs-
+  adjacent-normal STAR-Counts cohort on first run (cached after), the full
+  ~2,886-protein SURFY surfaceome is auto-populated
+  (`surfaceome.populate_surfy_cache`), and the top up-regulated DEGs are enriched
+  via Open Targets — a genuine surfaceome-wide discovery with full provenance
+  (`provenance.json` with GDC UUIDs + SHA-256). The fabricated
+  `examples/demo/counts.tsv`/`design.tsv` are deleted. Config gains
+  `inputs.download` (`bindsight.config.GDCSource`).
+- Discovery scales to real cohorts: enrichment is capped to the top up-regulated
+  DEGs and AlphaFold structures are fetched only for the carried-forward
+  candidates.
+
+### Changed — Snakemake front-end is now real
+- The `Snakefile` + `scripts/run_*.py` were stubs (they wrote
+  `"This is a placeholder"`) and never actually ran (a `from __future__` import
+  ordering bug broke them under Snakemake's script wrapper). They now call the
+  same `bindsight.*` pipeline functions as the CLI, so `snakemake --configfile
+  <cfg> --cores N` runs discover → design → validate → rank → report → manifest
+  end-to-end. Added a `workflow` extra and a Snakemake E2E test. Docs corrected:
+  the CLI and Snakemake are two equivalent front-ends over the same functions
+  (the CLI does **not** "drive Snakemake").
+- The `mock` backend now emits a realistically-shaped results tarball
+  (metrics.jsonl + per-binder dirs) so the whole orchestration runs E2E in CI.
+
+### Docs
+- Swept the docs/README/paper/announcements for stale claims now that the
+  design half and Snakemake are real: removed "v0.1+/coming/stub/templated"
+  language, fixed the version (`0.0.1.dev0` → `0.1.0`), "Quarto" → the actual
+  self-contained HTML report, and the "synthetic 10-gene demo" → the real
+  TCGA-BRCA demo. SURFACE-Bind targetable-site prediction is stated honestly as
+  a roadmap item (the design step targets the whole surface today).
+
+### Added — real design pipeline (all plugins, zero stubs)
+- **RFdiffusion → ProteinMPNN → Boltz-2 run end-to-end for real** via a single
+  executor (`bindsight.runners.job_exec`) shared by every backend. The Modal,
+  local/Docker, and Kaggle runners now genuinely submit + fetch (no more
+  `NotImplementedError`); the Colab notebook is a thin wrapper over the same
+  executor. Commands + parsers live once in `bindsight.runners.tools` (pinned
+  real upstream commit SHAs). `bindsight design`/`validate` actually launch and
+  materialise `validated.parquet`.
+- **All alternative plugins implemented for real** (no stubs): BindCraft +
+  BoltzGen designers, Chai-1r + AF2-IG validators (AF2-IG keeps its
+  non-commercial banner), and the Kaggle runner.
+
+### Fixed
+- **CLDN6 accession corrected**: the bundled map listed `Q14953` for CLDN6, but
+  `Q14953` is **KIR2DS5**. The correct CLDN6 accession is **`P56747`**
+  (`ENSG00000184697`); MSLN's gene id is corrected to `ENSG00000102854`
+  (was `ENSG00000133110` = POSTN). Both verified against UniProt/Ensembl.
+- **AlphaFoldDB model version** bumped `v4 → v6` (the old URLs now 404), so
+  structure fetching works again.
+- `parse_boltz_output` searches recursively (Boltz writes to
+  `predictions/<name>/`), the target structure is now actually shipped to the
+  GPU, and the designer's `metrics.jsonl` path is populated.
+
+### Added — held-out evaluation set + benchmark tooling
+- **Real held-out evaluation set** under `benchmarks/`: literature-validated
+  binders for the AML targets **CD33** (P20138) and **CD123/IL3RA** (P26951) —
+  gemtuzumab ozogamicin, lintuzumab, vadastuximab talirine, tagraxofusp,
+  talacotuzumab/CSL362, flotetuzumab — plus the solid-tumor antigens HER2, EGFR,
+  MSLN and CLDN6. Every binder carries a verifiable citation (ChEMBL / NCT /
+  PMID / DOI / PDB); five structurally-resolved binders ship byte-exact VH/VL
+  sequences pulled from their PDB co-crystals (`9VL2`, `4JZJ`, `1N8Z`, `1S78`,
+  `1YY9`). `benchmarks/build_eval_set.py` regenerates everything from the public
+  sources with full provenance + SHA-256 (`benchmarks/sources.json`,
+  `benchmarks/PROVENANCE.md`).
+- **`bindsight benchmark` command** (`bindsight.benchmark`): scores one or more
+  finished run dirs by the rank of each known antigen in the candidate
+  shortlist, computes recall@k, and renders a side-by-side HTML report — the
+  workflow `docs/use-cases.md` referenced but never shipped.
+- **`examples/benchmark_held_out.yaml`**: the held-out benchmark run config the
+  docs referenced (previously missing).
+
+### Fixed
+- **CLDN6 accession corrected**: the bundled map listed `Q14953` for CLDN6, but
+  `Q14953` is **KIR2DS5**. The correct CLDN6 accession is **`P56747`**
+  (`ENSG00000184697`), verified against UniProt.
+
 ## [0.1.0] - 2026-05-11
 
 The "real invention" release. Every CLI command works end-to-end (no
@@ -181,4 +304,4 @@ Cloud.
 
 ## [0.0.1-dev] - 2026-05-09
 
-Initial scaffold. Not functional yet — see Phase 0 in [ARCHITECTURE.md](ARCHITECTURE.md#phased-roadmap).
+Initial scaffold. Not functional yet — see Phase 0 in [ARCHITECTURE.md](ARCHITECTURE.md#11-phased-roadmap).

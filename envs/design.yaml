@@ -1,4 +1,4 @@
-# Placeholder env for the design half. Most heavy ML deps live inside the
+# Minimal local conda env for the design half. Most heavy ML deps live inside the
 # remote-GPU runner image, NOT in this local conda env. This env only needs
 # the spec/result handling code to run on the orchestrator.
 name: bindsight-design
