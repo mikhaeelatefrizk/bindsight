@@ -15,7 +15,7 @@
 **Primary** (Hugging Face Space, 16 GB CPU): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
 **Mirror** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
 
-Zero install — runs in your browser. Click the **Demo** tab and watch the full pipeline discover antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance.
+Zero install — runs in your browser. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those locally via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
 
 > Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
@@ -31,7 +31,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 Anyone visiting either URL above gets:
 - The Home page with what bindsight is
-- A **Demo** button that runs the full pipeline live and renders a report
+- A **Demo** button that runs the discovery half live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
@@ -128,7 +128,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
 | Citability | Code dump | DOI per release, JSON-Schema-validated outputs, JOSS-style |
 
-For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#comparison-vs-existing-tools).
+For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-comparison-vs-existing-tools).
 
 ## What works today (v0.1.0)
 
@@ -158,11 +158,11 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#compari
 ## Status & roadmap
 
 - ✅ **v0.1.0** (current) — discovery on real TCGA data; full design half (RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG) on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI.
-- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 stratification) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
+- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
 - ⏳ **v0.2.0** — SURFACE-Bind targetable-site epitope prediction (today the design step targets the whole surface), single-cell RNA-seq input, async (non-blocking) Modal job submission; populate the [three-way designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from a GPU run.
 - ⏳ **v1.0.0** — JOSS submission; multi-modal tumor-selectivity scoring (single-cell + co-expression + immunopeptidomics) to extend discovery beyond bulk differential expression.
 
-See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
+See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#11-phased-roadmap) for details.
 
 ## Install
 
@@ -194,7 +194,7 @@ mamba activate bindsight-discover
 pip install -e ".[dev,report]"
 ```
 
-## Quickstart (target: v0.0.x)
+## Quickstart
 
 ```bash
 # 1. Discover targets from a TCGA cohort (CPU only, ~10 minutes on a laptop)
@@ -230,12 +230,16 @@ bindsight/                 # Python package
 ├── runners/              # Colab / Modal / Kaggle / local-Docker adapters
 ├── validate/             # Boltz-2 default; Chai-1r, AF2-IG opt-in
 ├── rank/                 # Multi-objective scoring
+├── benchmark/            # Rediscovery + designer-benchmark scoring harness
 ├── provenance/           # PROV-O JSON-LD schema + RO-Crate emitter
 ├── report/               # HTML report template + Streamlit app
 └── cli.py                # Click entrypoint
 
 envs/                     # Conda environment files (one per stage)
 examples/                 # Example pipeline configs (TCGA-LUAD, etc.)
+benchmarks/               # Held-out known-antigen eval set + validation & designer-benchmark harnesses
+paper/                    # JOSS + bioRxiv manuscripts and the validation write-up
+data/                     # Local cache for auto-downloaded TCGA cohorts (gitignored)
 tests/                    # Pytest smoke + integration tests + fixtures
 docs/                     # mkdocs-material site source
 .github/workflows/        # CI + Zenodo deposit on tag

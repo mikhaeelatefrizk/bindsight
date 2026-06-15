@@ -10,7 +10,7 @@ Does bindsight's expression-based discovery resurface clinically-validated cell-
 
 ## Headline
 
-- **Sensitivity:** of 3 antigen(s) genuinely over-expressed in their cohort, **ERBB2** is rediscovered at **rank 4** in TCGA-BRCA (BRCA_Her2 subtype) — log2fc 4.4, padj 2e-59.
+- **Sensitivity:** of 3 antigen(s) genuinely over-expressed in their cohort, **ERBB2** is rediscovered at **rank 4** in TCGA-BRCA (BRCA_Her2 subtype) — log2fc 4.36, padj 1.7e-59.
 - **recall@k over over-expressed antigens:** recall@5=33%, recall@10=33%, recall@20=33%.
 - **Specificity:** 2/2 antigens that are NOT over-expressed at the bulk level are correctly kept out of the top-20 — the pipeline keys on genuine over-expression, not clinical fame.
 
