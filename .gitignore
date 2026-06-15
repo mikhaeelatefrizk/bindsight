@@ -104,3 +104,16 @@ outreach/
 
 # mkdocs build output
 site/
+
+# LaTeX build intermediates (the compiled PDF is committed; intermediates are not)
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.bcf
+paper/**/*.blg
+paper/**/*.log
+paper/**/*.out
+paper/**/*.run.xml
+paper/**/*.toc
+paper/**/*.fls
+paper/**/*.fdb_latexmk
+paper/**/*.synctex.gz
