@@ -338,13 +338,24 @@ that will be addressed promptly. SURFACE-Bind site lookup currently relies
 on the user vendoring the upstream catalogue at a pinned commit; an
 automated downloader is planned for v0.2.
 
-\paragraph{Planned validation paper (v0.2).} A separate manuscript is
-planned to demonstrate \textit{rediscovery validation}: running
-\texttt{bindsight} against blinded TCGA cohorts (BRCA, OV, PAAD, LUAD) and
-quantifying enrichment of known clinical-trial-stage surface antigens
-(HER2 in breast, MSLN in pancreatic, CLDN6 in ovarian, EGFR in lung) in the
-top-$N$ ranked outputs, alongside a benchmark comparing RFdiffusion+ProteinMPNN,
-BindCraft, and BoltzGen as designer back-ends on the same target set.
+\paragraph{Rediscovery validation.} A companion validation report
+(\texttt{paper/validation/manuscript.md}, with reproducible artifacts under
+\texttt{benchmarks/validation/}) tests the discovery half on six real
+indication-matched TCGA tumor-vs-adjacent-normal cohorts. Scoring the rank of
+each known antigen in the unsupervised candidate shortlist, the pipeline
+rediscovers \textbf{ERBB2 (HER2) at rank~4} in HER2-enriched breast cancer
+(log2fc~4.4, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
+on stratifying TCGA-BRCA by its PAM50 subtype, which otherwise averages the HER2
+signal away. The pipeline is also \textit{specific}: antigens that are not
+transcriptionally over-expressed at the bulk level --- EGFR (mutation/
+amplification-driven) and CEA (co-expressed in normal colon) --- are correctly
+left out of the top-20, so sensitivity tracks differential-expression effect
+size as expected for a DE-based method. Antigens without matched TCGA normals
+(CLDN6, CD33/CD123) are documented as data limitations rather than reported with
+a manufactured number. A complementary, CPU-tested three-way \textit{designer
+benchmark} (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable
+harness and protocol in \texttt{benchmarks/designer\_benchmark/}, to be populated
+from a GPU run.
 
 \paragraph{Broader impact.} \texttt{bindsight} is positioned to lower the
 barrier-to-entry for translational binder design from approximately six

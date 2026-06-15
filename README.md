@@ -8,7 +8,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
-[![Keep demo warm](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/keep-warm.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
 
 ## 👉 Try it live
@@ -22,7 +21,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the full
 
 > 🚀 **v0.1.0** — discovery half end-to-end on CPU (real TCGA data); design + validation run end-to-end on a GPU backend (Modal / local Docker / Kaggle / Colab); web UI deployed on Streamlit Cloud.
 
-**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md) · [Hugging Face Space backup](docs/hf-spaces-deploy.md) · [Keeping the demo warm (free playbook)](docs/keeping-the-demo-warm.md)
+**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
 
 ---
 
@@ -159,8 +158,9 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#compari
 ## Status & roadmap
 
 - ✅ **v0.1.0** (current) — discovery on real TCGA data; full design half (RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG) on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI.
-- ⏳ **v0.2.0** — SURFACE-Bind targetable-site epitope prediction (today the design step targets the whole surface), single-cell RNA-seq input, async (non-blocking) Modal job submission.
-- ⏳ **v1.0.0** — JOSS submission + validation paper (blinded rediscovery of HER2/EGFR/MSLN/CLDN6 across TCGA cohorts + a three-way designer benchmark).
+- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 stratification) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
+- ⏳ **v0.2.0** — SURFACE-Bind targetable-site epitope prediction (today the design step targets the whole surface), single-cell RNA-seq input, async (non-blocking) Modal job submission; populate the [three-way designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from a GPU run.
+- ⏳ **v1.0.0** — JOSS submission; multi-modal tumor-selectivity scoring (single-cell + co-expression + immunopeptidomics) to extend discovery beyond bulk differential expression.
 
 See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#phased-roadmap) for details.
 

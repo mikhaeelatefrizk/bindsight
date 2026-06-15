@@ -8,6 +8,40 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — rediscovery validation + designer benchmark
+- **Rediscovery validation** on six real indication-matched TCGA cohorts
+  (`bindsight/benchmark/rediscovery.py`, driver `benchmarks/run_validation.py`,
+  artifacts in `benchmarks/validation/`, write-up in `paper/validation/`). The
+  discovery half resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer
+  (PAM50-stratified) and is specific — antigens not transcriptionally
+  over-expressed at the bulk level (EGFR, CEA) are correctly not surfaced.
+  Results are grouped by *measured* over-expression under a uniform pre-stated
+  rule; every number is produced by the runs, none hand-set.
+- **cBioPortal PAM50 fetcher** (`bindsight/io/cbioportal.py`) and a GDC fetcher
+  extension to select STAR-Counts by explicit case barcodes (subtype-stratified
+  cohorts). Eval set extended with CEACAM5 (CEA) and NECTIN4 (Padcev target).
+- **Three-way designer benchmark** harness + protocol
+  (`bindsight/benchmark/designer_bench.py`, `benchmarks/designer_benchmark/`):
+  RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target set,
+  CPU-tested with the mock backend, runnable for real on a GPU backend; ships an
+  empty results template (no fabricated numbers).
+
+### Changed — discovery ranking, license audit
+- Discovery now ranks candidates by the combined DE score π = log2fc × −log10(padj)
+  (Xiao et al. 2014), matching the documented intent (the code previously sorted
+  by raw fold-change only). This moves strongly-and-confidently over-expressed
+  antigens up the shortlist (e.g. ERBB2 in HER2-enriched breast: rank 25 → 4).
+- `bindsight verify-licenses --config <cfg>` now performs a real per-config
+  audit (resolves the chosen designer/validator/backend and flags any
+  non-commercial component) instead of a stub.
+
+### Removed — repository cleanup
+- Removed ops/marketing residue not meant for a public scientific repo:
+  `GO_LIVE.ps1`, `tools/keep-warm/`, `announcement/`, `CUSTOM_DOMAIN.md`,
+  `PUBLISH_PYPI.md`, a redundant keep-warm workflow, and `docs/hf-spaces-deploy.md`
+  / `docs/keeping-the-demo-warm.md` (with their dangling references). Fixed the
+  PyPI `Homepage`/`Documentation` URLs to point at the live docs site.
+
 ### Added — docs site, container image, eval-set enrichment
 - **mkdocs-material documentation site** (`mkdocs.yml` + `docs/index.md`) with a
   GitHub Pages deploy workflow (`.github/workflows/docs.yml`) and a `docs` extra.
