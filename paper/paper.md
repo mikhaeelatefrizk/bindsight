@@ -18,7 +18,7 @@ authors:
 affiliations:
   - name: Independent Researcher, Cairo, Egypt
     index: 1
-date: 11 May 2026
+date: 15 June 2026
 bibliography: paper.bib
 ---
 
