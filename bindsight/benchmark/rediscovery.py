@@ -323,7 +323,9 @@ def run_and_score_cohort(
     # Score the whole known set (for the side-by-side report) and pull out the
     # expected antigen for the headline.
     full_score = score_run(run_out, known, ks=KS, run_name=cohort.label)
-    expected = next((a for a in full_score.per_antigen if a["uniprot"] == cohort.expected_uniprot), None)
+    expected = next(
+        (a for a in full_score.per_antigen if a["uniprot"] == cohort.expected_uniprot), None
+    )
 
     deg_stats = _deg_stats(run_out)
     deg_expected = _expected_deg(run_out, cohort.expected_ensembl)
@@ -476,7 +478,9 @@ def _write_artifacts(
     known_path: Path,
 ) -> dict[str, Any]:
     """Build the summary, write all artifacts, and return the summary dict."""
-    scores = [score_run(Path(r["run_dir"]), known, ks=KS, run_name=r["cohort"]["label"]) for r in results]
+    scores = [
+        score_run(Path(r["run_dir"]), known, ks=KS, run_name=r["cohort"]["label"]) for r in results
+    ]
     recall = _aggregate_recall(results)
     summary = {
         "schema": "bindsight-validation/1",
@@ -588,7 +592,8 @@ def _render_results_md(summary: dict[str, Any]) -> str:
 
     header = (
         "| antigen | project | tumor | normal | log2fc | padj | rank | "
-        + " | ".join(f"≤{k}" for k in ks) + " |"
+        + " | ".join(f"≤{k}" for k in ks)
+        + " |"
     )
     sep = "|---|---|--:|--:|--:|--:|--:|" + "|".join("--:" for _ in ks) + "|"
 
@@ -609,11 +614,13 @@ def _render_results_md(summary: dict[str, Any]) -> str:
         "discovery half (`bindsight discover`), then scored by the rank of the antigen "
         "in the candidate shortlist (`bindsight.benchmark.score_run`).\n"
     )
-    a("**All numbers below are produced by the runs; none are hand-set. Antigens are "
-      "grouped by their _measured_ differential expression "
-      f"(rule: {summary['overexpression_rule']}), not by any prior label — an "
-      "expression-based method can only surface antigens that are actually "
-      "over-expressed, and we report that precondition transparently.**\n")
+    a(
+        "**All numbers below are produced by the runs; none are hand-set. Antigens are "
+        "grouped by their _measured_ differential expression "
+        f"(rule: {summary['overexpression_rule']}), not by any prior label — an "
+        "expression-based method can only surface antigens that are actually "
+        "over-expressed, and we report that precondition transparently.**\n"
+    )
     a(f"- Generated: `{summary['generated_utc']}` · bindsight `{summary['bindsight_version']}`")
     a(f"- PAM50 subtypes: cBioPortal study `{summary['cbioportal_study']}`")
     a(f"- Known-antigen set: `{summary['known_set']}`\n")
@@ -623,18 +630,25 @@ def _render_results_md(summary: dict[str, Any]) -> str:
         best = min(found, key=lambda r: _antigen_rank(r) or 10**9)
         bc = best["cohort"]
         br = _antigen_rank(best)
-        a(f"- **Sensitivity:** of {len(oe)} antigen(s) genuinely over-expressed in their "
-          f"cohort, **{best['cohort']['expected_symbol']}** is rediscovered at "
-          f"**rank {br}** in {bc['project']}"
-          + (f" ({bc['subtype']} subtype)" if bc["subtype"] else "")
-          + f" — log2fc {best['deg_expected']['log2fc']:.1f}, "
-          f"padj {best['deg_expected']['padj']:.0e}.")
-    a("- **recall@k over over-expressed antigens:** "
-      + ", ".join(f"recall@{k}={rec[f'recall@{k}']:.0%}" for k in ks) + ".")
+        a(
+            f"- **Sensitivity:** of {len(oe)} antigen(s) genuinely over-expressed in their "
+            f"cohort, **{best['cohort']['expected_symbol']}** is rediscovered at "
+            f"**rank {br}** in {bc['project']}"
+            + (f" ({bc['subtype']} subtype)" if bc["subtype"] else "")
+            + f" — log2fc {best['deg_expected']['log2fc']:.1f}, "
+            f"padj {best['deg_expected']['padj']:.0e}."
+        )
+    a(
+        "- **recall@k over over-expressed antigens:** "
+        + ", ".join(f"recall@{k}={rec[f'recall@{k}']:.0%}" for k in ks)
+        + "."
+    )
     if spec.get("fraction") is not None:
-        a(f"- **Specificity:** {spec['correctly_excluded']}/{spec['n']} antigens that are "
-          f"NOT over-expressed at the bulk level are correctly kept out of the top-"
-          f"{spec['k']} — the pipeline keys on genuine over-expression, not clinical fame.")
+        a(
+            f"- **Specificity:** {spec['correctly_excluded']}/{spec['n']} antigens that are "
+            f"NOT over-expressed at the bulk level are correctly kept out of the top-"
+            f"{spec['k']} — the pipeline keys on genuine over-expression, not clinical fame."
+        )
     a("")
 
     a("## Reproduce\n")
@@ -644,8 +658,10 @@ def _render_results_md(summary: dict[str, Any]) -> str:
     a("```\n")
 
     a("## Per-antigen results (grouped by measured over-expression)\n")
-    a("`rank` is the antigen's 1-based position in the cohort's surface-filtered "
-      "candidate shortlist; `—` = not surfaced.\n")
+    a(
+        "`rank` is the antigen's 1-based position in the cohort's surface-filtered "
+        "candidate shortlist; `—` = not surfaced.\n"
+    )
     for cat in _CATEGORY_ORDER:
         rows = by_cat.get(cat, [])
         if not rows:
@@ -657,31 +673,39 @@ def _render_results_md(summary: dict[str, Any]) -> str:
             a(_row(r))
         a("")
         for r in rows:
-            a(f"- **{r['cohort']['expected_symbol']}** ({r['cohort']['project']}): "
-              f"{r['cohort']['note']}")
+            a(
+                f"- **{r['cohort']['expected_symbol']}** ({r['cohort']['project']}): "
+                f"{r['cohort']['note']}"
+            )
         a("")
 
     a("## Interpretation\n")
-    a("- The discovery pipeline (subtype-stratified DESeq2 → SURFY surfaceome filter → "
-      "combined-significance ranking) correctly surfaces the antigen that is strongly "
-      "transcriptionally over-expressed, and correctly withholds antigens that are not "
-      "— including clinically famous ones whose tumor-selectivity arises from mutation/"
-      "amplification (EGFR) or lineage co-expression in the normal tissue-of-origin "
-      "(CEA, PSMA). Sensitivity therefore tracks effect size, as expected for a "
-      "differential-expression method.")
-    a("- This delineates the scope of bulk tumor-vs-normal discovery and motivates the "
-      "multi-modal specificity scoring (single-cell, co-expression, immunopeptidomics) "
-      "planned for v1.0.\n")
+    a(
+        "- The discovery pipeline (subtype-stratified DESeq2 → SURFY surfaceome filter → "
+        "combined-significance ranking) correctly surfaces the antigen that is strongly "
+        "transcriptionally over-expressed, and correctly withholds antigens that are not "
+        "— including clinically famous ones whose tumor-selectivity arises from mutation/"
+        "amplification (EGFR) or lineage co-expression in the normal tissue-of-origin "
+        "(CEA, PSMA). Sensitivity therefore tracks effect size, as expected for a "
+        "differential-expression method."
+    )
+    a(
+        "- This delineates the scope of bulk tumor-vs-normal discovery and motivates the "
+        "multi-modal specificity scoring (single-cell, co-expression, immunopeptidomics) "
+        "planned for v1.0.\n"
+    )
 
     a("## Antigens with no matched TCGA normal (not runnable here)\n")
     for d in summary["data_limited"]:
         a(f"- **{d['symbol']}** ({d['project']}): {d['reason']}")
     a("")
     a("## Provenance\n")
-    a("Per-cohort GDC file UUIDs, case barcodes and SHA-256 checksums are in "
-      "`provenance.json` (and each cohort's own `provenance.json` under the GDC "
-      "cache). The side-by-side per-antigen scoring across the full known set is "
-      "in `report.html`.\n")
+    a(
+        "Per-cohort GDC file UUIDs, case barcodes and SHA-256 checksums are in "
+        "`provenance.json` (and each cohort's own `provenance.json` under the GDC "
+        "cache). The side-by-side per-antigen scoring across the full known set is "
+        "in `report.html`.\n"
+    )
     return "\n".join(lines)
 
 
@@ -770,8 +794,12 @@ def _render_figures(fig_dir: Path, results: list[dict[str, Any]], recall: dict[s
         hit = deg[deg["gene_id"] == ens]
         if not hit.empty:
             ax.scatter(
-                hit["log2fc"], -np.log10(hit["padj"].clip(lower=1e-300)),
-                s=60, color="#d62728", zorder=5, label=r["cohort"]["expected_symbol"],
+                hit["log2fc"],
+                -np.log10(hit["padj"].clip(lower=1e-300)),
+                s=60,
+                color="#d62728",
+                zorder=5,
+                label=r["cohort"]["expected_symbol"],
             )
             ax.legend()
         ax.set_xlabel("log2 fold-change (tumor / normal)")

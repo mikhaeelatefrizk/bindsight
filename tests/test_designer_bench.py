@@ -17,9 +17,11 @@ from bindsight.benchmark.designer_bench import (
 def test_read_metrics_and_floats(tmp_path: Path) -> None:
     p = tmp_path / "metrics.jsonl"
     p.write_text(
-        json.dumps({"iptm": 0.7, "affinity_pred_value": -7.0}) + "\n"
+        json.dumps({"iptm": 0.7, "affinity_pred_value": -7.0})
+        + "\n"
         + "\n"  # blank line tolerated
-        + json.dumps({"iptm": 0.8, "affinity_pred_value": None}) + "\n"
+        + json.dumps({"iptm": 0.8, "affinity_pred_value": None})
+        + "\n"
     )
     rows = _read_metrics(p)
     assert len(rows) == 2

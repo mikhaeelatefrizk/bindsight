@@ -43,7 +43,9 @@ def main() -> None:
         help="Subset of cohort keys to run (default: all).",
     )
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "benchmarks" / "validation")
-    parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "data" / "gdc_cache" / "validation")
+    parser.add_argument(
+        "--data-root", type=Path, default=REPO_ROOT / "data" / "gdc_cache" / "validation"
+    )
     parser.add_argument("--runs-root", type=Path, default=REPO_ROOT / "runs" / "validation")
     parser.add_argument("--known", type=Path, default=REPO_ROOT / "benchmarks" / "known.tsv")
     args = parser.parse_args()

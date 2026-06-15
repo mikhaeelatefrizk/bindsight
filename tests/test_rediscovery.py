@@ -47,7 +47,9 @@ def test_default_cohorts_have_one_negative_control() -> None:
 
 def test_categorise_rules() -> None:
     # Over-expressed: significant and log2fc >= threshold, enough normals.
-    assert R._categorise({"tested": True, "log2fc": 4.0, "significant": True}, 40) == "over_expressed"
+    assert (
+        R._categorise({"tested": True, "log2fc": 4.0, "significant": True}, 40) == "over_expressed"
+    )
     # Not over-expressed: not significant (clinical fame ≠ over-expression).
     assert (
         R._categorise({"tested": True, "log2fc": 0.4, "significant": False}, 40)
