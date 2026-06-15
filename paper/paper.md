@@ -56,6 +56,13 @@ normal, auto-downloaded from NIH/GDC) shows the pipeline discovering
 antibody-tractable cell-surface antigens over-expressed in tumor, with full
 provenance; established targets such as ERBB2 (HER2) appear among the
 candidates when their expression signal is present in the sampled cohort.
+A companion rediscovery validation (`benchmarks/validation/`,
+`paper/validation/manuscript.md`) runs the discovery half on six real
+indication-matched TCGA cohorts: it resurfaces ERBB2 at rank 4 in
+HER2-enriched breast cancer (using PAM50 subtype stratification) and is
+specific — antigens not transcriptionally over-expressed at the bulk level
+(e.g. EGFR, CEA) are correctly not surfaced, so sensitivity tracks
+differential-expression effect size.
 
 # Statement of need
 

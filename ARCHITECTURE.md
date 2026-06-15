@@ -330,8 +330,8 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [ ] mkdocs-material documentation site
 
 ### Phase 4 — Validation paper (in progress)
-- [ ] Rediscovery experiment: 3–5 TCGA cohorts → known antigens (HER2, CLDN6, MSLN, EGFR) — eval set + benchmark tooling ship in `benchmarks/`; the multi-cohort study is pending
-- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen (all three wired; the comparison run is pending)
+- [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); specificity confirmed (EGFR/CEA correctly not surfaced). Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
+- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen — runnable, CPU-tested harness + protocol ship in `benchmarks/designer_benchmark/`; the GPU comparison run is pending
 - [ ] Negative-result taxonomy on full DEG list
 - [ ] single-cell RNA-seq input + async Modal submission
 - [ ] **Milestone:** preprint DOI + `v0.2.0`

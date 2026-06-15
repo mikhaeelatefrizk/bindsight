@@ -159,7 +159,8 @@ For v0.1.0, **JOSS + bioRxiv** is the right combination.
      journal: bioRxiv
      year: 2026
    ```
-3. **Tweet/LinkedIn/BlueSky announcement** — drafts in `announcement/`.
+3. **Announce the preprint** through the usual channels (lab page, mailing
+   lists, social media) once the DOI is live.
 
 ---
 
@@ -172,10 +173,13 @@ To stay honest:
   (ColabDesign, dl_binder_design); the author has not personally smoke-
   tested them on a real GPU. The papers describe the design and explicitly
   flag this in the Discussion as the limitation that v0.2 will close.
-- **No formal rediscovery validation.** The demo runs on a real TCGA-BRCA
-  cohort (auto-downloaded from NIH/GDC, verbatim CLI output), but a rigorous
-  blinded multi-cohort rediscovery study of HER2/EGFR/MSLN/CLDN6 plus a
-  three-way designer benchmark remains the planned v0.2 manuscript.
+- **Rediscovery validation: done (discovery half).** A companion report
+  (`paper/validation/manuscript.md`, artifacts in `benchmarks/validation/`)
+  runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
+  is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified), with
+  confirmed specificity (EGFR/CEA correctly not surfaced). The three-way
+  *designer* benchmark is GPU-only; a runnable, CPU-tested harness + protocol
+  ship in `benchmarks/designer_benchmark/`, pending a GPU run.
 - **No claims of experimental validation.** Wet-lab work is out of scope
   and would require a separate paper with real biochemistry data.
 
