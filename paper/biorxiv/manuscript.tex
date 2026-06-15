@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
+\usepackage{amsmath}
 \usepackage[margin=1in]{geometry}
 \usepackage{microtype}
 \usepackage{xcolor}
@@ -203,7 +204,7 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   box/.style={rectangle, rounded corners=2pt, draw, fill=blue!8, align=center, text width=28mm, minimum height=8mm, inner sep=2pt},
   cpu/.style={box, fill=green!8, draw=green!50!black},
   gpu/.style={box, fill=orange!12, draw=orange!60!black},
-  out/.style={box, fill=gray!10, draw=gray!50!black},
+  outbox/.style={box, fill=gray!10, draw=gray!50!black},
   arr/.style={-{Latex[length=2mm]}, thick}
 ]
   \node[cpu] (counts) {RNA-seq\\counts.tsv};
@@ -216,8 +217,8 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   \node[gpu, left=of rfdiff] (mpnn) {Sequence\\(ProteinMPNN)};
   \node[gpu, below=8mm of mpnn] (boltz) {Validate\\(Boltz-2)};
   \node[cpu, right=of boltz] (rank) {Rank};
-  \node[out, right=of rank] (report) {HTML\\report};
-  \node[out, right=of report] (crate) {RO-Crate\\(Zenodo)};
+  \node[outbox, right=of rank] (report) {HTML\\report};
+  \node[outbox, right=of report] (crate) {RO-Crate\\(Zenodo)};
 
   \draw[arr] (counts) -- (deg);
   \draw[arr] (deg) -- (surf);
@@ -344,7 +345,7 @@ automated downloader is planned for v0.2.
 indication-matched TCGA tumor-vs-adjacent-normal cohorts. Scoring the rank of
 each known antigen in the unsupervised candidate shortlist, the pipeline
 rediscovers \textbf{ERBB2 (HER2) at rank~4} in HER2-enriched breast cancer
-(log2fc~4.4, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
+(log2fc~4.36, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
 on stratifying TCGA-BRCA by its PAM50 subtype, which otherwise averages the HER2
 signal away. The pipeline is also \textit{specific}: antigens that are not
 transcriptionally over-expressed at the bulk level --- EGFR (mutation/
