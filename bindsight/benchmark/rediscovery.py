@@ -496,11 +496,11 @@ def _write_artifacts(
         "data_limited": DATA_LIMITED,
     }
 
-    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n")
+    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "report.html").write_text(
         render_benchmark_html(scores, ks=KS, known_source=str(known_path)), encoding="utf-8"
     )
-    (out_dir / "RESULTS.md").write_text(_render_results_md(summary))
+    (out_dir / "RESULTS.md").write_text(_render_results_md(summary), encoding="utf-8")
     _write_provenance(out_dir, summary)
     try:
         _render_figures(out_dir / "figures", results, recall)
@@ -732,7 +732,7 @@ def _write_provenance(out_dir: Path, summary: dict[str, Any]) -> None:
             for r in summary["cohorts"]
         ],
     }
-    (out_dir / "provenance.json").write_text(json.dumps(prov, indent=2) + "\n")
+    (out_dir / "provenance.json").write_text(json.dumps(prov, indent=2) + "\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------

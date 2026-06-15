@@ -102,9 +102,11 @@ def fetch_pam50_subtypes(
             "labels": labels,
         }
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        cache_path.write_text(text)
+        cache_path.write_text(text, encoding="utf-8")
         payload_sha = hashlib.sha256(text.encode()).hexdigest()
-        (cache_path.parent / f"{study_id}_SUBTYPE.sha256").write_text(payload_sha + "\n")
+        (cache_path.parent / f"{study_id}_SUBTYPE.sha256").write_text(
+            payload_sha + "\n", encoding="utf-8"
+        )
 
     return labels
 
