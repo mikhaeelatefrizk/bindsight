@@ -112,7 +112,7 @@ def _resolve_structure(target: Target, structures_dir: Path | None, scratch: Pat
             LOG.warning("AlphaFold fetch failed for %s: %s", target.uniprot, e)
 
     placeholder = scratch / f"{target.uniprot}.pdb"
-    placeholder.write_text(_PLACEHOLDER_PDB)
+    placeholder.write_text(_PLACEHOLDER_PDB, encoding="utf-8")
     return placeholder
 
 
@@ -294,8 +294,8 @@ def run_designer_benchmark(
         "targets": [t.symbol for t in targets],
         "designers": [_score_dict(s) for s in scores],
     }
-    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n")
-    (out_dir / "RESULTS.md").write_text(_render_md(summary))
+    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (out_dir / "RESULTS.md").write_text(_render_md(summary), encoding="utf-8")
     LOG.info("designer benchmark complete; wrote %s", out_dir)
     return summary
 
