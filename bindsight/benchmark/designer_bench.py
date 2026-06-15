@@ -322,22 +322,30 @@ def _render_md(summary: dict[str, Any]) -> str:
     a = lines.append
     a("# bindsight designer benchmark — results\n")
     if summary["is_mock"]:
-        a("> **⚠ MOCK BACKEND — synthetic numbers for CI/orchestration only.** "
-          "These are NOT real GPU results. Re-run with `--backend modal` (or "
-          "`local_docker`/`kaggle`) on a GPU to produce real metrics.\n")
+        a(
+            "> **⚠ MOCK BACKEND — synthetic numbers for CI/orchestration only.** "
+            "These are NOT real GPU results. Re-run with `--backend modal` (or "
+            "`local_docker`/`kaggle`) on a GPU to produce real metrics.\n"
+        )
     a(f"- Generated: `{summary['generated_utc']}` · bindsight `{summary['bindsight_version']}`")
-    a(f"- Backend: `{summary['backend']}` · validator: `{summary['validator']}` · "
-      f"trajectories/target: {summary['n_trajectories']}")
+    a(
+        f"- Backend: `{summary['backend']}` · validator: `{summary['validator']}` · "
+        f"trajectories/target: {summary['n_trajectories']}"
+    )
     a(f"- Targets: {', '.join(summary['targets'])}\n")
 
-    a("| designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | "
-      "success@0.65 | est. cost (USD) | GPU-h |")
+    a(
+        "| designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | "
+        "success@0.65 | est. cost (USD) | GPU-h |"
+    )
     a("|---|--:|--:|--:|--:|--:|--:|--:|--:|")
     for d in summary["designers"]:
+
         def fmt(v: Any, pct: bool = False) -> str:
             if v is None:
                 return "—"
             return f"{v:.0%}" if pct else f"{v:.3g}"
+
         a(
             f"| {d['designer']} | {d['n_designs']} | {fmt(d['mean_iptm'])} | "
             f"{fmt(d['median_iptm'])} | {fmt(d['mean_pae_interaction'])} | "
@@ -345,8 +353,10 @@ def _render_md(summary: dict[str, Any]) -> str:
             f"{fmt(d['cost_usd'])} | {fmt(d['gpu_hours'])} |"
         )
     a("")
-    a("**ipTM** / **PAE-interaction** / **affinity** are the validator's "
-      "(Boltz-2) interface-confidence and predicted-affinity outputs; "
-      "**success@0.65** is the fraction of designs with ipTM ≥ 0.65. Cost is the "
-      "`bindsight.cost` estimate for the run on the chosen backend.\n")
+    a(
+        "**ipTM** / **PAE-interaction** / **affinity** are the validator's "
+        "(Boltz-2) interface-confidence and predicted-affinity outputs; "
+        "**success@0.65** is the fraction of designs with ipTM ≥ 0.65. Cost is the "
+        "`bindsight.cost` estimate for the run on the chosen backend.\n"
+    )
     return "\n".join(lines)

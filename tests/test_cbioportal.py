@@ -30,7 +30,9 @@ _ROWS = [
 ]
 
 
-def test_fetch_pam50_subtypes_parses_and_caches(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_fetch_pam50_subtypes_parses_and_caches(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     calls = {"n": 0}
 
     def fake_get(url: str, **kwargs: Any) -> _FakeResp:
