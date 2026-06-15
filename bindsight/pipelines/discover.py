@@ -442,9 +442,7 @@ def _do_discover(
     #    be hundreds, and the rest are never used downstream.
     if not candidates.empty:
         candidates["pi_score"] = _pi_score(candidates)
-        candidates = candidates.sort_values(
-            by="pi_score", ascending=False
-        ).reset_index(drop=True)
+        candidates = candidates.sort_values(by="pi_score", ascending=False).reset_index(drop=True)
         n_fetch = max(p.top_n, _STRUCTURE_FETCH_CAP)
         fetch_uniprots = sorted(
             {u for u in candidates.head(n_fetch)["uniprot_id"].dropna().unique() if u}

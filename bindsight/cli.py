@@ -788,8 +788,15 @@ def verify_licenses(config: Path | None) -> None:
 
         # Core discovery components are always pulled in, regardless of config.
         core = [
-            "bindsight", "pydeseq2", "Open Targets", "HPA", "GTEx (v8 public)",
-            "SURFY", "SURFACE-Bind", "AlphaFoldDB", "RCSB / PDBe",
+            "bindsight",
+            "pydeseq2",
+            "Open Targets",
+            "HPA",
+            "GTEx (v8 public)",
+            "SURFY",
+            "SURFACE-Bind",
+            "AlphaFoldDB",
+            "RCSB / PDBe",
         ]
         selected = [by_name[n] for n in core + designer_components + validator_components]
 
