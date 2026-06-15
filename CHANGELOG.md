@@ -304,4 +304,4 @@ Cloud.
 
 ## [0.0.1-dev] - 2026-05-09
 
-Initial scaffold. Not functional yet — see Phase 0 in [ARCHITECTURE.md](ARCHITECTURE.md#phased-roadmap).
+Initial scaffold. Not functional yet — see Phase 0 in [ARCHITECTURE.md](ARCHITECTURE.md#11-phased-roadmap).

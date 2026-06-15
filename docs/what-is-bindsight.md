@@ -160,7 +160,8 @@ Adds:
 A [companion report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md)
 runs the discovery half on six real indication-matched TCGA cohorts. It
 rediscovers **ERBB2 at rank 4** in HER2-enriched breast cancer (using PAM50
-subtype stratification) and is **specific**: antigens that are not
+subtype stratification — versus rank 25 in the unsplit BRCA cohort, where the
+HER2 signal is averaged away) and is **specific**: antigens that are not
 transcriptionally over-expressed at the bulk level (EGFR, which is
 mutation-driven; CEA, co-expressed in normal colon) are correctly not surfaced.
 Reproducible artifacts are in `benchmarks/validation/`. The three-way *designer*
