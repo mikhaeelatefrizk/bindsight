@@ -20,6 +20,8 @@ data/colabfold_msa_cache/
 report.html
 *_report.html
 report_files/
+# ...but the committed validation deliverable is kept
+!benchmarks/validation/report.html
 
 # RO-Crate exports
 *.crate.zip

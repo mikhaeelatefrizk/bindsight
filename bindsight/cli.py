@@ -728,43 +728,91 @@ def verify_licenses(config: Path | None) -> None:
     With a config path, audits the components selected by that config and
     flags any non-commercial choices.
     """
-    table = Table(
-        title="bindsight component licenses (default config)",
-        show_lines=False,
-        title_style="bold",
-    )
-    table.add_column("Component", style="cyan", no_wrap=True)
-    table.add_column("License")
-    table.add_column("Commercial?", style="bold")
-    table.add_column("Role")
-
-    rows = [
-        ("bindsight", "MIT", "[green]yes[/green]", "this package"),
-        ("pydeseq2", "MIT", "[green]yes[/green]", "DEG analysis (default)"),
-        ("Open Targets", "CC0 / Apache-2", "[green]yes[/green]", "target evidence"),
-        ("HPA", "CC BY-SA 3.0", "[green]yes[/green]", "tissue baselines"),
-        ("GTEx (v8 public)", "Open", "[green]yes[/green]", "tissue baselines"),
-        ("SURFY", "CC BY", "[green]yes[/green]", "surfaceome filter"),
-        ("SURFACE-Bind", "BSD-3", "[green]yes[/green]", "targetable sites"),
-        ("AlphaFoldDB", "CC BY 4.0", "[green]yes[/green]", "structures"),
-        ("RCSB / PDBe", "CC0 / Open", "[green]yes[/green]", "structures"),
-        ("RFdiffusion", "BSD-3", "[green]yes[/green]", "default backbone designer"),
-        ("ProteinMPNN", "MIT", "[green]yes[/green]", "sequence design"),
-        ("Boltz-2", "MIT (code+weights)", "[green]yes[/green]", "default validator"),
-        ("Chai-1r", "Apache-2", "[green]yes[/green]", "alt validator"),
-        ("BoltzGen", "MIT (code+weights)", "[green]yes[/green]", "alt designer (v0.2)"),
-        ("BindCraft", "MIT", "[green]yes[/green]", "premium designer"),
-        ("Snakemake", "MIT", "[green]yes[/green]", "workflow"),
-        ("AF2-IG (opt-in)", "AF2 weights NC", "[red]no[/red]", "alt validator (banner)"),
+    # Single source of truth: (component, license, commercial?, role).
+    # `commercial` is True when the component is usable in commercial work.
+    components: list[tuple[str, str, bool, str]] = [
+        ("bindsight", "MIT", True, "this package"),
+        ("pydeseq2", "MIT", True, "DEG analysis (default)"),
+        ("Open Targets", "CC0 / Apache-2", True, "target evidence"),
+        ("HPA", "CC BY-SA 3.0", True, "tissue baselines"),
+        ("GTEx (v8 public)", "Open", True, "tissue baselines"),
+        ("SURFY", "CC BY", True, "surfaceome filter"),
+        ("SURFACE-Bind", "BSD-3", True, "targetable sites"),
+        ("AlphaFoldDB", "CC BY 4.0", True, "structures"),
+        ("RCSB / PDBe", "CC0 / Open", True, "structures"),
+        ("RFdiffusion", "BSD-3", True, "default backbone designer"),
+        ("ProteinMPNN", "MIT", True, "sequence design"),
+        ("Boltz-2", "MIT (code+weights)", True, "default validator"),
+        ("Chai-1r", "Apache-2", True, "alt validator"),
+        ("BoltzGen", "MIT (code+weights)", True, "alt designer"),
+        ("BindCraft", "MIT", True, "premium designer"),
+        ("Snakemake", "MIT", True, "workflow"),
+        ("AF2-IG (opt-in)", "AF2 weights NC", False, "alt validator (banner)"),
     ]
-    for r in rows:
-        table.add_row(*r)
-    console.print(table)
+    by_name = {c[0]: c for c in components}
 
-    if config is not None:
-        console.print(f"\n[dim]config audit for {config}:[/dim]")
-        # Real audit lands in v0.1; for now a stub.
-        console.print("[yellow]Per-config audit not yet implemented.[/yellow]")
+    def _commercial_cell(ok: bool) -> str:
+        return "[green]yes[/green]" if ok else "[red]no[/red]"
+
+    def _render(title: str, rows: list[tuple[str, str, bool, str]]) -> None:
+        t = Table(title=title, show_lines=False, title_style="bold")
+        t.add_column("Component", style="cyan", no_wrap=True)
+        t.add_column("License")
+        t.add_column("Commercial?", style="bold")
+        t.add_column("Role")
+        for name, lic, ok, role in rows:
+            t.add_row(name, lic, _commercial_cell(ok), role)
+        console.print(t)
+
+    if config is None:
+        _render("bindsight component licenses (default config)", components)
+    else:
+        from bindsight.config import RunConfig
+
+        cfg = RunConfig.from_yaml(config)
+        designer = cfg.params.design.designer
+        validator = cfg.params.validate_.validator
+        backend = cfg.backend
+
+        # Map the config's plugin choices to the components they pull in.
+        designer_components = {
+            "rfdiff_mpnn": ["RFdiffusion", "ProteinMPNN"],
+            "bindcraft": ["BindCraft"],
+            "boltzgen": ["BoltzGen"],
+        }[designer]
+        validator_components = {
+            "boltz2": ["Boltz-2"],
+            "chai1r": ["Chai-1r"],
+            "af2_ig": ["AF2-IG (opt-in)"],
+        }[validator]
+
+        # Core discovery components are always pulled in, regardless of config.
+        core = [
+            "bindsight", "pydeseq2", "Open Targets", "HPA", "GTEx (v8 public)",
+            "SURFY", "SURFACE-Bind", "AlphaFoldDB", "RCSB / PDBe",
+        ]
+        selected = [by_name[n] for n in core + designer_components + validator_components]
+
+        _render(
+            f"Components selected by {Path(config).name} "
+            f"(designer={designer}, validator={validator}, backend={backend})",
+            selected,
+        )
+
+        nc = [r for r in selected if not r[2]]
+        if nc:
+            names = ", ".join(r[0] for r in nc)
+            console.print(
+                f"\n[red bold]⚠ Non-commercial component(s) selected:[/red bold] {names}.\n"
+                "[yellow]This configuration is NOT cleared for commercial use. Switch the "
+                "offending stage (e.g. validator -> boltz2 or chai1r) for a fully "
+                "commercial-friendly run.[/yellow]"
+            )
+        else:
+            console.print(
+                "\n[green bold]✓ All components selected by this config are "
+                "commercial-friendly.[/green bold]"
+            )
 
     console.print(
         "\n[dim]See LICENSING.md for the full inventory and commercial-use guidance.[/dim]"
