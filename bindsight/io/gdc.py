@@ -266,7 +266,7 @@ def fetch_cohort(
         },
     }
     prov_path = counts_out.parent / "provenance.json"
-    prov_path.write_text(json.dumps(provenance, indent=2) + "\n")
+    prov_path.write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     LOG.info(
         "GDC: wrote %s (%d genes × %d samples) + %s",
         counts_out,
