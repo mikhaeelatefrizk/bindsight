@@ -75,36 +75,55 @@ def _post_files_query(
     return hits
 
 
-def _list_cohort_files(project: str, condition: str, n: int) -> list[dict[str, Any]]:
-    """List the first ``n`` STAR-Counts files for a project + tumor/normal class."""
-    filters = {
-        "op": "and",
-        "content": [
-            {"op": "in", "content": {"field": "cases.project.project_id", "value": [project]}},
-            {
-                "op": "in",
-                "content": {"field": "data_type", "value": ["Gene Expression Quantification"]},
-            },
-            {
-                "op": "in",
-                "content": {"field": "analysis.workflow_type", "value": ["STAR - Counts"]},
-            },
-            {
-                "op": "in",
-                "content": {
-                    "field": "cases.samples.sample_type",
-                    "value": [_SAMPLE_TYPES[condition]],
-                },
-            },
-        ],
-    }
-    fields = [
-        "file_id",
-        "cases.submitter_id",
-        "cases.samples.submitter_id",
-        "cases.samples.sample_type",
+_FILE_FIELDS = [
+    "file_id",
+    "cases.submitter_id",
+    "cases.samples.submitter_id",
+    "cases.samples.sample_type",
+]
+
+
+def _list_cohort_files(
+    project: str, condition: str, n: int, *, cases: list[str] | None = None
+) -> list[dict[str, Any]]:
+    """List STAR-Counts files for a project + tumor/normal class.
+
+    Without ``cases`` this returns the first ``n`` files (deterministic by
+    ``file_id``). With ``cases`` (a list of TCGA case submitter ids, e.g. the
+    HER2-enriched patients from cBioPortal) it restricts to those cases and
+    de-duplicates to at most one file per case before capping at ``n`` — so a
+    subtype-stratified cohort fetches exactly the patients you asked for.
+    """
+    content = [
+        {"op": "in", "content": {"field": "cases.project.project_id", "value": [project]}},
+        {
+            "op": "in",
+            "content": {"field": "data_type", "value": ["Gene Expression Quantification"]},
+        },
+        {"op": "in", "content": {"field": "analysis.workflow_type", "value": ["STAR - Counts"]}},
+        {
+            "op": "in",
+            "content": {"field": "cases.samples.sample_type", "value": [_SAMPLE_TYPES[condition]]},
+        },
     ]
-    hits = _post_files_query(filters, fields, size=n)
+    if cases:
+        content.append({"op": "in", "content": {"field": "cases.submitter_id", "value": cases}})
+
+    # When selecting by case, ask for all matching files (a case can have >1
+    # sample) then dedupe to one-per-case; otherwise just ask for n.
+    size = max(n, len(cases) * 2) if cases else n
+    hits = _post_files_query({"op": "and", "content": content}, _FILE_FIELDS, size=size)
+
+    if cases:
+        seen: set[str] = set()
+        deduped: list[dict[str, Any]] = []
+        for hit in hits:
+            barcode = (hit.get("cases", [{}])[0]).get("submitter_id", "")
+            if barcode and barcode not in seen:
+                seen.add(barcode)
+                deduped.append(hit)
+        hits = deduped
+
     if len(hits) < n:
         LOG.warning(
             "%s %s: requested %d files but only %d available", project, condition, n, len(hits)
@@ -157,6 +176,8 @@ def fetch_cohort(
     counts_out: Path,
     design_out: Path,
     gene_types: tuple[str, ...] = ("protein_coding",),
+    tumor_cases: list[str] | None = None,
+    normal_cases: list[str] | None = None,
 ) -> dict[str, object]:
     """Download a real TCGA cohort and write counts + design + provenance.
 
@@ -169,6 +190,11 @@ def fetch_cohort(
         gene_types: biotypes to keep (``()`` keeps all). Defaults to
             protein-coding, which covers the surface-antigen targets and keeps
             DESeq2 tractable.
+        tumor_cases: optional list of TCGA case submitter ids to restrict the
+            Primary Tumor samples to (e.g. a PAM50 subtype cohort). When given,
+            ``n_tumor`` caps how many of those cases are used.
+        normal_cases: optional list of case submitter ids for the Solid Tissue
+            Normal samples (usually left ``None`` to take adjacent normals).
 
     Returns:
         The provenance dict (also written next to ``counts_out`` as
@@ -180,8 +206,8 @@ def fetch_cohort(
     design_out.parent.mkdir(parents=True, exist_ok=True)
 
     LOG.info("GDC: listing %s files (%d tumor + %d normal)…", project, n_tumor, n_normal)
-    tumor_hits = _list_cohort_files(project, "tumor", n_tumor)
-    normal_hits = _list_cohort_files(project, "normal", n_normal)
+    tumor_hits = _list_cohort_files(project, "tumor", n_tumor, cases=tumor_cases)
+    normal_hits = _list_cohort_files(project, "normal", n_normal, cases=normal_cases)
 
     samples: list[CohortSample] = []
     per_sample_counts: dict[str, dict[str, int]] = {}
@@ -219,7 +245,7 @@ def fetch_cohort(
     design_df = pd.DataFrame([asdict(s) for s in samples]).set_index("sample")
     design_df.to_csv(design_out, sep="\t", lineterminator="\n")
 
-    provenance = {
+    provenance: dict[str, object] = {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
         "project": project,
@@ -227,6 +253,9 @@ def fetch_cohort(
         "data_column": "unstranded",
         "gene_types": list(gene_types),
         "retrieved_utc": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
+        "selection": "by_case" if (tumor_cases or normal_cases) else "first_n",
+        "requested_tumor_cases": sorted(tumor_cases) if tumor_cases else None,
+        "requested_normal_cases": sorted(normal_cases) if normal_cases else None,
         "n_tumor": sum(1 for s in samples if s.condition == "tumor"),
         "n_normal": sum(1 for s in samples if s.condition == "normal"),
         "n_genes": int(counts_df.shape[0]),
