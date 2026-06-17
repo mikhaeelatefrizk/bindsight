@@ -1,3 +1,8 @@
+---
+title: bindsight — RNA-seq to de novo protein binder design
+description: bindsight is an open-source pipeline by Mikhaeel Atef Rizk that turns RNA-seq counts into ranked de novo protein-binder candidates against tumour cell-surface antigens, with full PROV-O / RO-Crate provenance back to the patient cohort.
+---
+
 # bindsight
 
 **Expression → Binder.** An open-source pipeline that takes RNA-seq counts and
