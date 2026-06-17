@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{#
+  SEO / discoverability overrides.
+  Adds descriptive meta, Open Graph + Twitter cards, and schema.org JSON-LD
+  structured data that ties the "bindsight" software entity to its author and
+  every canonical profile (GitHub, ORCID, Hugging Face, Zenodo). This is what
+  lets search engines connect a query about bindsight to this project and to
+  Mikhaeel Atef Rizk. No extra build dependencies required.
+#}
+{% block extrahead %}
+  <meta name="author" content="Mikhaeel Atef Rizk">
+  <meta name="keywords" content="bindsight, RNA-seq, de novo protein binder design, protein binder, target discovery, surfaceome, differential expression, RFdiffusion, ProteinMPNN, Boltz-2, AlphaFold, antibody, immunotherapy, drug discovery, bioinformatics, computational biology, PROV-O, RO-Crate, Mikhaeel Atef Rizk">
+
+  {% if page and page.title and not page.is_homepage %}
+    {% set page_title = page.title ~ " — bindsight" %}
+  {% else %}
+    {% set page_title = "bindsight — RNA-seq to de novo protein binders" %}
+  {% endif %}
+  {% if page and page.meta and page.meta.description %}
+    {% set page_desc = page.meta.description %}
+  {% else %}
+    {% set page_desc = config.site_description %}
+  {% endif %}
+  {% if page and page.canonical_url %}
+    {% set page_url = page.canonical_url %}
+  {% else %}
+    {% set page_url = config.site_url %}
+  {% endif %}
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="bindsight">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_desc }}">
+  <meta property="og:url" content="{{ page_url }}">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_desc }}">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "bindsight",
+    "alternateName": "bindsight — RNA-seq to de novo protein binder design",
+    "description": "An open-source pipeline that takes RNA-seq counts and outputs ranked de novo protein-binder candidates against over-expressed cell-surface antigens, with full PROV-O / RO-Crate provenance back to the patient cohort.",
+    "url": "https://mikhaeelatefrizk.github.io/bindsight/",
+    "codeRepository": "https://github.com/mikhaeelatefrizk/bindsight",
+    "programmingLanguage": "Python",
+    "license": "https://opensource.org/licenses/MIT",
+    "keywords": "RNA-seq, de novo protein binder design, target discovery, surfaceome, RFdiffusion, ProteinMPNN, Boltz-2, AlphaFold, immunotherapy, bioinformatics",
+    "author": {
+      "@type": "Person",
+      "name": "Mikhaeel Atef Rizk",
+      "url": "https://github.com/mikhaeelatefrizk",
+      "identifier": "https://orcid.org/0009-0006-1069-9558",
+      "sameAs": [
+        "https://orcid.org/0009-0006-1069-9558",
+        "https://github.com/mikhaeelatefrizk",
+        "https://www.linkedin.com/in/mikhaeel-atef-rizk-6549b8378",
+        "https://huggingface.co/Mikhaeelatefrizk"
+      ]
+    },
+    "sameAs": [
+      "https://github.com/mikhaeelatefrizk/bindsight",
+      "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight",
+      "https://bindsight.streamlit.app/",
+      "https://doi.org/10.5281/zenodo.20121496"
+    ]
+  }
+  </script>
+{% endblock %}
