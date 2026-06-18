@@ -95,9 +95,11 @@
   <h2>Epitopes (top-N targets)</h2>
   <p>
     For each top-N target, the AlphaFoldDB structure path and SURFACE-Bind
-    epitope status. <code>pending_surface_bind_lookup</code> means the
-    SURFACE-Bind data tree wasn't available at run time &mdash; populate
-    <code>data/surface_bind/</code> per its README and re-run to fill these.
+    epitope status. <code>surface_bind_site</code> = a vendored targetable site
+    (focused design); <code>no_surface_bind_site</code> /
+    <code>surface_bind_not_configured</code> = whole-surface design (the
+    SURFACE-Bind data tree had no site for this protein, or wasn't vendored
+    &mdash; see <code>data/surface_bind/</code> to populate it).
   </p>
   {% if epitopes_table %}
   <table>
@@ -112,10 +114,10 @@
         <td><code>{{ e.structure_path or '-' }}</code></td>
         <td>{{ e.site_id or '-' }}</td>
         <td>
-          {% if e.epitope_status == 'pending_surface_bind_lookup' %}
-            <span class="badge warn">pending</span>
-          {% else %}
+          {% if e.epitope_status == 'surface_bind_site' %}
             <span class="badge ok">{{ e.epitope_status }}</span>
+          {% else %}
+            <span class="badge warn">{{ e.epitope_status }}</span>
           {% endif %}
         </td>
       </tr>

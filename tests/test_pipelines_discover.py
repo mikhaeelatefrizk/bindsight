@@ -166,7 +166,8 @@ def test_discover_pipeline_end_to_end(tmp_path: Path, fixtures_dir: Path) -> Non
     epitopes_path = out / "epitopes" / "epitopes.parquet"
     assert epitopes_path.exists()
     epitopes_df = pd.read_parquet(epitopes_path)
-    assert all(epitopes_df["epitope_status"] == "pending_surface_bind_lookup")
+    # No SURFACE-Bind data vendored in the test env → whole-surface fallback.
+    assert all(epitopes_df["epitope_status"] == "surface_bind_not_configured")
     assert len(epitopes_df) == 2  # both top-N candidates
 
 
