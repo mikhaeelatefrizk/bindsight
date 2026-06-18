@@ -1,12 +1,15 @@
 site_name: bindsight
-site_description: A reproducible bridge from RNA-seq counts to de novo protein binder design.
+site_description: bindsight is an open-source pipeline that turns RNA-seq counts into ranked de novo protein-binder candidates against over-expressed cell-surface antigens, with full PROV-O / RO-Crate provenance back to the patient cohort.
+site_author: Mikhaeel Atef Rizk
 site_url: https://mikhaeelatefrizk.github.io/bindsight/
 repo_url: https://github.com/mikhaeelatefrizk/bindsight
 repo_name: mikhaeelatefrizk/bindsight
+copyright: "© 2026 Mikhaeel Atef Rizk — MIT License"
 docs_dir: docs
 
 theme:
   name: material
+  custom_dir: overrides
   palette:
     - scheme: default
       primary: teal
@@ -23,8 +26,18 @@ theme:
   features:
     - navigation.sections
     - navigation.top
+    - navigation.footer
     - content.code.copy
     - search.suggest
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mikhaeelatefrizk/bindsight
+      name: bindsight on GitHub
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/mikhaeel-atef-rizk-6549b8378
+      name: Mikhaeel Atef Rizk on LinkedIn
 
 nav:
   - Home: index.md
