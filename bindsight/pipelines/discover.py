@@ -29,13 +29,15 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from bindsight import __version__
-from bindsight.config import RunConfig
+from bindsight.config import RunConfig, TargetDiscoveryParams
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
+from bindsight.epitopes.surface_bind import SURFACE_BIND_DATA_ENV, SurfaceBindClient
 from bindsight.io.paths import run_dir
 from bindsight.provenance import (
     InputRef,
@@ -73,6 +75,7 @@ def run(
     out_dir: Path | None = None,
     open_targets_client: OpenTargetsClient | None = None,
     alphafolddb_client: AlphaFoldDBClient | None = None,
+    surface_bind_client: SurfaceBindClient | None = None,
     surfy: frozenset[str] | None = None,
 ) -> Manifest:
     """Run the discovery half end-to-end and write artifacts to ``out_dir``.
@@ -87,6 +90,7 @@ def run(
     # from GDC if configured + missing; populate the full SURFY surfaceome cache
     # for production runs). No-ops when data is already present or injected.
     _ensure_reference_data(config, surfy=surfy)
+    surface_bind_client = _resolve_surface_bind_client(surface_bind_client)
 
     manifest = new_manifest(name=config.name, config_path=str(config.inputs.counts.parent))
 
@@ -108,6 +112,7 @@ def run(
         epitopes_path=epitopes_path,
         open_targets_client=open_targets_client,
         alphafolddb_client=alphafolddb_client,
+        surface_bind_client=surface_bind_client,
         surfy=surfy,
     )
     manifest.append(discover_stage)
@@ -251,6 +256,7 @@ def _stage_discover(
     epitopes_path: Path,
     open_targets_client: OpenTargetsClient | None,
     alphafolddb_client: AlphaFoldDBClient | None,
+    surface_bind_client: SurfaceBindClient | None,
     surfy: frozenset[str] | None,
 ) -> StageRecord:
     stage = StageRecord(
@@ -279,6 +285,7 @@ def _stage_discover(
             deg_table_path=deg_table_path,
             open_targets_client=open_targets_client,
             alphafolddb_client=alphafolddb_client,
+            surface_bind_client=surface_bind_client,
             surfy=surfy,
         )
         candidates_path.parent.mkdir(parents=True, exist_ok=True)
@@ -321,6 +328,7 @@ def _do_discover(
     deg_table_path: Path,
     open_targets_client: OpenTargetsClient | None,
     alphafolddb_client: AlphaFoldDBClient | None,
+    surface_bind_client: SurfaceBindClient | None,
     surfy: frozenset[str] | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Pure-data discovery logic; returns (candidates_df, epitopes_df)."""
@@ -474,26 +482,10 @@ def _do_discover(
     candidates["rank"] = range(1, len(candidates) + 1)
     candidates["rank_in_top_n"] = candidates["rank"] <= p.top_n
 
-    # 8. Build the (currently empty) epitopes table — populated when SURFACE-Bind
-    # vendoring lands in v0.0.3. For now, every top-N candidate gets a row with
-    # ``epitope_status = 'pending_surface_bind_lookup'``.
-    epitopes_rows = []
-    for _, row in candidates[candidates["rank_in_top_n"]].iterrows():
-        epitopes_rows.append(
-            {
-                "gene_id": row["gene_id"],
-                "symbol": row["symbol"],
-                "uniprot_id": row["uniprot_id"],
-                "structure_path": row["alphafold_structure_path"],
-                "site_id": None,
-                "chain": "A",
-                "residues": [],
-                "score": None,
-                "seed_pdb_path": None,
-                "epitope_status": "pending_surface_bind_lookup",
-            }
-        )
-    epitopes = pd.DataFrame(epitopes_rows) if epitopes_rows else _empty_epitopes_frame()
+    # 8. Build the epitopes table from SURFACE-Bind targetable sites when the
+    # data is vendored; otherwise design against the whole surface, recorded
+    # honestly in ``epitope_status``.
+    epitopes = _build_epitopes(candidates[candidates["rank_in_top_n"]], surface_bind_client, p)
 
     return candidates, epitopes
 
@@ -528,6 +520,99 @@ def _empty_candidates_frame() -> pd.DataFrame:
             "rank_in_top_n",
         ]
     )
+
+
+def _resolve_surface_bind_client(injected: SurfaceBindClient | None) -> SurfaceBindClient | None:
+    """Return the injected client, or auto-construct one from vendored data.
+
+    Auto-construction happens *only* if SURFACE-Bind data is actually vendored
+    (the ``BINDSIGHT_SURFACE_BIND_DATA`` env var is set, or
+    ``data/surface_bind/sites/`` exists). A bare or absent data tree yields None
+    — discovery then designs against the whole surface and says so.
+    """
+    if injected is not None:
+        return injected
+    import os
+
+    env = os.environ.get(SURFACE_BIND_DATA_ENV)
+    local = Path("data/surface_bind")
+    root: str | Path | None = env or (local if (local / "sites").is_dir() else None)
+    if root is None:
+        return None
+    try:
+        return SurfaceBindClient(data_root=root)
+    except (RuntimeError, FileNotFoundError) as e:
+        LOG.warning("SURFACE-Bind data not usable (%s); designing against the whole surface", e)
+        return None
+
+
+def _build_epitopes(
+    top: pd.DataFrame, client: SurfaceBindClient | None, p: TargetDiscoveryParams
+) -> pd.DataFrame:
+    """Build the epitopes table for the top-N candidates.
+
+    With a SURFACE-Bind client whose data is vendored, each candidate gets one
+    row per qualifying targetable site (real residues → focused RFdiffusion
+    design). The ``epitope_status`` is honest about what happened:
+
+    - ``surface_bind_site``           — a real vendored site (focused design);
+    - ``no_surface_bind_site``        — data present, none for this protein;
+    - ``surface_bind_not_configured`` — no SURFACE-Bind data vendored.
+
+    ``require_surface_bind_site`` only bites when data is actually vendored: with
+    a client, ``True`` carries *only* candidates that have ≥1 qualifying site,
+    while ``False`` carries every top-N candidate (whole-surface where no site
+    exists). Without vendored data there is nothing to require, so every
+    candidate falls back to whole-surface design.
+    """
+    rows: list[dict[str, Any]] = []
+    for _, row in top.iterrows():
+        uni = row["uniprot_id"]
+        base = {
+            "gene_id": row["gene_id"],
+            "symbol": row["symbol"],
+            "uniprot_id": uni,
+            "structure_path": row["alphafold_structure_path"],
+        }
+        sites: list[Any] = []
+        if client is not None and isinstance(uni, str) and uni:
+            try:
+                sites = [
+                    s
+                    for s in client.sites(uni)
+                    if s.score is None or s.score >= p.min_surface_bind_score
+                ]
+            except Exception as e:  # malformed vendored data must not abort discovery
+                LOG.warning("SURFACE-Bind lookup failed for %s: %s", uni, e)
+        if sites:
+            for s in sites:
+                rows.append(
+                    {
+                        **base,
+                        "site_id": s.site_id,
+                        "chain": s.chain,
+                        "residues": list(s.residues),
+                        "score": s.score,
+                        "seed_pdb_path": s.seed_pdb_path,
+                        "epitope_status": "surface_bind_site",
+                    }
+                )
+        elif client is None or not p.require_surface_bind_site:
+            # whole-surface fallback (honest status); omitted only when data is
+            # vendored AND a site is required but none exists for this protein.
+            status = "no_surface_bind_site" if client is not None else "surface_bind_not_configured"
+            rows.append(
+                {
+                    **base,
+                    "site_id": None,
+                    "chain": "A",
+                    "residues": [],
+                    "score": None,
+                    "seed_pdb_path": None,
+                    "epitope_status": status,
+                }
+            )
+    return pd.DataFrame(rows) if rows else _empty_epitopes_frame()
 
 
 def _empty_epitopes_frame() -> pd.DataFrame:

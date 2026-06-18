@@ -23,7 +23,7 @@ def main() -> int:
     # Lazy imports keep the script importable even when the discover extras
     # are missing in a different env.
     from bindsight.config import RunConfig, TargetDiscoveryParams
-    from bindsight.pipelines.discover import _do_discover
+    from bindsight.pipelines.discover import _do_discover, _resolve_surface_bind_client
 
     deg_table = Path(snakemake.input.deg_table)
     out_targets = Path(snakemake.output.targets)
@@ -55,6 +55,7 @@ def main() -> int:
         deg_table_path=deg_table,
         open_targets_client=None,
         alphafolddb_client=None,
+        surface_bind_client=_resolve_surface_bind_client(None),
         surfy=None,
     )
     out_targets.parent.mkdir(parents=True, exist_ok=True)
