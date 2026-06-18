@@ -1,3 +1,7 @@
+---
+description: What bindsight is — an open-source pipeline that turns RNA-seq counts into ranked de novo protein-binder candidates against tumour cell-surface antigens. A 5-minute introduction to the discovery-to-design bridge, by Mikhaeel Atef Rizk.
+---
+
 # What is bindsight, and why does it matter?
 
 > A 5-minute read for anyone — biologist, data scientist, PI, investor, or
