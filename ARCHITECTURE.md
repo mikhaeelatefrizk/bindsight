@@ -309,7 +309,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [x] `structures/` (AlphaFoldDB pull)
 - [x] Manifest emission (PROV-O JSON-LD)
 - [x] `bindsight discover` end-to-end on a real TCGA cohort
-- [ ] `epitopes/` SURFACE-Bind targetable-site lookup (stub today; design targets the whole surface)
+- [x] `epitopes/` SURFACE-Bind targetable-site lookup — reads a vendored data tree (user-supplied; no public API) and focuses design on real sites; whole-surface fallback when the data isn't vendored
 
 ### Phase 2 — GPU design half ✅ done
 - [x] `runners/` (Colab, Modal, Kaggle, local-Docker, mock) over one executor (`job_exec`)

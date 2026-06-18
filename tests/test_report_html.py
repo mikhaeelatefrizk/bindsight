@@ -70,7 +70,7 @@ def _make_run(tmp_path: Path) -> Path:
             "residues": [[], []],
             "score": [None, None],
             "seed_pdb_path": [None, None],
-            "epitope_status": ["pending_surface_bind_lookup"] * 2,
+            "epitope_status": ["surface_bind_not_configured"] * 2,
         }
     )
     epitopes.to_parquet(run / "epitopes" / "epitopes.parquet", index=False)
