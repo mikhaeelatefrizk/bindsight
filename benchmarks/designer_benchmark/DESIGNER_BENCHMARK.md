@@ -10,6 +10,10 @@ runnable; the numbers must come from a real GPU run. **No results are committed
 until they come off a GPU** — `RESULTS_TEMPLATE.md` holds the empty tables to
 fill in.
 
+> **Free-GPU quickstart ($0):** to produce the first real binders on Colab or
+> Kaggle free tiers, follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below
+> are the full/Modal protocol.
+
 ## Why this needs a GPU
 
 RFdiffusion, BindCraft and BoltzGen are GPU-only. The harness is therefore
