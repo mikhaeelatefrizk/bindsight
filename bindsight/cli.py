@@ -116,8 +116,9 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
 
     Runs the discovery half of the pipeline (CPU only):
     DEG → surfaceome filter → Open Targets enrichment → AlphaFoldDB pull.
-    (SURFACE-Bind targetable-site prediction is a roadmap item; until then the
-    design step targets the whole surface.)
+    (SURFACE-Bind targetable-site lookup is wired in: it reads a vendored data
+    tree — there is no public API — and focuses design on real sites when
+    present, else targets the whole surface.)
     """
     _setup_logging(verbose)
     from bindsight.config import RunConfig
