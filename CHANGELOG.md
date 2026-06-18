@@ -25,6 +25,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target set,
   CPU-tested with the mock backend, runnable for real on a GPU backend; ships an
   empty results template (no fabricated numbers).
+- **Free-GPU design path made runnable**: the Colab notebook and Kaggle kernel
+  now install bindsight from GitHub (it is not on PyPI), and a $0 Colab/Kaggle
+  runbook (`benchmarks/designer_benchmark/RUN_FREE_GPU.md`) walks through
+  producing the first real binders.
+
+### Added — SURFACE-Bind targetable-site lookup
+- **SURFACE-Bind site lookup implemented** (`bindsight/epitopes/surface_bind.py`):
+  `SurfaceBindClient.has/sites/metadata` read a *vendored* data tree
+  (`data/surface_bind/sites/<UNIPROT>/sites.json`; user-supplied — SURFACE-Bind
+  has no public API). Wired into discovery (`pipelines/discover.py`): top-N
+  candidates get real epitope residues when a qualifying site exists (focused
+  RFdiffusion design), filtered by `min_surface_bind_score`, and
+  `require_surface_bind_site` carries only sited candidates when data is vendored.
+  With no vendored data, discovery falls back to whole-surface design and records
+  an honest `epitope_status` (`surface_bind_site` / `no_surface_bind_site` /
+  `surface_bind_not_configured`); the pinned commit SHA is exposed via
+  `client.metadata()` for provenance.
 
 ### Changed — discovery ranking, license audit
 - Discovery now ranks candidates by the combined DE score π = log2fc × −log10(padj)

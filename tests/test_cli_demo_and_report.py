@@ -43,7 +43,7 @@ def _seed_min_run(run: Path) -> None:
             "uniprot_id": ["P04626"],
             "structure_path": [""],
             "site_id": [None],
-            "epitope_status": ["pending_surface_bind_lookup"],
+            "epitope_status": ["surface_bind_not_configured"],
         }
     ).to_parquet(run / "epitopes" / "epitopes.parquet", index=False)
 
