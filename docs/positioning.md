@@ -1,3 +1,7 @@
+---
+description: Where bindsight fits in the protein-design and target-discovery landscape — who it is for, the RNA-seq-to-binder gap it fills, and how it compares to existing tools.
+---
+
 # Where bindsight fits — positioning & landscape
 
 > A short, honest map of where `bindsight` sits in the protein-design / target-discovery ecosystem:
