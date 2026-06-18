@@ -1,3 +1,7 @@
+---
+description: Install bindsight and run it end to end — RNA-seq counts to ranked surface-antigen targets on CPU, then RFdiffusion / ProteinMPNN / Boltz-2 binder design on a GPU backend, with full PROV-O / RO-Crate provenance.
+---
+
 # How to use `bindsight`
 
 > Practical end-to-end walkthrough. The discovery half (RNA-seq → ranked

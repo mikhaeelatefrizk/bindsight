@@ -1,3 +1,7 @@
+---
+description: Concrete bindsight use cases — target discovery from RNA-seq, de novo binder design against tumour surface antigens, and reproducible provenance — each sized for a CPU laptop plus a modest cloud-GPU budget.
+---
+
 # Use cases
 
 > Three concrete scenarios where `bindsight` saves serious time and produces

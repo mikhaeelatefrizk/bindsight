@@ -1,3 +1,7 @@
+---
+description: A step-by-step recipe to run the bindsight GPU design half (RFdiffusion → ProteinMPNN → Boltz-2) on free or paid Google Colab — turning discovered targets into designed binder PDBs without a local GPU.
+---
+
 # How to design binders on Colab (the real recipe)
 
 > Step-by-step: how to take the `bindsight discover` output (target structures
