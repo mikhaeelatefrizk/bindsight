@@ -15,6 +15,7 @@ data/alphafolddb_cache/
 data/recount3_cache/
 data/gdc_cache/
 data/colabfold_msa_cache/
+data/target_structures/
 
 # Generated reports
 report.html
