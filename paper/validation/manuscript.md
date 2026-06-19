@@ -144,8 +144,11 @@ number. MSLN/PAAD is reported but underpowered (4 matched normals).
 **Designer benchmark.** The complementary three-way comparison of binder
 designers (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target
 set) is GPU-only; a runnable, CPU-tested harness and protocol ship in
-[`benchmarks/designer_benchmark/`](../../benchmarks/designer_benchmark/) with an
-empty results template to be populated from a GPU run.
+[`benchmarks/designer_benchmark/`](../../benchmarks/designer_benchmark/). Its
+`rfdiff_mpnn` arm is populated with a real run — 20 binders against the ERBB2
+trastuzumab epitope on a free Kaggle P100 (best ipTM 0.83, 40 % pass ipTM ≥ 0.65,
+see [`RESULTS.md`](../../benchmarks/designer_benchmark/RESULTS.md)); the BindCraft
+and BoltzGen arms need ≥24–32 GB GPUs and run on paid backends.
 
 ## 5. Data and code availability
 
