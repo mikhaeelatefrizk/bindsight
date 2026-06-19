@@ -19,7 +19,7 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the **di
 
 > Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.1.0** — discovery half end-to-end on CPU (real TCGA data); design + validation run end-to-end on a GPU backend (Modal / local Docker / Kaggle / Colab); web UI deployed on Streamlit Cloud.
+> 🚀 **v0.2.0** — discovery half end-to-end on CPU (real TCGA data); design + validation now **proven** end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.83, 40% success@0.65) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
 **New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
 
@@ -130,7 +130,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 
 For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-comparison-vs-existing-tools).
 
-## What works today (v0.1.0)
+## What works today (v0.2.0)
 
 | Capability | Status | How to try |
 |---|---|---|
@@ -157,9 +157,10 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 
 ## Status & roadmap
 
-- ✅ **v0.1.0** (current) — discovery on real TCGA data; full design half (RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG) on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI.
+- ✅ **v0.2.0** (current) — everything in v0.1.0 (discovery on real TCGA data; full design half — RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG — on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI) **plus** the first real de novo binders, the free Kaggle split-environment backend, the negative-result taxonomy, and SURFACE-Bind targetable-site lookup.
 - ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
-- ⏳ **v0.2.0** — single-cell RNA-seq input, async (non-blocking) Modal job submission, and populating the [three-way designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from a GPU run. (SURFACE-Bind targetable-site lookup is now implemented — it reads a vendored data tree and falls back to whole-surface design when the data isn't present.)
+- ✅ **De novo binder design validated** — the design half (RFdiffusion → ProteinMPNN → Boltz-2) run on a **free Kaggle Tesla P100** produced **20 real binders** against the ERBB2 extracellular **domain IV** (the clinically validated trastuzumab epitope): mean **ipTM 0.60**, best **0.83**, and **40 %** of designs pass the ipTM ≥ 0.65 success bar — at **$0**, no local GPU. Designs (PDB + FASTA) and per-design metrics in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md); reproduce on a free GPU via [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md).
+- ⏳ **v0.3.0** — single-cell RNA-seq input, async (non-blocking) Modal job submission, and extending the [designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from the committed `rfdiff_mpnn` arm to the full three-way comparison (BindCraft / BoltzGen need ≥24–32 GB GPUs, so those arms run on paid backends).
 - ⏳ **v1.0.0** — JOSS submission; multi-modal tumor-selectivity scoring (single-cell + co-expression + immunopeptidomics) to extend discovery beyond bulk differential expression.
 
 See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#11-phased-roadmap) for details.
@@ -277,7 +278,7 @@ pyproject.toml            # Python packaging
 
 If you use `bindsight` in your work, please cite it via the Zenodo DOI:
 
-> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.1.0). Zenodo. https://doi.org/10.5281/zenodo.20121496
+> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.2.0). Zenodo. https://doi.org/10.5281/zenodo.20121496
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
 
@@ -289,7 +290,7 @@ BibTeX:
   title        = {bindsight: a reproducible bridge from RNA-seq to de novo protein binder design},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v0.1.0},
+  version      = {v0.2.0},
   doi          = {10.5281/zenodo.20121496},
   url          = {https://doi.org/10.5281/zenodo.20121496},
   orcid        = {https://orcid.org/0009-0006-1069-9558}

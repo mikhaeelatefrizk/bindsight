@@ -8,6 +8,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-19
+
+### Added — first real de novo binders (designer benchmark populated)
+- The designer benchmark now ships a **real result**, not an empty template:
+  RFdiffusion → ProteinMPNN → Boltz-2, run on a **free Kaggle Tesla P100**, produced
+  **20 binders** against ERBB2 extracellular domain IV (the trastuzumab epitope) —
+  mean ipTM 0.60, best 0.83, 40 % pass ipTM ≥ 0.65 — at $0. The designs (PDB + FASTA),
+  per-design metrics, `results.json`, and a populated `RESULTS.md` live in
+  `benchmarks/designer_benchmark/`. New `prepare_erbb2_target.py` (extracts the
+  domain-IV target from the AlphaFold model) and `score_run.py` (aggregates a returned
+  results tarball into the committed artifacts).
+- **Kaggle split-environment backend** (`bindsight/runners/kaggle_kernel.py`): the free
+  Kaggle GPU is a P100 (sm_60) whose preinstalled stack runs neither RFdiffusion's
+  legacy deps nor shares a Python env with the modern Boltz-2 validator, so the kernel
+  builds two micromamba environments — `se3` (py3.9 / torch 1.12.1+cu113 → RFdiffusion +
+  ProteinMPNN) and `boltz` (py3.11 / torch 2.2.2+cu118 → Boltz-2 + bindsight) — and runs
+  `job_exec` across them. Boltz-2 is pinned to fp32 (the P100/T4 lack bfloat16).
+- `bindsight/runners/tools.py`: the design and validator interpreters are overridable via
+  `BINDSIGHT_DESIGN_PYTHON` / `BINDSIGHT_BOLTZ_BIN` — the minimal seam that lets one
+  `job_exec` span a legacy designer env and a modern validator env (defaults unchanged).
+
+### Fixed — Kaggle runner + Boltz-2 protein-binder validation
+- `KaggleRunner.submit()` now embeds the spec + structure as base64 in a self-contained
+  kernel instead of referencing a Kaggle dataset it never created; `poll()` reads the real
+  `KernelWorkerStatus` enum (it previously mis-parsed the status and never saw completion).
+- `job_exec` / `validate/boltz2.py`: disable Boltz-2 affinity for protein binders (it is
+  ligand-only) and use valid single-letter chain IDs — previously Boltz-2 silently skipped
+  every design, so all metrics came back null. ipTM is now produced; PAE-interaction and
+  affinity are intentionally blank for protein binders.
+
 ### Added — negative-result taxonomy (failure modes as a first-class output)
 - `bindsight/pipelines/discover.py` now emits `taxonomy/failure_taxonomy.parquet`:
   one disposition per differentially-expressed gene explaining why it did / didn't
@@ -34,12 +64,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **Three-way designer benchmark** harness + protocol
   (`bindsight/benchmark/designer_bench.py`, `benchmarks/designer_benchmark/`):
   RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target set,
-  CPU-tested with the mock backend, runnable for real on a GPU backend; ships an
-  empty results template (no fabricated numbers).
-- **Free-GPU design path made runnable**: the Colab notebook and Kaggle kernel
-  now install bindsight from GitHub (it is not on PyPI), and a $0 Colab/Kaggle
-  runbook (`benchmarks/designer_benchmark/RUN_FREE_GPU.md`) walks through
-  producing the first real binders.
+  CPU-tested with the mock backend, runnable for real on a GPU backend (the
+  `rfdiff_mpnn` arm is now populated with a real run — see *first real de novo
+  binders* above; the empty template is gone).
+- **Free-GPU design path made runnable**: bindsight installs from GitHub (it is
+  not on PyPI) and a $0 Kaggle runbook
+  (`benchmarks/designer_benchmark/RUN_FREE_GPU.md`) walks through producing real
+  binders on a free P100 via the split-environment kernel.
 
 ### Added — SURFACE-Bind targetable-site lookup
 - **SURFACE-Bind site lookup implemented** (`bindsight/epitopes/surface_bind.py`):

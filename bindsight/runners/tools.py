@@ -17,12 +17,35 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 from bindsight.validate.boltz2 import build_boltz_yaml, parse_boltz_output
 from bindsight.validate.protocol import ValidationResult
 
 LOG = logging.getLogger(__name__)
+
+
+def _design_python() -> str:
+    """Interpreter for the design subprocesses (RFdiffusion / ProteinMPNN).
+
+    Defaults to ``python`` on PATH. Hosts that run the *designer* in a different
+    Python env than the orchestrator (e.g. the Kaggle split-env build, where
+    RFdiffusion needs a legacy py3.9/torch1.12 env while ``job_exec`` itself runs
+    under the modern Boltz-2 env) point this at that env's interpreter via
+    ``BINDSIGHT_DESIGN_PYTHON``.
+    """
+    return os.environ.get("BINDSIGHT_DESIGN_PYTHON") or "python"
+
+
+def _boltz_bin() -> str:
+    """Executable for the Boltz-2 validator (``boltz`` on PATH by default).
+
+    Overridable via ``BINDSIGHT_BOLTZ_BIN`` for split-env hosts where Boltz-2
+    lives in its own environment.
+    """
+    return os.environ.get("BINDSIGHT_BOLTZ_BIN") or "boltz"
+
 
 # ---------------------------------------------------------------------------
 # Pinned upstream tool revisions + weights (real, verifiable).
@@ -118,7 +141,7 @@ def build_rfdiff_cmd(
 ) -> list[str]:
     """RFdiffusion ``scripts/run_inference.py`` argv for binder backbone design."""
     return [
-        "python",
+        _design_python(),
         str(Path(rfdiff_dir) / "scripts" / "run_inference.py"),
         f"inference.input_pdb={input_pdb}",
         f"inference.output_prefix={output_prefix}",
@@ -139,7 +162,7 @@ def build_mpnn_cmd(
 ) -> list[str]:
     """ProteinMPNN ``protein_mpnn_run.py`` argv for sequence design on a backbone."""
     return [
-        "python",
+        _design_python(),
         str(Path(mpnn_dir) / "protein_mpnn_run.py"),
         "--pdb_path",
         str(pdb_path),
@@ -156,7 +179,7 @@ def build_mpnn_cmd(
 
 def build_boltz_cmd(*, yaml_path: Path, out_dir: Path, use_msa_server: bool = True) -> list[str]:
     """Boltz-2 ``boltz predict`` argv for structure + affinity prediction."""
-    cmd = ["boltz", "predict", str(yaml_path), "--out_dir", str(out_dir)]
+    cmd = [_boltz_bin(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
     if use_msa_server:
         cmd.append("--use_msa_server")
     return cmd
