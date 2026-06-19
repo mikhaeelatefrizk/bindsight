@@ -39,7 +39,7 @@ def test_sites_parses_scores_and_sorts() -> None:
     assert s1.residues == [10, 11, 12, 15, 18]
     assert s1.score == 0.82
     assert s1.seed_pdb_path is not None
-    assert s1.seed_pdb_path.endswith("seeds/site_1.pdb")
+    assert s1.seed_pdb_path.replace("\\", "/").endswith("seeds/site_1.pdb")  # OS-agnostic
     assert sites[1].seed_pdb_path is None  # no seed in the second record
 
 

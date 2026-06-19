@@ -34,9 +34,12 @@ from bindsight.runners import tools
 # community-proven equivalent and (unlike Kaggle's default cu128 torch) include the
 # P100's sm_60 kernels. SE3-Transformer's own requirements (e3nn==0.3.3, dllogger,
 # …) come from RFdiffusion/env/SE3Transformer/requirements.txt at install time.
+# cu113 is the newest CUDA wheel line for torch 1.12.1; the dgl cu113 wheels at the
+# find-links below are therefore built against this exact torch. Package name is
+# plain ``dgl`` with a ``+cu113`` local version (the old ``dgl-cu113`` name is gone).
 _SE3_TORCH = "torch==1.12.1+cu113"
 _SE3_TORCH_INDEX = "https://download.pytorch.org/whl/cu113"
-_SE3_DGL = "dgl-cu113"
+_SE3_DGL = "dgl==1.0.2+cu113"
 _SE3_DGL_FIND = "https://data.dgl.ai/wheels/cu113/repo.html"
 _SE3_EXTRA_PIP = [
     "hydra-core==1.3.2",
