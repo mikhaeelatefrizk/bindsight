@@ -1,0 +1,29 @@
+{
+  "schema": "bindsight-designer-benchmark/1",
+  "generated_utc": "2026-06-19T20:42:17+00:00",
+  "bindsight_version": "0.1.0",
+  "backend": "kaggle",
+  "gpu": "Tesla P100-PCIE-16GB (Kaggle free)",
+  "validator": "boltz2",
+  "n_trajectories": 10,
+  "is_mock": false,
+  "targets": [
+    "ERBB2 domain IV (UniProt P04626, residues 511-652; trastuzumab epitope)"
+  ],
+  "designers": [
+    {
+      "designer": "rfdiff_mpnn",
+      "n_targets": 1,
+      "n_designs": 20,
+      "mean_iptm": 0.598,
+      "median_iptm": 0.6064,
+      "mean_pae_interaction": null,
+      "mean_affinity": null,
+      "success_rate": 0.4,
+      "cost_usd": null,
+      "gpu_hours": null,
+      "per_target": [],
+      "error": null
+    }
+  ]
+}

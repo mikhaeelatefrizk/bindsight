@@ -6,13 +6,15 @@ target set with a fixed validator (**Boltz-2**), reporting per-designer binder
 quality (ipTM, PAE-interaction, predicted affinity, success rate) and GPU cost.
 
 This is the designer half of the v0.2 validation. The harness is real and
-runnable; the numbers must come from a real GPU run. **No results are committed
-until they come off a GPU** — `RESULTS_TEMPLATE.md` holds the empty tables to
-fill in.
+runnable; the numbers come from a real GPU run. The **first real result** —
+RFdiffusion + ProteinMPNN against ERBB2 domain IV (the trastuzumab epitope), on
+Kaggle's free P100 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs,
+mean ipTM 0.60, 40% success@0.65), with the designed binders in `binders/` and
+the raw metrics in `results.json`.
 
-> **Free-GPU quickstart ($0):** to produce the first real binders on Colab or
-> Kaggle free tiers, follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below
-> are the full/Modal protocol.
+> **Free-GPU quickstart ($0):** to reproduce or extend it on a Kaggle free GPU,
+> follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below are the
+> full/Modal protocol for the complete three-way comparison.
 
 ## Why this needs a GPU
 
@@ -91,17 +93,30 @@ so differences in the output table are attributable to the designer alone.
 
 ## Step 4 — Record results
 
-The run writes `benchmarks/designer_benchmark/run/results.json` and `RESULTS.md`.
-Copy the headline table into `RESULTS_TEMPLATE.md` (rename to `RESULTS.md`),
-note the GPU, date, and `bindsight --version`, and commit. Keep `results.json`
-for provenance.
+For the headless Kaggle path, score the returned tarball straight into the
+committed artifacts:
+
+```bash
+python benchmarks/designer_benchmark/score_run.py <out_dir>/<id>.tar.gz \
+    --n-trajectories 10 --out benchmarks/designer_benchmark
+```
+
+This writes `results.json` + `RESULTS.md` (`is_mock=False`, stamped with GPU +
+date + `bindsight --version`) and stages the designed binder PDBs into
+`binders/`. For the Modal path the run writes `run/results.json` + `RESULTS.md`
+directly; copy those up and commit. Keep `results.json` and `binders/` for
+provenance.
 
 ## Metrics
 
 - **ipTM** — Boltz-2 interface predicted-TM (higher = more confident interface).
-- **PAE-interaction** — predicted aligned error across the interface (lower = better).
-- **predicted affinity** — Boltz-2 `affinity_pred_value` (more negative = stronger).
-- **success@0.65** — fraction of designs with ipTM ≥ 0.65.
+  The primary metric for protein binders.
+- **PAE-interaction** — predicted aligned error across the interface (lower = better);
+  comes from Boltz-2's full-PAE output (not the confidence JSON), so it is blank in the
+  Kaggle quickstart result.
+- **predicted affinity** — Boltz-2 `affinity_pred_value`. **Ligand-only**: Boltz-2 does
+  not predict protein–protein affinity, so it is blank for protein binders.
+- **success@0.65** — fraction of designs with ipTM ≥ 0.65 (standard de novo criterion).
 
 The scoring math lives in `bindsight/benchmark/designer_bench.py`; it parses the
 same `metrics.jsonl` the runner/job executor produces, so CPU (mock) and GPU
