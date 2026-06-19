@@ -280,7 +280,7 @@ def _stage_discover(
     )
 
     try:
-        candidates_df, epitopes_df = _do_discover(
+        candidates_df, epitopes_df, taxonomy_df = _do_discover(
             config=config,
             deg_table_path=deg_table_path,
             open_targets_client=open_targets_client,
@@ -290,13 +290,19 @@ def _stage_discover(
         )
         candidates_path.parent.mkdir(parents=True, exist_ok=True)
         epitopes_path.parent.mkdir(parents=True, exist_ok=True)
+        taxonomy_path = candidates_path.parent.parent / "taxonomy" / "failure_taxonomy.parquet"
+        taxonomy_path.parent.mkdir(parents=True, exist_ok=True)
         candidates_df.to_parquet(candidates_path, index=False)
         epitopes_df.to_parquet(epitopes_path, index=False)
+        taxonomy_df.to_parquet(taxonomy_path, index=False)
 
+        disp_counts = taxonomy_df["disposition"].value_counts().to_dict()
         stage.notes = (
             f"n_candidates={len(candidates_df)}, "
             f"n_with_structure={int(candidates_df['has_alphafold_structure'].sum())}, "
-            f"n_top={int((candidates_df['rank_in_top_n']).sum())}"
+            f"n_top={int((candidates_df['rank_in_top_n']).sum())}; "
+            f"taxonomy({len(taxonomy_df)} genes)="
+            + ",".join(f"{k}:{v}" for k, v in sorted(disp_counts.items()))
         )
         stage.mark_completed(
             outputs=[
@@ -312,6 +318,13 @@ def _stage_discover(
                     path=str(epitopes_path),
                     sha256=sha256_file(epitopes_path),
                     bytes=epitopes_path.stat().st_size,
+                    media_type="application/x-parquet",
+                ),
+                OutputRef(
+                    role="failure_taxonomy",
+                    path=str(taxonomy_path),
+                    sha256=sha256_file(taxonomy_path),
+                    bytes=taxonomy_path.stat().st_size,
                     media_type="application/x-parquet",
                 ),
             ]
@@ -330,8 +343,8 @@ def _do_discover(
     alphafolddb_client: AlphaFoldDBClient | None,
     surface_bind_client: SurfaceBindClient | None,
     surfy: frozenset[str] | None,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Pure-data discovery logic; returns (candidates_df, epitopes_df)."""
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Pure-data discovery logic; returns (candidates_df, epitopes_df, taxonomy_df)."""
     p = config.params.target_discovery
 
     # 1. Load DEGs and keep significant ones. Antibody targets need tumor
@@ -346,6 +359,7 @@ def _do_discover(
     # ratio (e.g. PSMA) is not crowded out by noisy high-fold-change genes.
     sig["pi_score"] = _pi_score(sig)
     sig = sig.sort_values("pi_score", ascending=False).head(_ENRICH_TOP_K)
+    enriched_gene_ids = {str(g) for g in sig["gene_id"]}
     LOG.info(
         "DEGs: %d total, %d significant; enriching top %d by combined score (π)",
         len(deg),
@@ -407,9 +421,20 @@ def _do_discover(
             )
 
     candidates = pd.DataFrame(enriched_rows)
+    enriched_all = candidates.copy()
     if candidates.empty:
         LOG.warning("no candidates after Open Targets enrichment")
-        return _empty_candidates_frame(), _empty_epitopes_frame()
+        taxonomy = _build_taxonomy(
+            deg,
+            enriched_gene_ids,
+            enriched_all,
+            _empty_candidates_frame(),
+            _empty_epitopes_frame(),
+            surfy_set,
+            p,
+            surface_bind_active=surface_bind_client is not None,
+        )
+        return _empty_candidates_frame(), _empty_epitopes_frame(), taxonomy
 
     # 3. Surfaceome filter.
     if p.require_surfy:
@@ -487,7 +512,143 @@ def _do_discover(
     # honestly in ``epitope_status``.
     epitopes = _build_epitopes(candidates[candidates["rank_in_top_n"]], surface_bind_client, p)
 
-    return candidates, epitopes
+    # 9. Negative-result taxonomy: one disposition per DEG gene, explaining why it
+    # is / isn't a surfaced candidate. Every gene is accounted for (the counts sum
+    # to the DEG total) — the failure modes are a first-class, auditable output.
+    taxonomy = _build_taxonomy(
+        deg,
+        enriched_gene_ids,
+        enriched_all,
+        candidates,
+        epitopes,
+        surfy_set,
+        p,
+        surface_bind_active=surface_bind_client is not None,
+    )
+    return candidates, epitopes, taxonomy
+
+
+# Negative-result taxonomy: the ordered dispositions a DEG gene can land in, from
+# "never in contention" to "surfaced". The funnel is exhaustive, so the per-
+# disposition counts always sum to the total DEG gene count.
+TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
+    "not_significant",
+    "down_regulated",
+    "below_enrichment_cutoff",
+    "no_uniprot",
+    "not_surfaceome",
+    "fails_tractability",
+    "fails_safety",
+    "no_alphafold_model",
+    "not_top_n",
+    "no_surface_bind_site",
+    "surfaced",
+)
+
+
+def _build_taxonomy(
+    deg: pd.DataFrame,
+    enriched_gene_ids: set[str],
+    enriched_all: pd.DataFrame,
+    candidates: pd.DataFrame,
+    epitopes: pd.DataFrame,
+    surfy_set: frozenset[str],
+    p: TargetDiscoveryParams,
+    *,
+    surface_bind_active: bool,
+) -> pd.DataFrame:
+    """One disposition per DEG gene explaining why it is / isn't a surfaced candidate.
+
+    Re-derives each gene's fate from the same signals the pipeline used — without
+    perturbing the candidate/epitope outputs — so the failure modes (the "negative
+    results") become an auditable, first-class artifact. The funnel is exhaustive:
+    the per-disposition counts always sum to the total DEG gene count.
+    """
+    wanted = {m for m in (p.require_tractable_modality or [])}
+
+    # Per-gene "furthest stage reached", collapsed over a gene's UniProt rows.
+    reach: dict[str, dict[str, bool]] = {}
+    sym_map: dict[str, object] = {}
+    for r in enriched_all.itertuples(index=False):
+        gid = str(r.gene_id)
+        sym_map.setdefault(gid, getattr(r, "symbol", None))
+        uniprot = getattr(r, "uniprot_id", None)
+        has_u = bool(uniprot) and pd.notna(uniprot)
+        surf = has_u and (not p.require_surfy or is_surface_protein(str(uniprot), surfy=surfy_set))
+        mods = {
+            m.strip()
+            for m in str(getattr(r, "tractable_modalities", "") or "").split(";")
+            if m.strip()
+        }
+        tract = surf and (not wanted or bool(wanted & mods))
+        safe = tract and (int(getattr(r, "n_safety_events", 0) or 0) <= p.max_safety_events)
+        d = reach.setdefault(gid, {"u": False, "surf": False, "tract": False, "safe": False})
+        d["u"] |= has_u
+        d["surf"] |= surf
+        d["tract"] |= tract
+        d["safe"] |= safe
+
+    cand_gids: set[str] = set()
+    struct_gids: set[str] = set()
+    topn_gids: set[str] = set()
+    if not candidates.empty:
+        cand_gids = {str(g) for g in candidates["gene_id"]}
+        struct_gids = {
+            str(g) for g in candidates.loc[candidates["has_alphafold_structure"], "gene_id"]
+        }
+        topn_gids = {str(g) for g in candidates.loc[candidates["rank_in_top_n"], "gene_id"]}
+    site_gids: set[str] = set()
+    if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
+        site_gids = {
+            str(g)
+            for g in epitopes.loc[epitopes["epitope_status"] == "surface_bind_site", "gene_id"]
+        }
+
+    rows: list[dict[str, object]] = []
+    for r in deg.itertuples(index=False):
+        gid = str(r.gene_id)
+        significant = bool(getattr(r, "significant", False))
+        log2fc = float(r.log2fc) if pd.notna(getattr(r, "log2fc", None)) else None
+        padj = float(r.padj) if pd.notna(getattr(r, "padj", None)) else None
+        # Terminal outcome wins: a gene's *actual* fate (the pipeline ranks rather
+        # than hard-filters on fold-change/structure, so a down-regulated or
+        # structure-less gene can still appear in candidates). Only genes that
+        # never reached candidates get the upstream "why dropped" reasons.
+        if gid in struct_gids and gid in topn_gids:
+            disp = (
+                "no_surface_bind_site"
+                if surface_bind_active and gid not in site_gids
+                else "surfaced"
+            )
+        elif gid in cand_gids:
+            # passed the filters but can't proceed to design: no structure, or out of top-N
+            disp = "no_alphafold_model" if gid not in struct_gids else "not_top_n"
+        elif gid in enriched_gene_ids:
+            d = reach.get(gid, {"u": False, "surf": False, "tract": False, "safe": False})
+            if not d["u"]:
+                disp = "no_uniprot"
+            elif p.require_surfy and not d["surf"]:
+                disp = "not_surfaceome"
+            elif wanted and not d["tract"]:
+                disp = "fails_tractability"
+            else:
+                disp = "fails_safety"
+        elif not significant:
+            disp = "not_significant"
+        elif (log2fc or 0.0) <= 0.0:
+            disp = "down_regulated"
+        else:
+            disp = "below_enrichment_cutoff"
+        rows.append(
+            {
+                "gene_id": gid,
+                "symbol": sym_map.get(gid),
+                "log2fc": log2fc,
+                "padj": padj,
+                "disposition": disp,
+            }
+        )
+    return pd.DataFrame(rows, columns=["gene_id", "symbol", "log2fc", "padj", "disposition"])
 
 
 def _pi_score(df: pd.DataFrame) -> pd.Series:
