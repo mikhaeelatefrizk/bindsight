@@ -60,6 +60,8 @@ def _inject_css() -> None:
 # Pages
 # ---------------------------------------------------------------------------
 def _page_home() -> None:
+    from bindsight import __version__
+
     st.title("bindsight")
     st.markdown(
         "**RNA-seq counts → ranked de novo protein binder candidates, "
@@ -67,7 +69,7 @@ def _page_home() -> None:
     )
     st.markdown(
         '<div style="margin-bottom:1rem">'
-        '<span class="pill ok-pill">v0.1.0 ready</span>'
+        f'<span class="pill ok-pill">v{__version__} ready</span>'
         '<span class="pill">MIT license</span>'
         '<span class="pill">CPU-friendly</span>'
         '<span class="pill">PROV-O provenance</span>'
