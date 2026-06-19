@@ -31,7 +31,10 @@ Prints a per-designer table and writes `/tmp/dbench/RESULTS.md` marked **MOCK**.
 ```bash
 mkdir -p data/target_structures
 # ERBB2/HER2 — your validation already surfaces it; AlphaFold model exists.
-curl -sSL https://alphafold.ebi.ac.uk/files/AF-P04626-F1-model_v4.cif \
+# (v6 is the current AlphaFold DB release. bindsight's own AlphaFoldDB client always
+# tracks the live version, and the benchmark auto-fetches the structure if absent —
+# so if this exact URL ever 404s, just let the harness fetch it for you.)
+curl -sSL https://alphafold.ebi.ac.uk/files/AF-P04626-F1-model_v6.cif \
   -o data/target_structures/P04626.cif
 ```
 
