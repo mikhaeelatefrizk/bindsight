@@ -68,7 +68,7 @@ falls back to an AlphaFoldDB fetch for that UniProt.
 # Example: fetch AlphaFold models for the default targets.
 mkdir -p data/target_structures
 for u in P04626 P00533 Q13421 P20138 P26951; do
-  curl -sSL "https://alphafold.ebi.ac.uk/files/AF-${u}-F1-model_v4.cif" \
+  curl -sSL "https://alphafold.ebi.ac.uk/files/AF-${u}-F1-model_v6.cif" \
     -o "data/target_structures/${u}.cif"
 done
 ```
