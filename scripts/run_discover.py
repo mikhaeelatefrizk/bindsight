@@ -28,6 +28,7 @@ def main() -> int:
     deg_table = Path(snakemake.input.deg_table)
     out_targets = Path(snakemake.output.targets)
     out_epitopes = Path(snakemake.output.epitopes)
+    out_taxonomy = Path(snakemake.output.taxonomy)
     out_manifest = Path(snakemake.output.manifest_fragment)
     target_params = TargetDiscoveryParams.model_validate(dict(snakemake.params.target))
 
@@ -50,7 +51,7 @@ def main() -> int:
         }
     )
 
-    candidates_df, epitopes_df = _do_discover(
+    candidates_df, epitopes_df, taxonomy_df = _do_discover(
         config=cfg,
         deg_table_path=deg_table,
         open_targets_client=None,
@@ -60,8 +61,10 @@ def main() -> int:
     )
     out_targets.parent.mkdir(parents=True, exist_ok=True)
     out_epitopes.parent.mkdir(parents=True, exist_ok=True)
+    out_taxonomy.parent.mkdir(parents=True, exist_ok=True)
     candidates_df.to_parquet(out_targets, index=False)
     epitopes_df.to_parquet(out_epitopes, index=False)
+    taxonomy_df.to_parquet(out_taxonomy, index=False)
 
     out_manifest.parent.mkdir(parents=True, exist_ok=True)
     out_manifest.write_text(
@@ -72,6 +75,7 @@ def main() -> int:
                 "metrics": {
                     "n_candidates": len(candidates_df),
                     "n_epitopes": len(epitopes_df),
+                    "n_taxonomy": len(taxonomy_df),
                 },
             },
             indent=2,
