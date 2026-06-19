@@ -271,7 +271,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 1. **The opinionated, validated *join*.** The work is the empirical defense of the defaults: which DE thresholds × surfaceome filter × specificity penalty × designer × validator combination produces designs that pass an orthogonal check on held-out known antigens (HER2, CLDN6, MSLN, EGFR).
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
-3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy.
+3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy. *(Shipped for the discovery half: `taxonomy/failure_taxonomy.parquet` — an exhaustive per-gene disposition, rendered in the HTML report.)*
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
 5. **Streamlit + self-contained HTML report with embedded py3Dmol.** The artifact that sells the tool in a 5-minute talk.
 
@@ -332,7 +332,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 ### Phase 4 — Validation paper (in progress)
 - [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); specificity confirmed (EGFR/CEA correctly not surfaced). Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
 - [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen — runnable, CPU-tested harness + protocol ship in `benchmarks/designer_benchmark/`; the GPU comparison run is pending
-- [ ] Negative-result taxonomy on full DEG list
+- [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission
 - [ ] **Milestone:** preprint DOI + `v0.2.0`
 

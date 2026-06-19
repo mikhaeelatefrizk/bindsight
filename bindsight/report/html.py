@@ -49,6 +49,7 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
     deg_df = _maybe_read_parquet(run_dir / "deg" / "results.parquet")
     candidates_df = _maybe_read_parquet(run_dir / "targets" / "candidates.parquet")
     epitopes_df = _maybe_read_parquet(run_dir / "epitopes" / "epitopes.parquet")
+    taxonomy_df = _maybe_read_parquet(run_dir / "taxonomy" / "failure_taxonomy.parquet")
     manifest = _maybe_read_jsonld(run_dir / "run_manifest.jsonld")
 
     volcano_b64 = _render_volcano(deg_df) if deg_df is not None and len(deg_df) else ""
@@ -77,6 +78,8 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
         ),
         candidates_table=_df_to_records(candidates_df, _CANDIDATE_DISPLAY_COLS, head=20),
         epitopes_table=_df_to_records(epitopes_df, _EPITOPE_DISPLAY_COLS, head=20),
+        taxonomy_counts=_disposition_counts(taxonomy_df),
+        n_taxonomy=len(taxonomy_df) if taxonomy_df is not None else 0,
         manifest=manifest,
         stages=manifest.get("stages", []) if manifest else [],
     )
@@ -108,6 +111,35 @@ _EPITOPE_DISPLAY_COLS = [
     "site_id",
     "epitope_status",
 ]
+
+
+# Funnel order for the negative-result taxonomy (display only; the canonical list
+# lives in bindsight.pipelines.discover.TAXONOMY_DISPOSITIONS — duplicated here so the
+# report renders without importing the heavy discovery module).
+_DISPOSITION_ORDER = (
+    "not_significant",
+    "down_regulated",
+    "below_enrichment_cutoff",
+    "no_uniprot",
+    "not_surfaceome",
+    "fails_tractability",
+    "fails_safety",
+    "no_alphafold_model",
+    "not_top_n",
+    "no_surface_bind_site",
+    "surfaced",
+)
+
+
+def _disposition_counts(df: pd.DataFrame | None) -> list[dict]:
+    """Per-disposition counts for the report, in funnel order (deepest drop → surfaced)."""
+    if df is None or "disposition" not in df.columns or len(df) == 0:
+        return []
+    vc = df["disposition"].value_counts().to_dict()
+    total = sum(vc.values()) or 1
+    order = {d: i for i, d in enumerate(_DISPOSITION_ORDER)}
+    items = sorted(vc.items(), key=lambda kv: order.get(kv[0], 999))
+    return [{"disposition": k, "count": int(v), "pct": f"{100 * v / total:.0f}%"} for k, v in items]
 
 
 def _maybe_read_parquet(path: Path) -> pd.DataFrame | None:
