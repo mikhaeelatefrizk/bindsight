@@ -132,6 +132,10 @@ MM = "/opt/micromamba/bin/micromamba"
 TOOLS = "/opt/tools"
 SE3 = f"{MR}/envs/se3"
 BOLTZ = f"{MR}/envs/boltz"
+# dgl's C lib needs CUDA 11's libcusparse.so.11 etc.; the torch cu113 wheel bundles
+# them under torch/lib, but that dir isn't on the loader path by default. Point the
+# se3 interpreter there so `import dgl` (and RFdiffusion) find the CUDA runtime.
+SE3_LD = f"{SE3}/lib/python3.9/site-packages/torch/lib:{SE3}/lib"
 os.environ["MAMBA_ROOT_PREFIX"] = MR
 
 
@@ -181,10 +185,22 @@ sh(f"{MM} run -p {SE3} pip install -q --no-input " + " ".join(f"'{p}'" for p in 
 sh(f"{MM} run -p {SE3} pip install -q --no-input -r {TOOLS}/RFdiffusion/env/SE3Transformer/requirements.txt")
 sh(f"{MM} run -p {SE3} pip install -q --no-input --no-deps {TOOLS}/RFdiffusion/env/SE3Transformer")
 sh(f"{MM} run -p {SE3} pip install -q --no-input --no-deps -e {TOOLS}/RFdiffusion")
-# Sanity: RFdiffusion importable + CUDA usable on the P100 in this env.
-sh(f"{MM} run -p {SE3} python -c \""
+
+step("write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs)")
+wrapper = "/opt/se3_python.sh"
+pathlib.Path(wrapper).write_text(
+    "#!/bin/bash\n"
+    f"export MAMBA_ROOT_PREFIX={MR}\n"
+    f"export LD_LIBRARY_PATH={SE3_LD}:$LD_LIBRARY_PATH\n"
+    f"exec {MM} run -p {SE3} python \"$@\"\n"
+)
+os.chmod(wrapper, 0o755)
+
+# Sanity: RFdiffusion importable + CUDA usable on the P100 — via the wrapper, so the
+# import-time dgl CUDA-lib load is exercised exactly as the real run will do it.
+sh(f"{wrapper} -c \""
    "import torch, dgl, e3nn; "
-   "print('se3 torch', torch.__version__, 'cuda', torch.cuda.is_available(), "
+   "print('se3 torch', torch.__version__, 'dgl', dgl.__version__, 'cuda', torch.cuda.is_available(), "
    "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
    "x=torch.zeros(4,device='cuda'); print('se3 cuda op ok', (x+1).sum().item())\"")
 
@@ -196,15 +212,6 @@ sh(f"{MM} run -p {BOLTZ} python -c \""
    "import torch; print('boltz torch', torch.__version__, 'cuda', torch.cuda.is_available(), "
    "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
    "x=torch.zeros(4,device='cuda'); print('boltz cuda op ok', (x+1).sum().item())\"")
-
-step("write se3 interpreter wrapper")
-wrapper = "/opt/se3_python.sh"
-pathlib.Path(wrapper).write_text(
-    "#!/bin/bash\n"
-    f"export MAMBA_ROOT_PREFIX={MR}\n"
-    f"exec {MM} run -p {SE3} python \"$@\"\n"
-)
-os.chmod(wrapper, 0o755)
 
 step("materialise spec + target structure (embedded base64)")
 spec_dir = pathlib.Path("/tmp/spec"); spec_dir.mkdir(parents=True, exist_ok=True)
