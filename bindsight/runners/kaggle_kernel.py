@@ -217,6 +217,19 @@ sh(f"{MM} run -p {BOLTZ} python -c \""
    "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
    "x=torch.zeros(4,device='cuda'); print('boltz cuda op ok', (x+1).sum().item())\"")
 
+step("patch Boltz-2 precision for non-bf16 GPUs (P100/T4 lack bfloat16)")
+# Boltz-2 hardcodes precision="bf16-mixed" (main.py); the free Kaggle GPUs
+# (P100 sm_60, T4 sm_75) don't support bfloat16, so force full fp32 — what the
+# boltz1 path already uses — which is numerically safe and runs on sm_60.
+import glob as _glob  # noqa: E402
+
+_bm = _glob.glob(f"{BOLTZ}/lib/python*/site-packages/boltz/main.py")[0]
+_txt = pathlib.Path(_bm).read_text()
+_patched = _txt.replace('precision=32 if model == "boltz1" else "bf16-mixed"', "precision=32")
+assert _patched != _txt, "could not find Boltz-2 precision line to patch"
+pathlib.Path(_bm).write_text(_patched)
+print("patched", _bm, "-> precision=32")
+
 step("materialise spec + target structure (embedded base64)")
 spec_dir = pathlib.Path("/tmp/spec"); spec_dir.mkdir(parents=True, exist_ok=True)
 for name, b64 in PAYLOAD.items():
