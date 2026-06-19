@@ -62,8 +62,9 @@ back `<id>.tar.gz`. **Use `rfdiff_mpnn` only** — it is the one designer that f
 python benchmarks/designer_benchmark/score_run.py <out_dir>/<id>.tar.gz \
     --n-trajectories 10 --out benchmarks/designer_benchmark
 ```
-Writes `results.json` + `RESULTS.md` (marked `is_mock=False`) and stages the designed
-binder PDBs into `binders/`. Commit them — the empty template becomes a real result.
+Writes `results.json` + `RESULTS.md` (marked `is_mock=False`) and stages every file from
+the run's `design/` directory — the designed binder PDBs and FASTAs plus the per-design
+`metrics.jsonl` — into `binders/`. Commit them to record (or refresh) the benchmark result.
 
 ## What the metrics mean
 - **ipTM** (Boltz-2 interface confidence) is the primary de novo binder-quality metric;
