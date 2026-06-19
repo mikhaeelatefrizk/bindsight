@@ -55,12 +55,10 @@ reproducible.
 
 ## Roadmap
 
-- **v0.1.0 (now)** — discovery half end-to-end on CPU; design + validation wired for free Colab;
-  multi-page web UI live.
-- **v0.1.x** — first full end-to-end GPU case study on a public TCGA cohort, published as a worked
-  example.
-- **v0.2.0** — live Modal/Colab job submission; BindCraft + BoltzGen plugins fully wired; scRNA-seq
-  input.
+- **v0.2.0 (now)** — discovery half end-to-end on CPU; design + validation **proven on a free GPU**
+  (bindsight's first real ERBB2 binders — see the designer benchmark); multi-page web UI live.
+- **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
+  fully wired; scRNA-seq input.
 - **v1.0.0** — JOSS submission + validation paper (blinded rediscovery of HER2/EGFR/MSLN/CLDN6).
 
 ## Get involved

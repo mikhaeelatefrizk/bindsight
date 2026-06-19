@@ -228,23 +228,40 @@ def _validate_boltz2(
     validate_root = work / "validate"
     metrics: list[dict[str, Any]] = []
     for d in designs:
+        # predict_affinity=False: Boltz-2 affinity prediction is ligand-only
+        # ("Chain B is not a ligand!"), and bindsight designs *protein* binders —
+        # requesting it makes Boltz-2 skip the whole input. ipTM + PAE-interaction
+        # from the protein–protein structure prediction are the binder-quality
+        # metrics we want; affinity_pred_value stays None for protein binders.
         yaml_spec = tools.build_boltz_yaml(
             target_id="T",
             target_sequence=target_seq,
             binder_id=d.binder_id,
             binder_sequence=d.sequence,
+            predict_affinity=False,
         )
         from bindsight.validate.boltz2 import write_boltz_yaml
 
         yaml_path = boltz_root / f"{d.binder_id}.yaml"
         write_boltz_yaml(yaml_spec, yaml_path)
         out_dir = boltz_root / d.binder_id
-        _run(tools.build_boltz_cmd(yaml_path=yaml_path, out_dir=out_dir))
+        proc = _run(tools.build_boltz_cmd(yaml_path=yaml_path, out_dir=out_dir))
         result = tools.parse_boltz_output(
             output_dir=out_dir,
             binder_id=d.binder_id,
             target_uniprot=str(spec.get("target_uniprot", "")),
         )
+        if result.iptm is None:
+            # Boltz-2 exits 0 even when it *skips* a bad input, so surface its own
+            # output here rather than recording a silent null.
+            LOG.warning(
+                "boltz2 produced no confidence for %s (no confidence_*.json under %s).\n"
+                "boltz stdout tail:\n%s\nboltz stderr tail:\n%s",
+                d.binder_id,
+                out_dir,
+                (proc.stdout or "")[-2000:],
+                (proc.stderr or "")[-2000:],
+            )
         _stage_validate_jsons(out_dir, validate_root / d.binder_id)
         metrics.append(result.model_dump())
     return metrics

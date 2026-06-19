@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # -----------------------------------------------------------------------------
 [project]
 name = "bindsight"
-version = "0.1.0"
+version = "0.2.0"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
