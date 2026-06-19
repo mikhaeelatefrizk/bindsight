@@ -331,15 +331,15 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 ### Phase 4 — Validation paper (in progress)
 - [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); specificity confirmed (EGFR/CEA correctly not surfaced). Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
-- [ ] Designer benchmark: RFdiff+MPNN vs BindCraft vs BoltzGen — runnable, CPU-tested harness + protocol ship in `benchmarks/designer_benchmark/`; the GPU comparison run is pending
+- [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.83, 40% success@0.65), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
 - [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission
-- [ ] **Milestone:** preprint DOI + `v0.2.0`
+- [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free P100); preprint DOI pending
 
 ### Phase 5 — Coverage and community (post-preprint, ongoing)
-- v0.2: ESMFold fallback; fpocket fallback; scRNA-seq input via scanpy markers; BoltzGen as primary
-- v0.3: nf-core compatibility; HPC SLURM runner; immunogenicity layer (NetMHCpan)
-- v0.4: bispecific / multi-epitope; LigandMPNN
+- v0.3: ESMFold fallback; fpocket fallback; scRNA-seq input via scanpy markers; BoltzGen as primary; live async Modal/Colab submission
+- v0.4: nf-core compatibility; HPC SLURM runner; immunogenicity layer (NetMHCpan)
+- v0.5: bispecific / multi-epitope; LigandMPNN
 - v1.0: JOSS submission; tutorial workshop; Zenodo all-versions DOI
 
 ---
