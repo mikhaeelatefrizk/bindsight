@@ -17,7 +17,10 @@ RFdiffusion's legacy requirements. So the kernel `bindsight.runners.kaggle_kerne
 - **`boltz`** — Python 3.11 / torch 2.2.2+cu118: Boltz-2 + bindsight.
 
 `job_exec` runs under `boltz` and invokes the design tools with the `se3` interpreter via
-`BINDSIGHT_DESIGN_PYTHON`. All of this is automatic — you just need a Kaggle token.
+`BINDSIGHT_DESIGN_PYTHON`; the validator binary is likewise overridable via
+`BINDSIGHT_BOLTZ_BIN` (it defaults to `boltz` on PATH, which is correct here since `job_exec`
+already runs inside the `boltz` env). Both hooks live in `bindsight/runners/tools.py`. All of
+this is automatic — you just need a Kaggle token.
 
 ## Step 0 — CPU smoke test (proves the harness, no GPU, ~5 s)
 ```bash

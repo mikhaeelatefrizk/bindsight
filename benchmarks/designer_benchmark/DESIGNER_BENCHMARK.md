@@ -102,8 +102,10 @@ python benchmarks/designer_benchmark/score_run.py <out_dir>/<id>.tar.gz \
 ```
 
 This writes `results.json` + `RESULTS.md` (`is_mock=False`, stamped with GPU +
-date + `bindsight --version`) and stages the designed binder PDBs into
-`binders/`. For the Modal path the run writes `run/results.json` + `RESULTS.md`
+date + `bindsight --version`) and stages **every file from the run's `design/`
+directory** — the designed binder PDBs and FASTAs plus the per-design
+`metrics.jsonl` — into `binders/`. For the Modal path the run writes
+`run/results.json` + `RESULTS.md`
 directly; copy those up and commit. Keep `results.json` and `binders/` for
 provenance.
 
