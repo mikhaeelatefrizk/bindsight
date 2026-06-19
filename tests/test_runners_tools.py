@@ -65,6 +65,30 @@ def test_build_boltz_cmd_msa_flag() -> None:
     assert "--use_msa_server" not in no_msa
 
 
+def test_interpreter_overrides_for_split_env_hosts(monkeypatch) -> None:
+    """BINDSIGHT_DESIGN_PYTHON / BINDSIGHT_BOLTZ_BIN swap argv[0] (Kaggle split env).
+
+    Defaults stay ``python`` / ``boltz`` so every other backend is unaffected.
+    """
+    monkeypatch.setenv("BINDSIGHT_DESIGN_PYTHON", "/opt/se3_python.sh")
+    monkeypatch.setenv("BINDSIGHT_BOLTZ_BIN", "/opt/mamba/envs/boltz/bin/boltz")
+    rf = tools.build_rfdiff_cmd(
+        rfdiff_dir=Path("/opt/RFdiffusion"),
+        input_pdb=Path("/w/t.pdb"),
+        output_prefix=Path("/w/o/b"),
+        num_designs=2,
+        hotspot="[A30]",
+        contig="[A1-100/0 50-100]",
+    )
+    assert rf[0] == "/opt/se3_python.sh"
+    mpnn = tools.build_mpnn_cmd(
+        mpnn_dir=Path("/opt/ProteinMPNN"), pdb_path=Path("/w/b.pdb"), out_folder=Path("/w/m")
+    )
+    assert mpnn[0] == "/opt/se3_python.sh"
+    boltz = tools.build_boltz_cmd(yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"))
+    assert boltz[0] == "/opt/mamba/envs/boltz/bin/boltz"
+
+
 def test_build_chai_boltzgen_bindcraft_af2ig_cmds() -> None:
     assert tools.build_chai_cmd(fasta_path=Path("/w/x.fa"), out_dir=Path("/w/o"))[:2] == [
         "chai-lab",
