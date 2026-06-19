@@ -63,9 +63,8 @@ python benchmarks/run_designer_benchmark.py --backend kaggle \
     --out benchmarks/designer_benchmark/run
 ```
 This pushes a kernel, polls it, and pulls the results tarball automatically — no
-manual download. (For RFdiffusion specifically, Colab's notebook installs the
-SE3-Transformer env for you; on Kaggle the simplest first designer to prove the path
-is `boltzgen`, then add `rfdiff_mpnn`.)
+manual download. Use `rfdiff_mpnn` here too — it's the one designer that fits a
+single free T4 (see the GPU-memory note below).
 
 ## Step 2 — Estimate cost before ever touching a paid backend
 ```bash
@@ -84,6 +83,22 @@ Rename the produced `RESULTS.md` over `RESULTS_TEMPLATE.md`, note the GPU + date
 `bindsight --version`, keep `results.json` and the designed PDBs for provenance, and
 commit. The empty template becomes a result — and the only credibility asterisk on
 bindsight is gone.
+
+## GPU memory — what actually fits a FREE GPU (read before picking designers)
+Free Colab/Kaggle give a **single T4 (16 GB)**. Per the VRAM table in
+`DESIGNER_BENCHMARK.md`, only one of the three designers fits it:
+
+| designer | min VRAM | fits a free T4 (16 GB)? |
+|---|---:|---|
+| `rfdiff_mpnn` | ~16 GB | ✅ yes — this is the free arm |
+| `boltzgen` | ~24 GB | ❌ no — needs an A100-class (paid) GPU |
+| `bindcraft` | ≥32 GB | ❌ no — needs ≥32 GB (paid) |
+
+So the **free** path produces real binders for the **`rfdiff_mpnn`** arm only. (Kaggle's
+"T4×2" is two separate 16 GB cards, **not** a unified 32 GB — it doesn't raise the
+per-card limit without model parallelism.) The full three-way comparison needs a bigger
+GPU: run `boltzgen` / `bindcraft` via `--backend modal` (or local Docker with an
+A100-class card) using the prebuilt image — that is the paid step, by hardware necessity.
 
 ## Tips
 - **First run = ERBB2 + `rfdiff_mpnn` only** (smallest; T4-friendly, ~45 s/trajectory).
