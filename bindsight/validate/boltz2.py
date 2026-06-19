@@ -59,15 +59,20 @@ def build_boltz_yaml(
     + one affinity property) so the spec is portable across Boltz-2 minor
     versions.
     """
+    # Boltz-2 chain IDs must be short identifiers (single letters), not our
+    # binder_id tracking string ("binder_0_seq0" makes Boltz-2 skip the input).
+    # Use target_id for the target chain and a distinct single letter for the
+    # binder; binder_id is kept only for our own bookkeeping/filenames.
+    binder_chain = "B" if target_id != "B" else "C"
     spec: dict[str, Any] = {
         "version": 1,
         "sequences": [
-            {"protein": {"id": "T", "sequence": target_sequence}},
-            {"protein": {"id": binder_id, "sequence": binder_sequence}},
+            {"protein": {"id": target_id, "sequence": target_sequence}},
+            {"protein": {"id": binder_chain, "sequence": binder_sequence}},
         ],
     }
     if predict_affinity:
-        spec["properties"] = [{"affinity": {"binder": binder_id}}]
+        spec["properties"] = [{"affinity": {"binder": binder_chain}}]
     return spec
 
 
