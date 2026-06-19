@@ -132,10 +132,10 @@ MM = "/opt/micromamba/bin/micromamba"
 TOOLS = "/opt/tools"
 SE3 = f"{MR}/envs/se3"
 BOLTZ = f"{MR}/envs/boltz"
-# dgl's C lib needs CUDA 11's libcusparse.so.11 etc.; the torch cu113 wheel bundles
-# them under torch/lib, but that dir isn't on the loader path by default. Point the
-# se3 interpreter there so `import dgl` (and RFdiffusion) find the CUDA runtime.
-SE3_LD = f"{SE3}/lib/python3.9/site-packages/torch/lib:{SE3}/lib"
+# dgl's C lib dlopen()s CUDA 11's libcusparse.so.11 etc. via the system loader, so
+# those libs must be on LD_LIBRARY_PATH. We install conda cudatoolkit=11.3 into the
+# se3 env (puts them in $SE3/lib) and also keep torch's bundled libs (torch/lib).
+SE3_LD = f"{SE3}/lib:{SE3}/lib/python3.9/site-packages/torch/lib"
 os.environ["MAMBA_ROOT_PREFIX"] = MR
 
 
@@ -178,6 +178,8 @@ if not pathlib.Path(f"{TOOLS}/ProteinMPNN").exists():
 
 step("build se3 env (RFdiffusion: py3.9 / torch1.12+cu113 — sm_60 capable)")
 sh(f"{MM} create -y -p {SE3} -c conda-forge python=3.9 pip")
+# CUDA 11.3 runtime libs (libcusparse.so.11 …) that dgl's C library dlopen()s.
+sh(f"{MM} install -y -p {SE3} -c conda-forge cudatoolkit=11.3")
 sh(f"{MM} run -p {SE3} pip install -q --no-input {SE3_TORCH} --extra-index-url {SE3_TORCH_INDEX}")
 sh(f"{MM} run -p {SE3} pip install -q --no-input {SE3_DGL} -f {SE3_DGL_FIND}")
 sh(f"{MM} run -p {SE3} pip install -q --no-input " + " ".join(f"'{p}'" for p in SE3_EXTRA_PIP))
@@ -187,12 +189,14 @@ sh(f"{MM} run -p {SE3} pip install -q --no-input --no-deps {TOOLS}/RFdiffusion/e
 sh(f"{MM} run -p {SE3} pip install -q --no-input --no-deps -e {TOOLS}/RFdiffusion")
 
 step("write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs)")
+# Invoke the se3 python directly (not via `micromamba run`) so the explicit
+# LD_LIBRARY_PATH reliably reaches the loader when dgl dlopen()s its CUDA deps.
 wrapper = "/opt/se3_python.sh"
 pathlib.Path(wrapper).write_text(
     "#!/bin/bash\n"
-    f"export MAMBA_ROOT_PREFIX={MR}\n"
     f"export LD_LIBRARY_PATH={SE3_LD}:$LD_LIBRARY_PATH\n"
-    f"exec {MM} run -p {SE3} python \"$@\"\n"
+    "export DGLBACKEND=pytorch\n"
+    f"exec {SE3}/bin/python \"$@\"\n"
 )
 os.chmod(wrapper, 0o755)
 
