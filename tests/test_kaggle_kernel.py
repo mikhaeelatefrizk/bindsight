@@ -32,7 +32,20 @@ def test_kernel_script_is_valid_python_and_embeds_payload() -> None:
     # Payload is embedded verbatim (base64), to be decoded on the GPU.
     assert payload["spec.json"] in src
     assert payload["target.pdb"] in src
-    assert '"abc123"' in src or "'abc123'" in src
+    assert "'abc123'" in src
+
+
+def test_kernel_header_constants_are_valid_python_literals() -> None:
+    """Execute the generated header — guards against JSON literals (null/true) that
+    parse syntactically but raise NameError at runtime (an early bug)."""
+    src = kaggle_kernel.build_kernel_script(handle_id="abc123", payload=_payload())
+    header = src.split("\n\n", 1)[0]
+    ns: dict[str, object] = {}
+    exec(header, ns)  # must bind without NameError
+    assert ns["HANDLE_ID"] == "abc123"
+    assert ns["N_TRAJ_NOTE"] is None
+    assert ns["RFDIFF_COMMIT"] == tools.RFDIFF_COMMIT
+    assert isinstance(ns["PAYLOAD"], dict)
 
 
 def test_kernel_script_sources_pins_from_tools() -> None:
