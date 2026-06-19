@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-19
+
 ### Added — first real de novo binders (designer benchmark populated)
 - The designer benchmark now ships a **real result**, not an empty template:
   RFdiffusion → ProteinMPNN → Boltz-2, run on a **free Kaggle Tesla P100**, produced
