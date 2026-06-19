@@ -129,6 +129,34 @@
   {% endif %}
 </section>
 
+{% if taxonomy_counts %}
+<section>
+  <h2>Why candidates dropped (negative-result taxonomy)</h2>
+  <p>
+    Each of the {{ n_taxonomy }} differentially-expressed genes gets exactly one
+    disposition explaining why it did or didn't become a surfaced candidate &mdash;
+    so the failure modes are auditable rather than discarded. The counts sum to the
+    gene total.
+  </p>
+  <table>
+    <thead><tr><th>disposition</th><th>genes</th><th>share</th></tr></thead>
+    <tbody>
+    {% for d in taxonomy_counts %}
+      <tr {% if d.disposition == 'surfaced' %}class="top"{% endif %}>
+        <td>
+          {% if d.disposition == 'surfaced' %}<span class="badge ok">{{ d.disposition }}</span>
+          {% else %}<code>{{ d.disposition }}</code>{% endif %}
+        </td>
+        <td class="num">{{ d.count }}</td>
+        <td class="num">{{ d.pct }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="note">Full per-gene table: <code>taxonomy/failure_taxonomy.parquet</code>.</p>
+</section>
+{% endif %}
+
 <section id="provenance">
   <h2>Provenance</h2>
   <p>
