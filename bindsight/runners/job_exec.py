@@ -78,13 +78,24 @@ def _git_clone(repo: str, commit: str, dest: Path) -> Path:
 
 
 def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
-    rfdiff = _git_clone(tools.RFDIFF_REPO, tools.RFDIFF_COMMIT, tools_root / "RFdiffusion")
+    rfdiff_dir = tools_root / "RFdiffusion"
+    fresh = not rfdiff_dir.exists()
+    rfdiff = _git_clone(tools.RFDIFF_REPO, tools.RFDIFF_COMMIT, rfdiff_dir)
     weights = rfdiff / "models"
     weights.mkdir(parents=True, exist_ok=True)
     for name, url in tools.RFDIFF_WEIGHTS.items():
         dst = weights / name
         if not dst.exists():
             _run(["wget", "-q", url, "-O", str(dst)])
+    if fresh:
+        # Install RFdiffusion's SE3-Transformer deps so the executor is
+        # self-sufficient on a *bare* GPU (headless Kaggle / a fresh box), not
+        # only inside the prebuilt Docker image. Mirrors the proven Colab
+        # install cell; no-ops when the image already ships an installed tree.
+        req = rfdiff / "env" / "SE3Transformer" / "requirements.txt"
+        if req.exists():
+            _run([sys.executable, "-m", "pip", "install", "-q", "-r", str(req)])
+        _run([sys.executable, "-m", "pip", "install", "-q", "-e", str(rfdiff)])
     mpnn = _git_clone(tools.PROTEINMPNN_REPO, tools.PROTEINMPNN_COMMIT, tools_root / "ProteinMPNN")
     return rfdiff, mpnn
 
