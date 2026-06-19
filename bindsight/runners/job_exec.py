@@ -228,11 +228,17 @@ def _validate_boltz2(
     validate_root = work / "validate"
     metrics: list[dict[str, Any]] = []
     for d in designs:
+        # predict_affinity=False: Boltz-2 affinity prediction is ligand-only
+        # ("Chain B is not a ligand!"), and bindsight designs *protein* binders —
+        # requesting it makes Boltz-2 skip the whole input. ipTM + PAE-interaction
+        # from the protein–protein structure prediction are the binder-quality
+        # metrics we want; affinity_pred_value stays None for protein binders.
         yaml_spec = tools.build_boltz_yaml(
             target_id="T",
             target_sequence=target_seq,
             binder_id=d.binder_id,
             binder_sequence=d.sequence,
+            predict_affinity=False,
         )
         from bindsight.validate.boltz2 import write_boltz_yaml
 
@@ -245,6 +251,13 @@ def _validate_boltz2(
             binder_id=d.binder_id,
             target_uniprot=str(spec.get("target_uniprot", "")),
         )
+        if result.iptm is None:
+            LOG.warning(
+                "boltz2 produced no confidence for %s (no confidence_*.json under %s); "
+                "metrics will be null — check the Boltz-2 log for a skipped input",
+                d.binder_id,
+                out_dir,
+            )
         _stage_validate_jsons(out_dir, validate_root / d.binder_id)
         metrics.append(result.model_dump())
     return metrics
