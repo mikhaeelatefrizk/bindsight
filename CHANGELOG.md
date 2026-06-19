@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — negative-result taxonomy (failure modes as a first-class output)
+- `bindsight/pipelines/discover.py` now emits `taxonomy/failure_taxonomy.parquet`:
+  one disposition per differentially-expressed gene explaining why it did / didn't
+  become a surfaced candidate — `not_significant`, `down_regulated`,
+  `below_enrichment_cutoff`, `no_uniprot`, `not_surfaceome`, `fails_tractability`,
+  `fails_safety`, `no_alphafold_model`, `not_top_n`, `no_surface_bind_site`,
+  `surfaced`. The funnel is **exhaustive** (counts sum to the DEG total), so the
+  failure modes are auditable rather than silently discarded. The HTML report
+  renders a "Why candidates dropped" breakdown, and the per-disposition counts
+  land in the run manifest. New `tests/test_failure_taxonomy.py`.
+
 ### Added — rediscovery validation + designer benchmark
 - **Rediscovery validation** on six real indication-matched TCGA cohorts
   (`bindsight/benchmark/rediscovery.py`, driver `benchmarks/run_validation.py`,

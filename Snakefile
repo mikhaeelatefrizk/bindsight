@@ -64,6 +64,7 @@ rule discover:
     output:
         targets = OUT / "targets" / "candidates.parquet",
         epitopes = OUT / "epitopes" / "epitopes.parquet",
+        taxonomy = OUT / "taxonomy" / "failure_taxonomy.parquet",
         manifest_fragment = OUT / "discover" / "manifest_fragment.jsonld",
     params:
         target = config["params"]["target_discovery"],
