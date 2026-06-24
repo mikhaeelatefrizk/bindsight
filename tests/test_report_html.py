@@ -116,6 +116,10 @@ def test_render_run_produces_self_contained_html(tmp_path: Path) -> None:
     assert "data:image/png;base64," in text  # volcano embedded
     assert "ERBB2" in text  # candidate row rendered
     assert "P04626" in text
+    # Limitations section is always rendered (honest scope of discovery).
+    assert "<h2>Limitations</h2>" in text
+    assert "cell-surface protein abundance" in text
+    assert "infiltrating immune" in text
 
 
 def test_render_run_handles_missing_optional_files(tmp_path: Path) -> None:
