@@ -105,6 +105,7 @@ _CANDIDATE_DISPLAY_COLS = [
     "tractable_modalities",
     "n_safety_events",
     "has_alphafold_structure",
+    "mean_plddt",
     "rank_in_top_n",
 ]
 _EPITOPE_DISPLAY_COLS = [
@@ -113,6 +114,7 @@ _EPITOPE_DISPLAY_COLS = [
     "structure_path",
     "site_id",
     "epitope_status",
+    "mean_epitope_plddt",
 ]
 
 
@@ -128,6 +130,7 @@ _DISPOSITION_ORDER = (
     "fails_tractability",
     "fails_safety",
     "no_alphafold_model",
+    "low_confidence_structure",
     "not_top_n",
     "no_surface_bind_site",
     "surfaced",
