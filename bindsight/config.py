@@ -132,6 +132,13 @@ class TargetDiscoveryParams(BaseModel):
     require_tractable_modality: list[str] = Field(default_factory=lambda: ["Antibody"])
     max_safety_events: int = Field(5, ge=0)
 
+    # Normal-tissue safety (GTEx) — on-target/off-tumor toxicity. When enabled,
+    # candidates whose median expression in any vital tissue exceeds
+    # ``vital_tissue_max_tpm`` are flagged ``high_normal_tissue_expression`` and
+    # dropped from design. Off by default (requires the GTEx download). Wires the
+    # ``vital_tissues`` / ``vital_tissue_max_tpm`` knobs above.
+    use_gtex_safety: bool = False
+
     # SURFACE-Bind site lookup
     require_surface_bind_site: bool = True
     min_surface_bind_score: float = Field(0.5, ge=0.0, le=1.0)
