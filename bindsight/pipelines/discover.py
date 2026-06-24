@@ -51,6 +51,7 @@ from bindsight.provenance import (
 )
 from bindsight.structures.alphafolddb import AlphaFoldDBClient
 from bindsight.structures.plddt import mean_plddt, region_plddt
+from bindsight.structures.topology import Topology, UniProtTopologyClient
 from bindsight.surfaceome import is_surface_protein, load_surfy
 from bindsight.targets.open_targets import OpenTargetsClient
 
@@ -78,6 +79,7 @@ def run(
     open_targets_client: OpenTargetsClient | None = None,
     alphafolddb_client: AlphaFoldDBClient | None = None,
     surface_bind_client: SurfaceBindClient | None = None,
+    topology_client: UniProtTopologyClient | None = None,
     surfy: frozenset[str] | None = None,
 ) -> Manifest:
     """Run the discovery half end-to-end and write artifacts to ``out_dir``.
@@ -115,6 +117,7 @@ def run(
         open_targets_client=open_targets_client,
         alphafolddb_client=alphafolddb_client,
         surface_bind_client=surface_bind_client,
+        topology_client=topology_client,
         surfy=surfy,
     )
     manifest.append(discover_stage)
@@ -259,6 +262,7 @@ def _stage_discover(
     open_targets_client: OpenTargetsClient | None,
     alphafolddb_client: AlphaFoldDBClient | None,
     surface_bind_client: SurfaceBindClient | None,
+    topology_client: UniProtTopologyClient | None,
     surfy: frozenset[str] | None,
 ) -> StageRecord:
     stage = StageRecord(
@@ -291,6 +295,7 @@ def _stage_discover(
             open_targets_client=open_targets_client,
             alphafolddb_client=alphafolddb_client,
             surface_bind_client=surface_bind_client,
+            topology_client=topology_client,
             surfy=surfy,
         )
         candidates_path.parent.mkdir(parents=True, exist_ok=True)
@@ -349,6 +354,7 @@ def _do_discover(
     open_targets_client: OpenTargetsClient | None,
     alphafolddb_client: AlphaFoldDBClient | None,
     surface_bind_client: SurfaceBindClient | None,
+    topology_client: UniProtTopologyClient | None,
     surfy: frozenset[str] | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pure-data discovery logic; returns (candidates_df, epitopes_df, taxonomy_df)."""
@@ -527,6 +533,48 @@ def _do_discover(
             p.min_mean_plddt,
         )
 
+    # 6c. Membrane topology (extracellular-domain awareness) — opt-in (UniProt).
+    # A binder only reaches the extracellular part of a surface protein, so when
+    # enabled we annotate each candidate's extracellular ranges (and target the
+    # ECD for whole-surface design). Off by default — requires UniProt network.
+    topo_map: dict[str, Topology] = {}
+    if p.use_uniprot_topology and not candidates.empty:
+        topo_client = topology_client or UniProtTopologyClient()
+        topo_fetch = sorted(
+            {
+                u
+                for u in candidates.head(max(p.top_n, _STRUCTURE_FETCH_CAP))["uniprot_id"]
+                .dropna()
+                .unique()
+                if u
+            }
+        )
+        for uid in topo_fetch:
+            try:
+                t = topo_client.fetch(uid)
+            except Exception as e:  # network/parse — fall back to whole-surface
+                LOG.warning("UniProt topology fetch failed for %s: %s", uid, e)
+                t = None
+            if t is not None:
+                topo_map[uid] = t
+        candidates["has_extracellular_domain"] = candidates["uniprot_id"].map(
+            lambda u: topo_map[u].has_extracellular if u in topo_map else None
+        )
+        candidates["extracellular_ranges"] = candidates["uniprot_id"].map(
+            lambda u: [list(r) for r in topo_map[u].extracellular_ranges] if u in topo_map else None
+        )
+        if p.require_extracellular_domain:
+            no_ecd = candidates["uniprot_id"].map(
+                lambda u: u in topo_map and not topo_map[u].has_extracellular
+            )
+            candidates["no_extracellular_domain"] = no_ecd
+            if bool(no_ecd.any()):
+                # Not antibody-accessible — drop from design carry-forward.
+                candidates.loc[no_ecd, "has_alphafold_structure"] = False
+                LOG.info(
+                    "topology gate: %d candidate(s) with no extracellular domain", int(no_ecd.sum())
+                )
+
     # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
     #    2014), structures first (only structure-bearing candidates can proceed
     #    to design). Higher π = more confidently over-expressed.
@@ -542,7 +590,9 @@ def _do_discover(
     # 8. Build the epitopes table from SURFACE-Bind targetable sites when the
     # data is vendored; otherwise design against the whole surface, recorded
     # honestly in ``epitope_status``.
-    epitopes = _build_epitopes(candidates[candidates["rank_in_top_n"]], surface_bind_client, p)
+    epitopes = _build_epitopes(
+        candidates[candidates["rank_in_top_n"]], surface_bind_client, p, topology_map=topo_map
+    )
 
     # 9. Negative-result taxonomy: one disposition per DEG gene, explaining why it
     # is / isn't a surfaced candidate. Every gene is accounted for (the counts sum
@@ -571,6 +621,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
+    "no_extracellular_domain",
     "no_alphafold_model",
     "low_confidence_structure",
     "not_top_n",
@@ -625,6 +676,7 @@ def _build_taxonomy(
     struct_gids: set[str] = set()
     topn_gids: set[str] = set()
     low_conf_gids: set[str] = set()
+    no_ecd_gids: set[str] = set()
     if not candidates.empty:
         cand_gids = {str(g) for g in candidates["gene_id"]}
         struct_gids = {
@@ -634,6 +686,10 @@ def _build_taxonomy(
         if "low_confidence_structure" in candidates.columns:
             low_conf_gids = {
                 str(g) for g in candidates.loc[candidates["low_confidence_structure"], "gene_id"]
+            }
+        if "no_extracellular_domain" in candidates.columns:
+            no_ecd_gids = {
+                str(g) for g in candidates.loc[candidates["no_extracellular_domain"], "gene_id"]
             }
     site_gids: set[str] = set()
     if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
@@ -659,9 +715,11 @@ def _build_taxonomy(
                 else "surfaced"
             )
         elif gid in cand_gids:
-            # passed the filters but can't proceed to design: low-confidence model,
-            # no structure at all, or out of top-N.
-            if gid in low_conf_gids:
+            # passed the filters but can't proceed to design: not antibody-accessible
+            # (no extracellular domain), low-confidence model, no structure, or out of top-N.
+            if gid in no_ecd_gids:
+                disp = "no_extracellular_domain"
+            elif gid in low_conf_gids:
                 disp = "low_confidence_structure"
             elif gid not in struct_gids:
                 disp = "no_alphafold_model"
@@ -754,7 +812,11 @@ def _resolve_surface_bind_client(injected: SurfaceBindClient | None) -> SurfaceB
 
 
 def _build_epitopes(
-    top: pd.DataFrame, client: SurfaceBindClient | None, p: TargetDiscoveryParams
+    top: pd.DataFrame,
+    client: SurfaceBindClient | None,
+    p: TargetDiscoveryParams,
+    *,
+    topology_map: dict[str, Topology] | None = None,
 ) -> pd.DataFrame:
     """Build the epitopes table for the top-N candidates.
 
@@ -772,14 +834,19 @@ def _build_epitopes(
     exists). Without vendored data there is nothing to require, so every
     candidate falls back to whole-surface design.
     """
+    tmap = topology_map or {}
     rows: list[dict[str, Any]] = []
     for _, row in top.iterrows():
         uni = row["uniprot_id"]
+        topo = tmap.get(uni) if isinstance(uni, str) else None
+        # ECD ranges to target for whole-surface design; None = no topology → whole protein.
+        design_ranges = [list(r) for r in topo.extracellular_ranges] if topo else None
         base = {
             "gene_id": row["gene_id"],
             "symbol": row["symbol"],
             "uniprot_id": uni,
             "structure_path": row["alphafold_structure_path"],
+            "design_ranges": design_ranges,
         }
         sites: list[Any] = []
         if client is not None and isinstance(uni, str) and uni:
@@ -805,6 +872,9 @@ def _build_epitopes(
                         "mean_epitope_plddt": region_plddt(
                             row["alphafold_structure_path"], list(s.residues)
                         ),
+                        "fraction_extracellular": (
+                            topo.fraction_extracellular(list(s.residues)) if topo else None
+                        ),
                     }
                 )
         elif client is None or not p.require_surface_bind_site:
@@ -821,6 +891,7 @@ def _build_epitopes(
                     "seed_pdb_path": None,
                     "epitope_status": status,
                     "mean_epitope_plddt": region_plddt(row["alphafold_structure_path"], []),
+                    "fraction_extracellular": None,
                 }
             )
     return pd.DataFrame(rows) if rows else _empty_epitopes_frame()
@@ -840,5 +911,7 @@ def _empty_epitopes_frame() -> pd.DataFrame:
             "seed_pdb_path",
             "epitope_status",
             "mean_epitope_plddt",
+            "design_ranges",
+            "fraction_extracellular",
         ]
     )
