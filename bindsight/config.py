@@ -112,6 +112,12 @@ class TargetDiscoveryParams(BaseModel):
     )
     vital_tissue_max_tpm: float = Field(5.0, ge=0.0)
 
+    # Structure-confidence (disorder) filter — AlphaFold pLDDT (0-100). pLDDT is
+    # always computed and surfaced (mean_plddt column); this only gates carry-
+    # forward. 0 disables the gate (default). A typical disorder threshold is
+    # ~50 (very low confidence / likely disordered) to ~70 (confident).
+    min_mean_plddt: float = Field(0.0, ge=0.0, le=100.0)
+
     # Open Targets enrichment
     use_open_targets: bool = True
     require_tractable_modality: list[str] = Field(default_factory=lambda: ["Antibody"])
