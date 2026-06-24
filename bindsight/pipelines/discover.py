@@ -50,6 +50,7 @@ from bindsight.provenance import (
     sha256_file,
 )
 from bindsight.structures.alphafolddb import AlphaFoldDBClient
+from bindsight.structures.plddt import mean_plddt, region_plddt
 from bindsight.surfaceome import is_surface_protein, load_surfy
 from bindsight.targets.open_targets import OpenTargetsClient
 
@@ -501,6 +502,31 @@ def _do_discover(
         candidates["alphafold_structure_path"] = ""
         candidates["has_alphafold_structure"] = False
 
+    # 6b. Disorder signal: per-model mean pLDDT (AlphaFold confidence, 0-100),
+    # read straight from the cached mmCIF B-factor column. Always surfaced; only
+    # gates carry-forward when ``min_mean_plddt`` is set. A mostly-disordered /
+    # low-confidence model cannot be reliably designed against.
+    candidates["mean_plddt"] = candidates["alphafold_structure_path"].map(
+        lambda pth: mean_plddt(pth) if pth else None
+    )
+    if p.min_mean_plddt > 0:
+        low_conf = (
+            candidates["has_alphafold_structure"]
+            & candidates["mean_plddt"].notna()
+            & (candidates["mean_plddt"] < p.min_mean_plddt)
+        )
+    else:
+        low_conf = pd.Series(False, index=candidates.index)
+    candidates["low_confidence_structure"] = low_conf
+    if bool(low_conf.any()):
+        # Distinct from no_alphafold_model: the model exists but is too disordered.
+        candidates.loc[low_conf, "has_alphafold_structure"] = False
+        LOG.info(
+            "pLDDT gate: %d candidate(s) below mean pLDDT %.0f -> low_confidence_structure",
+            int(low_conf.sum()),
+            p.min_mean_plddt,
+        )
+
     # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
     #    2014), structures first (only structure-bearing candidates can proceed
     #    to design). Higher π = more confidently over-expressed.
@@ -546,6 +572,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "fails_tractability",
     "fails_safety",
     "no_alphafold_model",
+    "low_confidence_structure",
     "not_top_n",
     "no_surface_bind_site",
     "surfaced",
@@ -597,12 +624,17 @@ def _build_taxonomy(
     cand_gids: set[str] = set()
     struct_gids: set[str] = set()
     topn_gids: set[str] = set()
+    low_conf_gids: set[str] = set()
     if not candidates.empty:
         cand_gids = {str(g) for g in candidates["gene_id"]}
         struct_gids = {
             str(g) for g in candidates.loc[candidates["has_alphafold_structure"], "gene_id"]
         }
         topn_gids = {str(g) for g in candidates.loc[candidates["rank_in_top_n"], "gene_id"]}
+        if "low_confidence_structure" in candidates.columns:
+            low_conf_gids = {
+                str(g) for g in candidates.loc[candidates["low_confidence_structure"], "gene_id"]
+            }
     site_gids: set[str] = set()
     if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
         site_gids = {
@@ -627,8 +659,14 @@ def _build_taxonomy(
                 else "surfaced"
             )
         elif gid in cand_gids:
-            # passed the filters but can't proceed to design: no structure, or out of top-N
-            disp = "no_alphafold_model" if gid not in struct_gids else "not_top_n"
+            # passed the filters but can't proceed to design: low-confidence model,
+            # no structure at all, or out of top-N.
+            if gid in low_conf_gids:
+                disp = "low_confidence_structure"
+            elif gid not in struct_gids:
+                disp = "no_alphafold_model"
+            else:
+                disp = "not_top_n"
         elif gid in enriched_gene_ids:
             d = reach.get(gid, {"u": False, "surf": False, "tract": False, "safe": False})
             if not d["u"]:
@@ -683,6 +721,8 @@ def _empty_candidates_frame() -> pd.DataFrame:
             "is_surface",
             "alphafold_structure_path",
             "has_alphafold_structure",
+            "mean_plddt",
+            "low_confidence_structure",
             "rank",
             "rank_in_top_n",
         ]
@@ -762,6 +802,9 @@ def _build_epitopes(
                         "score": s.score,
                         "seed_pdb_path": s.seed_pdb_path,
                         "epitope_status": "surface_bind_site",
+                        "mean_epitope_plddt": region_plddt(
+                            row["alphafold_structure_path"], list(s.residues)
+                        ),
                     }
                 )
         elif client is None or not p.require_surface_bind_site:
@@ -777,6 +820,7 @@ def _build_epitopes(
                     "score": None,
                     "seed_pdb_path": None,
                     "epitope_status": status,
+                    "mean_epitope_plddt": region_plddt(row["alphafold_structure_path"], []),
                 }
             )
     return pd.DataFrame(rows) if rows else _empty_epitopes_frame()
@@ -795,5 +839,6 @@ def _empty_epitopes_frame() -> pd.DataFrame:
             "score",
             "seed_pdb_path",
             "epitope_status",
+            "mean_epitope_plddt",
         ]
     )

@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — disorder-aware filter (AlphaFold pLDDT)
+- New `bindsight/structures/plddt.py` reads per-residue confidence (pLDDT) straight from the
+  AlphaFold mmCIF B-factor column (no network, graceful on bad files). Discovery now surfaces a
+  `mean_plddt` per candidate and a `mean_epitope_plddt` per epitope (don't design against a
+  disordered region). A new opt-in `target_discovery.min_mean_plddt` gate (default 0 = off) drops
+  models below the threshold with a new `low_confidence_structure` disposition in the failure
+  taxonomy; the report shows pLDDT columns and the new disposition. Tests: `tests/test_plddt.py`
+  (real fixture mmCIF) + a gate test in `tests/test_failure_taxonomy.py`.
+
 ## [0.2.0] - 2026-06-19
 
 ### Added — first real de novo binders (designer benchmark populated)
