@@ -28,6 +28,8 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
+from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
+
 LOG = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -82,6 +84,7 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
         n_taxonomy=len(taxonomy_df) if taxonomy_df is not None else 0,
         manifest=manifest,
         stages=manifest.get("stages", []) if manifest else [],
+        limitations=[{"title": t, "body": b} for t, b in DISCOVERY_LIMITATIONS],
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
