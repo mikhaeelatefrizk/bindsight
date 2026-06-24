@@ -191,6 +191,16 @@
   {% endif %}
 </section>
 
+<section id="limitations">
+  <h2>Limitations</h2>
+  <p>The honest scope of expression-based discovery — read before trusting a candidate:</p>
+  <ul>
+    {% for lim in limitations %}
+    <li><strong>{{ lim.title }}.</strong> {{ lim.body }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
 <section>
   <h2>How to read this report</h2>
   <ul>
@@ -201,6 +211,8 @@
         once SURFACE-Bind data is populated.</li>
     <li><strong>Provenance</strong> shows what ran. Every entry's
         SHA-256 hashes are in <code>run_manifest.jsonld</code>.</li>
+    <li><strong>Limitations</strong> states what expression-based discovery can and
+        cannot establish — candidates are hypotheses, not validated targets.</li>
   </ul>
 </section>
 

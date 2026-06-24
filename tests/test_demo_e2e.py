@@ -70,6 +70,10 @@ def test_demo_runs_end_to_end(offline_real_data, demo_cfg: RunConfig, tmp_path: 
     epitopes = pd.read_parquet(out / "epitopes" / "epitopes.parquet")
     assert len(epitopes) >= 2
 
+    # The discover stage records the honest scientific caveats in its manifest notes.
+    discover_stage = next(s for s in manifest.stages if s.name == "discover")
+    assert "caveats:" in (discover_stage.notes or ""), discover_stage.notes
+
 
 def test_demo_report_renders(offline_real_data, demo_cfg: RunConfig, tmp_path: Path) -> None:
     """HTML report renders to a non-empty self-contained file."""
@@ -87,6 +91,9 @@ def test_demo_report_renders(offline_real_data, demo_cfg: RunConfig, tmp_path: P
     assert "data:image/png;base64," in text
     assert "candidates" in text.lower()
     assert "provenance" in text.lower()
+    # Honest limitations are surfaced to the user in every report.
+    assert "Limitations" in text
+    assert "cell-surface protein abundance" in text
 
 
 def test_manifest_jsonld_is_valid_json(
