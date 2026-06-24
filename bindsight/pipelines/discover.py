@@ -39,6 +39,7 @@ from bindsight.config import RunConfig, TargetDiscoveryParams
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 from bindsight.epitopes.surface_bind import SURFACE_BIND_DATA_ENV, SurfaceBindClient
 from bindsight.io.paths import run_dir
+from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS, caveat_summary
 from bindsight.provenance import (
     InputRef,
     Manifest,
@@ -279,6 +280,9 @@ def _stage_discover(
         params=config.params.target_discovery.model_dump(),
     )
 
+    for _title, _body in DISCOVERY_LIMITATIONS:
+        LOG.warning("discovery limitation — %s: %s", _title, _body)
+
     try:
         candidates_df, epitopes_df, taxonomy_df = _do_discover(
             config=config,
@@ -303,6 +307,8 @@ def _stage_discover(
             f"n_top={int((candidates_df['rank_in_top_n']).sum())}; "
             f"taxonomy({len(taxonomy_df)} genes)="
             + ",".join(f"{k}:{v}" for k, v in sorted(disp_counts.items()))
+            + "; "
+            + caveat_summary()
         )
         stage.mark_completed(
             outputs=[

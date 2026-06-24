@@ -216,6 +216,14 @@ We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](../A
 - Free Colab sessions die mid-job (per-trajectory checkpointing mitigates)
 - Designer choice (RFdiff vs BindCraft vs BoltzGen) will keep evolving
   (plugin interface, all three benchmarked in the v0.2 paper)
+- mRNA abundance is not cell-surface protein abundance — SURFY confirms a protein
+  *can* reach the surface, not how much is actually there. Surfaced candidates are
+  hypotheses to confirm at the protein level (flow cytometry / IHC / Human Protein
+  Atlas) before trusting them. (Stated in every run's report Limitations section.)
+- Bulk expression can come from non-tumour cells — high apparent over-expression may
+  reflect infiltrating immune/stromal cells or tumour purity rather than a
+  tumour-intrinsic target; single-cell / deconvolution evidence is needed to be sure
+  (the multi-modal tumour-selectivity layer for v1.0).
 - Disease specificity is hard — "up in cancer, low in vital tissue" predictably
   finds known antigens (a feature for the v0.1 rediscovery paper, a problem
   layer for v1.0)
