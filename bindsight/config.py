@@ -118,6 +118,15 @@ class TargetDiscoveryParams(BaseModel):
     # ~50 (very low confidence / likely disordered) to ~70 (confident).
     min_mean_plddt: float = Field(0.0, ge=0.0, le=100.0)
 
+    # Membrane-topology (extracellular-domain) awareness — UniProt. A binder can
+    # only reach the extracellular part of a surface protein. When enabled,
+    # discovery annotates each candidate's extracellular ranges and targets the
+    # ECD for whole-surface design. Off by default (requires UniProt network).
+    use_uniprot_topology: bool = False
+    # Gate: drop candidates with no annotated extracellular domain (only meaningful
+    # when use_uniprot_topology is True). Off by default.
+    require_extracellular_domain: bool = False
+
     # Open Targets enrichment
     use_open_targets: bool = True
     require_tractable_modality: list[str] = Field(default_factory=lambda: ["Antibody"])
