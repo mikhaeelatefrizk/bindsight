@@ -115,6 +115,7 @@ _EPITOPE_DISPLAY_COLS = [
     "site_id",
     "epitope_status",
     "mean_epitope_plddt",
+    "fraction_extracellular",
 ]
 
 
@@ -129,6 +130,7 @@ _DISPOSITION_ORDER = (
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
+    "no_extracellular_domain",
     "no_alphafold_model",
     "low_confidence_structure",
     "not_top_n",

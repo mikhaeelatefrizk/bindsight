@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — topology-aware epitope selection (UniProt extracellular domain)
+- New `bindsight/structures/topology.py` fetches real UniProt membrane topology (transmembrane,
+  topological domains, signal peptide) and exposes the extracellular ranges. A binder can only
+  reach the extracellular part of a surface protein, so when `target_discovery.use_uniprot_topology`
+  is enabled discovery annotates each candidate's `extracellular_ranges` / `has_extracellular_domain`,
+  targets the ECD for whole-surface design (`design_ranges`), and reports each SURFACE-Bind site's
+  `fraction_extracellular`. Opt-in `require_extracellular_domain` drops non-accessible targets with a
+  new `no_extracellular_domain` disposition. Both flags default off (UniProt network), so existing
+  runs are unchanged. Tests: `tests/test_topology.py` against a real downloaded UniProt fixture
+  (ERBB2 P04626) + gate/annotation tests in `tests/test_failure_taxonomy.py`.
+
 ### Added — disorder-aware filter (AlphaFold pLDDT)
 - New `bindsight/structures/plddt.py` reads per-residue confidence (pLDDT) straight from the
   AlphaFold mmCIF B-factor column (no network, graceful on bad files). Discovery now surfaces a
