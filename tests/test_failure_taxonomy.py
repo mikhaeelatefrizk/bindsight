@@ -14,6 +14,7 @@ import pandas as pd
 from bindsight.config import RunConfig
 from bindsight.pipelines import discover as discover_pipeline
 from bindsight.pipelines.discover import TAXONOMY_DISPOSITIONS
+from bindsight.structures.topology import Topology
 from bindsight.targets.open_targets import TargetEvidence
 
 
@@ -30,6 +31,14 @@ class _FakeAlphaFoldDB:
         self.mapping = mapping
 
     def fetch(self, uniprot_id: str) -> Path | None:
+        return self.mapping.get(uniprot_id)
+
+
+class _FakeTopology:
+    def __init__(self, mapping: dict[str, Topology | None]) -> None:
+        self.mapping = mapping
+
+    def fetch(self, uniprot_id: str) -> Topology | None:
         return self.mapping.get(uniprot_id)
 
 
@@ -187,3 +196,89 @@ def test_low_confidence_structure_disposition(tmp_path: Path, fixtures_dir: Path
     assert erbb2["mean_plddt"] == 55.0  # real value parsed from the fixture
     assert bool(erbb2["low_confidence_structure"]) is True
     assert bool(erbb2["has_alphafold_structure"]) is False  # gated out of design
+
+
+def _single_erbb2_deg() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "log2FoldChange": [3.5],
+            "lfcSE": [0.5],
+            "stat": [7.0],
+            "pvalue": [1e-10],
+            "padj": [1e-9],
+            "baseMean": [800],
+        },
+        index=["ENSG00000141736"],  # ERBB2
+    )
+
+
+def test_no_extracellular_domain_disposition(tmp_path: Path, fixtures_dir: Path) -> None:
+    """With the topology gate on, a candidate lacking an extracellular domain is dropped."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.use_uniprot_topology = True
+    cfg.params.target_discovery.require_extracellular_domain = True
+    out = tmp_path / "out"
+
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    afdb = _FakeAlphaFoldDB({"P04626": struct})
+    # Topology with NO extracellular domain (only a cytoplasmic stretch).
+    topo = _FakeTopology({"P04626": Topology("P04626", (), ((10, 30),), None)})
+
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            topology_client=topo,
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "no_extracellular_domain"
+
+    cands = pd.read_parquet(out / "targets" / "candidates.parquet")
+    erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
+    assert bool(erbb2["has_extracellular_domain"]) is False
+
+
+def test_topology_annotates_ecd_for_design(tmp_path: Path, fixtures_dir: Path) -> None:
+    """With topology on (gate off), the ECD is annotated and used as the design region."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.use_uniprot_topology = True  # gate stays off
+    out = tmp_path / "out"
+
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    afdb = _FakeAlphaFoldDB({"P04626": struct})
+    topo = _FakeTopology({"P04626": Topology("P04626", ((23, 652),), ((653, 675),), (1, 22))})
+
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            topology_client=topo,
+            surfy=frozenset({"P04626"}),
+        )
+
+    cands = pd.read_parquet(out / "targets" / "candidates.parquet")
+    erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
+    assert bool(erbb2["has_extracellular_domain"]) is True
+    assert list(erbb2["extracellular_ranges"][0]) == [23, 652]
+
+    epitopes = pd.read_parquet(out / "epitopes" / "epitopes.parquet")
+    erow = epitopes[epitopes["uniprot_id"] == "P04626"].iloc[0]
+    # whole-surface fallback targets the ECD, not the whole chain
+    assert list(erow["design_ranges"][0]) == [23, 652]
