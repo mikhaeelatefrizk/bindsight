@@ -142,3 +142,48 @@ def test_failure_taxonomy_is_exhaustive(tmp_path: Path, fixtures_dir: Path) -> N
     assert disp["ENSG00000142208"] == "not_significant"  # AKT1
     assert disp["ENSG00000147889"] == "no_uniprot"  # CDKN2A (no UniProt)
     assert disp["ENSG00000146648"] == "no_alphafold_model"  # EGFR (no structure here)
+
+
+def test_low_confidence_structure_disposition(tmp_path: Path, fixtures_dir: Path) -> None:
+    """An AlphaFold model below the pLDDT gate → low_confidence_structure, not surfaced."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    # Gate at 70; the fixture model's mean pLDDT is 55 (mostly disordered).
+    cfg.params.target_discovery.min_mean_plddt = 70.0
+    out = tmp_path / "out"
+
+    fake_deg = pd.DataFrame(
+        {
+            "log2FoldChange": [3.5],
+            "lfcSE": [0.5],
+            "stat": [7.0],
+            "pvalue": [1e-10],
+            "padj": [1e-9],
+            "baseMean": [800],
+        },
+        index=["ENSG00000141736"],  # ERBB2
+    )
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+    disordered = Path(__file__).parent / "fixtures" / "plddt" / "AF-TEST1-F1-model_v6.cif"
+    afdb = _FakeAlphaFoldDB({"P04626": disordered})
+
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=fake_deg,
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "low_confidence_structure"
+
+    candidates = pd.read_parquet(out / "targets" / "candidates.parquet")
+    erbb2 = candidates[candidates["uniprot_id"] == "P04626"].iloc[0]
+    assert erbb2["mean_plddt"] == 55.0  # real value parsed from the fixture
+    assert bool(erbb2["low_confidence_structure"]) is True
+    assert bool(erbb2["has_alphafold_structure"]) is False  # gated out of design
