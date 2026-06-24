@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — normal-tissue safety filter (GTEx, on-target/off-tumor toxicity)
+- New `bindsight/targets/gtex.py` downloads + caches real GTEx v8 gene-median-TPM-by-tissue and
+  exposes `max_expression(gene, tissues)`. A good antibody/ADC target is over-expressed in tumour
+  but low in vital normal tissues; discovery previously only used Open Targets adverse-event counts
+  and left the `vital_tissues` / `vital_tissue_max_tpm` config orphaned. Now, with opt-in
+  `target_discovery.use_gtex_safety`, candidates whose median expression in any vital tissue exceeds
+  the threshold are flagged `high_normal_tissue_expression` (new disposition) and dropped from design;
+  `max_vital_tissue_tpm` is surfaced per candidate. Off by default (requires the GTEx download), so
+  existing runs are unchanged. Tests: `tests/test_gtex.py` against a fixture built from real GTEx v8
+  medians (ERBB2 ~47.8 TPM in lung — the trastuzumab cardiotox concern; NY-ESO-1/MAGEA4 = 0 in vital
+  tissues) + gate tests in `tests/test_failure_taxonomy.py`.
+
 ### Added — topology-aware epitope selection (UniProt extracellular domain)
 - New `bindsight/structures/topology.py` fetches real UniProt membrane topology (transmembrane,
   topological domains, signal peptide) and exposes the extracellular ranges. A binder can only
