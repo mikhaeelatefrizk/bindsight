@@ -91,6 +91,12 @@ workflow = [
 docs = [
     "mkdocs-material>=9.5,<10",  # MIT line; builds the docs site (mkdocs.yml)
 ]
+embed = [
+    # Protein-language-model embeddings (ESM-2) for the pre-GPU sequence-space
+    # visualizer. Heavy + CPU-capable; kept out of `all` so the core stays lean.
+    "torch>=2.0",
+    "transformers>=4.40",
+]
 all = [
     "bindsight[discover,report,runners,workflow]",
 ]
@@ -198,7 +204,16 @@ plugins = ["pydantic.mypy"]
 exclude = ["tests/fixtures", "build", "dist"]
 
 [[tool.mypy.overrides]]
-module = ["pydeseq2.*", "Bio.*", "py3Dmol.*", "modal.*", "snakemake.*", "kaggle.*"]
+module = [
+    "pydeseq2.*",
+    "Bio.*",
+    "py3Dmol.*",
+    "modal.*",
+    "snakemake.*",
+    "kaggle.*",
+    "torch.*",
+    "transformers.*",
+]
 ignore_missing_imports = true
 # These third-party libs ship no type info; don't follow into them so calls
 # aren't flagged as untyped in our (strict) code.
