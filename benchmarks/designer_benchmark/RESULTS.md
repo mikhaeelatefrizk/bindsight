@@ -17,3 +17,14 @@
 - **Pipeline:** RFdiffusion → ProteinMPNN → Boltz-2, run via the split-environment Kaggle kernel (`bindsight.runners.kaggle_kernel`).
 - **Metrics:** **ipTM** is the primary de novo binder-quality metric here, and **success@0.65** is the standard ipTM≥0.65 success criterion. The **PAE-interaction and affinity columns in the table above are conditional and intentionally blank for this protein-binder run** — Boltz-2 affinity prediction is ligand-only, and PAE-interaction comes from Boltz-2's full-PAE output (not staged here).
 - Per-design metrics plus the designed binder PDBs **and FASTAs** are in `binders/` (and `results.json`).
+
+## Developability (sequence biophysics)
+
+Deterministic ProtParam descriptors for each designed binder are in
+[`binders/developability.tsv`](binders/) — instability index, GRAVY, isoelectric point,
+aromaticity, free cysteines, aggregation-prone fraction, and a composite
+`developability_score` ∈ [0, 1]. Across the 20 designs: mean `developability_score`
+**0.69**, **11/20** predicted stable (ProtParam instability index < 40); best
+`binder_4_seq1` (0.88), worst `binder_9_seq1` (0.49, hydrophobic/aggregation-prone).
+Reproduce with `python benchmarks/designer_benchmark/score_developability.py`. (No GPU,
+no network — computed from the committed FASTAs.)
