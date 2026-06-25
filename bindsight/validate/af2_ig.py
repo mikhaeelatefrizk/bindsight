@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """AF2-IG validator plugin (opt-in, non-commercial weights).
 
 AF2 with initial guess (`Bennett/Baker dl_binder_design

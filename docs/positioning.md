@@ -63,7 +63,7 @@ reproducible.
 
 ## Get involved
 
-bindsight is MIT-licensed and built in the open. If you run target discovery or binder design and
+bindsight is AGPL-3.0-licensed and built in the open. If you run target discovery or binder design and
 want to compare notes — or you'd like to try it on your own cohort — open an issue or reach the author
 ([@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk),
 [ORCID 0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)). Feedback from real workflows

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 r"""Run the three-way designer benchmark (RFdiff+MPNN vs BindCraft vs BoltzGen).
 
 Designs binders for the same target set with each designer and the same

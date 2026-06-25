@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Reproducibly build the bindsight held-out evaluation set from public sources.
 
 This script is the *single source of truth* for ``benchmarks/known.tsv``,

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the Snakemake provenance assembler (``scripts/assemble_manifest.py``).
 
 The script lives under ``scripts/`` (not an installed package) and is normally

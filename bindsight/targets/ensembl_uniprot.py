@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Bundled Ensembl gene ID → UniProt accession map for offline / demo runs.
 
 Used as a fallback when ``use_open_targets`` is disabled (e.g. the demo) or

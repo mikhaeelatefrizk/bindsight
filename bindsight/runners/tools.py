@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Single source of truth for the design/validation tools.
 
 Pure, CPU-importable command-builders + output-parsers shared by BOTH the
