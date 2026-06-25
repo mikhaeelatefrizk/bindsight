@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — binder developability scoring (sequence biophysics)
+- New `bindsight/design/developability.py` scores a designed binder's *sequence* on deterministic,
+  offline biophysical descriptors via Biopython ProtParam: instability index, GRAVY, isoelectric
+  point, aromaticity, free cysteines, an aggregation-prone fraction (Kyte-Doolittle window), and a
+  composite `developability_score` ∈ [0,1]. Wired into `rank/scoring.py` as a sequence-optional
+  `score_developability` component (new `RankWeights.developability`; inert when no sequence column).
+  `benchmarks/designer_benchmark/score_developability.py` computes it for the real committed binders
+  → `binders/developability.tsv` (mean score 0.69, 11/20 predicted stable). Tests:
+  `tests/test_developability.py` (exact ProtParam values on a real binder + rank integration).
+  (T-cell-epitope / immunogenicity scoring is deliberately deferred — it needs a licensed/heavy MHC
+  predictor this layer can't compute exactly offline.)
+
 ### Added — normal-tissue safety filter (GTEx, on-target/off-tumor toxicity)
 - New `bindsight/targets/gtex.py` downloads + caches real GTEx v8 gene-median-TPM-by-tissue and
   exposes `max_expression(gene, tissues)`. A good antibody/ADC target is over-expressed in tumour
