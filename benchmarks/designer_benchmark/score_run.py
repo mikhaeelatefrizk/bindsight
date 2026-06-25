@@ -115,21 +115,40 @@ def main() -> None:
     )
     (args.out / "RESULTS.md").write_text(md, encoding="utf-8")
 
-    # Stage the designed binders (PDB + FASTA) for provenance.
+    # Stage the designed binders (PDB + FASTA) plus, when the run retained them,
+    # the real Boltz-2 *predicted complex* structures (validate/<id>/*_model_0.cif)
+    # — the actual folded binder–target complex behind each ipTM.
     binders = args.out / "binders"
     binders.mkdir(parents=True, exist_ok=True)
+    n_complexes = 0
     with tarfile.open(args.tarball, "r:gz") as tf:
         for m in tf.getmembers():
-            if m.isfile() and m.name.startswith("design/"):
-                data = tf.extractfile(m)
-                if data is not None:
-                    (binders / Path(m.name).name).write_bytes(data.read())
+            if not m.isfile():
+                continue
+            name = m.name
+            is_design = name.startswith("design/")
+            is_complex = name.startswith("validate/") and name.endswith((".cif", "_model_0.pdb"))
+            if not (is_design or is_complex):
+                continue
+            data = tf.extractfile(m)
+            if data is None:
+                continue
+            if is_complex:
+                # validate/<binder_id>/<binder_id>_model_0.cif -> <binder_id>_complex.cif
+                stem = Path(name).parent.name
+                (binders / f"{stem}_complex.cif").write_bytes(data.read())
+                n_complexes += 1
+            else:
+                (binders / Path(name).name).write_bytes(data.read())
     # Also keep the raw per-design metrics next to the binders.
     (binders / "metrics.jsonl").write_text(
         "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
     )
 
-    print(f"wrote {args.out}/results.json + RESULTS.md; staged {len(rows)} designs into {binders}")
+    print(
+        f"wrote {args.out}/results.json + RESULTS.md; staged {len(rows)} designs "
+        f"+ {n_complexes} predicted complex structure(s) into {binders}"
+    )
     print(
         f"designs={score.n_designs} mean_ipTM={score.mean_iptm} success@0.65={score.success_rate}"
     )
