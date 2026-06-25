@@ -118,3 +118,7 @@ paper/**/*.toc
 paper/**/*.fls
 paper/**/*.fdb_latexmk
 paper/**/*.synctex.gz
+
+# Designer-benchmark scratch (the --out run dir + transient submit spec dirs)
+benchmarks/designer_benchmark/run/
+_bindsight_spec_*/

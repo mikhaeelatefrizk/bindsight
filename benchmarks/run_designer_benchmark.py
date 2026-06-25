@@ -26,7 +26,11 @@ import argparse
 import logging
 from pathlib import Path
 
-from bindsight.benchmark.designer_bench import DEFAULT_DESIGNERS, run_designer_benchmark
+from bindsight.benchmark.designer_bench import (
+    DEFAULT_DESIGNERS,
+    DEFAULT_TARGETS,
+    run_designer_benchmark,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -46,9 +50,27 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--structures-dir", type=Path, default=None)
     parser.add_argument(
+        "--targets",
+        nargs="*",
+        default=None,
+        help="restrict to these target gene symbols (e.g. --targets ERBB2). "
+        "Default: all DEFAULT_TARGETS. Only those needing a real GPU + structure fit a "
+        "free 16 GB P100 when sliced (e.g. ERBB2 domain IV).",
+    )
+    parser.add_argument(
         "--out", type=Path, default=REPO_ROOT / "benchmarks" / "designer_benchmark" / "run"
     )
     args = parser.parse_args()
+
+    targets = None
+    if args.targets:
+        wanted = {t.upper() for t in args.targets}
+        targets = [t for t in DEFAULT_TARGETS if t.symbol.upper() in wanted]
+        if not targets:
+            parser.error(
+                f"no DEFAULT_TARGETS match {args.targets}; "
+                f"available: {[t.symbol for t in DEFAULT_TARGETS]}"
+            )
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -62,6 +84,7 @@ def main() -> None:
         n_trajectories=args.trajectories,
         seed=args.seed,
         structures_dir=args.structures_dir,
+        targets=targets,
     )
 
     tag = " (MOCK — synthetic)" if summary["is_mock"] else ""
