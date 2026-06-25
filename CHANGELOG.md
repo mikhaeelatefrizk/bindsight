@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-25
+
 ### Changed — relicensed to AGPL-3.0 (code) + CC BY 4.0 (docs); SPDX headers everywhere
 - **bindsight is now licensed under the GNU Affero General Public License v3.0 or later
   (AGPL-3.0-or-later)** instead of MIT. It stays free and open-source, but the copyleft
@@ -111,8 +113,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   models below the threshold with a new `low_confidence_structure` disposition in the failure
   taxonomy; the report shows pLDDT columns and the new disposition. Tests: `tests/test_plddt.py`
   (real fixture mmCIF) + a gate test in `tests/test_failure_taxonomy.py`.
-
-## [0.2.0] - 2026-06-19
 
 ### Added — first real de novo binders (designer benchmark populated)
 - The designer benchmark now ships a **real result**, not an empty template:
