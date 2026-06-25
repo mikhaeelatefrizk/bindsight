@@ -155,9 +155,21 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 > generated Colab notebook), not on the CPU host. The held-out evaluation set
 > lives in [`benchmarks/`](benchmarks/) with full provenance.
 
+> **Discovery quality filters (opt-in).** Beyond the core
+> DE → surfaceome → structure path, discovery can apply real-data refinements via
+> `target_discovery` config flags: an AlphaFold-pLDDT disorder gate
+> (`min_mean_plddt`), UniProt extracellular-domain / topology restriction
+> (`use_uniprot_topology`, `require_extracellular_domain`), and GTEx normal-tissue
+> safety (`use_gtex_safety`) — each adds a negative-result disposition and a
+> per-candidate column. Binder developability scoring (Biopython ProtParam) is a
+> ranking component; an ESM-2 → PCA embedding visualizer (`pip install -e ".[embed]"`)
+> shows the designed-binder sequence space before any GPU spend; and the report
+> carries a Limitations section (mRNA ≠ surface protein, bulk-purity confounding).
+> All are documented in the [CHANGELOG](CHANGELOG.md).
+
 ## Status & roadmap
 
-- ✅ **v0.2.0** (current) — everything in v0.1.0 (discovery on real TCGA data; full design half — RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG — on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI) **plus** the first real de novo binders, the free Kaggle split-environment backend, the negative-result taxonomy, and SURFACE-Bind targetable-site lookup.
+- ✅ **v0.2.0** (current) — everything in v0.1.0 (discovery on real TCGA data; full design half — RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG — on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI) **plus** the first real de novo binders, the free Kaggle split-environment backend, the negative-result taxonomy, SURFACE-Bind targetable-site lookup, opt-in discovery-quality filters (AlphaFold-pLDDT disorder gate, UniProt extracellular-domain/topology restriction, GTEx normal-tissue safety), binder developability scoring, an ESM-2 pre-GPU embedding visualizer, and surfaced discovery caveats (mRNA ≠ surface protein, bulk-purity confounding).
 - ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal) and is specific (non-over-expressed antigens such as EGFR/CEA are correctly not surfaced). Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
 - ✅ **De novo binder design validated** — the design half (RFdiffusion → ProteinMPNN → Boltz-2) run on a **free Kaggle Tesla P100** produced **20 real binders** against the ERBB2 extracellular **domain IV** (the clinically validated trastuzumab epitope): mean **ipTM 0.59**, best **0.84**, **50 %** of designs pass the ipTM ≥ 0.65 success bar (mean PAE-interaction 13.7 Å) — at **$0**, no local GPU. The real Boltz-2-predicted **complexes** (CIF) + FASTAs + per-design metrics are in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md); reproduce on a free GPU via [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md).
 - ⏳ **v0.3.0** — single-cell RNA-seq input, async (non-blocking) Modal job submission, and extending the [designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from the committed `rfdiff_mpnn` arm to the full three-way comparison (BindCraft / BoltzGen need ≥24–32 GB GPUs, so those arms run on paid backends).
@@ -223,17 +235,19 @@ bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
 bindsight/                 # Python package
 ├── io/                   # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/                  # pydeseq2 wrapper (+ optional R bridge)
-├── targets/              # Open Targets client + bundled ENSG→UniProt fallback
+├── targets/              # Open Targets client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/           # SURFY filter + SURFACE-Bind client
-├── structures/           # AlphaFoldDB + RCSB/PDBe fetch
+├── structures/           # AlphaFoldDB + RCSB/PDBe fetch; pLDDT + UniProt topology
 ├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (v0.2)
-├── design/               # Designer plugin interface
+├── design/               # Designer plugin interface; developability + ESM-2 embeddings
 ├── runners/              # Colab / Modal / Kaggle / local-Docker adapters
 ├── validate/             # Boltz-2 default; Chai-1r, AF2-IG opt-in
 ├── rank/                 # Multi-objective scoring
 ├── benchmark/            # Rediscovery + designer-benchmark scoring harness
+├── pipelines/            # Discovery orchestrator (discover.py) + honesty caveats
 ├── provenance/           # PROV-O JSON-LD schema + RO-Crate emitter
 ├── report/               # HTML report template + Streamlit app
+├── config.py             # Pydantic run-configuration models
 └── cli.py                # Click entrypoint
 
 envs/                     # Conda environment files (one per stage)

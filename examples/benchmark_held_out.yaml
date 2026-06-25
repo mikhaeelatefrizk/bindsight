@@ -46,6 +46,13 @@ params:
       - liver
       - lung
     vital_tissue_max_tpm: 5.0
+    # Opt-in discovery-quality filters (default off; uncomment to apply). The
+    # vital_tissues / vital_tissue_max_tpm above are consulted only when
+    # use_gtex_safety is true. See CHANGELOG.md for what each filter does.
+    # use_gtex_safety: true                # GTEx normal-tissue safety gate
+    # min_mean_plddt: 70.0                 # AlphaFold-pLDDT disorder gate
+    # use_uniprot_topology: true           # parse UniProt transmembrane/topology
+    # require_extracellular_domain: true   # restrict design to the extracellular domain
     use_open_targets: true
     require_tractable_modality: ["Antibody"]
     max_safety_events: 5
