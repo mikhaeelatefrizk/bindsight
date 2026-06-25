@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — pLM embedding visualizer (ESM-2 → PCA, pre-GPU sequence space)
+- New `bindsight/design/embeddings.py`: real protein-language-model embeddings via **ESM-2**
+  (`facebook/esm2_t6_8M_UR50D`, CPU-capable) with mean-pooled per-protein vectors, plus a
+  dependency-free NumPy `pca_2d` projection and a matplotlib `render_embedding_png`. Lets you *see*
+  the designed-binder sequence space (which cluster / are outliers) before any GPU spend — the
+  ProtSpace idea. ESM-2 lives behind a new optional extra `bindsight[embed]` (torch + transformers),
+  kept out of `all` so the core stays CPU-lean; the PCA/PNG path needs no heavy deps.
+- `benchmarks/designer_benchmark/embed_binders.py` produced real artifacts for the 20 ERBB2 binders:
+  `binders/embedding_coords.tsv` + `binders/embedding_space.png` (real ESM-2 inference). Tests:
+  `tests/test_embeddings.py` runs PCA/PNG on a committed real 20×320 ESM-2 fixture (CI-safe) and the
+  live ESM-2 path under `importorskip` (verified locally).
+
 ### Added — binder developability scoring (sequence biophysics)
 - New `bindsight/design/developability.py` scores a designed binder's *sequence* on deterministic,
   offline biophysical descriptors via Biopython ProtParam: instability index, GRAVY, isoelectric
