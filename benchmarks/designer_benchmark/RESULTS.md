@@ -28,3 +28,12 @@ aromaticity, free cysteines, aggregation-prone fraction, and a composite
 `binder_4_seq1` (0.88), worst `binder_9_seq1` (0.49, hydrophobic/aggregation-prone).
 Reproduce with `python benchmarks/designer_benchmark/score_developability.py`. (No GPU,
 no network — computed from the committed FASTAs.)
+
+## Sequence-space visualization (ESM-2 → PCA)
+
+A ProtSpace-style view of the binder set, computed with a real protein-language model
+(**ESM-2 `esm2_t6_8M`**) on a CPU: each binder's mean-pooled embedding projected to 2-D.
+Per-binder PC1/PC2 in [`binders/embedding_coords.tsv`](binders/), scatter in
+[`binders/embedding_space.png`](binders/embedding_space.png). This is a *pre-GPU* triage —
+see which designs cluster or are outliers before spending GPU on validation. Reproduce with
+`pip install 'bindsight[embed]'` then `python benchmarks/designer_benchmark/embed_binders.py`.
