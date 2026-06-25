@@ -24,6 +24,7 @@ from pathlib import Path
 import pandas as pd
 
 from bindsight.config import RankWeights
+from bindsight.design.developability import developability
 
 LOG = logging.getLogger(__name__)
 
@@ -101,6 +102,13 @@ def rank_validated(
         if "sequence_recovery" in df.columns
         else pd.Series([float("nan")] * len(df))
     )
+    # Developability (sequence biophysics) — only when the binder sequence is
+    # carried on the row. developability_score is already an absolute [0, 1].
+    if "sequence" in df.columns:
+        df["developability_score"] = df["sequence"].map(_developability_score)
+        df["score_developability"] = df["developability_score"]
+    else:
+        df["score_developability"] = pd.Series([float("nan")] * len(df))
 
     # Composite. Weights apply to non-NaN components only; missing metrics
     # don't penalise — they're just excluded from the weighted average.
@@ -109,6 +117,7 @@ def rank_validated(
         ("score_structure", weights.iptm),
         ("score_affinity", weights.affinity),
         ("score_sequence", weights.sequence_recovery),
+        ("score_developability", weights.developability),
     ]
     composite = pd.Series([0.0] * len(df), index=df.index)
     weight_sum = pd.Series([0.0] * len(df), index=df.index)
@@ -124,6 +133,14 @@ def rank_validated(
     df["rank"] = range(1, len(df) + 1)
 
     return df
+
+
+def _developability_score(sequence: object) -> float:
+    """Absolute developability score in [0, 1] for a binder sequence; NaN if unavailable."""
+    if not isinstance(sequence, str) or not sequence:
+        return float("nan")
+    d = developability(sequence)
+    return d.developability_score if d is not None else float("nan")
 
 
 def _structure_score(df: pd.DataFrame) -> pd.Series:

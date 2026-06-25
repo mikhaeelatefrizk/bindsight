@@ -178,7 +178,13 @@ class ValidateParams(BaseModel):
 
 
 class RankWeights(BaseModel):
-    """Composite-score weights. Should sum to 1.0 for interpretability."""
+    """Composite-score weights.
+
+    The composite is a weighted average over the components *present* for a row
+    (missing metrics are excluded, not penalised), so the weights need not sum to
+    1.0 — they are renormalised per row. ``developability`` only contributes when
+    a binder sequence is available, so it is inert on sequence-less runs.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -186,6 +192,7 @@ class RankWeights(BaseModel):
     iptm: float = Field(0.30, ge=0.0, le=1.0)
     affinity: float = Field(0.30, ge=0.0, le=1.0)
     sequence_recovery: float = Field(0.15, ge=0.0, le=1.0)
+    developability: float = Field(0.15, ge=0.0, le=1.0)
 
 
 class RankParams(BaseModel):
