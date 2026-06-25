@@ -56,11 +56,7 @@ def main() -> None:
     io.save(str(args.out), DomainIV())
 
     # Report what we wrote.
-    kept = [
-        r.id[1]
-        for r in structure[0]["A"].get_residues()
-        if args.lo <= r.id[1] <= args.hi
-    ]
+    kept = [r.id[1] for r in structure[0]["A"].get_residues() if args.lo <= r.id[1] <= args.hi]
     print(
         f"wrote {args.out} — ERBB2 domain IV residues {min(kept)}–{max(kept)} "
         f"({len(kept)} residues; trastuzumab epitope) from AlphaFold {cif}"
