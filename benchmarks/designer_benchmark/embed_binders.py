@@ -29,7 +29,9 @@ def main() -> None:
     """Embed binders/*.fasta with ESM-2, project to 2-D, write coords TSV + PNG."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--binders", type=Path, default=Path("benchmarks/designer_benchmark/binders"))
-    ap.add_argument("--save-embeddings", type=Path, default=None, help="optional .npy of raw embeddings")
+    ap.add_argument(
+        "--save-embeddings", type=Path, default=None, help="optional .npy of raw embeddings"
+    )
     args = ap.parse_args()
 
     fastas = sorted(args.binders.glob("*.fasta"))

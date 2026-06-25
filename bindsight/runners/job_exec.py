@@ -251,6 +251,15 @@ def _validate_boltz2(
             binder_id=d.binder_id,
             target_uniprot=str(spec.get("target_uniprot", "")),
         )
+        # Fill PAE-interaction from the predicted PAE matrix (mean inter-chain PAE)
+        # when Boltz's confidence JSON didn't carry it. Token order is target then
+        # binder (per the YAML), so the chain lengths split the matrix.
+        if result.pae_interaction is None:
+            pae_i = _boltz_pae_interaction(
+                out_dir, target_len=len(target_seq), binder_len=len(d.sequence)
+            )
+            if pae_i is not None:
+                result = result.model_copy(update={"pae_interaction": pae_i})
         if result.iptm is None:
             # Boltz-2 exits 0 even when it *skips* a bad input, so surface its own
             # output here rather than recording a silent null.
@@ -262,9 +271,35 @@ def _validate_boltz2(
                 (proc.stdout or "")[-2000:],
                 (proc.stderr or "")[-2000:],
             )
-        _stage_validate_jsons(out_dir, validate_root / d.binder_id)
+        _stage_validate_outputs(out_dir, validate_root / d.binder_id)
         metrics.append(result.model_dump())
     return metrics
+
+
+def _boltz_pae_interaction(out_dir: Path, *, target_len: int, binder_len: int) -> float | None:
+    """Mean inter-chain PAE (Å) from a Boltz-2 ``pae_*.npz``, or None if unavailable.
+
+    The PAE matrix is over all residue tokens in chain order (target, then binder),
+    so the off-diagonal blocks [target × binder] and [binder × target] are the
+    interface PAE — lower means a more confident interface.
+    """
+    npz = next(Path(out_dir).rglob("pae_*.npz"), None)
+    if npz is None:
+        return None
+    try:
+        import numpy as np
+
+        data = np.load(npz)
+        pae = data["pae"] if "pae" in data.files else data[data.files[0]]
+        n = target_len + binder_len
+        if pae.ndim != 2 or pae.shape != (n, n):
+            return None
+        t = target_len
+        inter = np.concatenate([pae[:t, t:].ravel(), pae[t:, :t].ravel()])
+        return float(inter.mean()) if inter.size else None
+    except Exception as e:  # malformed npz must not abort the job
+        LOG.warning("failed to compute PAE-interaction from %s: %s", npz, e)
+        return None
 
 
 def _validate_chai1r(
@@ -355,12 +390,26 @@ def _last_chain(pdb_path: Path) -> str:
     return chains[-1] if chains else "A"
 
 
-def _stage_validate_jsons(src_dir: Path, dst_dir: Path) -> None:
-    """Copy Boltz confidence/affinity JSONs into <work>/validate/<binder_id>/."""
+def _stage_validate_outputs(src_dir: Path, dst_dir: Path) -> None:
+    """Copy Boltz outputs into <work>/validate/<binder_id>/ for the results tarball.
+
+    Retains not just the confidence/affinity JSONs but the **predicted complex
+    structure** (``*_model_0.cif``/``.pdb``) and the PAE / pLDDT arrays — the real,
+    inspectable folded binder–target complex and its per-residue confidence. (The
+    earlier version kept only the JSONs, so the structures were lost.)
+    """
     dst_dir.mkdir(parents=True, exist_ok=True)
-    for pattern in ("confidence_*.json", "affinity_*.json"):
-        for jpath in src_dir.rglob(pattern):
-            (dst_dir / jpath.name).write_bytes(jpath.read_bytes())
+    patterns = (
+        "confidence_*.json",
+        "affinity_*.json",
+        "*_model_0.cif",
+        "*_model_0.pdb",
+        "pae_*.npz",
+        "plddt_*.npz",
+    )
+    for pattern in patterns:
+        for path in src_dir.rglob(pattern):
+            (dst_dir / path.name).write_bytes(path.read_bytes())
 
 
 def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None) -> Path:
