@@ -8,6 +8,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — Snakemake provenance manifest now populated + docs refreshed
+- `scripts/assemble_manifest.py` now folds each per-rule `manifest_fragment.jsonld`
+  (`{stage, status, metrics}`) into a real `bindsight.provenance.StageRecord`, so the
+  Snakemake front-end's `run_manifest.jsonld` records the run's stages exactly like the
+  Click CLI path does — previously it only logged the fragments and wrote an empty manifest.
+  The assembly logic is a pure `assemble()` helper covered by `tests/test_assemble_manifest.py`
+  (CI-safe, no Snakemake runtime); stale `v0.0.x` version references were removed.
+- Documentation refreshed to match the shipped state: README "Status & roadmap" /
+  "What works today" (the opt-in discovery-quality filters, developability, ESM-2 visualizer,
+  honesty caveats) + repository layout (`pipelines/`, `config.py`); ARCHITECTURE module map
+  (`pipelines/`, `benchmark/`, new submodules); and DESIGNER_BENCHMARK.md (PAE-interaction is
+  now reported — mean 13.7 Å; `*_complex.cif` complexes replace the poly-glycine PDBs;
+  SURFACE-Bind has landed). `examples/benchmark_held_out.yaml` surfaces the opt-in flags
+  (commented, default off).
+
 ### Added — real Boltz-2 predicted binder complexes (+ PAE-interaction)
 - `bindsight/runners/job_exec.py` now stages the Boltz-2 **predicted complex** (`*_model_0.cif`) plus
   the PAE / pLDDT arrays into the results tarball — previously only the confidence JSONs were kept, so

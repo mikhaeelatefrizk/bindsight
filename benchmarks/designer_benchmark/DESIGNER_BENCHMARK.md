@@ -38,8 +38,9 @@ dry-run of the real job: it uses the production plugin stack
 ## Target set
 
 Defaults to the held-out known antigens (`benchmarks/known.tsv`): ERBB2, EGFR,
-MSLN, CD33, IL3RA. Epitope residues are left empty (whole-target design) until
-SURFACE-Bind epitope prediction lands in v0.2; this is valid per `DesignSpec`.
+MSLN, CD33, IL3RA. Epitope residues are left empty (whole-target design) by
+default — valid per `DesignSpec`. The committed ERBB2 result instead targets the
+extracellular **domain IV** (the trastuzumab epitope) via `prepare_erbb2_target.py`.
 
 ## Step 0 — CPU smoke test (no GPU, no network)
 
@@ -103,8 +104,9 @@ python benchmarks/designer_benchmark/score_run.py <out_dir>/<id>.tar.gz \
 
 This writes `results.json` + `RESULTS.md` (`is_mock=False`, stamped with GPU +
 date + `bindsight --version`) and stages **every file from the run's `design/`
-directory** — the designed binder PDBs and FASTAs plus the per-design
-`metrics.jsonl` — into `binders/`. For the Modal path the run writes
+directory** — the real Boltz-2-predicted complexes (`*_complex.cif`) and the
+ProteinMPNN sequences (FASTA) plus the per-design `metrics.jsonl` — into
+`binders/`. For the Modal path the run writes
 `run/results.json` + `RESULTS.md`
 directly; copy those up and commit. Keep `results.json` and `binders/` for
 provenance.
@@ -114,8 +116,8 @@ provenance.
 - **ipTM** — Boltz-2 interface predicted-TM (higher = more confident interface).
   The primary metric for protein binders.
 - **PAE-interaction** — predicted aligned error across the interface (lower = better);
-  comes from Boltz-2's full-PAE output (not the confidence JSON), so it is blank in the
-  Kaggle quickstart result.
+  comes from Boltz-2's full-PAE output (the saved `pae_*.npz`, not the confidence
+  JSON); the committed Kaggle result reports it (mean 13.7 Å across the 20 designs).
 - **predicted affinity** — Boltz-2 `affinity_pred_value`. **Ligand-only**: Boltz-2 does
   not predict protein–protein affinity, so it is blank for protein binders.
 - **success@0.65** — fraction of designs with ipTM ≥ 0.65 (standard de novo criterion).

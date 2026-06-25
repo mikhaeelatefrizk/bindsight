@@ -63,16 +63,20 @@ counts.tsv + design.tsv ─┐
 bindsight/
 ├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
 ├── deg/             # pydeseq2 wrapper (+ optional R bridge)
-├── targets/         # Open Targets GraphQL client + bundled ENSG→UniProt fallback
+├── targets/         # Open Targets GraphQL client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
-├── structures/      # AlphaFoldDB + RCSB/PDBe fetch
+├── structures/      # AlphaFoldDB + RCSB/PDBe fetch; pLDDT (disorder) + UniProt topology
 ├── epitopes/        # SURFACE-Bind site lookup; v0.2 fpocket fallback
-├── design/          # Designer plugin interface (RFdiffusion+MPNN, BindCraft, BoltzGen)
+├── design/          # Designer plugin interface (RFdiffusion+MPNN, BindCraft, BoltzGen);
+│                    #   developability scoring + ESM-2 embeddings
 ├── runners/         # Colab / Modal / Kaggle / local-Docker adapters
 ├── validate/        # Boltz-2 (default), Chai-1r, AF2-IG (opt-in)
-├── rank/            # Multi-objective scoring
+├── rank/            # Multi-objective scoring (incl. developability component)
+├── pipelines/       # End-to-end orchestrators (discover.py) + honesty caveats
+├── benchmark/       # Rediscovery + designer-benchmark scoring harness
 ├── provenance/      # Pydantic schema for run_manifest.jsonld, RO-Crate emitter
-├── report/          # HTML report template + Streamlit app
+├── report/          # HTML report template + Streamlit app (+ Limitations section)
+├── config.py        # Pydantic run-configuration models
 └── cli.py           # Click entrypoint
 ```
 
