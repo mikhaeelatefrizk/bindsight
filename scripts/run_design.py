@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Snakemake script: design half — launches the real executor via a runner.
 
 Invoked by the ``design`` rule. Delegates to the same code path as

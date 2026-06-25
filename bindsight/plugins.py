@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Plugin loader — resolve designers / validators / runners by name.
 
 Looks up the entry points declared in ``pyproject.toml``

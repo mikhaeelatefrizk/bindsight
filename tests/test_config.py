@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the Pydantic RunConfig and per-stage param models."""
 
 from __future__ import annotations

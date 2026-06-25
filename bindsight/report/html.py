@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Self-contained HTML report renderer.
 
 Reads a finished bindsight run directory (``deg/results.parquet``,

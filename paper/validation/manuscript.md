@@ -179,3 +179,7 @@ results.json, report.html, provenance.json, figures) are under
    doi:10.1093/nar/gkac1046
 8. Cho HS, *et al.* Structure of the extracellular region of HER2 alone and in
    complex with trastuzumab. *Nature* 2003. doi:10.1038/nature01392
+
+---
+
+*Licensing: this manuscript, its figures, and the generated result artifacts are released under [CC BY 4.0](../LICENSE) — reuse freely with attribution. The bindsight software is licensed under [AGPL-3.0-or-later](../../LICENSE).*

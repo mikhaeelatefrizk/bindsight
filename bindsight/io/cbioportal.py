@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """cBioPortal molecular-subtype fetcher.
 
 Pulls canonical PAM50 intrinsic-subtype calls for a TCGA study from the public

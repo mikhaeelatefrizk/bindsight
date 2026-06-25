@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Snakemake script: target discovery + epitope lookup.
 
 Wraps :func:`bindsight.pipelines.discover._do_discover` so the work survives

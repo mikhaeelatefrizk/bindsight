@@ -1,6 +1,6 @@
 # Licensing inventory
 
-> **Read this before any commercial use.** `bindsight` itself is MIT, but it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
+> **Read this before any commercial use.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
 >
 > Last reviewed: 2026-06-15 — upstream code `LICENSE` files re-verified on this date for every GitHub-hosted component (designers, validators, surfaceome, viewers, workflow tooling); all match the table below. Model-weights and data-source terms (AF2/RFdiffusion weights, TCGA/GTEx/Open Targets/HPA/SURFY/AlphaFoldDB/RCSB) are unchanged from the prior review. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
@@ -8,9 +8,13 @@
 
 ## 1. bindsight itself
 
-**MIT.** See [LICENSE](LICENSE).
+**GNU AGPL-3.0-or-later.** See [LICENSE](LICENSE).
 
-You may use, modify, and redistribute `bindsight` for any purpose (commercial or academic) provided you keep the copyright notice. There are no patent grants beyond standard MIT.
+You may use, study, modify, and redistribute `bindsight` for any purpose, commercial or academic — it is free and open-source software. The AGPL adds one core obligation (copyleft): if you **distribute** a modified version, **or run a modified version as a network/web service**, you must make your complete corresponding source available to its users under the same AGPL terms, preserving the copyright notice and attribution. This keeps bindsight and everything built on it open.
+
+If those copyleft terms don't fit your use (e.g. embedding bindsight in a closed-source product), a separate **commercial license** is available from the author — as sole copyright holder, the author can dual-license. Contact: mikhaeelatefrizk@proton.me.
+
+Documentation, manuscripts, figures, and generated results (e.g. `paper/`) are licensed under **CC BY 4.0** ([paper/LICENSE](paper/LICENSE)) — reuse freely with attribution.
 
 ---
 

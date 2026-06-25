@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """bindsight web app — multi-page Streamlit interface.
 
 Anyone can run this locally (``bindsight ui``) or hit the Streamlit Cloud
@@ -70,7 +72,7 @@ def _page_home() -> None:
     st.markdown(
         '<div style="margin-bottom:1rem">'
         f'<span class="pill ok-pill">v{__version__} ready</span>'
-        '<span class="pill">MIT license</span>'
+        '<span class="pill">AGPL-3.0 license</span>'
         '<span class="pill">CPU-friendly</span>'
         '<span class="pill">PROV-O provenance</span>'
         "</div>",
@@ -323,7 +325,7 @@ def _page_about() -> None:
         from its evidence chain — the patient cohort, the differential
         expression, the structure, the designer commit, the validator metrics.
 
-        **License:** MIT.
+        **License:** AGPL-3.0-or-later.
         **Source:** https://github.com/mikhaeelatefrizk/bindsight
         **Docs:** [What is bindsight?](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/what-is-bindsight.md) ·
         [How to use](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/how-to-use.md) ·
@@ -443,7 +445,7 @@ def main() -> None:
     )
     st.sidebar.markdown("---")
     st.sidebar.markdown(
-        '<span class="small-muted">bindsight · MIT · '
+        '<span class="small-muted">bindsight · AGPL-3.0 · '
         '<a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a></span>',
         unsafe_allow_html=True,
     )

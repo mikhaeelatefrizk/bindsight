@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """End-to-end test: `bindsight demo` runs to completion on a real-data cohort.
 
 The demo now runs on a real TCGA-BRCA cohort auto-downloaded from NIH/GDC. To

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Three-way designer benchmark: RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen.
 
 Runs each designer over the *same* target set with the *same* validator (Boltz-2
