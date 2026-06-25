@@ -9,8 +9,8 @@ This is the designer half of the v0.2 validation. The harness is real and
 runnable; the numbers come from a real GPU run. The **first real result** —
 RFdiffusion + ProteinMPNN against ERBB2 domain IV (the trastuzumab epitope), on
 Kaggle's free P100 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs,
-mean ipTM 0.60, 40% success@0.65), with the designed binders in `binders/` and
-the raw metrics in `results.json`.
+mean ipTM 0.59, 50% success@0.65), with the real Boltz-2-predicted complexes
+(`binders/*_complex.cif`) and the raw metrics in `results.json`.
 
 > **Free-GPU quickstart ($0):** to reproduce or extend it on a Kaggle free GPU,
 > follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below are the
