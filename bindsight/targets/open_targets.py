@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Open Targets Platform GraphQL client.
 
 Open Targets aggregates target-disease association evidence from ~20 sources

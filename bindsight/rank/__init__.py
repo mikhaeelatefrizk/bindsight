@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Multi-objective ranking of validated binders."""
 
 from bindsight.rank.scoring import rank_run, rank_validated

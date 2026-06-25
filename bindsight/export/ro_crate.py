@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """RO-Crate exporter.
 
 Bundles a finished bindsight run into a single ``.crate.zip`` that is
@@ -139,7 +141,7 @@ def _build_metadata(run: Path, files: list[Path]) -> dict:
                     "name": "bindsight",
                     "version": __version__,
                     "url": "https://github.com/mikhaeelatefrizk/bindsight",
-                    "license": "MIT",
+                    "license": "AGPL-3.0-or-later",
                 },
                 "hasPart": [{"@id": e["@id"]} for e in file_entries],
                 "bindsight:run_id": manifest.get("run_id", ""),
@@ -200,6 +202,6 @@ _DEFAULT_BIBTEX = """% bindsight run with no manifest entries detected.
 @software{bindsight,
   title = {bindsight: a reproducible bridge from RNA-seq to de novo protein binder design},
   url = {https://github.com/mikhaeelatefrizk/bindsight},
-  license = {MIT}
+  license = {AGPL-3.0-or-later}
 }
 """

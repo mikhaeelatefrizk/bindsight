@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Unit tests for the design-tool command builders + output parsers.
 
 These cover the highest-risk, CPU-verifiable pieces of the design half: exact

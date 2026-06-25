@@ -57,5 +57,5 @@ preference to the local `data/surface_bind/sites` path.
 ## License
 
 SURFACE-Bind is BSD-3-Clause licensed. See the upstream repository for the
-full text. bindsight itself is MIT-licensed and does not redistribute
-SURFACE-Bind data.
+full text. bindsight itself is AGPL-3.0-or-later licensed and does not
+redistribute SURFACE-Bind data.

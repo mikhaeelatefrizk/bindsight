@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Mock GPU runner for CI.
 
 Returns canned-but-realistically-shaped results immediately so CI (and the

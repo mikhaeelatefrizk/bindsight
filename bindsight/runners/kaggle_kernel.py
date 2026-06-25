@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Builder for the self-contained Kaggle kernel that runs the design+validation job.
 
 Kaggle's free GPU is a **Tesla P100 (sm_60)** whose preinstalled stack

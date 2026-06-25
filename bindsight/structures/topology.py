@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Membrane topology from UniProt (extracellular-domain awareness).
 
 An antibody or a de novo mini-binder can only reach the **extracellular** part of

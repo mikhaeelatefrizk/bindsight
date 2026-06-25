@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Chai-1 validator plugin.
 
 `Chai-1 <https://github.com/chaidiscovery/chai-lab>`_ (Apache-2) is an

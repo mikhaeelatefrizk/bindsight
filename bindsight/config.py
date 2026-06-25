@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """User-facing pipeline configuration.
 
 The YAML configs under ``examples/`` (and any user-authored config) are

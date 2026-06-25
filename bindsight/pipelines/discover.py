@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Discovery-half orchestrator.
 
 Joins the upstream genomics evidence into a ranked target shortlist:
@@ -274,7 +276,7 @@ def _stage_discover(
         tool=ToolRef(
             name=f"bindsight/{__version__}",
             version=__version__,
-            license="MIT",
+            license="AGPL-3.0-or-later",
             repo_url="https://github.com/mikhaeelatefrizk/bindsight",
         ),
         inputs=[

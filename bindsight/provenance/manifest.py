@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Pydantic v2 schema for ``run_manifest.jsonld`` — the bindsight provenance contract.
 
 Every pipeline stage emits a :class:`StageRecord` and appends it to the

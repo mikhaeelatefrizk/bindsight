@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared designer plumbing: ship the spec+structure to a runner, stage results.
 
 All designer plugins (RFdiffusion+ProteinMPNN, BindCraft, BoltzGen) submit the
