@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — retain real Boltz-2 predicted complexes (+ PAE-interaction)
+- `bindsight/runners/job_exec.py` now stages the Boltz-2 **predicted complex** (`*_model_0.cif`) plus
+  the PAE / pLDDT arrays into the results tarball — previously only the confidence JSONs were kept, so
+  the actual folded binder–target structures were lost — and fills `pae_interaction` (mean inter-chain
+  PAE from the predicted PAE matrix). `score_run.py` stages those complexes into `binders/` as
+  `<id>_complex.cif`, so a GPU re-run commits **real folded complexes** instead of the poly-glycine
+  RFdiffusion backbones. Unit-tested in `tests/test_job_exec_retention.py` against a synthetic Boltz-2
+  output layout. (The ERBB2 re-run that produces the committed structures is pending a GPU credential.)
+
 ### Added — pLM embedding visualizer (ESM-2 → PCA, pre-GPU sequence space)
 - New `bindsight/design/embeddings.py`: real protein-language-model embeddings via **ESM-2**
   (`facebook/esm2_t6_8M_UR50D`, CPU-capable) with mean-pooled per-protein vectors, plus a
