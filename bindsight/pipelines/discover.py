@@ -53,6 +53,7 @@ from bindsight.structures.alphafolddb import AlphaFoldDBClient
 from bindsight.structures.plddt import mean_plddt, region_plddt
 from bindsight.structures.topology import Topology, UniProtTopologyClient
 from bindsight.surfaceome import is_surface_protein, load_surfy
+from bindsight.targets.gtex import GTExTissueExpression
 from bindsight.targets.open_targets import OpenTargetsClient
 
 LOG = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ def run(
     alphafolddb_client: AlphaFoldDBClient | None = None,
     surface_bind_client: SurfaceBindClient | None = None,
     topology_client: UniProtTopologyClient | None = None,
+    gtex_client: GTExTissueExpression | None = None,
     surfy: frozenset[str] | None = None,
 ) -> Manifest:
     """Run the discovery half end-to-end and write artifacts to ``out_dir``.
@@ -118,6 +120,7 @@ def run(
         alphafolddb_client=alphafolddb_client,
         surface_bind_client=surface_bind_client,
         topology_client=topology_client,
+        gtex_client=gtex_client,
         surfy=surfy,
     )
     manifest.append(discover_stage)
@@ -263,6 +266,7 @@ def _stage_discover(
     alphafolddb_client: AlphaFoldDBClient | None,
     surface_bind_client: SurfaceBindClient | None,
     topology_client: UniProtTopologyClient | None,
+    gtex_client: GTExTissueExpression | None,
     surfy: frozenset[str] | None,
 ) -> StageRecord:
     stage = StageRecord(
@@ -296,6 +300,7 @@ def _stage_discover(
             alphafolddb_client=alphafolddb_client,
             surface_bind_client=surface_bind_client,
             topology_client=topology_client,
+            gtex_client=gtex_client,
             surfy=surfy,
         )
         candidates_path.parent.mkdir(parents=True, exist_ok=True)
@@ -355,6 +360,7 @@ def _do_discover(
     alphafolddb_client: AlphaFoldDBClient | None,
     surface_bind_client: SurfaceBindClient | None,
     topology_client: UniProtTopologyClient | None,
+    gtex_client: GTExTissueExpression | None,
     surfy: frozenset[str] | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pure-data discovery logic; returns (candidates_df, epitopes_df, taxonomy_df)."""
@@ -575,6 +581,28 @@ def _do_discover(
                     "topology gate: %d candidate(s) with no extracellular domain", int(no_ecd.sum())
                 )
 
+    # 6d. Normal-tissue safety (GTEx) — opt-in. A binder against a target that is
+    # also highly expressed in vital normal tissue risks on-target/off-tumor
+    # toxicity. Flag candidates over the vital-tissue TPM threshold and drop them
+    # from design carry-forward. Off by default — requires the GTEx download.
+    if p.use_gtex_safety and not candidates.empty:
+        gtex = gtex_client or GTExTissueExpression()
+        candidates["max_vital_tissue_tpm"] = candidates["gene_id"].map(
+            lambda g: gtex.max_expression(str(g), p.vital_tissues) if g is not None else None
+        )
+        tissue_unsafe = candidates["max_vital_tissue_tpm"].notna() & (
+            candidates["max_vital_tissue_tpm"] > p.vital_tissue_max_tpm
+        )
+        candidates["high_normal_tissue_expression"] = tissue_unsafe
+        if bool(tissue_unsafe.any()):
+            candidates.loc[tissue_unsafe, "has_alphafold_structure"] = False
+            LOG.info(
+                "GTEx tissue-safety: %d candidate(s) over %.1f TPM in a vital tissue "
+                "-> high_normal_tissue_expression",
+                int(tissue_unsafe.sum()),
+                p.vital_tissue_max_tpm,
+            )
+
     # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
     #    2014), structures first (only structure-bearing candidates can proceed
     #    to design). Higher π = more confidently over-expressed.
@@ -621,6 +649,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
+    "high_normal_tissue_expression",
     "no_extracellular_domain",
     "no_alphafold_model",
     "low_confidence_structure",
@@ -677,6 +706,7 @@ def _build_taxonomy(
     topn_gids: set[str] = set()
     low_conf_gids: set[str] = set()
     no_ecd_gids: set[str] = set()
+    tissue_unsafe_gids: set[str] = set()
     if not candidates.empty:
         cand_gids = {str(g) for g in candidates["gene_id"]}
         struct_gids = {
@@ -690,6 +720,11 @@ def _build_taxonomy(
         if "no_extracellular_domain" in candidates.columns:
             no_ecd_gids = {
                 str(g) for g in candidates.loc[candidates["no_extracellular_domain"], "gene_id"]
+            }
+        if "high_normal_tissue_expression" in candidates.columns:
+            tissue_unsafe_gids = {
+                str(g)
+                for g in candidates.loc[candidates["high_normal_tissue_expression"], "gene_id"]
             }
     site_gids: set[str] = set()
     if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
@@ -715,9 +750,12 @@ def _build_taxonomy(
                 else "surfaced"
             )
         elif gid in cand_gids:
-            # passed the filters but can't proceed to design: not antibody-accessible
-            # (no extracellular domain), low-confidence model, no structure, or out of top-N.
-            if gid in no_ecd_gids:
+            # passed the filters but can't proceed to design: over-expressed in vital
+            # tissue, not antibody-accessible (no ECD), low-confidence model, no
+            # structure, or out of top-N.
+            if gid in tissue_unsafe_gids:
+                disp = "high_normal_tissue_expression"
+            elif gid in no_ecd_gids:
                 disp = "no_extracellular_domain"
             elif gid in low_conf_gids:
                 disp = "low_confidence_structure"

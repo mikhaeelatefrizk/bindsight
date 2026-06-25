@@ -10,12 +10,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
+import pytest
 
 from bindsight.config import RunConfig
 from bindsight.pipelines import discover as discover_pipeline
 from bindsight.pipelines.discover import TAXONOMY_DISPOSITIONS
 from bindsight.structures.topology import Topology
+from bindsight.targets.gtex import GTExTissueExpression
 from bindsight.targets.open_targets import TargetEvidence
+
+_GTEX_FIX = Path(__file__).parent / "fixtures" / "gtex" / "gtex_median_subset.gct"
 
 
 class _FakeOpenTargets:
@@ -282,3 +286,74 @@ def test_topology_annotates_ecd_for_design(tmp_path: Path, fixtures_dir: Path) -
     erow = epitopes[epitopes["uniprot_id"] == "P04626"].iloc[0]
     # whole-surface fallback targets the ECD, not the whole chain
     assert list(erow["design_ranges"][0]) == [23, 652]
+
+
+def test_high_normal_tissue_expression_disposition(tmp_path: Path, fixtures_dir: Path) -> None:
+    """GTEx safety: a target over-expressed in vital tissue is dropped (real GTEx values)."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.use_gtex_safety = True  # threshold defaults to 5.0 TPM
+    out = tmp_path / "out"
+
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    afdb = _FakeAlphaFoldDB({"P04626": struct})
+    gtex = GTExTissueExpression(gct_path=_GTEX_FIX)
+
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            gtex_client=gtex,
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    # ERBB2 median ~47.8 TPM in normal lung > 5.0 -> dropped (real cardiotox concern).
+    assert disp["ENSG00000141736"] == "high_normal_tissue_expression"
+
+    cands = pd.read_parquet(out / "targets" / "candidates.parquet")
+    erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
+    assert float(erbb2["max_vital_tissue_tpm"]) == pytest.approx(47.78, rel=1e-2)
+    assert bool(erbb2["high_normal_tissue_expression"]) is True
+
+
+def test_gtex_safe_target_surfaces(tmp_path: Path, fixtures_dir: Path) -> None:
+    """A target below the vital-tissue threshold still surfaces; TPM is recorded."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.use_gtex_safety = True
+    cfg.params.target_discovery.vital_tissue_max_tpm = 100.0  # ERBB2 (~47.8) is under this
+    out = tmp_path / "out"
+
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    afdb = _FakeAlphaFoldDB({"P04626": struct})
+    gtex = GTExTissueExpression(gct_path=_GTEX_FIX)
+
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            gtex_client=gtex,
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "surfaced"
+    cands = pd.read_parquet(out / "targets" / "candidates.parquet")
+    erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
+    assert float(erbb2["max_vital_tissue_tpm"]) == pytest.approx(47.78, rel=1e-2)
+    assert bool(erbb2["high_normal_tissue_expression"]) is False
