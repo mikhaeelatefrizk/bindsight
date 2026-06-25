@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Rediscovery validation: do real TCGA cohorts resurface known antigens?
 
 This module runs the discovery half of bindsight on real TCGA cohorts (one per

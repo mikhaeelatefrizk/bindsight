@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Annotate the designed binders with sequence-level developability (real, offline).
 
 Reads every ``binders/*.fasta`` and writes ``binders/developability.tsv`` with

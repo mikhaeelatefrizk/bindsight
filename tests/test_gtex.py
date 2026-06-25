@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for GTEx normal-tissue expression (on-target/off-tumor safety).
 
 Uses a small fixture GCT whose values are the real GTEx v8 medians for a handful

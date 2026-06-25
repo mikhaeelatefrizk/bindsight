@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Prepare the ERBB2 design target: extracellular domain IV (trastuzumab epitope).
 
 The full ERBB2 (UniProt **P04626**) is 1255 residues. RFdiffusion holds the entire

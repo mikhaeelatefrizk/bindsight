@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Kaggle Notebooks GPU runner.
 
 Drives Kaggle's free GPU tier (T4×2, ~30 GPU-hr/week) headlessly via the Kaggle

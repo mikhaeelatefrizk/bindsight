@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """BoltzGen designer plugin (newest, watch-list for v0.2 default).
 
 `BoltzGen <https://github.com/HannesStark/boltzgen>`_ (Nov 2025, MIT for both

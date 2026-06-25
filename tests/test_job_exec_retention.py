@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the Boltz-2 output retention fix in the job executor.
 
 job_exec imports no GPU libraries at module load, so these run anywhere — they

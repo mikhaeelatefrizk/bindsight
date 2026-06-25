@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """bindsight command-line interface.
 
 A Click app exposing the pipeline stages as subcommands: ``discover`` (CPU
@@ -732,7 +734,7 @@ def verify_licenses(config: Path | None) -> None:
     # Single source of truth: (component, license, commercial?, role).
     # `commercial` is True when the component is usable in commercial work.
     components: list[tuple[str, str, bool, str]] = [
-        ("bindsight", "MIT", True, "this package"),
+        ("bindsight", "AGPL-3.0-or-later", True, "this package"),
         ("pydeseq2", "MIT", True, "DEG analysis (default)"),
         ("Open Targets", "CC0 / Apache-2", True, "target evidence"),
         ("HPA", "CC BY-SA 3.0", True, "tissue baselines"),

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Designer plugin protocol.
 
 A Designer turns a ``DesignSpec`` (target structure + epitope + params) into

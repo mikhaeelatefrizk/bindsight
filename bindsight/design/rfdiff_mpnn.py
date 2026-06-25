@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """RFdiffusion + ProteinMPNN designer plugin.
 
 The default designer. Generates backbones with `RFdiffusion

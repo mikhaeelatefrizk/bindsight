@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """BindCraft designer plugin (premium GPU path).
 
 BindCraft (`Pacesa et al., Nature 2025 <https://www.nature.com/articles/s41586-025-09429-6>`_,

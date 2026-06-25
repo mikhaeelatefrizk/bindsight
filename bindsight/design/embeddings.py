@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Protein-language-model embeddings + a pre-GPU sequence-space visualizer.
 
 Before spending GPU on structure prediction / validation, it's useful to *see*

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the cBioPortal PAM50 subtype fetcher (mocked HTTP, no network)."""
 
 from __future__ import annotations

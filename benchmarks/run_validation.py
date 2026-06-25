@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Run the bindsight rediscovery validation end-to-end and write artifacts.
 
 Fetches real, subtype-stratified TCGA cohorts (PAM50 labels from cBioPortal,
