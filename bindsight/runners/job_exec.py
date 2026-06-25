@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Headless design+validation executor — the real GPU work, runnable anywhere.
 
 This module is what actually runs RFdiffusion → ProteinMPNN → Boltz-2 (and the

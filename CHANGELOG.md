@@ -8,6 +8,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed — relicensed to AGPL-3.0 (code) + CC BY 4.0 (docs); SPDX headers everywhere
+- **bindsight is now licensed under the GNU Affero General Public License v3.0 or later
+  (AGPL-3.0-or-later)** instead of MIT. It stays free and open-source, but the copyleft
+  terms ensure anyone who distributes a modified version — **or runs one as a network
+  service** — must release their corresponding source under the same license, preserving
+  attribution. As sole copyright holder, the author can additionally grant commercial
+  licenses on request. `LICENSE` now carries the full AGPL text; `pyproject.toml`
+  (`License-Expression: AGPL-3.0-or-later`, deprecated license classifier dropped per
+  PEP 639), `CITATION.cff`, `README`, `LICENSING.md`, `SECURITY.md`, the Streamlit/web UI,
+  the docs-site metadata, the Hugging Face Space card, and the RO-Crate / provenance
+  `ToolRef` license fields were all updated to match. Component (third-party tool) licenses
+  are unchanged and remain documented in `LICENSING.md`.
+- **Documentation, manuscripts, figures, and generated results** (`paper/`) are now licensed
+  under **Creative Commons Attribution 4.0 (CC BY 4.0)** — see `paper/LICENSE`.
+- Added **SPDX headers** (`SPDX-FileCopyrightText` + `SPDX-License-Identifier: AGPL-3.0-or-later`)
+  to every first-party Python file (125 files), so the license and copyright travel with each
+  source file. (The historical v0.1.0 bioRxiv preprint under `paper/biorxiv/` is left as-is —
+  it accurately describes the MIT-era v0.1.0 release and its compiled PDF can't be regenerated
+  here.)
+
 ### Fixed — Snakemake provenance manifest now populated + docs refreshed
 - `scripts/assemble_manifest.py` now folds each per-rule `manifest_fragment.jsonld`
   (`{stage, status, metrics}`) into a real `bindsight.provenance.StageRecord`, so the

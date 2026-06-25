@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Snakemake script: stitch per-rule manifest fragments into run_manifest.jsonld.
 
 Each pipeline rule writes a small ``manifest_fragment.jsonld`` summary
@@ -45,7 +47,7 @@ def _fragment_to_stage(fragment: dict[str, Any], *, fallback_name: str) -> Stage
     return StageRecord(
         name=name,
         status=status,
-        tool=ToolRef(name="bindsight", version=BINDSIGHT_VERSION, license="MIT"),
+        tool=ToolRef(name="bindsight", version=BINDSIGHT_VERSION, license="AGPL-3.0-or-later"),
         notes=notes,
     )
 

@@ -4,7 +4,7 @@ site_author: Mikhaeel Atef Rizk
 site_url: https://mikhaeelatefrizk.github.io/bindsight/
 repo_url: https://github.com/mikhaeelatefrizk/bindsight
 repo_name: mikhaeelatefrizk/bindsight
-copyright: "© 2026 Mikhaeel Atef Rizk — MIT License"
+copyright: "© 2026 Mikhaeel Atef Rizk Wahba — AGPL-3.0-or-later"
 docs_dir: docs
 
 theme:

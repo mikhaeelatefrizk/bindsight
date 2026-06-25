@@ -57,7 +57,7 @@ review happens transparently on GitHub.
    README.
 
 JOSS submission criteria (already met):
-- ✅ Open-source license (MIT)
+- ✅ Open-source license (AGPL-3.0-or-later, OSI-approved)
 - ✅ Repository on GitHub with version-controlled history
 - ✅ Tagged release
 - ✅ Documentation (README + `docs/`)
@@ -186,3 +186,11 @@ To stay honest:
 The papers describe what the software *is and does*, accurately, and what
 the planned validation looks like — the standard for a software-methods
 manuscript.
+
+---
+
+## License
+
+The manuscripts, figures, and generated results in this directory are licensed
+under [CC BY 4.0](LICENSE) — reuse freely with attribution. The bindsight
+software is licensed under [AGPL-3.0-or-later](../LICENSE).

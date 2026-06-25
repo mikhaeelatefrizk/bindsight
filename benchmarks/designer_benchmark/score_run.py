@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Score a fetched design+validation results tarball into the benchmark result.
 
 The GPU runners (Kaggle / Colab) return a ``<handle>.tar.gz`` containing

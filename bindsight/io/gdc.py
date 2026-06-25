@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """NIH/GDC RNA-seq cohort fetcher.
 
 Downloads **real** TCGA gene-expression (STAR - Counts) for a project such as

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Per-residue confidence (pLDDT) from AlphaFold models.
 
 AlphaFold stores its per-residue confidence estimate (pLDDT, 0–100) in the

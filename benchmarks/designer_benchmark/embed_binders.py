@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Pre-GPU sequence-space visualizer: ESM-2 embed the designed binders, PCA to 2-D.
 
 Produces a ProtSpace-style view of the binder set *before* any GPU spend:

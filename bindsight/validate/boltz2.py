@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Boltz-2 validator.
 
 Wraps `Boltz-2 <https://github.com/jwohlwend/boltz>`_ (MIT for both code and

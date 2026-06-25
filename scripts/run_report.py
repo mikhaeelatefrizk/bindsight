@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Snakemake script: render the self-contained HTML report.
 
 Invoked by the ``report`` rule. Delegates to :func:`bindsight.report.render_run`

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Normal-tissue expression from GTEx (on-target / off-tumor safety).
 
 A good antibody / ADC target is over-expressed in tumour but **low in vital normal

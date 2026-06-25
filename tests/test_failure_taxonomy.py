@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Negative-result taxonomy: every DEG gene gets exactly one disposition.
 
 The funnel is exhaustive — the per-disposition counts must sum to the total DEG

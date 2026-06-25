@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for pLM embeddings + the PCA sequence-space visualizer.
 
 The PCA projection and PNG rendering run in CI on a *real* committed ESM-2

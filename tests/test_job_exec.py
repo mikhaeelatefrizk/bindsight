@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Executor dispatch tests — real assembly logic, subprocess mocked (no GPU).
 
 Monkeypatches the single subprocess seam (`job_exec._run`) to drop canned

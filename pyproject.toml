@@ -11,7 +11,7 @@ version = "0.2.0"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 keywords = [
     "protein-design",
@@ -35,7 +35,6 @@ classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
