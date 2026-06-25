@@ -105,19 +105,21 @@ def main() -> None:
         "(`prepare_erbb2_target.py`).\n"
         f"- **Pipeline:** RFdiffusion → ProteinMPNN → Boltz-2, run via the split-environment "
         "Kaggle kernel (`bindsight.runners.kaggle_kernel`).\n"
-        "- **Metrics:** **ipTM** is the primary de novo binder-quality metric here, and "
-        "**success@0.65** is the standard ipTM≥0.65 success criterion. The **PAE-interaction "
-        "and affinity columns in the table above are conditional and intentionally blank for "
-        "this protein-binder run** — Boltz-2 affinity prediction is ligand-only, and "
-        "PAE-interaction comes from Boltz-2's full-PAE output (not staged here).\n"
-        f"- Per-design metrics plus the designed binder PDBs **and FASTAs** are in `binders/` "
-        "(and `results.json`).\n"
+        "- **Metrics:** **ipTM** is the primary de novo binder-quality metric and "
+        "**success@0.65** is the standard ipTM≥0.65 criterion. **PAE-interaction** is the mean "
+        "inter-chain predicted aligned error (Å) from the Boltz-2 complex (lower = more confident "
+        "interface). The **affinity column is intentionally blank** — Boltz-2 affinity prediction "
+        "is ligand-only and these are protein binders.\n"
+        f"- The real Boltz-2 **predicted complex structures** are staged in `binders/` as "
+        "`<binder_id>_complex.cif` (the actual folded binder–target complex behind each ipTM), "
+        "alongside the ProteinMPNN FASTAs, per-design `metrics.jsonl`, and `results.json`.\n"
     )
     (args.out / "RESULTS.md").write_text(md, encoding="utf-8")
 
-    # Stage the designed binders (PDB + FASTA) plus, when the run retained them,
-    # the real Boltz-2 *predicted complex* structures (validate/<id>/*_model_0.cif)
-    # — the actual folded binder–target complex behind each ipTM.
+    # Stage the ProteinMPNN FASTAs plus the real Boltz-2 *predicted complex* structures
+    # (validate/<id>/*_model_0.cif) — the actual folded binder–target complex behind each
+    # ipTM. The RFdiffusion poly-glycine backbone PDBs (design/*.pdb) are intentionally NOT
+    # staged: they are a pre-sequence intermediate, and the predicted complex supersedes them.
     binders = args.out / "binders"
     binders.mkdir(parents=True, exist_ok=True)
     n_complexes = 0
@@ -126,7 +128,7 @@ def main() -> None:
             if not m.isfile():
                 continue
             name = m.name
-            is_design = name.startswith("design/")
+            is_design = name.startswith("design/") and name.endswith(".fasta")
             is_complex = name.startswith("validate/") and name.endswith((".cif", "_model_0.pdb"))
             if not (is_design or is_complex):
                 continue
