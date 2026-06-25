@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for ``bindsight.deg.pydeseq2_runner``.
 
 The cheap tests exercise the I/O + filtering layer with mocked pydeseq2 so

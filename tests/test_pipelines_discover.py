@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """End-to-end test of the discovery pipeline against tiny fixtures + fakes."""
 
 from __future__ import annotations

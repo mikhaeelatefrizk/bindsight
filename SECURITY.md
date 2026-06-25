@@ -16,7 +16,7 @@ git log --show-signature -1 <commit-sha>
 
 This complements the other provenance layers in `bindsight`:
 
-- The MIT [LICENSE](LICENSE) carries the copyright notice.
+- The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
 - The Zenodo DOI [10.5281/zenodo.20121496](https://doi.org/10.5281/zenodo.20121496)
   permanently archives v0.1.0 of the source tree (CERN-operated).

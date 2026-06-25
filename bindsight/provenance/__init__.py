@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Provenance subsystem.
 
 The :mod:`bindsight.provenance` package owns the inter-module contract: every

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """pydeseq2 wrapper.
 
 Wraps `pydeseq2 <https://github.com/owkin/PyDESeq2>`_ (MIT) so the rest of

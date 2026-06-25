@@ -5,7 +5,7 @@
 [![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-bindsight-yellow.svg)](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bindsight.streamlit.app/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121496.svg)](https://doi.org/10.5281/zenodo.20121496)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
@@ -336,4 +336,14 @@ GitHub also exposes a "Cite this repository" button on the right sidebar of the 
 
 ## License
 
-MIT. See [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md) for component-level details.
+- **Code:** [GNU AGPL-3.0-or-later](LICENSE). You may use, study, modify, and
+  redistribute bindsight freely; if you distribute a modified version **or run it
+  as a network service**, you must make your source available under the same
+  license, with attribution preserved. See [LICENSING.md](LICENSING.md) for
+  component-level details (bindsight orchestrates external tools that keep their
+  own licenses).
+- **Documentation, manuscripts, figures, and generated results** (e.g. `paper/`):
+  [CC BY 4.0](paper/LICENSE) — reuse freely with attribution.
+
+© 2026 Mikhaeel Atef Rizk Wahba. Commercial licensing on other terms is available
+from the author on request.

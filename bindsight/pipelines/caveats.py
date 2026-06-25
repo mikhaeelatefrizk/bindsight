@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """User-facing scientific caveats for the discovery half.
 
 Single source of truth so the pipeline logs, the run manifest, and the HTML

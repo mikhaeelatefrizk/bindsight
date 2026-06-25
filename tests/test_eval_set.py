@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Integrity tests for the committed held-out evaluation set (benchmarks/).
 
 These run offline against the committed files (no network); they guard against

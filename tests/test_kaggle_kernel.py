@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the Kaggle split-env kernel builder + status mapping (CPU-only).
 
 The GPU run itself can't be exercised without Kaggle, but the kernel *script* is

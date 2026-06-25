@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Modal serverless-GPU runner.
 
 `Modal <https://modal.com/>`_ provisions a GPU, runs

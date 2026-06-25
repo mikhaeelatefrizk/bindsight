@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """End-to-end test of the Snakemake front-end.
 
 Runs the real Snakemake DAG (discover → design → validate → rank → report →

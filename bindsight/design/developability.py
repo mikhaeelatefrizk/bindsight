@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Binder developability — sequence-level manufacturability / liability flags.
 
 A high-ipTM design is useless if it won't express, aggregates, or is hard to

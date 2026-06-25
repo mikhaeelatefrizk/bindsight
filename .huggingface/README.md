@@ -6,7 +6,7 @@ colorTo: green
 sdk: docker
 app_port: 8501
 pinned: false
-license: mit
+license: agpl-3.0
 short_description: RNA-seq counts → ranked de novo protein binder candidates
 tags:
   - streamlit
@@ -86,7 +86,7 @@ Colab recipe in the GitHub repo.
 
 ## License
 
-MIT.  See [LICENSE](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSE)
+AGPL-3.0-or-later.  See [LICENSE](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSE)
 on GitHub for the full text and per-component commercial-use audit.
 
 ## Citation
