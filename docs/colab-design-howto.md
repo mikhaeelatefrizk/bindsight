@@ -63,8 +63,8 @@ which is one-shot but needs A100 (≥32 GB). Use this if you have Colab Pro+.
 
 In the ColabDesign diffusion notebook:
 
-1. **Upload your target structure.** Drag the mmCIF from `runs/demo/structures/`
-   into the Colab file browser. Note its filename (e.g. `AF-P04626-F1-model_v4.cif`).
+1. **Upload your target structure.** Drag your target's mmCIF (its path is in the `structure_path` column of
+   `runs/demo/epitopes/epitopes.parquet`) into the Colab file browser. Note its filename (e.g. `AF-P04626-F1-model_v4.cif`).
 
 2. **Set the inputs cell:**
    ```python
