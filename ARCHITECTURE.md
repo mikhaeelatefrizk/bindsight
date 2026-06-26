@@ -39,7 +39,7 @@ counts.tsv + design.tsv ─┐
    design.spec.yaml ─────┼─────────► Colab / Modal / Kaggle / local-Docker
                          │             ├── BindCraft (paid, ≥32GB GPU)
                          │             ├── RFdiffusion + ProteinMPNN (T4 OK)
-                         │             └── BoltzGen (v0.2)
+                         │             └── BoltzGen
                          │             ▼
                          │           Boltz-2 affinity & structure
                          │             ▼
@@ -66,7 +66,7 @@ bindsight/
 ├── targets/         # Open Targets GraphQL client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
 ├── structures/      # AlphaFoldDB + RCSB/PDBe fetch; pLDDT (disorder) + UniProt topology
-├── epitopes/        # SURFACE-Bind site lookup; v0.2 fpocket fallback
+├── epitopes/        # SURFACE-Bind site lookup; fpocket fallback (planned)
 ├── design/          # Designer plugin interface (RFdiffusion+MPNN, BindCraft, BoltzGen);
 │                    #   developability scoring + ESM-2 embeddings
 ├── runners/         # Colab / Modal / Kaggle / local-Docker adapters
@@ -240,7 +240,7 @@ bindsight run <cfg>  ≡  snakemake (full DAG)
 | Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | 2,886 surface proteins |
 | Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | 2,800+ proteins, sites + seeds |
 | Structures | AlphaFoldDB + [RCSB API](https://data.rcsb.org/) | CC-BY 4.0 | No | mmCIF by UniProt |
-| Epitope fallback (v0.2) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | When SURFACE-Bind has no entry |
+| Epitope fallback (planned) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | When SURFACE-Bind has no entry |
 | Designer (default) | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) + [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | BSD-3 / MIT | T4 OK (~16GB) | Free-Colab-friendly baseline |
 | Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32GB) | Higher reported success rate |
 | Designer (newest) | [BoltzGen](https://github.com/HannesStark/boltzgen) | MIT (code+weights) | Yes | Nov 2025 release; bet on it for v0.2 |
@@ -287,7 +287,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **GPU offload latency** — Colab sessions die. Mitigation: per-trajectory checkpointing, idempotent rerun keys.
 3. **Model output instability across versions** — pin commit SHA + weights hash + CUDA in containers; document that exact reproducibility requires the same digest.
 4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: `--cheap` profile (RFdiff+MPNN on T4, 10 trajectories, ESM-2 pre-screen).
-5. **SURFACE-Bind coverage gaps** — 2,886 ≠ all surfaceome. Mitigation: graceful drop with `no_surfacebind_entry` tag; v0.2 fpocket fallback.
+5. **SURFACE-Bind coverage gaps** — 2,886 ≠ all surfaceome. Mitigation: graceful drop with `no_surfacebind_entry` tag; a planned fpocket fallback.
 6. **Designer choice will age.** Mitigation: plugin interface; ship RFdiff+MPNN default, BindCraft and BoltzGen as flags; benchmark all three in the paper.
 7. **Disease specificity is hard.** "Up in cancer, low in vital tissue" predictably finds known antigens. *This is a feature for v0.1* (rediscovery validation). Real novelty in v1.0 layers scRNA-seq + co-expression + immunopeptidomics.
 8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + Zenodo + GitHub stars is a real moat for academic users.
