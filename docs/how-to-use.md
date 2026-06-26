@@ -162,9 +162,9 @@ shows the state. On first real run these populate automatically:
 - **SURFY surfaceome** (full ~2,886-protein list) — downloaded from
   [wlab.ethz.ch/surfaceome](https://wlab.ethz.ch/surfaceome) (CC-BY).
 - **AlphaFoldDB** structures + **Open Targets** evidence — fetched per target.
-- **SURFACE-Bind** targetable-site lookup is a roadmap item; until then the
-  design step targets the whole surface (set `require_surface_bind_site: false`,
-  the default).
+- **SURFACE-Bind** targetable-site lookup is implemented: when a vendored
+  SURFACE-Bind site tree is present, design focuses on those sites; otherwise it
+  falls back to whole-surface design (`require_surface_bind_site: false`, the default).
 
 No manual setup is required for a standard run.
 
