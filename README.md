@@ -95,7 +95,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                      │                       │
                                      ▼                       ▼
                               Targetable sites          Sequence design
-                              (SURFACE-Bind, v0.2)      (ProteinMPNN)
+                              (SURFACE-Bind)            (ProteinMPNN)
                                      │                       │
                                      ▼                       ▼
                               AlphaFoldDB structure     Affinity + structure
@@ -196,7 +196,7 @@ source .venv/bin/activate
 pip install -e ".[dev,discover,report]"
 bindsight --version
 bindsight doctor                # confirm install is clean
-bindsight demo                  # run the 60-second demo
+bindsight demo                  # run the demo (a few minutes, real TCGA data)
 ```
 
 For Conda users, `envs/discover.yaml` provides the same set of dependencies:
@@ -217,13 +217,13 @@ bindsight discover examples/tcga_luad.yaml --out runs/luad_v01
 bindsight report runs/luad_v01 --format html
 open runs/luad_v01/report.html
 
-# 3. (v0.1+) Design binders for the top 5 targets via Colab GPU
+# 3. Design binders for the top 5 targets via Colab GPU
 bindsight design runs/luad_v01 --backend colab --trajectories 50
 
-# 4. (v0.1+) Validate with Boltz-2
+# 4. Validate with Boltz-2
 bindsight validate runs/luad_v01 --backend colab --validator boltz2
 
-# 5. (v0.1+) Rank, report, export as RO-Crate
+# 5. Rank, report, export as RO-Crate
 bindsight rank runs/luad_v01
 bindsight report runs/luad_v01 --format html --include-binders
 bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
@@ -238,7 +238,7 @@ bindsight/                 # Python package
 ├── targets/              # Open Targets client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/           # SURFY filter + SURFACE-Bind client
 ├── structures/           # AlphaFoldDB + RCSB/PDBe fetch; pLDDT + UniProt topology
-├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (v0.2)
+├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (planned)
 ├── design/               # Designer plugin interface; developability + ESM-2 embeddings
 ├── runners/              # Colab / Modal / Kaggle / local-Docker adapters
 ├── validate/             # Boltz-2 default; Chai-1r, AF2-IG opt-in

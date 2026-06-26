@@ -19,7 +19,8 @@ This complements the other provenance layers in `bindsight`:
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
 - The Zenodo DOI [10.5281/zenodo.20121496](https://doi.org/10.5281/zenodo.20121496)
-  permanently archives v0.1.0 of the source tree (CERN-operated).
+  archives the v0.1.0 release; v0.2.0 and later are archived on publish via
+  the GitHub–Zenodo integration (CERN-operated).
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
@@ -39,6 +40,6 @@ email the author at `mikhaeelatefrizk@proton.me` with the subject
   [LICENSING.md](LICENSING.md) for the full per-dependency inventory.
 - All Python dependencies are pinned with minimum versions in
   [pyproject.toml](pyproject.toml). Container image digests will be pinned
-  for reproducible runs in v0.1.x.
+  for reproducible runs in a future release.
 - `bindsight verify-licenses` prints the per-component license inventory
   on demand.
