@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — post-v0.2.0 docs + packaging polish
+- `bindsight ui` / `bindsight report --format streamlit` now work from a pip install: `streamlit`
+  was missing from every `pyproject` extra (it lived only in `requirements.txt` and the conda env),
+  so the documented `pip install -e ".[report]"` → `bindsight ui` quickstart failed. Added
+  `streamlit>=1.36` to the `report` extra.
+- Removed stale pre-v0.2 wording from the docs: `docs/what-is-bindsight.md` no longer frames the
+  project as "v0.0.x / design half in flight"; the README Quickstart drops the `(v0.1+)` tags and
+  the "60-second demo" label; `docs/how-to-use.md` + `docs/colab-design-howto.md` describe
+  SURFACE-Bind as implemented and point at the real structure path; `SECURITY.md` de-pinned from
+  v0.1.x; `CONTRIBUTING.md`'s smoke test now runs a command that exists. Reconciled the
+  contradictory designer-benchmark figures inside CHANGELOG [0.2.0] to the shipped numbers.
+
 ## [0.2.0] - 2026-06-25
 
 ### Changed — relicensed to AGPL-3.0 (code) + CC BY 4.0 (docs); SPDX headers everywhere
@@ -118,7 +130,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The designer benchmark now ships a **real result**, not an empty template:
   RFdiffusion → ProteinMPNN → Boltz-2, run on a **free Kaggle Tesla P100**, produced
   **20 binders** against ERBB2 extracellular domain IV (the trastuzumab epitope) —
-  mean ipTM 0.60, best 0.83, 40 % pass ipTM ≥ 0.65 — at $0. The designs (PDB + FASTA),
+  mean ipTM 0.59, best 0.84, 50 % pass ipTM ≥ 0.65 — at $0. The designs (real Boltz-2-predicted complexes + FASTA),
   per-design metrics, `results.json`, and a populated `RESULTS.md` live in
   `benchmarks/designer_benchmark/`. New `prepare_erbb2_target.py` (extracts the
   domain-IV target from the AlphaFold model) and `score_run.py` (aggregates a returned

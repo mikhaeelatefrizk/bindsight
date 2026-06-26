@@ -74,6 +74,7 @@ discover = [
     "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [
+    "streamlit>=1.36",     # web UI: `bindsight ui` + `bindsight report --format streamlit`
     "py3Dmol>=2.0",
     "matplotlib>=3.8",
     "seaborn>=0.13",

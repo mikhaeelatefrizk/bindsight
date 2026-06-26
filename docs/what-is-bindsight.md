@@ -124,7 +124,7 @@ pharma early-discovery team can run it without legal review.
 
 ## What you can do with it
 
-### Today (v0.0.x — discovery half)
+### Discovery half — CPU, no GPU
 
 ```bash
 bindsight discover examples/tcga_luad.yaml --out runs/luad_v01
@@ -142,7 +142,7 @@ Produces:
 Useful right now if you're a translational researcher trying to triage a
 cancer cohort for surface-antigen targets without writing 600 lines of glue.
 
-### v0.1 (Phase 2 — design half, in flight)
+### Design + validation half — GPU-backed
 
 ```bash
 bindsight design runs/luad_v01 --backend colab --trajectories 50
@@ -215,7 +215,8 @@ We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](../A
 - SURFACE-Bind covers ~2,800 surface proteins, not all of them (graceful drop)
 - Free Colab sessions die mid-job (per-trajectory checkpointing mitigates)
 - Designer choice (RFdiff vs BindCraft vs BoltzGen) will keep evolving
-  (plugin interface, all three benchmarked in the v0.2 paper)
+  (plugin interface; the rfdiff_mpnn arm is benchmarked today — see the designer
+  benchmark — with BindCraft/BoltzGen on paid ≥24–32 GB GPUs as it grows)
 - mRNA abundance is not cell-surface protein abundance — SURFY confirms a protein
   *can* reach the surface, not how much is actually there. Surfaced candidates are
   hypotheses to confirm at the protein level (flow cytometry / IHC / Human Protein
