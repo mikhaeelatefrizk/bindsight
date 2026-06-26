@@ -21,8 +21,8 @@ ruff check .
 ruff format --check .
 mypy bindsight
 
-# Run the discovery-half smoke test on a tiny fixture
-bindsight discover tests/fixtures/tiny_config.yaml --out /tmp/bindsight_smoke
+# Run the discovery-half smoke test on the bundled example cohort
+bindsight demo
 ```
 
 ---
