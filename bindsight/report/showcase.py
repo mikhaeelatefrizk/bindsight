@@ -153,6 +153,37 @@ class ValidationShowcase:
             return None
         return min(ranked, key=lambda c: c["expected"]["rank"])
 
+    def rows(self) -> list[dict]:
+        """Flatten the cohorts into one row per antigen, for tabular display.
+
+        Fold-change and adjusted p-value are taken from ``deg_expected`` — the
+        *measured* differential expression, which is present for every cohort.
+        ``expected`` only carries them when the antigen was actually surfaced,
+        so reading from there alone silently blanks the antigens the benchmark
+        most wants to be transparent about (NECTIN4, FOLH1, MSLN).
+
+        Returns:
+            One dict per cohort with normalised, display-ready fields.
+        """
+        out: list[dict] = []
+        for c in self.cohorts:
+            expected = c.get("expected") or {}
+            measured = c.get("deg_expected") or {}
+            cohort = c.get("cohort") or {}
+            out.append(
+                {
+                    "antigen": expected.get("symbol") or cohort.get("expected_symbol") or "—",
+                    "cohort": cohort.get("label", ""),
+                    "project": cohort.get("project", ""),
+                    "over_expressed": c.get("category") == "over_expressed",
+                    "log2fc": _as_float(measured.get("log2fc", expected.get("log2fc"))),
+                    "padj": _as_float(measured.get("padj", expected.get("padj"))),
+                    "rank": expected.get("rank"),
+                    "note": cohort.get("note", ""),
+                }
+            )
+        return out
+
 
 def load_validation(root: Path | None = None) -> ValidationShowcase | None:
     """Load the rediscovery validation results.

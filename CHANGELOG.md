@@ -8,6 +8,48 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — the presentation layer now shows the evidence
+- **New "Real results" page in the web app.** `benchmarks/` already held the strongest evidence
+  the project has — the rediscovery experiment across six real TCGA cohorts and 20 real ERBB2
+  binders designed on a free Kaggle P100 — and none of it was reachable from the app. The page
+  renders the rediscovery table, recall@k, the six cohort volcanoes, every scored design, the
+  ESM-2 sequence-space projection, and the **actual Boltz-2 predicted complexes in 3-D** with the
+  designed binder coloured against its target.
+- **`bindsight/report/showcase.py`** — read-only loaders for the committed benchmark results, the
+  single source of truth shared by the web app and the documentation site so the two can never
+  disagree. Degrades to `None` when `benchmarks/` is absent (it is not shipped in the wheel).
+- **`bindsight/report/theme.py`** and **`.streamlit/config.toml`** — one brand definition for the
+  app, the HTML report, and the docs site, which had drifted into navy/navy/teal. The Streamlit
+  theme also stops Streamlit's own chrome rendering in its default red against navy headings.
+- **Documentation site is now the project's front door** — landing page, generated
+  [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) page, logo, favicon, and a
+  social-preview card. Links to the project previously previewed with no image anywhere.
+- **`tests/test_webapp_smoke.py`** — the web app is exercised in CI for the first time. Previously
+  only its *import* was checked, so any page could raise on render with CI still green.
+- `tests/test_showcase.py` and `tests/test_docs_results.py` pin the published numbers (ERBB2 rank 4,
+  20 designs, best ipTM 0.84, 50% success@0.65), so changing the committed benchmarks without
+  updating the public surfaces is now a test failure.
+
+### Fixed
+- **Web-app results no longer vanish.** The app used no `st.session_state` at all, so demo and
+  user-run output was rendered inside the button-click branch and disappeared the moment any other
+  widget was touched — losing a completed run on your own cohort.
+- **"Browse a run" is usable on the hosted deployments.** It asked for a server-side filesystem
+  path, which a visitor to the Hugging Face Space or Streamlit Cloud does not have. It now lists
+  local runs found by their provenance manifest.
+- **Mobile navigation.** All navigation lives in the sidebar, which Streamlit collapses on phones,
+  leaving mobile visitors with no visible way off the Home page. The sidebar state is now explicit
+  and the stylesheet has real media queries — the module docstring had claimed phone support while
+  containing no responsive rules.
+- **Nine broken links on the live documentation site.** `mkdocs build` is now `--strict`, which
+  immediately caught `../ARCHITECTURE.md`-style links in four pages that resolve nowhere once the
+  site is built.
+- `bindsight ui` now actually disables Streamlit telemetry, which its own help text has always
+  promised.
+- Docstrings that had drifted ahead of the code are corrected: the HTML report never embedded an
+  NGL viewer, `report/streamlit_app.py` does not use `data_editor`, RO-Crate output is not
+  bit-identical (only its payload files are), and `schemas/run_manifest.schema.json` does not exist.
+
 ### Fixed — post-v0.2.0 docs + packaging polish
 - `bindsight ui` / `bindsight report --format streamlit` now work from a pip install: `streamlit`
   was missing from every `pyproject` extra (it lived only in `requirements.txt` and the conda env),
