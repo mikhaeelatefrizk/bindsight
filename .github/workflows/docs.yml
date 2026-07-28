@@ -11,6 +11,11 @@ on:
       - "overrides/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
+      # docs/results.md is generated from the committed benchmark results, so a
+      # new benchmark run must republish the site.
+      - "benchmarks/**"
+      - "bindsight/report/showcase.py"
+      - "scripts/build_docs_results.py"
   workflow_dispatch:
 
 permissions:
@@ -32,9 +37,13 @@ jobs:
           python-version: "3.11"
           cache: "pip"
       - name: Install docs deps
-        run: pip install "mkdocs-material>=9.5,<10"
+        run: pip install -e "." "mkdocs-material>=9.5,<10"
+      - name: Regenerate the results page from benchmarks/
+        run: python scripts/build_docs_results.py
+      # --strict fails the build on broken internal links. It caught nine
+      # already-live 404s the first time it was switched on.
       - name: Build site
-        run: mkdocs build --site-dir site
+        run: mkdocs build --strict --site-dir site
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

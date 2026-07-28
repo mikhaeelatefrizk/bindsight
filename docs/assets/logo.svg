@@ -1,17 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="bindsight">
   <title>bindsight</title>
   <!--
-    The mark: a cell-surface antigen (navy ring) with a targetable site left
-    open at the upper right, and a designed binder (teal) docked into it.
-    That is the whole thesis of the project in one glyph — expression finds the
-    surface, design fills the site.
+    The mark: a cell-surface antigen (the ring) with a targetable site left open
+    at the upper right, and a designed binder (teal) docked into it. That is the
+    whole thesis of the project in one glyph — expression finds the surface,
+    design fills the site.
+
+    Drawn in white because Material for MkDocs renders theme.logo on the header
+    bar, which is the primary brand navy. docs/assets/favicon.svg is the
+    standalone variant with its own background.
   -->
   <circle
     cx="32" cy="32" r="22"
-    fill="none" stroke="#0b5394" stroke-width="6"
+    fill="none" stroke="#ffffff" stroke-width="6"
     stroke-linecap="round" stroke-dasharray="102 36"/>
-  <circle cx="32" cy="32" r="6.5" fill="#0b5394"/>
-  <g transform="translate(47.6 16.4) rotate(-45)">
+  <circle cx="32" cy="32" r="6.5" fill="#ffffff"/>
+  <g transform="translate(43.6 20.4) rotate(-45)">
     <rect x="-4.5" y="-11" width="9" height="22" rx="4.5" fill="#0f9d8f"/>
   </g>
 </svg>

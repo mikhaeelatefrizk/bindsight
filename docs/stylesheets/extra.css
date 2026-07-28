@@ -1,0 +1,245 @@
+/*
+ * bindsight documentation site — brand layer.
+ *
+ * Values mirror bindsight/report/theme.py so the docs site, the Streamlit app
+ * and the generated HTML report read as one product. Before this file the docs
+ * were teal while both other surfaces were navy.
+ */
+
+:root {
+  --md-primary-fg-color:        #0b5394;
+  --md-primary-fg-color--light: #1a6fbf;
+  --md-primary-fg-color--dark:  #083b6b;
+  --md-accent-fg-color:         #0f9d8f;
+
+  --bs-navy:       #0b5394;
+  --bs-navy-dark:  #083b6b;
+  --bs-navy-tint:  #e8f0fb;
+  --bs-accent:     #0f9d8f;
+  --bs-rule:       #e3e6ea;
+  --bs-muted:      #6c757d;
+  --bs-canvas:     #f7f9fc;
+}
+
+[data-md-color-scheme="slate"] {
+  --bs-navy-tint: #12263f;
+  --bs-rule:      #2b3038;
+  --bs-canvas:    #171a1f;
+  --bs-muted:     #9aa4b0;
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+
+.bs-hero {
+  background: linear-gradient(135deg, var(--bs-navy) 0%, var(--bs-navy-dark) 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 2.6rem 2.4rem;
+  margin: 0 0 1.6rem 0;
+}
+
+.bs-hero h1 {
+  color: #fff;
+  margin: 0 0 .5rem 0;
+  font-size: 2.6rem;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  font-weight: 700;
+}
+
+.bs-hero .bs-lede {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.55;
+  opacity: .95;
+}
+
+.bs-hero .bs-sub {
+  margin-top: 1rem;
+  font-size: .95rem;
+  opacity: .82;
+}
+
+/* --- Call-to-action buttons ---------------------------------------------- */
+
+.bs-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin: 1.4rem 0 0 0;
+}
+
+.bs-cta a,
+.bs-cta a:hover {
+  display: inline-block;
+  padding: .6rem 1.15rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: .92rem;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, .35);
+  color: #fff;
+}
+
+.bs-cta a.primary,
+.bs-cta a.primary:hover {
+  background: #fff;
+  color: var(--bs-navy);
+  border-color: #fff;
+}
+
+.bs-cta a:hover {
+  background: rgba(255, 255, 255, .14);
+}
+
+.bs-cta a.primary:hover {
+  background: #eef4fb;
+}
+
+/* --- Stat strip ----------------------------------------------------------- */
+
+.bs-stats {
+  display: grid;
+  gap: .85rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 1.6rem 0;
+}
+
+.bs-stat {
+  background: var(--bs-canvas);
+  border: 1px solid var(--bs-rule);
+  border-radius: 11px;
+  padding: 1rem 1.1rem;
+}
+
+.bs-stat .v {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--bs-navy);
+  line-height: 1.1;
+}
+
+[data-md-color-scheme="slate"] .bs-stat .v {
+  color: #7fb2e8;
+}
+
+.bs-stat .k {
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--bs-muted);
+  margin-top: .25rem;
+  font-weight: 600;
+}
+
+.bs-stat .d {
+  font-size: .8rem;
+  color: var(--bs-muted);
+  margin-top: .3rem;
+  line-height: 1.35;
+}
+
+/* --- Pipeline strip ------------------------------------------------------- */
+
+.bs-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 1.1rem 0 .6rem 0;
+}
+
+.bs-flow .s {
+  flex: 1 1 130px;
+  background: var(--bs-navy-tint);
+  border: 1px solid rgba(11, 83, 148, .18);
+  border-radius: 10px;
+  padding: .6rem .65rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--bs-navy-dark);
+  text-align: center;
+}
+
+[data-md-color-scheme="slate"] .bs-flow .s {
+  color: #cfe2f7;
+  border-color: rgba(127, 178, 232, .25);
+}
+
+.bs-flow .s small {
+  display: block;
+  font-weight: 400;
+  font-size: .7rem;
+  color: var(--bs-muted);
+  margin-top: .2rem;
+}
+
+.bs-flow .s.gpu {
+  background: #fff8e1;
+  border-color: #f0e0a8;
+  color: #7a5c00;
+}
+
+[data-md-color-scheme="slate"] .bs-flow .s.gpu {
+  background: #33290a;
+  color: #f2d98b;
+  border-color: #5c4a12;
+}
+
+/* --- Cards ---------------------------------------------------------------- */
+
+.bs-cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin: 1.2rem 0;
+}
+
+.bs-card {
+  border: 1px solid var(--bs-rule);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+  background: var(--bs-canvas);
+}
+
+.bs-card h3 {
+  margin: 0 0 .4rem 0;
+  font-size: 1.02rem;
+  color: var(--bs-navy);
+}
+
+[data-md-color-scheme="slate"] .bs-card h3 {
+  color: #7fb2e8;
+}
+
+.bs-card p {
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--bs-muted);
+}
+
+/* --- Mobile --------------------------------------------------------------- */
+
+@media screen and (max-width: 600px) {
+  .bs-hero {
+    padding: 1.6rem 1.25rem;
+    border-radius: 12px;
+  }
+
+  .bs-hero h1 {
+    font-size: 1.85rem;
+  }
+
+  .bs-hero .bs-lede {
+    font-size: 1rem;
+  }
+
+  .bs-cta a {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  .bs-flow .s {
+    flex: 1 1 100%;
+  }
+}

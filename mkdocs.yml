@@ -10,16 +10,20 @@ docs_dir: docs
 theme:
   name: material
   custom_dir: overrides
+  # Brand assets and colours mirror bindsight/report/theme.py so the docs site,
+  # the Streamlit app and the generated HTML report read as one product.
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
   palette:
     - scheme: default
-      primary: teal
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: teal
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -27,8 +31,12 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.footer
+    - navigation.instant
     - content.code.copy
     - search.suggest
+
+extra_css:
+  - stylesheets/extra.css
 
 extra:
   social:
@@ -41,6 +49,7 @@ extra:
 
 nav:
   - Home: index.md
+  - Real results: results.md
   - What is bindsight?: what-is-bindsight.md
   - How to use: how-to-use.md
   - Use cases: use-cases.md
@@ -49,6 +58,8 @@ nav:
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - pymdownx.superfences
   - pymdownx.details
   - tables
