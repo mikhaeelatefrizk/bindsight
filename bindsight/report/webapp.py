@@ -193,6 +193,45 @@ def _page_home() -> None:
     )
 
 
+def _demo_config(out_dir: Path):
+    """Build the demo run configuration.
+
+    Split out from :func:`_run_demo_cached` so the path handling is testable
+    without executing the pipeline.
+
+    The cohort is cached under the OS user-cache directory, exactly as
+    ``bindsight demo`` does (``cli.py``), rather than beside the bundled
+    ``examples/demo/config.yaml``. Three reasons:
+
+    1. ``examples/demo/counts.tsv`` does not exist and is asserted absent by
+       ``tests/test_demo_e2e.py``, so the previous paths could only ever
+       trigger a fresh download.
+    2. That download landed *inside the install tree*, which is read-only in
+       the Docker image behind the Hugging Face Space.
+    3. Sharing the CLI's cache means whichever runs first warms the other.
+
+    The file is ``counts.tsv.gz``; pandas infers compression from the
+    extension, so the name has to match what the GDC fetcher writes.
+
+    Args:
+        out_dir: Directory the run should write into.
+
+    Returns:
+        A ready-to-run :class:`bindsight.config.RunConfig`.
+    """
+    from bindsight.config import RunConfig
+    from bindsight.io.paths import cache_dir
+
+    cfg_path = _find_repo_root() / "examples" / "demo" / "config.yaml"
+    cfg = RunConfig.from_yaml(cfg_path)
+    cfg.out_dir = out_dir
+
+    cohort_dir = cache_dir("gdc") / "tcga_brca"
+    cfg.inputs.counts = cohort_dir / "counts.tsv.gz"
+    cfg.inputs.design = cohort_dir / "design.tsv"
+    return cfg
+
+
 def _run_demo_cached() -> tuple[Path, object, float, Path]:
     """Run the demo pipeline once per server process and cache the full result.
 
@@ -204,17 +243,11 @@ def _run_demo_cached() -> tuple[Path, object, float, Path]:
     This is the difference between "the app crashes after the first demo" and
     "the app stays up indefinitely under heavy load".
     """
-    from bindsight.config import RunConfig
     from bindsight.pipelines import discover as discover_pipeline
     from bindsight.report import render_run
 
     out_dir = Path(tempfile.mkdtemp(prefix="bindsight_demo_")) / "demo_run"
-    repo_root = _find_repo_root()
-    cfg_path = repo_root / "examples" / "demo" / "config.yaml"
-    cfg = RunConfig.from_yaml(cfg_path)
-    cfg.out_dir = out_dir
-    cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
-    cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
+    cfg = _demo_config(out_dir)
 
     t0 = time.time()
     manifest = discover_pipeline.run(cfg, out_dir=out_dir)
