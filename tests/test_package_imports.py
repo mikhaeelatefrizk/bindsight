@@ -53,6 +53,7 @@ PUBLIC_MODULES = [
     "bindsight.report",
     "bindsight.report.html",
     "bindsight.report.streamlit_app",
+    "bindsight.report.theme",
     "bindsight.report.webapp",
     "bindsight.export",
     "bindsight.export.ro_crate",
