@@ -39,6 +39,18 @@ except ImportError:  # pragma: no cover
     st = None  # type: ignore[assignment]
 
 
+#: ``st.session_state`` keys. The app previously used no session state at all,
+#: so demo and user-run results were rendered inside the ``if st.button(...)``
+#: block and vanished the moment any other widget was touched.
+_NAV_KEY = "bs_nav"
+#: Streamlit forbids assigning to a widget's own key once that widget has been
+#: instantiated this run, so cross-page buttons record their intent here and
+#: ``main()`` applies it before building the navigation radio.
+_NAV_PENDING_KEY = "bs_nav_pending"
+_DEMO_RESULT_KEY = "bs_demo_result"
+_RUN_RESULT_KEY = "bs_run_result"
+
+
 def _inject_css() -> None:
     """Apply the shared stylesheet from :mod:`bindsight.report.theme`."""
     st.markdown(theme.app_css(), unsafe_allow_html=True)
@@ -47,42 +59,102 @@ def _inject_css() -> None:
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
+#: The pipeline, as a visitor should read it. ``gpu`` marks the stages that
+#: are offloaded rather than run in the browser.
+_PIPELINE_STAGES: tuple[tuple[str, str, bool], ...] = (
+    ("Patient RNA-seq", "counts + design", False),
+    ("Differential expression", "pydeseq2", False),
+    ("Cell-surface filter", "SURFY surfaceome", False),
+    ("Safety + tractability", "GTEx · Open Targets", False),
+    ("Targetable site", "SURFACE-Bind · AlphaFold", False),
+    ("Binder design", "RFdiffusion + MPNN", True),
+    ("Structure + affinity", "Boltz-2", True),
+    ("Ranked candidates", "multi-objective", False),
+    ("Provenance", "PROV-O · RO-Crate", False),
+)
+
+
+def _goto(page: str) -> None:
+    """Request a switch to ``page`` on the next run, then rerun."""
+    st.session_state[_NAV_PENDING_KEY] = page
+    st.rerun()
+
+
 def _page_home() -> None:
     from bindsight import __version__
 
-    st.title("bindsight")
     st.markdown(
-        "**RNA-seq counts → ranked de novo protein binder candidates, "
-        "with full provenance back to the patient cohort.**"
-    )
-    st.markdown(
-        '<div style="margin-bottom:1rem">'
-        f'<span class="pill ok-pill">v{__version__} ready</span>'
-        '<span class="pill">AGPL-3.0 license</span>'
-        '<span class="pill">CPU-friendly</span>'
-        '<span class="pill">PROV-O provenance</span>'
-        "</div>",
+        f"""
+        <div class="bs-hero">
+          <h1>bindsight</h1>
+          <p>{theme.TAGLINE}</p>
+          <div class="bs-hero-sub">
+            Genomics stops at &ldquo;here are the interesting genes&rdquo;.
+            Protein design starts at &ldquo;given a target structure&rdquo;.
+            bindsight is the open, citable bridge between them.
+          </div>
+        </div>
+        """,
         unsafe_allow_html=True,
+    )
+
+    # Headline numbers come from benchmarks/ via showcase.py -- never typed in,
+    # so this page cannot claim more than the committed results support.
+    stats = showcase.headline_stats()
+    if stats:
+        st.markdown(
+            '<div class="bs-stats">'
+            + "".join(
+                f'<div class="bs-stat"><div class="v">{s.value}</div>'
+                f'<div class="k">{s.label}</div>'
+                f'<div class="small-muted">{s.detail}</div></div>'
+                for s in stats
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+    cta = st.columns(3)
+    if cta[0].button("🔬  Explore real results", type="primary", use_container_width=True):
+        _goto("🔬 Real results")
+    if cta[1].button("✨  Run the live demo", use_container_width=True):
+        _goto("✨ Demo")
+    if cta[2].button("📤  Use my own data", use_container_width=True):
+        _goto("📤 Run on my data")
+
+    st.markdown("## How it works")
+    st.markdown(
+        '<div class="bs-flow">'
+        + "".join(
+            f'<div class="s{" gpu" if gpu else ""}">{name}<small>{tool}</small></div>'
+            for name, tool, gpu in _PIPELINE_STAGES
+        )
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Amber stages need a GPU and are offloaded to Colab, Kaggle, Modal or your own "
+        "Docker host — everything else runs on a CPU laptop, and in this browser."
     )
 
     col_left, col_right = st.columns([3, 2])
     with col_left:
         st.markdown(
             "### What this is\n"
-            "Two ecosystems in computational biology have run in parallel for years: "
-            "**genomics** (which stops at *here are the interesting genes*) and "
-            "**protein design** (which starts at *given a target structure*). "
-            "**bindsight is the first open-source tool that connects them.**\n\n"
             'Going from "this gene is up in disease" to "here is a designed '
             'binder candidate" used to take a competent grad student 4–6 weeks of '
             "glue scripting. bindsight does it in a single command on a CPU laptop, "
-            "with reproducibility that survives peer review."
+            "with reproducibility that survives peer review.\n\n"
+            "Every ranked candidate stays one click from its evidence — the patient "
+            "cohort, the differential expression, the structure, the trajectory seed, "
+            "the validator metrics."
         )
-        st.info(
-            "👉 Click **Demo** in the left sidebar for a 60-second guided run on a "
-            "tiny shipped cohort. The pipeline rediscovers HER2 and EGFR as the top "
-            "antibody-tractable surface antigens — the textbook cancer immunotherapy targets.",
-            icon="✨",
+        st.markdown("### Three commands cover the whole pipeline")
+        st.code(
+            "bindsight demo                                # guided demo, real TCGA cohort\n"
+            "bindsight run my_config.yaml --out runs/x     # your cohort end-to-end\n"
+            "bindsight ui                                  # this web interface, locally",
+            language="bash",
         )
 
     with col_right:
@@ -99,18 +171,18 @@ def _page_home() -> None:
             '<span class="pill ok-pill">✓</span> RO-Crate export (Zenodo-ready)<br>'
             '<span class="pill ok-pill">✓</span> GPU cost estimator<br>'
             '<span class="pill warn-pill">≈</span> RFdiffusion + ProteinMPNN + Boltz-2 '
-            "(Colab notebook)<br>"
+            "(GPU, offloaded)<br>"
             "</div>",
             unsafe_allow_html=True,
         )
-
-    st.markdown("### Three commands cover the whole pipeline")
-    st.code(
-        "bindsight demo                                # 60-second guided demo\n"
-        "bindsight run my_config.yaml --out runs/x     # your cohort end-to-end\n"
-        "bindsight ui                                  # this web interface, locally",
-        language="bash",
-    )
+        st.markdown(
+            f'<div style="margin-top:1rem">'
+            f'<span class="pill ok-pill">v{__version__}</span>'
+            f'<span class="pill">{theme.LICENSE_NAME}</span>'
+            f'<span class="pill">CPU-friendly</span>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         "### Who this is for\n\n"
@@ -187,8 +259,12 @@ def _page_demo() -> None:
         # @st.cache_resource, so only the first visitor pays the cold-run cost.
         with st.spinner("Running demo pipeline (cached after first run)…"):
             out_dir, manifest, elapsed, report_path = _run_demo_cached()
+        # Stash it so the result survives any later widget interaction.
+        st.session_state[_DEMO_RESULT_KEY] = (out_dir, manifest, elapsed, report_path)
 
-        st.progress(1.0, text=f"Done in {elapsed:.1f} s")
+    stashed = st.session_state.get(_DEMO_RESULT_KEY)
+    if stashed is not None:
+        out_dir, manifest, elapsed, report_path = stashed
         st.success(f"Demo complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
 
@@ -552,22 +628,75 @@ def _page_run() -> None:
         from bindsight.report import render_run
 
         report_path = render_run(out_dir)
+        st.session_state[_RUN_RESULT_KEY] = (out_dir, manifest, elapsed, report_path)
+
+    stashed = st.session_state.get(_RUN_RESULT_KEY)
+    if stashed is not None:
+        out_dir, manifest, elapsed, report_path = stashed
         st.success(f"Pipeline complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
+
+
+def _discover_local_runs(limit: int = 25) -> list[Path]:
+    """Find run directories on this machine, newest first.
+
+    A run directory is identified by its provenance manifest, which every
+    front-end writes (``pipelines/discover.run`` and the Snakemake assembler
+    alike). Looks under the conventional ``runs/`` tree beside the working
+    directory and the repository root.
+
+    Args:
+        limit: Maximum number of runs to return.
+
+    Returns:
+        Paths to run directories, most recently modified first.
+    """
+    seen: dict[Path, float] = {}
+    for base in {Path.cwd() / "runs", _find_repo_root() / "runs"}:
+        if not base.is_dir():
+            continue
+        for manifest in base.glob("**/run_manifest.jsonld"):
+            run_dir = manifest.parent
+            try:
+                seen[run_dir] = manifest.stat().st_mtime
+            except OSError:  # pragma: no cover - race with a concurrent run
+                continue
+    return sorted(seen, key=lambda p: seen[p], reverse=True)[:limit]
 
 
 def _page_browse() -> None:
     st.title("Browse a run")
     st.markdown(
-        "Point the picker at a directory produced by `bindsight discover` or "
-        "`bindsight demo` to inspect its outputs."
+        "Inspect the outputs of any directory produced by `bindsight discover`, "
+        "`bindsight run` or `bindsight demo`."
     )
-    run_dir_str = st.text_input("Run directory path", "")
-    if not run_dir_str:
-        st.info("Enter a path above and press Enter.")
+
+    # The hosted deployments have no user-visible filesystem, so a bare path box
+    # was unusable there. Offer whatever runs exist locally first.
+    local = _discover_local_runs()
+    run_dir: Path | None = None
+    if local:
+        pick = st.selectbox(
+            "Runs found on this machine",
+            options=["—"] + [str(p) for p in local],
+            help="Directories under runs/ containing a provenance manifest.",
+        )
+        if pick != "—":
+            run_dir = Path(pick)
+    else:
+        st.info(
+            "No runs found under `runs/`. Run `bindsight demo` locally, or use the "
+            "**Demo** page here, then come back.",
+            icon="💡",
+        )
+
+    run_dir_str = st.text_input("…or enter a run directory path", "")
+    if run_dir_str:
+        run_dir = Path(run_dir_str)
+
+    if run_dir is None:
         return
-    run_dir = Path(run_dir_str)
-    if not run_dir.exists():
+    if not run_dir.is_dir():
         st.error(f"Not a directory: {run_dir}")
         return
     _show_run_summary(run_dir, manifest=None, report_path=run_dir / "report.html")
@@ -707,6 +836,12 @@ def main() -> None:
     )
     _inject_css()
 
+    # Apply any cross-page navigation requested by a button on the previous run.
+    # This must happen before the radio is instantiated.
+    pending = st.session_state.pop(_NAV_PENDING_KEY, None)
+    if pending is not None:
+        st.session_state[_NAV_KEY] = pending
+
     page = st.sidebar.radio(
         "Navigation",
         options=(
@@ -718,6 +853,7 @@ def main() -> None:
             "ℹ️ About",
         ),
         label_visibility="collapsed",
+        key=_NAV_KEY,
     )
     st.sidebar.markdown("---")
     st.sidebar.markdown(
