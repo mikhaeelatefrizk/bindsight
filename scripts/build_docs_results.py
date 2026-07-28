@@ -89,15 +89,22 @@ def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
         "| antigen | cohort | over-expressed | log2fc | padj | rank |",
         "|---|---|:--:|--:|--:|--:|",
     ]
-    for c in v.cohorts:
-        exp = c.get("expected") or {}
-        over = "✓" if c.get("category") == "over_expressed" else "·"
+    for row in v.rows():
+        over = "✓" if row["over_expressed"] else "·"
         lines.append(
-            f"| **{exp.get('symbol', '—')}** | {c.get('cohort', {}).get('label', '')} "
-            f"| {over} | {_fmt(exp.get('log2fc'), '.2f')} | {_fmt(exp.get('padj'), '.1e')} "
-            f"| {_fmt(exp.get('rank'))} |"
+            f"| **{row['antigen']}** | {row['cohort']} "
+            f"| {over} | {_fmt(row['log2fc'], '.2f')} | {_fmt(row['padj'], '.1e')} "
+            f"| {_fmt(row['rank'])} |"
         )
+    lines += ["", "`rank` is the antigen's position in that cohort's shortlist; — = not surfaced."]
     lines.append("")
+
+    notes = [r for r in v.rows() if r["note"]]
+    if notes:
+        lines += ['??? note "Why each cohort behaves the way it does"', ""]
+        for r in notes:
+            lines.append(f"    - **{r['antigen']}** ({r['project']}) — {r['note']}")
+        lines.append("")
 
     if v.data_limited:
         lines += ['??? info "Antigens excluded for data reasons"', ""]

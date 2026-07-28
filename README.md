@@ -21,7 +21,9 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the **di
 
 > 🚀 **v0.2.0** — discovery half end-to-end on CPU (real TCGA data); design + validation now **proven** end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
-**New here?** → [What is bindsight?](docs/what-is-bindsight.md) (5-min read) · [How to use it](docs/how-to-use.md) · [Use cases](docs/use-cases.md) · [Designing on Colab](docs/colab-design-howto.md)
+**New here?** → [Documentation site](https://mikhaeelatefrizk.github.io/bindsight/) · [What is bindsight?](https://mikhaeelatefrizk.github.io/bindsight/what-is-bindsight/) (5-min read) · [How to use it](https://mikhaeelatefrizk.github.io/bindsight/how-to-use/) · [Use cases](https://mikhaeelatefrizk.github.io/bindsight/use-cases/) · [Designing on Colab](https://mikhaeelatefrizk.github.io/bindsight/colab-design-howto/)
+
+**Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — ERBB2 rediscovered at rank 4 from real TCGA-BRCA RNA-seq, and 20 de novo ERBB2 binders (best ipTM 0.84) with their Boltz-2 predicted complexes.
 
 ---
 
@@ -30,7 +32,8 @@ Zero install — runs in your browser. Click the **Demo** tab and watch the **di
 ### 1. Web app — [Hugging Face Space](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) (zero install) · [Streamlit mirror](https://bindsight.streamlit.app/)
 
 Anyone visiting either URL above gets:
-- The Home page with what bindsight is
+- A **Home** page with what bindsight is and the headline results
+- A **Real results** page — the committed benchmarks, including the 20 real ERBB2 binders rendered in 3-D against their target from the actual Boltz-2 predicted complexes (no run required, nothing to wait for)
 - A **Demo** button that runs the discovery half live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
