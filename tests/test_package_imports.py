@@ -52,6 +52,7 @@ PUBLIC_MODULES = [
     "bindsight.rank.scoring",
     "bindsight.report",
     "bindsight.report.html",
+    "bindsight.report.showcase",
     "bindsight.report.streamlit_app",
     "bindsight.report.theme",
     "bindsight.report.webapp",
