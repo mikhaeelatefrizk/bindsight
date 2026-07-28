@@ -7,14 +7,18 @@ deployment to use the tool entirely in a browser.
 
 Pages:
 
-- **Home** — what this is, why it matters, "Try the demo" CTA
-- **Demo** — one-click run on a real TCGA-BRCA cohort with live progress
+- **Home** — what this is, why it matters, the headline results, CTAs
+- **Real results** — the committed benchmarks: rediscovery over six TCGA
+  cohorts, and the 20 real ERBB2 binders with their predicted complexes
+- **Demo** — one-click run on a real TCGA-BRCA cohort
 - **Run with my data** — upload counts.tsv + design.tsv, run the pipeline
 - **Browse a run** — open a run directory, inspect tables, view the report
 - **About** — links to docs, source, citation
 
-The app is intentionally one file so Streamlit Cloud can deploy from a
-single import path, and the layout is conservative so it works on phones.
+The app is intentionally one file so Streamlit Cloud can deploy from a single
+import path. Styling and brand constants come from
+:mod:`bindsight.report.theme`; the published numbers come from
+:mod:`bindsight.report.showcase`, so nothing on screen is hand-typed.
 """
 
 from __future__ import annotations
@@ -25,6 +29,8 @@ import tempfile
 import time
 from pathlib import Path
 
+from bindsight.report import showcase, theme
+
 # Streamlit must be importable as the entry point. The rest is lazy-loaded
 # below so command-line flags + module probing work without it.
 try:
@@ -34,28 +40,8 @@ except ImportError:  # pragma: no cover
 
 
 def _inject_css() -> None:
-    st.markdown(
-        """
-        <style>
-            .block-container { max-width: 980px; padding-top: 2rem; }
-            h1 { color: #0b5394; letter-spacing: -0.02em; }
-            h2 { color: #0b5394; border-bottom: 1px solid #e3e6ea; padding-bottom: .3rem; }
-            .stButton button[kind="primary"] {
-                background-color: #0b5394; color: white; font-weight: 600;
-            }
-            .small-muted { color: #6c757d; font-size: 0.85rem; }
-            .pill {
-                display: inline-block; padding: .15rem .55rem;
-                background: #e8f0fb; color: #0b5394; border-radius: 999px;
-                font-size: .75rem; font-weight: 600; margin-right: .3rem;
-            }
-            .ok-pill   { background: #e8f5e9; color: #2e7d32; }
-            .warn-pill { background: #fff8e1; color: #b08400; }
-            .err-pill  { background: #ffebee; color: #c62828; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Apply the shared stylesheet from :mod:`bindsight.report.theme`."""
+    st.markdown(theme.app_css(), unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +193,278 @@ def _page_demo() -> None:
         _show_run_summary(out_dir, manifest, report_path)
 
 
+def _render_complex(cif_path: Path, height: int = 420) -> bool:
+    """Render a predicted binder-target complex with py3Dmol.
+
+    ``py3Dmol`` has been a declared dependency of the ``report`` extra since the
+    beginning and was never imported anywhere; ``report/html.py`` even documents
+    a structure viewer that did not exist. This is that viewer.
+
+    Chain ``B`` is the designed binder, chain ``T`` the target antigen, so the
+    colouring shows the actual designed interface rather than a generic ribbon.
+
+    Args:
+        cif_path: Path to a validator-produced complex mmCIF.
+        height: Viewer height in pixels.
+
+    Returns:
+        ``True`` if the viewer was rendered, ``False`` if py3Dmol is unavailable.
+    """
+    try:
+        import py3Dmol
+    except ImportError:  # pragma: no cover - report extra always ships py3Dmol
+        st.info("Install the `report` extra to view structures: `pip install -e '.[report]'`")
+        return False
+
+    import streamlit.components.v1 as components
+
+    view = py3Dmol.view(width="100%", height=height)
+    view.addModel(cif_path.read_text(encoding="utf-8"), "cif")
+    view.setStyle({"chain": "T"}, {"cartoon": {"color": theme.NAVY, "opacity": 0.85}})
+    view.setStyle({"chain": "B"}, {"cartoon": {"color": theme.ACCENT}})
+    view.zoomTo()
+    components.html(view._make_html(), height=height + 10)
+    return True
+
+
+def _page_results() -> None:
+    """Show the real, committed benchmark results."""
+    import pandas as pd
+
+    st.title("Real results")
+    st.markdown(
+        "Everything on this page is read straight from `benchmarks/` in the "
+        "repository — the same files the paper and the README cite. Nothing here "
+        "is illustrative, recomputed on the fly, or hand-typed."
+    )
+
+    validation = showcase.load_validation()
+    designer = showcase.load_designer_benchmark()
+
+    if validation is None and designer is None:
+        st.warning(
+            "The `benchmarks/` tree isn't available in this install — it ships with "
+            "the repository, not the wheel."
+        )
+        st.markdown(
+            f"Browse the committed results on [GitHub]({theme.GITHUB_URL}/tree/main/benchmarks)."
+        )
+        return
+
+    # -- Rediscovery ------------------------------------------------------
+    if validation is not None:
+        st.markdown("## Does it rediscover antigens we already trust?")
+        st.markdown(
+            "Six real TCGA cohorts were run through the discovery half as "
+            "tumor-vs-adjacent-normal contrasts, then scored by where each "
+            "clinically-validated antigen landed in the shortlist. **Antigens are "
+            "grouped by their *measured* differential expression, not by clinical "
+            "fame** — an expression-based method can only surface what is actually "
+            "over-expressed, and the benchmark reports that precondition openly."
+        )
+
+        top = validation.headline
+        cols = st.columns(4)
+        if top is not None:
+            exp = top["expected"]
+            cols[0].metric(f"{exp['symbol']} rank", exp["rank"], help=top["cohort"]["label"])
+            cols[1].metric("log2 fold-change", f"{exp['log2fc']:.2f}")
+        for i, k in enumerate(("recall@5", "recall@20")):
+            if k in validation.recall_at_k:
+                cols[2 + i].metric(k, f"{validation.recall_at_k[k] * 100:.0f}%")
+
+        spec = validation.specificity or {}
+        if spec.get("n"):
+            st.success(
+                f"**Specificity: {spec.get('correctly_excluded')}/{spec['n']}.** Antigens that "
+                f"are *not* over-expressed at the bulk level are correctly kept out of the "
+                f"top {spec.get('k', 20)} — the pipeline keys on genuine over-expression, "
+                "not on clinical fame.",
+                icon="✅",
+            )
+
+        rows = []
+        for c in validation.cohorts:
+            exp = c.get("expected") or {}
+            rows.append(
+                {
+                    "antigen": exp.get("symbol", "—"),
+                    "cohort": c.get("cohort", {}).get("label", ""),
+                    "project": c.get("cohort", {}).get("project", ""),
+                    "over-expressed": c.get("category") == "over_expressed",
+                    "log2fc": exp.get("log2fc"),
+                    "padj": exp.get("padj"),
+                    "rank": exp.get("rank"),
+                }
+            )
+        st.dataframe(
+            pd.DataFrame(rows),
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "over-expressed": st.column_config.CheckboxColumn(disabled=True),
+                "log2fc": st.column_config.NumberColumn(format="%.2f"),
+                "padj": st.column_config.NumberColumn(format="%.2e"),
+                "rank": st.column_config.NumberColumn(
+                    help="Position in the shortlist; blank = not surfaced"
+                ),
+            },
+        )
+
+        if validation.data_limited:
+            with st.expander("Antigens excluded for data reasons (reported for transparency)"):
+                for d in validation.data_limited:
+                    st.markdown(f"- **{d.get('symbol')}** ({d.get('project')}) — {d.get('reason')}")
+
+        fig_cols = st.columns(2)
+        for i, key in enumerate(("antigen_rank", "recall_at_k")):
+            if key in validation.figures:
+                fig_cols[i].image(str(validation.figures[key]), use_container_width=True)
+
+        volcanoes = {k: v for k, v in validation.figures.items() if k.startswith("volcano_")}
+        if volcanoes:
+            label = st.selectbox(
+                "Differential expression by cohort",
+                options=sorted(volcanoes),
+                format_func=lambda k: k.replace("volcano_", "").replace("_", " ").upper(),
+            )
+            st.image(str(volcanoes[label]), use_container_width=True)
+
+    # -- Designer benchmark ----------------------------------------------
+    if designer is not None:
+        st.markdown("## The binders it actually designed")
+        provenance = (
+            f"**Real GPU run**, not a simulation — backend `{designer.backend}`, "
+            f"GPU `{designer.gpu}`, validator `{designer.validator}`, "
+            f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}."
+        )
+        st.markdown(provenance)
+        if designer.targets:
+            st.caption(f"Target: {designer.targets[0]}")
+
+        best = designer.best
+        cols = st.columns(4)
+        cols[0].metric("Designs", designer.n_designs)
+        if best is not None and best.iptm is not None:
+            cols[1].metric("Best ipTM", f"{best.iptm:.2f}")
+        if designer.success_rate is not None:
+            cols[2].metric("Success @ ipTM 0.65", f"{designer.success_rate * 100:.0f}%")
+        paes = [b.pae_interaction for b in designer.binders if b.pae_interaction is not None]
+        if paes:
+            cols[3].metric("Mean PAE-int", f"{sum(paes) / len(paes):.1f} Å")
+
+        # -- 3D viewer ----------------------------------------------------
+        with_struct = designer.with_structures()
+        if with_struct:
+            st.markdown("### The predicted complexes")
+            st.markdown(
+                f"<span class='pill' style='background:{theme.ACCENT}22;color:{theme.ACCENT}'>"
+                "designed binder</span> docked against "
+                f"<span class='pill'>target antigen</span> — the real Boltz-2 predicted "
+                "structure behind each ipTM below.",
+                unsafe_allow_html=True,
+            )
+            choice = st.selectbox(
+                "Design",
+                options=[b.binder_id for b in with_struct],
+                format_func=lambda bid: (
+                    f"{bid} — ipTM {next(b.iptm for b in with_struct if b.binder_id == bid):.3f}"
+                ),
+            )
+            binder = next(b for b in with_struct if b.binder_id == choice)
+
+            view_col, meta_col = st.columns([3, 1])
+            with view_col:
+                if binder.complex_cif is not None:
+                    _render_complex(binder.complex_cif)
+            with meta_col:
+                if binder.iptm is not None:
+                    st.metric("ipTM", f"{binder.iptm:.3f}")
+                if binder.pae_interaction is not None:
+                    st.metric("PAE-int", f"{binder.pae_interaction:.1f} Å")
+                dev = binder.developability.get("developability_score")
+                if dev is not None:
+                    st.metric("Developability", f"{dev:.2f}")
+                if binder.target_uniprot:
+                    st.caption(f"Target {binder.target_uniprot}")
+            seq = binder.sequence
+            if seq:
+                st.code(seq, language=None)
+                st.caption(f"{len(seq)} aa · ProteinMPNN sequence · chain B in the structure above")
+
+        # -- Per-design table ---------------------------------------------
+        st.markdown("### Every design, scored")
+        table = pd.DataFrame(
+            [
+                {
+                    "binder_id": b.binder_id,
+                    "ipTM": b.iptm,
+                    "PAE-int (Å)": b.pae_interaction,
+                    "developability": b.developability.get("developability_score"),
+                    "length": b.developability.get("length"),
+                    "instability": b.developability.get("instability_index"),
+                    "GRAVY": b.developability.get("gravy"),
+                    "free Cys": b.developability.get("n_cys"),
+                }
+                for b in designer.scored
+            ]
+        )
+        st.dataframe(
+            table,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "ipTM": st.column_config.ProgressColumn(
+                    min_value=0.0,
+                    max_value=1.0,
+                    format="%.3f",
+                    help="Boltz-2 interface confidence; ≥0.65 counts as success",
+                ),
+                "developability": st.column_config.ProgressColumn(
+                    min_value=0.0,
+                    max_value=1.0,
+                    format="%.2f",
+                    help="Composite of ProtParam sequence-biophysics descriptors",
+                ),
+                "PAE-int (Å)": st.column_config.NumberColumn(format="%.1f"),
+                "instability": st.column_config.NumberColumn(
+                    format="%.1f", help="ProtParam instability index; <40 predicts stable"
+                ),
+                "GRAVY": st.column_config.NumberColumn(format="%.3f"),
+            },
+        )
+
+        # -- Sequence space ------------------------------------------------
+        coords = [b for b in designer.binders if b.pc1 is not None and b.pc2 is not None]
+        if coords:
+            st.markdown("### Sequence space (ESM-2 → PCA)")
+            st.markdown(
+                "Each design's mean-pooled ESM-2 embedding projected to two dimensions — "
+                "a *pre-GPU* triage that shows which designs cluster and which are outliers "
+                "before spending compute on validation."
+            )
+            st.scatter_chart(
+                pd.DataFrame(
+                    {
+                        "PC1": [b.pc1 for b in coords],
+                        "PC2": [b.pc2 for b in coords],
+                        "ipTM": [b.iptm for b in coords],
+                    }
+                ),
+                x="PC1",
+                y="PC2",
+                color="ipTM",
+                use_container_width=True,
+            )
+
+    st.markdown("---")
+    st.markdown(
+        f"Reproduce these numbers yourself: "
+        f"[validation]({theme.GITHUB_URL}/blob/main/benchmarks/validation/RESULTS.md) · "
+        f"[designer benchmark]({theme.GITHUB_URL}/blob/main/benchmarks/designer_benchmark/RESULTS.md)"
+    )
+
+
 def _page_run() -> None:
     st.title("Run on your own data")
     st.markdown(
@@ -316,21 +574,24 @@ def _page_browse() -> None:
 
 
 def _page_about() -> None:
-    st.title("About bindsight")
     st.markdown(
-        """
+        f"""
+        # About bindsight
+
         bindsight is an open-source pipeline that takes RNA-seq counts and
         outputs ranked de novo protein binder candidates against
         differentially-expressed surface antigens. Every output is one click
         from its evidence chain — the patient cohort, the differential
         expression, the structure, the designer commit, the validator metrics.
 
-        **License:** AGPL-3.0-or-later.
-        **Source:** https://github.com/mikhaeelatefrizk/bindsight
-        **Docs:** [What is bindsight?](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/what-is-bindsight.md) ·
-        [How to use](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/how-to-use.md) ·
-        [Use cases](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/use-cases.md) ·
-        [Colab design recipe](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/colab-design-howto.md)
+        **License:** {theme.LICENSE_NAME} ·
+        **Source:** [GitHub]({theme.GITHUB_URL}) ·
+        **Cite:** [Zenodo DOI]({theme.ZENODO_DOI_URL})
+
+        **Docs:** [What is bindsight?]({theme.docs_url("what-is-bindsight")}) ·
+        [How to use]({theme.docs_url("how-to-use")}) ·
+        [Use cases]({theme.docs_url("use-cases")}) ·
+        [Designing on Colab]({theme.docs_url("colab-design-howto")})
 
         **Built on the shoulders of:** RFdiffusion (BSD-3), ProteinMPNN (MIT),
         BindCraft (MIT), BoltzGen (MIT), Boltz-2 (MIT), Chai-1r (Apache-2),
@@ -435,23 +696,41 @@ def main() -> None:
         print('Streamlit not installed. Run: pip install -e ".[report]"', file=sys.stderr)
         sys.exit(1)
 
-    st.set_page_config(page_title="bindsight", layout="wide", page_icon="🧬")
+    st.set_page_config(
+        page_title=theme.PAGE_TITLE,
+        layout=theme.LAYOUT,
+        page_icon=theme.PAGE_ICON,
+        # All navigation lives in the sidebar, and Streamlit collapses it on
+        # phones by default -- which left mobile visitors on Home with no
+        # visible way to reach any other page.
+        initial_sidebar_state="expanded",
+    )
     _inject_css()
 
     page = st.sidebar.radio(
         "Navigation",
-        options=("🏠 Home", "✨ Demo", "📤 Run on my data", "🔎 Browse a run", "ℹ️ About"),
+        options=(
+            "🏠 Home",
+            "🔬 Real results",
+            "✨ Demo",
+            "📤 Run on my data",
+            "🔎 Browse a run",
+            "ℹ️ About",
+        ),
         label_visibility="collapsed",
     )
     st.sidebar.markdown("---")
     st.sidebar.markdown(
-        '<span class="small-muted">bindsight · AGPL-3.0 · '
-        '<a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a></span>',
+        f'<span class="small-muted">bindsight · {theme.LICENSE_NAME} · '
+        f'<a href="{theme.GITHUB_URL}">GitHub</a> · '
+        f'<a href="{theme.DOCS_URL}">Docs</a></span>',
         unsafe_allow_html=True,
     )
 
     if page.startswith("🏠"):
         _page_home()
+    elif page.startswith("🔬"):
+        _page_results()
     elif page.startswith("✨"):
         _page_demo()
     elif page.startswith("📤"):
