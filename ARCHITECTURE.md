@@ -164,7 +164,7 @@ Every run emits a single PROV-O JSON-LD manifest. **This is the moat.** A review
 - the validator metrics,
 - the container digest of every step.
 
-Schema is in `bindsight/provenance/manifest.py`. Validated against a JSON Schema in `schemas/run_manifest.schema.json` on every run.
+Schema is in `bindsight/provenance/manifest.py`, enforced by Pydantic v2 with `extra="forbid"` on every model, so a malformed stage record fails at write time. (A standalone `schemas/run_manifest.schema.json` for non-Python consumers is not yet emitted.)
 
 Final RO-Crate bundles the manifest + all artifacts + a `software.bib` for citation.
 
@@ -277,7 +277,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
 3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy. *(Shipped for the discovery half: `taxonomy/failure_taxonomy.parquet` — an exhaustive per-gene disposition, rendered in the HTML report.)*
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
-5. **Streamlit + self-contained HTML report with embedded py3Dmol.** The artifact that sells the tool in a 5-minute talk.
+5. **Streamlit app with py3Dmol structure viewing, plus a self-contained HTML report.** The web app's *Real results* page renders the actual Boltz-2 predicted binder–target complexes in 3-D; the HTML report stays dependency-free and offline-openable. Together they are the artifact that sells the tool in a 5-minute talk.
 
 ---
 

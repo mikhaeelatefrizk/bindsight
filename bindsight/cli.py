@@ -659,8 +659,9 @@ def benchmark(
 def ui(port: int, no_browser: bool) -> None:
     """Launch the bindsight web interface in your browser.
 
-    Same app that's deployed on Streamlit Cloud — multi-page, with the demo,
-    'run on my data', and 'browse a run' panels. Local-first; no telemetry.
+    Same app that's deployed on the Hugging Face Space and Streamlit Cloud —
+    multi-page, with the real-results explorer, the demo, 'run on my data', and
+    'browse a run' panels. Local-first; telemetry is disabled explicitly below.
     """
     import subprocess
     import sys as _sys
@@ -689,6 +690,11 @@ def ui(port: int, no_browser: bool) -> None:
         str(entry),
         "--server.port",
         str(port),
+        # .streamlit/config.toml covers runs from a repo checkout, but a
+        # packaged install launched from elsewhere never sees it -- so the
+        # "no telemetry" promise above is enforced here too.
+        "--browser.gatherUsageStats",
+        "false",
     ]
     if no_browser:
         cmd += ["--server.headless", "true"]

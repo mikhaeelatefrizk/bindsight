@@ -11,8 +11,11 @@ Design choices:
 
 - **No Quarto / Jupyter dependency.** Pure Python with stdlib, jinja2, and
   matplotlib (which is already in the report extras). The output is one
-  self-contained HTML file (CSS embedded, plot embedded as base64 PNG, NGL
-  viewer pulled from a CDN).
+  genuinely self-contained HTML file — CSS embedded, volcano plot embedded as
+  a base64 PNG, and no external requests at all, so it survives being emailed
+  or opened offline. Interactive 3-D structure viewing deliberately lives in
+  the Streamlit app (``report/webapp.py``) instead, because a structure viewer
+  needs a script from a CDN and that would break self-containment.
 - **Looks like a paper, not a dashboard.** Sections, tables, captions,
   citations to the upstream tools — readable as a methods + results pair.
 - **Provenance front and center.** The manifest table shows every stage's

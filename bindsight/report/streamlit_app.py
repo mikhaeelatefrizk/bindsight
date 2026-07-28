@@ -10,8 +10,14 @@ or directly:
 
     streamlit run -m bindsight.report.streamlit_app -- runs/demo
 
-Three-panel layout: KPIs at the top, candidates table in the middle (sortable
-+ filterable via Streamlit's data_editor), provenance at the bottom.
+Three-panel layout: KPIs at the top, the DEG / candidate / epitope tables in
+the middle (``st.dataframe``, so columns sort by clicking their header), and
+the per-stage provenance at the bottom.
+
+This is the single-run viewer reached through ``bindsight report``. For the
+full multi-page interface — including the real-results explorer and the 3-D
+complex viewer — see :mod:`bindsight.report.webapp`, which is what
+``bindsight ui`` and both hosted deployments serve.
 """
 
 from __future__ import annotations

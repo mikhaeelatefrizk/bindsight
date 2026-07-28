@@ -13,9 +13,11 @@ listing the upstream tools used. This is intentionally minimal: implementing
 the full ``ro-crate-py`` library as a runtime dependency adds several
 hundred KB of code for one JSON file.
 
-The crate is bit-identical for runs with the same manifest, so this is a
-reproducibility primitive — depositing the crate to Zenodo gives a DOI
-that anyone can dereference to pull the exact bytes we packaged.
+Every payload file in the crate is byte-identical for runs with the same
+manifest; the only varying field is ``datePublished`` in the metadata, which
+records when the crate was packaged rather than anything about the run. So
+this is a reproducibility primitive — depositing the crate to Zenodo gives a
+DOI that anyone can dereference to pull the exact artifacts we packaged.
 """
 
 from __future__ import annotations
