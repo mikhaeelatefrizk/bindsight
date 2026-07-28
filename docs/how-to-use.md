@@ -267,5 +267,5 @@ Scores how well the run rediscovers the literature-validated known antigens in
 
 - [What is bindsight?](what-is-bindsight.md) · [Use cases](use-cases.md) ·
   [Designing on Colab](colab-design-howto.md)
-- [ARCHITECTURE.md](../ARCHITECTURE.md) · [LICENSING.md](../LICENSING.md) ·
-  [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [ARCHITECTURE.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/ARCHITECTURE.md) · [LICENSING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSING.md) ·
+  [CONTRIBUTING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CONTRIBUTING.md)
