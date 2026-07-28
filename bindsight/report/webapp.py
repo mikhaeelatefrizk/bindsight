@@ -359,31 +359,34 @@ def _page_results() -> None:
                 icon="✅",
             )
 
-        rows = []
-        for c in validation.cohorts:
-            exp = c.get("expected") or {}
-            rows.append(
-                {
-                    "antigen": exp.get("symbol", "—"),
-                    "cohort": c.get("cohort", {}).get("label", ""),
-                    "project": c.get("cohort", {}).get("project", ""),
-                    "over-expressed": c.get("category") == "over_expressed",
-                    "log2fc": exp.get("log2fc"),
-                    "padj": exp.get("padj"),
-                    "rank": exp.get("rank"),
-                }
-            )
+        table = pd.DataFrame(validation.rows()).rename(columns={"over_expressed": "over-expressed"})
+        # `project` only repeats what the cohort label already says.
+        table = table.drop(columns=["project"])
+        # Coerce to real numeric dtypes: a column mixing floats with None stays
+        # object-typed and Streamlit prints the literal string "None".
+        for col in ("log2fc", "padj"):
+            table[col] = pd.to_numeric(table[col], errors="coerce")
+        # Rank is text so a missing rank reads as an em dash rather than a greyed
+        # "None" -- "not surfaced" is a real reportable outcome, not absent data.
+        # pd.isna, not `is None`: building the frame turns a mixed int/None
+        # column into float64, so the missing ranks arrive here as NaN.
+        table["rank"] = ["—" if pd.isna(r) else str(int(r)) for r in table["rank"]]
         st.dataframe(
-            pd.DataFrame(rows),
+            table,
             hide_index=True,
             use_container_width=True,
             column_config={
-                "over-expressed": st.column_config.CheckboxColumn(disabled=True),
-                "log2fc": st.column_config.NumberColumn(format="%.2f"),
-                "padj": st.column_config.NumberColumn(format="%.2e"),
-                "rank": st.column_config.NumberColumn(
-                    help="Position in the shortlist; blank = not surfaced"
+                "over-expressed": st.column_config.CheckboxColumn(
+                    disabled=True, help="Measured: FDR < 0.05 and log2fc >= 1.0"
                 ),
+                "log2fc": st.column_config.NumberColumn(
+                    format="%.2f", help="Measured tumor-vs-normal fold-change in this cohort"
+                ),
+                "padj": st.column_config.NumberColumn(format="%.2e"),
+                "rank": st.column_config.TextColumn(
+                    help="Position in the shortlist; — = not surfaced"
+                ),
+                "note": st.column_config.TextColumn("why", width="large"),
             },
         )
 
@@ -463,10 +466,25 @@ def _page_results() -> None:
                     st.metric("Developability", f"{dev:.2f}")
                 if binder.target_uniprot:
                     st.caption(f"Target {binder.target_uniprot}")
+                if binder.complex_cif is not None:
+                    # The viewer needs 3Dmol.js from a CDN. Offering the file
+                    # keeps the structure usable offline, behind a strict
+                    # network policy, or in PyMOL / ChimeraX.
+                    st.download_button(
+                        "⬇  mmCIF",
+                        data=binder.complex_cif.read_bytes(),
+                        file_name=binder.complex_cif.name,
+                        mime="chemical/x-cif",
+                        use_container_width=True,
+                    )
             seq = binder.sequence
             if seq:
                 st.code(seq, language=None)
                 st.caption(f"{len(seq)} aa · ProteinMPNN sequence · chain B in the structure above")
+            st.caption(
+                "The viewer loads 3Dmol.js from a CDN. If your network blocks it, download the "
+                "mmCIF and open it in PyMOL, ChimeraX or NGL — it is the same file."
+            )
 
         # -- Per-design table ---------------------------------------------
         st.markdown("### Every design, scored")

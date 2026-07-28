@@ -73,6 +73,37 @@ def test_validation_headline_is_erbb2_at_rank_4() -> None:
     assert top["expected"]["uniprot"] == "P04626"
 
 
+def test_validation_rows_use_measured_expression() -> None:
+    """Fold-change comes from deg_expected, which is populated for every cohort.
+
+    ``expected`` only carries log2fc/padj when the antigen was actually
+    surfaced, so reading it alone blanks exactly the antigens the benchmark is
+    most careful to report — NECTIN4, FOLH1 and MSLN were not in the shortlist
+    but their measured over-expression is the whole point of the disclosure.
+    """
+    v = showcase.load_validation()
+    assert v is not None
+    rows = {r["antigen"]: r for r in v.rows()}
+    assert len(rows) == 6
+
+    for symbol in ("ERBB2", "CEACAM5", "NECTIN4", "EGFR", "MSLN", "FOLH1"):
+        assert rows[symbol]["log2fc"] is not None, f"{symbol} lost its fold-change"
+        assert rows[symbol]["padj"] is not None
+
+    assert rows["NECTIN4"]["log2fc"] == pytest.approx(1.59, abs=0.01)
+    assert rows["NECTIN4"]["rank"] is None
+    assert rows["FOLH1"]["log2fc"] == pytest.approx(1.32, abs=0.01)
+    assert rows["ERBB2"]["rank"] == 4
+
+
+def test_validation_rows_flag_over_expression() -> None:
+    """The over-expressed flag mirrors the cohort categorisation."""
+    v = showcase.load_validation()
+    assert v is not None
+    flagged = {r["antigen"] for r in v.rows() if r["over_expressed"]}
+    assert flagged == {"ERBB2", "NECTIN4", "FOLH1"}
+
+
 def test_validation_cohort_partition() -> None:
     """Over-expressed and specificity cohorts partition the cohort list."""
     v = showcase.load_validation()

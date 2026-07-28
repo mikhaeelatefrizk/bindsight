@@ -37,11 +37,22 @@ clinically-validated antigen landed in the candidate shortlist.
 | antigen | cohort | over-expressed | log2fc | padj | rank |
 |---|---|:--:|--:|--:|--:|
 | **ERBB2** | BRCA HER2-enriched | ✓ | 4.36 | 1.7e-59 | 4 |
-| **CEACAM5** | COAD | · | — | — | — |
-| **NECTIN4** | BLCA | ✓ | — | — | — |
-| **EGFR** | LUAD (EGFR negative control) | · | — | — | — |
-| **MSLN** | PAAD (MSLN, limited) | · | — | — | — |
-| **FOLH1** | PRAD (FOLH1, limited) | ✓ | — | — | — |
+| **CEACAM5** | COAD | · | -0.31 | 1.9e-01 | — |
+| **NECTIN4** | BLCA | ✓ | 1.59 | 3.9e-03 | — |
+| **EGFR** | LUAD (EGFR negative control) | · | 0.42 | 1.3e-01 | — |
+| **MSLN** | PAAD (MSLN, limited) | · | 2.31 | 1.3e-01 | — |
+| **FOLH1** | PRAD (FOLH1, limited) | ✓ | 1.32 | 3.4e-04 | — |
+
+`rank` is the antigen's position in that cohort's shortlist; — = not surfaced.
+
+??? note "Why each cohort behaves the way it does"
+
+    - **ERBB2** (TCGA-BRCA) — PAM50 HER2-enriched tumors are ERBB2-amplified, so ERBB2 mRNA is high.
+    - **CEACAM5** (TCGA-COAD) — CEA (target of tusamitamab ravtansine / labetuzumab govitecan) is a classic colorectal marker, but it is also abundantly expressed in normal colon epithelium, so the bulk tumor-vs-adjacent-normal fold-change is ~0.
+    - **NECTIN4** (TCGA-BLCA) — Nectin-4 (target of enfortumab vedotin, Padcev) is elevated in urothelial carcinoma, but only modestly at the bulk-mRNA level (log2fc ~1.6), below the discovery shortlist.
+    - **EGFR** (TCGA-LUAD) — EGFR drives LUAD via mutation/amplification, not bulk mRNA over-expression, so a specificity-respecting pipeline should NOT surface it on expression alone.
+    - **MSLN** (TCGA-PAAD) — Mesothelin is over-expressed in PDAC, but TCGA-PAAD ships only 4 matched normals, so the contrast is underpowered (reported for transparency).
+    - **FOLH1** (TCGA-PRAD) — PSMA (FOLH1) is highly expressed but also abundant in normal prostate, so the tumor-vs-normal fold-change is modest (reported for transparency).
 
 ??? info "Antigens excluded for data reasons"
 
