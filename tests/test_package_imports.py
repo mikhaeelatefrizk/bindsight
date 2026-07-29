@@ -18,6 +18,7 @@ PUBLIC_MODULES = [
     "bindsight.pipelines",
     "bindsight.pipelines.discover",
     "bindsight.provenance",
+    "bindsight.provenance.fragments",
     "bindsight.provenance.manifest",
     "bindsight.targets",
     "bindsight.targets.open_targets",
