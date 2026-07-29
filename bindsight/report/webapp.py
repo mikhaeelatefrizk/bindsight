@@ -880,10 +880,12 @@ def main() -> None:
         page_title=theme.PAGE_TITLE,
         layout=theme.LAYOUT,
         page_icon=theme.PAGE_ICON,
-        # All navigation lives in the sidebar, and Streamlit collapses it on
-        # phones by default -- which left mobile visitors on Home with no
-        # visible way to reach any other page.
-        initial_sidebar_state="expanded",
+        # "auto" = expanded on desktop, collapsed on phones. Forcing it open
+        # puts the sidebar overlay on top of the hero on a phone, hiding the
+        # pitch behind a panel the visitor has to dismiss. Mobile navigation is
+        # instead solved on the page itself: the Home call-to-action buttons
+        # reach Real results / Demo / Run without touching the sidebar.
+        initial_sidebar_state="auto",
     )
     _inject_css()
 
