@@ -159,6 +159,7 @@ packages = ["bindsight"]
 "examples/demo" = "bindsight_demo"
 
 [tool.hatch.build.targets.wheel.force-include]
+"bindsight/surfaceome/data/surfy_v1.uniprot.txt" = "bindsight/surfaceome/data/surfy_v1.uniprot.txt"
 "bindsight/surfaceome/data/surfy_offline.txt" = "bindsight/surfaceome/data/surfy_offline.txt"
 "bindsight/report/templates/report.html.j2"   = "bindsight/report/templates/report.html.j2"
 "bindsight/report/templates/report.css"       = "bindsight/report/templates/report.css"

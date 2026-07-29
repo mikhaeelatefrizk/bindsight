@@ -161,28 +161,24 @@ def _ensure_reference_data(config: RunConfig, *, surfy: frozenset[str] | None) -
 
 
 def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
-    """Return the SURFY surface set, populating the full cache on first use.
+    """Return the SURFY surface set.
 
-    If an explicit set was injected (tests), use it. Otherwise populate the full
-    canonical SURFY cache when empty, falling back to the bundled offline list
-    only if allowed.
+    No network access. The full canonical list is vendored with the package, so
+    discovery resolves the surfaceome from disk every time.
+
+    This used to try ``populate_surfy_cache()`` on a cache miss. That download
+    can no longer succeed — upstream serves an HTML page on one host and a
+    Git-LFS pointer on the other — so every fresh install either hard-failed or
+    silently degraded to a ten-protein list and surfaced almost nothing. Keeping
+    the attempt would only add five retries of latency before the same outcome.
+
+    An explicitly injected set (tests) still wins.
     """
     from bindsight.config import TargetDiscoveryParams
 
     assert isinstance(p, TargetDiscoveryParams)
     if surfy is not None:
         return surfy
-    if p.require_surfy:
-        from bindsight.surfaceome.surfy import _surfy_cache_path, populate_surfy_cache
-
-        if not _surfy_cache_path().exists():
-            LOG.info("SURFY cache empty; populating the full surfaceome list")
-            try:
-                populate_surfy_cache()
-            except Exception as e:  # network/parse failure
-                if not p.surfy_allow_offline_fallback:
-                    raise
-                LOG.warning("SURFY populate failed (%s); using bundled offline fallback", e)
     return load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
 
 
