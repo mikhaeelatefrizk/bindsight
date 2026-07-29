@@ -27,6 +27,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from bindsight.cost import estimate
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
@@ -101,7 +102,7 @@ class ColabRunner:
 
     def poll(self, handle: JobHandle) -> JobStatus:
         """Check whether the user has placed the results tarball in the dir."""
-        results_dir = Path(handle.model_extra.get("results_dir") or ".")
+        results_dir = Path((handle.model_extra or {}).get("results_dir") or ".")
         archive = results_dir / f"{handle.id}.tar.gz"
         if archive.exists():
             return JobStatus(handle=handle, state="succeeded", progress=1.0)
@@ -118,7 +119,7 @@ class ColabRunner:
         Raises ``FileNotFoundError`` if the user hasn't dropped the tarball
         in the configured results_dir yet — call :meth:`poll` first.
         """
-        results_dir = Path(handle.model_extra.get("results_dir") or ".")
+        results_dir = Path((handle.model_extra or {}).get("results_dir") or ".")
         archive = results_dir / f"{handle.id}.tar.gz"
         if not archive.exists():
             raise FileNotFoundError(
@@ -141,7 +142,7 @@ class ColabRunner:
 
         from bindsight.runners.notebook_content import build_design_notebook
 
-        spec: dict = {}
+        spec: dict[str, Any] = {}
         if Path(spec_path).exists():
             try:
                 spec = _json.loads(Path(spec_path).read_text())

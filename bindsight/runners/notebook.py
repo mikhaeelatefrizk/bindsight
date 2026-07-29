@@ -19,14 +19,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from jinja2 import BaseLoader, Environment, StrictUndefined
 
 NotebookGPU = Literal["T4", "L4", "A100", "V100"]
 
 
-def _code_cell(src: str | list[str]) -> dict:
+def _code_cell(src: str | list[str]) -> dict[str, Any]:
     if isinstance(src, str):
         src = src.splitlines(keepends=True)
     return {
@@ -38,7 +38,7 @@ def _code_cell(src: str | list[str]) -> dict:
     }
 
 
-def _markdown_cell(src: str | list[str]) -> dict:
+def _markdown_cell(src: str | list[str]) -> dict[str, Any]:
     if isinstance(src, str):
         src = src.splitlines(keepends=True)
     return {
@@ -50,10 +50,10 @@ def _markdown_cell(src: str | list[str]) -> dict:
 
 def build_notebook(
     *,
-    cells: list[dict],
+    cells: list[dict[str, Any]],
     gpu: NotebookGPU = "T4",
     title: str = "bindsight job",
-) -> dict:
+) -> dict[str, Any]:
     """Return a Jupyter v4 notebook dict with the given cells and Colab GPU runtime.
 
     Pass the result to :func:`json.dumps` (or use :func:`write_notebook`) to
@@ -81,7 +81,7 @@ def build_notebook(
     }
 
 
-def write_notebook(notebook: dict, path: Path) -> Path:
+def write_notebook(notebook: dict[str, Any], path: Path) -> Path:
     """Write a notebook dict to ``path`` as JSON. Creates parent dirs."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ def write_notebook(notebook: dict, path: Path) -> Path:
     return path
 
 
-def render_template(template_str: str, context: dict) -> str:
+def render_template(template_str: str, context: dict[str, Any]) -> str:
     """Render a Jinja2 template string against ``context`` with strict undefined.
 
     Strict-undefined means a missing variable raises immediately rather than
@@ -106,11 +106,11 @@ def render_template(template_str: str, context: dict) -> str:
     return env.from_string(template_str).render(**context)
 
 
-def code_cell_from_template(template_str: str, context: dict) -> dict:
+def code_cell_from_template(template_str: str, context: dict[str, Any]) -> dict[str, Any]:
     """Convenience: render a Jinja template and wrap as a code cell."""
     return _code_cell(render_template(template_str, context))
 
 
-def markdown_cell(src: str | list[str]) -> dict:
+def markdown_cell(src: str | list[str]) -> dict[str, Any]:
     """Public alias for the markdown cell constructor."""
     return _markdown_cell(src)

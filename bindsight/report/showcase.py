@@ -32,6 +32,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 ENV_BENCHMARKS_DIR = "BINDSIGHT_BENCHMARKS_DIR"
 
@@ -66,7 +67,7 @@ def benchmarks_root() -> Path | None:
     return None
 
 
-def _read_json(path: Path) -> dict | None:
+def _read_json(path: Path) -> dict[str, Any] | None:
     """Parse ``path`` as JSON, returning ``None`` if absent or malformed."""
     try:
         with path.open(encoding="utf-8") as fh:
@@ -85,9 +86,9 @@ def _read_tsv(path: Path) -> list[dict[str, str]]:
         return []
 
 
-def _read_jsonl(path: Path) -> list[dict]:
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     """Parse a JSON-lines file, skipping unparseable lines."""
-    rows: list[dict] = []
+    rows: list[dict[str, Any]] = []
     try:
         with path.open(encoding="utf-8") as fh:
             for line in fh:
@@ -125,24 +126,24 @@ class ValidationShowcase:
     generated_utc: str
     bindsight_version: str
     recall_at_k: dict[str, float]
-    specificity: dict
-    cohorts: list[dict]
-    data_limited: list[dict]
+    specificity: dict[str, Any]
+    cohorts: list[dict[str, Any]]
+    data_limited: list[dict[str, Any]]
     figures: dict[str, Path]
     report_html: Path | None
 
     @property
-    def over_expressed(self) -> list[dict]:
+    def over_expressed(self) -> list[dict[str, Any]]:
         """Cohorts whose expected antigen is genuinely over-expressed."""
         return [c for c in self.cohorts if c.get("category") == "over_expressed"]
 
     @property
-    def not_over_expressed(self) -> list[dict]:
+    def not_over_expressed(self) -> list[dict[str, Any]]:
         """Cohorts scored for specificity rather than sensitivity."""
         return [c for c in self.cohorts if c.get("category") != "over_expressed"]
 
     @property
-    def headline(self) -> dict | None:
+    def headline(self) -> dict[str, Any] | None:
         """The best-ranked rediscovered antigen, i.e. the sensitivity result."""
         ranked = [
             c
@@ -153,7 +154,7 @@ class ValidationShowcase:
             return None
         return min(ranked, key=lambda c: c["expected"]["rank"])
 
-    def rows(self) -> list[dict]:
+    def rows(self) -> list[dict[str, Any]]:
         """Flatten the cohorts into one row per antigen, for tabular display.
 
         Fold-change and adjusted p-value are taken from ``deg_expected`` — the
@@ -165,7 +166,7 @@ class ValidationShowcase:
         Returns:
             One dict per cohort with normalised, display-ready fields.
         """
-        out: list[dict] = []
+        out: list[dict[str, Any]] = []
         for c in self.cohorts:
             expected = c.get("expected") or {}
             measured = c.get("deg_expected") or {}
@@ -260,7 +261,7 @@ class DesignerShowcase:
     n_trajectories: int
     is_mock: bool
     targets: list[str]
-    designers: list[dict]
+    designers: list[dict[str, Any]]
     binders: list[BinderDesign]
 
     @property
