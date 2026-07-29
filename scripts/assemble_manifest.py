@@ -13,43 +13,42 @@ The :func:`assemble` helper is pure (no Snakemake globals) so it is unit-tested
 directly; :func:`main` is the thin Snakemake entrypoint.
 """
 
-from __future__ import annotations
+# NOTE: no `from __future__ import annotations` here. Snakemake prepends its
+# own preamble to script files before executing them, which pushes a
+# __future__ import off line 1 and makes Python raise
+# "SyntaxError: from __future__ imports must occur at the beginning of the
+# file". This rule had never run because of it. Python 3.11 is the floor, so
+# builtin generics and X | None work without it.
 
 import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any
 
-from bindsight import __version__ as BINDSIGHT_VERSION
-from bindsight.provenance import Manifest, StageRecord, ToolRef, new_manifest
+from bindsight.provenance import Manifest, StageRecord, new_manifest
+from bindsight.provenance.fragments import stage_record_from_fragment
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOG = logging.getLogger("bindsight.assemble_manifest")
-
-# StageRecord.status is a Literal; fall back to "completed" for anything else.
-_Status = Literal["running", "completed", "failed", "skipped_cache"]
-_VALID_STATUS: frozenset[str] = frozenset({"running", "completed", "failed", "skipped_cache"})
 
 
 def _fragment_to_stage(fragment: dict[str, Any], *, fallback_name: str) -> StageRecord:
     """Fold one per-rule fragment dict into a :class:`StageRecord`.
 
-    The fragment carries ``stage``/``status``/``metrics``; ``stage`` defaults to
-    the fragment's parent directory name and metrics are preserved verbatim in
-    ``StageRecord.notes`` (the record schema has no metrics field of its own).
+    Rebuilding goes through :mod:`bindsight.provenance.fragments`, which is the
+    same code the rules write with, so the Snakemake manifest now carries the
+    inputs, outputs, sha256 digests, params and timings that make it a real
+    provenance record. It previously carried a stage name, a status, and a
+    metrics blob stuffed into ``notes`` — no digests at all — while claiming to
+    emit what the Click CLI does.
+
+    Older, thinner fragments still assemble, so a run left part-finished by a
+    previous version does not become unreadable.
     """
-    name = str(fragment.get("stage") or fallback_name)
-    raw_status = str(fragment.get("status", "completed"))
-    status: _Status = cast(_Status, raw_status if raw_status in _VALID_STATUS else "completed")
-    metrics = fragment.get("metrics")
-    notes = json.dumps({"metrics": metrics}, sort_keys=True) if metrics is not None else None
-    return StageRecord(
-        name=name,
-        status=status,
-        tool=ToolRef(name="bindsight", version=BINDSIGHT_VERSION, license="AGPL-3.0-or-later"),
-        notes=notes,
-    )
+    payload = dict(fragment)
+    payload.setdefault("stage", fallback_name)
+    return stage_record_from_fragment(payload)
 
 
 def assemble(fragments: list[Path], *, name: str = "snakemake-run") -> Manifest:
