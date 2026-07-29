@@ -7,7 +7,6 @@ from the design step's per-binder metrics — the same code path as
 ``bindsight validate`` (``bindsight.cli._finalize_validate``).
 """
 
-import json
 import logging
 import sys
 from pathlib import Path
@@ -24,19 +23,21 @@ LOG = logging.getLogger("bindsight.validate")
 
 def main() -> int:
     from bindsight.cli import _finalize_validate
+    from bindsight.provenance.fragments import artifact_ref, write_fragment
+    from bindsight.provenance.manifest import _now_iso
 
     out_v = Path(snakemake.output.validated)
     run_dir = out_v.parent.parent
+    started = _now_iso()
     n = _finalize_validate(run_dir)
     LOG.info("validated %d design(s) -> %s", n, out_v)
 
-    out_m = Path(snakemake.output.manifest_fragment)
-    out_m.parent.mkdir(parents=True, exist_ok=True)
-    out_m.write_text(
-        json.dumps(
-            {"stage": "validate", "status": "completed", "metrics": {"n_validated": n}},
-            indent=2,
-        )
+    write_fragment(
+        Path(snakemake.output.manifest_fragment),
+        stage="validate",
+        started_at=started,
+        outputs=[artifact_ref(out_v, role="validated", run_root=run_dir)],
+        notes=f"validated {n} design(s)",
     )
     return 0
 

@@ -50,6 +50,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,discover,report]"
+      # The Snakemake front-end is now exercised in CI. It runs offline via
+      # BINDSIGHT_CACHE_DIR and adds ~15 s. Linux only: Snakemake's Windows
+      # support is unreliable, and the test skips itself elsewhere, so this
+      # keeps the signal trustworthy rather than flaky.
+      - name: Install the workflow extra (Linux only)
+        if: runner.os == 'Linux'
+        run: pip install -e ".[workflow]"
       - name: Pytest (no GPU, no slow)
         run: pytest -m "not gpu and not slow" --maxfail=5 --no-cov -q
 
