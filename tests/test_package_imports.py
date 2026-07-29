@@ -31,6 +31,7 @@ PUBLIC_MODULES = [
     "bindsight.epitopes",
     "bindsight.epitopes.surface_bind",
     "bindsight.design",
+    "bindsight.design.prescreen",
     "bindsight.design.protocol",
     "bindsight.design.rfdiff_mpnn",
     "bindsight.design.bindcraft",

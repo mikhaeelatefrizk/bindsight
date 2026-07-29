@@ -40,12 +40,14 @@ def main() -> int:
             "bindsight design <run> --backend colab."
         )
 
+    prescreen = design.get("prescreen_top_k")
     launched = _launch_design(
         run_dir,
         backend=backend,
         designer=str(design.get("designer", "rfdiff_mpnn")),
         validator=validator,
         trajectories=int(design.get("n_trajectories", 50)),
+        prescreen_top_k=int(prescreen) if prescreen else None,
     )
     LOG.info("design launched for %d target(s) via %s", launched, backend)
 

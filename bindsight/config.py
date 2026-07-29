@@ -160,6 +160,17 @@ class DesignParams(BaseModel):
     binder_length_max: int = Field(100, ge=20)
     seed: int = 42
 
+    # GPU the run is costed against. None resolves to the backend's default in
+    # bindsight.cost, which is how every run behaved before this field existed;
+    # the --cheap profile sets it to "T4" so the estimate reflects the hardware
+    # the profile actually targets instead of quoting A100 prices.
+    gpu_type: str | None = None
+
+    # ESM-2 pre-screen: keep only this many designs for validation. None (the
+    # default) validates every design, so behaviour is unchanged unless asked
+    # for. See bindsight.design.prescreen.
+    prescreen_top_k: int | None = Field(None, ge=1)
+
     @field_validator("binder_length_max")
     @classmethod
     def _check_length_range(cls, v: int, info) -> int:

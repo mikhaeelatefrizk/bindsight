@@ -414,6 +414,38 @@ def _stage_validate_outputs(src_dir: Path, dst_dir: Path) -> None:
             (dst_dir / path.name).write_bytes(path.read_bytes())
 
 
+def _apply_prescreen(
+    spec: dict[str, Any], designs: list[Design]
+) -> tuple[list[Design], str | None]:
+    """Screen designs before validation, if the spec asks for it.
+
+    Args:
+        spec: The design spec; ``extra_params['prescreen_top_k']`` opts in.
+        designs: Designs produced by the designer, in design order.
+
+    Returns:
+        ``(designs_to_validate, note)`` where ``note`` is a provenance-ready
+        summary, or ``None`` when no screen was requested.
+    """
+    raw = spec.get("extra_params", {}).get("prescreen_top_k")
+    if raw in (None, "", 0, "0"):
+        return designs, None
+    try:
+        top_k = int(raw)
+    except (TypeError, ValueError):
+        LOG.warning("ignoring non-integer prescreen_top_k=%r", raw)
+        return designs, None
+
+    from bindsight.design.prescreen import prescreen_report, select_representative
+
+    result = select_representative([d.sequence for d in designs], top_k)
+    note = prescreen_report(result, [d.binder_id for d in designs])
+    LOG.info("%s", note)
+    if not result.applied:
+        return designs, note
+    return [designs[i] for i in result.kept], note
+
+
 def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None) -> Path:
     """Run design + validation for one spec; write the results tarball.
 
@@ -444,7 +476,15 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
     )
     designs = _DESIGNERS[designer](spec, work_dir, tools_root)
     LOG.info("designer produced %d designs", len(designs))
+
+    # ESM-2 pre-screen, between design and validation — the only point where
+    # dropping a design actually saves GPU time. Off unless prescreen_top_k is
+    # set, and it keeps everything if the optional `embed` extra is absent.
+    designs, prescreen_note = _apply_prescreen(spec, designs)
+
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
+    if prescreen_note:
+        (work_dir / "prescreen.txt").write_text(prescreen_note + "\n", encoding="utf-8")
 
     tools.write_metrics_jsonl(metrics, work_dir / "metrics.jsonl")
 
