@@ -79,6 +79,7 @@ def run(
                 designer=config.params.design.designer,
                 validator=config.params.validate_.validator,
                 trajectories=config.params.design.n_trajectories,
+                prescreen_top_k=config.params.design.prescreen_top_k,
             )
         except Exception as e:
             LOG.warning("design stage failed: %s", e)
