@@ -26,7 +26,7 @@ import json
 import logging
 import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from bindsight import __version__
 
@@ -76,26 +76,86 @@ def export_ro_crate(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+#: Single files, in canonical order.
 _PIPELINE_FILES = (
+    "config.yaml",
     "deg/results.parquet",
     "targets/candidates.parquet",
     "epitopes/epitopes.parquet",
+    "taxonomy/failure_taxonomy.parquet",
     "design/results.tar.gz",
+    "design/metrics.jsonl",
     "validate/validated.parquet",
     "rank/ranking.parquet",
     "report.html",
     "run_manifest.jsonld",
 )
 
+#: Directory trees included wholesale. ``structures/`` is what makes the crate
+#: self-contained — candidate and epitope tables reference those files, and
+#: without them every structure reference in an exported crate dangles.
+#: ``design/`` and ``validate/`` subtrees carry the per-target archives and the
+#: per-binder validator output that the flat allowlist silently dropped.
+_PIPELINE_TREES = (
+    "structures",
+    "design/_targets",
+    "validate",
+)
+
+#: Skipped inside `_PIPELINE_TREES`; already listed individually above.
+_TREE_EXCLUDE = frozenset({"validated.parquet"})
+
 
 def _collect_files(run: Path) -> list[Path]:
-    """Return the per-run artifacts to include in the crate, in canonical order."""
+    """Return the per-run artifacts to include in the crate, in canonical order.
+
+    Zero-byte files are skipped: several stages write empty placeholders, and a
+    crate should describe what a run produced, not what it reserved space for.
+    """
     files: list[Path] = []
+    seen: set[Path] = set()
+
+    def _add(p: Path) -> None:
+        if p in seen or not p.is_file():
+            return
+        try:
+            if p.stat().st_size <= 0:
+                return
+        except OSError:  # pragma: no cover - race with a concurrent write
+            return
+        seen.add(p)
+        files.append(p)
+
     for rel in _PIPELINE_FILES:
-        p = run / rel
-        if p.exists() and p.stat().st_size > 0:
-            files.append(p)
+        _add(run / rel)
+
+    for tree in _PIPELINE_TREES:
+        base = run / tree
+        if not base.is_dir():
+            continue
+        for p in sorted(base.rglob("*")):
+            if p.name not in _TREE_EXCLUDE:
+                _add(p)
+
     return files
+
+
+def _manifest_digests(manifest: dict) -> dict[str, str]:
+    """Map run-relative artifact path -> sha256, as recorded in the manifest.
+
+    The manifest already carries a verified digest for every declared input and
+    output; the crate simply never carried them across, so a reader had no way
+    to check integrity. Paths are normalised to their run-relative form because
+    older manifests recorded absolute ones.
+    """
+    digests: dict[str, str] = {}
+    for stage in manifest.get("stages", []) or []:
+        for ref in [*(stage.get("inputs") or []), *(stage.get("outputs") or [])]:
+            path = ref.get("path")
+            sha = ref.get("sha256")
+            if path and sha:
+                digests[PurePosixPath(Path(path).as_posix()).name] = sha
+    return digests
 
 
 def _build_metadata(run: Path, files: list[Path]) -> dict:
@@ -110,15 +170,20 @@ def _build_metadata(run: Path, files: list[Path]) -> dict:
         except json.JSONDecodeError:
             pass
 
-    file_entries = [
-        {
+    digests = _manifest_digests(manifest)
+    file_entries: list[dict[str, object]] = []
+    for p in files:
+        entry: dict[str, object] = {
             "@id": p.relative_to(run).as_posix(),
             "@type": "File",
             "name": p.name,
             "contentSize": p.stat().st_size,
         }
-        for p in files
-    ]
+        sha = digests.get(p.name)
+        if sha:
+            # schema.org has no sha256 term; this is the RO-Crate convention.
+            entry["sha256"] = sha
+        file_entries.append(entry)
 
     return {
         "@context": RO_CRATE_CONTEXT,
