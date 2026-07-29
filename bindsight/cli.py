@@ -859,8 +859,16 @@ def _count_designs(design_dir: Path) -> int:
 
 
 def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
-    """Return top-N targets (uniprot, structure_path, chain, residues) to design."""
+    """Return top-N targets (uniprot, structure_path, chain, residues) to design.
+
+    Structure references are resolved to absolute paths here, which is the one
+    place every design/validate consumer funnels through. New runs store them
+    run-relative so the run stays portable; runs made before that change stored
+    absolute cache paths. ``resolve_run_path`` accepts both.
+    """
     import pandas as pd
+
+    from bindsight.io.paths import resolve_run_path
 
     epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
     if not epitopes_parquet.exists():
@@ -868,10 +876,11 @@ def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
     df = pd.read_parquet(epitopes_parquet)
     targets: list[dict[str, Any]] = []
     for _, row in df.iterrows():
-        struct = str(row.get("structure_path") or "")
         uni = row.get("uniprot_id")
-        if not struct or not uni:
+        resolved = resolve_run_path(run_dir, row.get("structure_path"))
+        if resolved is None or not uni:
             continue
+        struct = str(resolved)
         residues = row.get("residues")
         residues = list(residues) if residues is not None and len(residues) else []
         targets.append(

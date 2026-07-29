@@ -40,7 +40,7 @@ from bindsight import __version__
 from bindsight.config import RunConfig, TargetDiscoveryParams
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 from bindsight.epitopes.surface_bind import SURFACE_BIND_DATA_ENV, SurfaceBindClient
-from bindsight.io.paths import run_dir
+from bindsight.io.paths import adopt_structure, resolve_run_path, run_dir
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS, caveat_summary
 from bindsight.provenance import (
     InputRef,
@@ -100,7 +100,12 @@ def run(
     _ensure_reference_data(config, surfy=surfy)
     surface_bind_client = _resolve_surface_bind_client(surface_bind_client)
 
-    manifest = new_manifest(name=config.name, config_path=str(config.inputs.counts.parent))
+    # Persist the effective configuration inside the run. Nothing used to write
+    # it, so a finished run — or an exported crate — could not say what produced
+    # it, and any CLI override (--backend, --cheap …) was lost entirely.
+    config_path = _write_run_config(config, root)
+
+    manifest = new_manifest(name=config.name, config_path=str(config_path))
 
     # ---- 1. DEG ----
     deg_table_path = root / "deg" / "results.parquet"
@@ -158,6 +163,34 @@ def _ensure_reference_data(config: RunConfig, *, surfy: frozenset[str] | None) -
             design_out=design_p,
             gene_types=tuple(dl.gene_types),
         )
+
+
+def _write_run_config(config: RunConfig, root: Path) -> Path:
+    """Write the effective run configuration to ``<run>/config.yaml``.
+
+    ``io/paths.py`` has always documented this file as part of the run layout,
+    and nothing ever produced it. Writing the *effective* config — after CLI
+    overrides are applied — is what makes a run self-describing and an exported
+    crate reproducible.
+
+    Args:
+        config: The resolved run configuration.
+        root: The run directory.
+
+    Returns:
+        Path to the written config file.
+    """
+    import yaml
+
+    out = root / "config.yaml"
+    payload = config.model_dump(mode="json", by_alias=True)
+    out.write_text(
+        "# Effective bindsight run configuration, written by the pipeline.\n"
+        "# Includes any command-line overrides applied to the source config.\n"
+        + yaml.safe_dump(payload, sort_keys=False),
+        encoding="utf-8",
+    )
+    return out
 
 
 def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
@@ -363,6 +396,10 @@ def _do_discover(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pure-data discovery logic; returns (candidates_df, epitopes_df, taxonomy_df)."""
     p = config.params.target_discovery
+    # The run root, derived the same way the taxonomy path is: the DEG table
+    # lives at <run>/deg/results.parquet. Structures are adopted into <run>/
+    # structures/ so the run stays portable.
+    run_root = deg_table_path.parent.parent
 
     # 1. Load DEGs and keep significant ones. Antibody targets need tumor
     #    over-expression, so carry the most up-regulated significant genes into
@@ -497,15 +534,28 @@ def _do_discover(
         fetch_uniprots = sorted(
             {u for u in candidates.head(n_fetch)["uniprot_id"].dropna().unique() if u}
         )
-        struct_paths: dict[str, Path | None] = {}
+        # Structures are fetched into the shared cache, then adopted into the
+        # run's own structures/ directory and referenced run-relatively. Storing
+        # the absolute cache path made every run — and every RO-Crate built from
+        # one — valid on exactly one machine.
+        struct_paths: dict[str, str] = {}
         for uid in fetch_uniprots:
             try:
-                struct_paths[uid] = afdb.fetch(uid)
+                cached = afdb.fetch(uid)
             except Exception as e:
                 LOG.warning("AlphaFoldDB fetch failed for %s: %s", uid, e)
-                struct_paths[uid] = None
+                continue
+            if cached is None:
+                continue
+            try:
+                struct_paths[uid] = adopt_structure(run_root, cached)
+            except OSError as e:
+                # A copy failure must not lose the structure; fall back to the
+                # cache path, which older runs used exclusively anyway.
+                LOG.warning("could not adopt structure for %s into the run (%s)", uid, e)
+                struct_paths[uid] = str(cached)
         candidates["alphafold_structure_path"] = candidates["uniprot_id"].map(
-            lambda u: str(struct_paths.get(u, "")) if u and struct_paths.get(u) else ""
+            lambda u: struct_paths.get(u, "") if u else ""
         )
         candidates["has_alphafold_structure"] = candidates["alphafold_structure_path"] != ""
     else:
@@ -517,7 +567,7 @@ def _do_discover(
     # gates carry-forward when ``min_mean_plddt`` is set. A mostly-disordered /
     # low-confidence model cannot be reliably designed against.
     candidates["mean_plddt"] = candidates["alphafold_structure_path"].map(
-        lambda pth: mean_plddt(pth) if pth else None
+        lambda pth: mean_plddt(resolved) if (resolved := resolve_run_path(run_root, pth)) else None
     )
     if p.min_mean_plddt > 0:
         low_conf = (
