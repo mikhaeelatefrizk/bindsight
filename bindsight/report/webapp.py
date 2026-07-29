@@ -28,8 +28,12 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from bindsight.report import showcase, theme
+
+if TYPE_CHECKING:  # pragma: no cover - typing only; runtime imports stay lazy
+    from bindsight.config import RunConfig
 
 # Streamlit must be importable as the entry point. The rest is lazy-loaded
 # below so command-line flags + module probing work without it.
@@ -193,7 +197,7 @@ def _page_home() -> None:
     )
 
 
-def _demo_config(out_dir: Path):
+def _demo_config(out_dir: Path) -> RunConfig:
     """Build the demo run configuration.
 
     Split out from :func:`_run_demo_cached` so the path handling is testable
@@ -256,7 +260,7 @@ def _run_demo_cached() -> tuple[Path, object, float, Path]:
     return out_dir, manifest, elapsed, report_path
 
 
-def _load_parquet_cached(path_str: str):
+def _load_parquet_cached(path_str: str) -> Any:
     """Cached parquet read so revisiting a run page doesn't re-read from disk."""
     import pandas as pd
 
@@ -795,7 +799,7 @@ def _find_repo_root() -> Path:
     return Path.cwd()
 
 
-def _show_run_summary(run_dir: Path, manifest, report_path: Path | None) -> None:
+def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) -> None:
     """Render KPIs, tables, and inline-report-iframe for a finished run."""
     candidates_p = run_dir / "targets" / "candidates.parquet"
     epitopes_p = run_dir / "epitopes" / "epitopes.parquet"
@@ -878,7 +882,7 @@ def main() -> None:
 
     st.set_page_config(
         page_title=theme.PAGE_TITLE,
-        layout=theme.LAYOUT,
+        layout=theme.PAGE_LAYOUT,
         page_icon=theme.PAGE_ICON,
         # "auto" = expanded on desktop, collapsed on phones. Forcing it open
         # puts the sidebar overlay on top of the hero on a phone, hiding the

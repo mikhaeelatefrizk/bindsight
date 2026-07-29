@@ -71,6 +71,9 @@ _STRUCTURE_FETCH_CAP = 25
 # the most up-regulated and bound the (per-gene) Open Targets calls.
 _ENRICH_TOP_K = 300
 
+#: Sentinel for a gene with no UniProt mapping (see _do_discover).
+_NO_UNIPROT: str | None = None
+
 
 # ---------------------------------------------------------------------------
 # Public entry point
@@ -460,7 +463,11 @@ def _do_discover(
                 if ot_status == "skipped":
                     ot_status = "bundled_fallback"
 
-        for uniprot_id in uniprot_ids or [None]:
+        # [None] is the deliberate sentinel for 'gene mapped to no UniProt
+        # accession'; the row is still emitted so the failure taxonomy can
+        # record it as no_uniprot rather than dropping it silently.
+        candidates_for_gene: list[str | None] = list(uniprot_ids) or [_NO_UNIPROT]
+        for uniprot_id in candidates_for_gene:
             enriched_rows.append(
                 {
                     "gene_id": gene_id,

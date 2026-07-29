@@ -34,6 +34,7 @@ from bindsight import __version__
 
 if TYPE_CHECKING:  # pragma: no cover - typing only; runtime imports stay lazy
     from bindsight.config import RunConfig
+    from bindsight.runners.protocol import CostEstimate
 
 
 def _force_utf8_io() -> None:
@@ -1101,7 +1102,7 @@ def _finalize_validate(run_dir: Path) -> int:
     return len(df)
 
 
-def _print_cost_panel(cost, label: str) -> None:
+def _print_cost_panel(cost: CostEstimate, label: str) -> None:
     """Render a CostEstimate as a Rich panel with the user-relevant fields."""
     usd = cost.usd_estimate or 0.0
     dollars = "free" if usd == 0 else f"~${usd:.2f}"
