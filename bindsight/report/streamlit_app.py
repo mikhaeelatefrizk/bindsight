@@ -25,9 +25,10 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 
-def _read_run(run_dir: Path):
+def _read_run(run_dir: Path) -> Any:
     import pandas as pd
 
     deg = candidates = epitopes = None

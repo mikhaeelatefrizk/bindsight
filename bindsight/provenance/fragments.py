@@ -182,7 +182,7 @@ def stage_record_from_fragment(payload: dict[str, Any]) -> StageRecord:
 
     record = StageRecord(
         name=name,
-        status=status,  # type: ignore[arg-type]
+        status=status,
         tool=ToolRef(**tool_payload),
         inputs=[InputRef(**r) for r in payload.get("inputs") or []],
         outputs=[OutputRef(**r) for r in payload.get("outputs") or []],

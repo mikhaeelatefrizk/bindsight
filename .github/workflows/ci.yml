@@ -29,8 +29,11 @@ jobs:
         run: ruff check bindsight tests scripts
       - name: Ruff format
         run: ruff format --check bindsight tests scripts
+      # Blocking. pyproject sets strict = true and CI swallowed the result with
+      # `|| true`, so 53 errors accumulated unnoticed -- including the arity bug
+      # that left the Snakemake front-end dead for five weeks.
       - name: mypy
-        run: mypy bindsight || true   # mypy strictness ratcheting; not blocking yet
+        run: mypy bindsight
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
@@ -57,8 +60,10 @@ jobs:
       - name: Install the workflow extra (Linux only)
         if: runner.os == 'Linux'
         run: pip install -e ".[workflow]"
+      # Coverage is configured in pyproject and was disabled here by --no-cov,
+      # so it had never actually run.
       - name: Pytest (no GPU, no slow)
-        run: pytest -m "not gpu and not slow" --maxfail=5 --no-cov -q
+        run: pytest -m "not gpu and not slow" --maxfail=5 -q
 
   build:
     name: Build wheel + sdist

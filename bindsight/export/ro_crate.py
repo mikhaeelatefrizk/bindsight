@@ -27,6 +27,7 @@ import logging
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 from bindsight import __version__
 
@@ -140,7 +141,7 @@ def _collect_files(run: Path) -> list[Path]:
     return files
 
 
-def _manifest_digests(manifest: dict) -> dict[str, str]:
+def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
     """Map run-relative artifact path -> sha256, as recorded in the manifest.
 
     The manifest already carries a verified digest for every declared input and
@@ -158,7 +159,7 @@ def _manifest_digests(manifest: dict) -> dict[str, str]:
     return digests
 
 
-def _build_metadata(run: Path, files: list[Path]) -> dict:
+def _build_metadata(run: Path, files: list[Path]) -> dict[str, Any]:
     """Construct the RO-Crate 1.1 metadata document."""
     manifest_path = run / "run_manifest.jsonld"
     manifest = {}

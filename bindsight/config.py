@@ -19,6 +19,7 @@ from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +174,7 @@ class DesignParams(BaseModel):
 
     @field_validator("binder_length_max")
     @classmethod
-    def _check_length_range(cls, v: int, info) -> int:
+    def _check_length_range(cls, v: int, info: ValidationInfo) -> int:
         lo = info.data.get("binder_length_min")
         if lo is not None and v < lo:
             raise ValueError("binder_length_max must be ≥ binder_length_min")
