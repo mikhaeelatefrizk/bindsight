@@ -11,6 +11,35 @@ import pandas as pd
 import pytest
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _isolate_cache(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Redirect the bindsight cache away from the developer's real one.
+
+    Autouse and session-scoped. Client tests call ``cache_dir("afdb_test")``
+    and friends, which used to create directories inside
+    ``~/.cache/bindsight`` and leave them behind — real residue in a real
+    user's cache, on every test run.
+
+    ``BINDSIGHT_CACHE_DIR`` also reaches subprocesses, which ``monkeypatch``
+    cannot, so a test that shells out is covered too.
+
+    Returns:
+        The temporary cache root.
+    """
+    import os
+
+    from bindsight.io.paths import ENV_CACHE_DIR
+
+    cache = tmp_path_factory.mktemp("bindsight-cache")
+    previous = os.environ.get(ENV_CACHE_DIR)
+    os.environ[ENV_CACHE_DIR] = str(cache)
+    yield cache
+    if previous is None:
+        os.environ.pop(ENV_CACHE_DIR, None)
+    else:
+        os.environ[ENV_CACHE_DIR] = previous
+
+
 @pytest.fixture
 def fixtures_dir() -> Path:
     """Path to the bundled tests/fixtures directory."""
