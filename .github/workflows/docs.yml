@@ -36,8 +36,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+      # pandas is not a core dependency, but importing bindsight.report runs
+      # its __init__, which pulls in report/html.py -> pandas. Cheaper than
+      # installing the whole [discover] extra (pydeseq2, pyarrow, biopython…)
+      # for what is only a Markdown generation step.
       - name: Install docs deps
-        run: pip install -e "." "mkdocs-material>=9.5,<10"
+        run: pip install -e "." "pandas>=2.2" "mkdocs-material>=9.5,<10"
       - name: Regenerate the results page from benchmarks/
         run: python scripts/build_docs_results.py
       # --strict fails the build on broken internal links. It caught nine
