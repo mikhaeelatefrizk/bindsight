@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import gzip
+from collections.abc import Iterator
 from pathlib import Path
 
 import pandas as pd
@@ -12,7 +13,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True, scope="session")
-def _isolate_cache(tmp_path_factory: pytest.TempPathFactory) -> Path:
+def _isolate_cache(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Path]:
     """Redirect the bindsight cache away from the developer's real one.
 
     Autouse and session-scoped. Client tests call ``cache_dir("afdb_test")``
@@ -101,10 +102,14 @@ def offline_real_data(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         return {"source": "mock", "n_tumor": 4, "n_normal": 4}
 
     monkeypatch.setattr("bindsight.io.gdc.fetch_cohort", _fake_fetch)
-    monkeypatch.setattr(
-        "bindsight.io.paths.user_cache_path",
-        lambda *a, **k: tmp_path / "cache",
-    )
+    # Per-test cache isolation. This must go through BINDSIGHT_CACHE_DIR rather
+    # than patching user_cache_path: cache_root() consults the env var first and
+    # only falls back to platformdirs, so patching the fallback alone would
+    # silently leave these tests sharing the session-wide cache that
+    # `_isolate_cache` sets up, and let state leak between them.
+    from bindsight.io.paths import ENV_CACHE_DIR
+
+    monkeypatch.setenv(ENV_CACHE_DIR, str(tmp_path / "cache"))
     # Open Targets returns nothing offline -> discover uses the bundled ENSG map.
     monkeypatch.setattr(
         "bindsight.targets.open_targets.OpenTargetsClient.get_target",
