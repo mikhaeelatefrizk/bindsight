@@ -1,0 +1,31 @@
+# Streamlit configuration for the bindsight web app.
+#
+# Read automatically by `streamlit run` when the working directory is the repo
+# root — which covers `bindsight ui` run from a clone, the Hugging Face Space
+# (primary deployment), and the Streamlit Community Cloud mirror.
+#
+# Why this file exists:
+#
+# 1. Theme. The app styles its own headings and primary button navy (#0b5394),
+#    but without a [theme] block Streamlit's own chrome — radio selection,
+#    spinners, sliders, focus rings — kept rendering in the default red/pink,
+#    clashing with the brand on every page.
+#
+# 2. Telemetry. `bindsight ui` documents itself as "local-first; no telemetry",
+#    and nothing in the repo actually made that true. It does now.
+#
+# Values mirror bindsight/report/theme.py — keep the two in step.
+
+[theme]
+primaryColor = "#0b5394"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f7f9fc"
+textColor = "#1b1f24"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+# The "Run on my data" page takes a counts matrix; real cohorts are large.
+maxUploadSize = 400

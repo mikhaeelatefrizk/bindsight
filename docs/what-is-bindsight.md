@@ -117,7 +117,7 @@ users actually need to triage.
 
 The default config uses only MIT / Apache / BSD / CC-BY components. Every
 non-permissive opt-in (e.g. AlphaFold2 weights for the AF2-IG validator) is
-behind a CLI banner and documented in [LICENSING.md](../LICENSING.md). A
+behind a CLI banner and documented in [LICENSING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSING.md). A
 pharma early-discovery team can run it without legal review.
 
 ---
@@ -209,7 +209,7 @@ plus the populated designer benchmark.
 
 ## The honest limits in v0.x
 
-We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](../ARCHITECTURE.md#10-risks-honest):
+We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](https://github.com/mikhaeelatefrizk/bindsight/blob/main/ARCHITECTURE.md#10-risks-honest):
 
 - pydeseq2 is not bit-equivalent to R DESeq2 (documented)
 - SURFACE-Bind covers ~2,800 surface proteins, not all of them (graceful drop)
@@ -285,6 +285,6 @@ Anyone with a GPU can run the existing tools. The work `bindsight` does is the
 > crisis everyone agrees on. One person can connect all of this for the
 > first time. That's `bindsight`.
 
-If you want the architectural detail, see [ARCHITECTURE.md](../ARCHITECTURE.md).
+If you want the architectural detail, see [ARCHITECTURE.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/ARCHITECTURE.md).
 If you want to use it now, see [how-to-use.md](how-to-use.md). If you want to
 see what it can do, see [use-cases.md](use-cases.md).

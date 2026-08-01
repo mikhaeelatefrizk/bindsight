@@ -27,6 +27,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import asdict, dataclass
+from typing import Any
 
 LOG = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class Developability:
         """ProtParam instability index < 40 ⇒ predicted stable."""
         return self.instability_index < 40.0
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> dict[str, Any]:
         """Return the descriptors as a plain dict (for TSV/JSON export)."""
         return asdict(self)
 

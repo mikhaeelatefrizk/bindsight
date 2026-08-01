@@ -2,6 +2,20 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """I/O helpers — file readers, writers, cache directories."""
 
-from bindsight.io.paths import cache_dir, ensure_dir, run_dir
+from bindsight.io.paths import (
+    adopt_structure,
+    cache_dir,
+    cache_root,
+    ensure_dir,
+    resolve_run_path,
+    run_dir,
+)
 
-__all__ = ["cache_dir", "ensure_dir", "run_dir"]
+__all__ = [
+    "adopt_structure",
+    "cache_dir",
+    "cache_root",
+    "ensure_dir",
+    "resolve_run_path",
+    "run_dir",
+]

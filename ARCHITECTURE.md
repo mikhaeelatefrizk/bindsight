@@ -164,7 +164,7 @@ Every run emits a single PROV-O JSON-LD manifest. **This is the moat.** A review
 - the validator metrics,
 - the container digest of every step.
 
-Schema is in `bindsight/provenance/manifest.py`. Validated against a JSON Schema in `schemas/run_manifest.schema.json` on every run.
+Schema is in `bindsight/provenance/manifest.py`, enforced by Pydantic v2 with `extra="forbid"` on every model, so a malformed stage record fails at write time. (A standalone `schemas/run_manifest.schema.json` for non-Python consumers is not yet emitted.)
 
 Final RO-Crate bundles the manifest + all artifacts + a `software.bib` for citation.
 
@@ -277,7 +277,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
 3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy. *(Shipped for the discovery half: `taxonomy/failure_taxonomy.parquet` — an exhaustive per-gene disposition, rendered in the HTML report.)*
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
-5. **Streamlit + self-contained HTML report with embedded py3Dmol.** The artifact that sells the tool in a 5-minute talk.
+5. **Streamlit app with py3Dmol structure viewing, plus a self-contained HTML report.** The web app's *Real results* page renders the actual Boltz-2 predicted binder–target complexes in 3-D; the HTML report stays dependency-free and offline-openable. Together they are the artifact that sells the tool in a 5-minute talk.
 
 ---
 
@@ -286,7 +286,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 1. **Licensing landmines** — see [LICENSING.md](LICENSING.md). Defaults to MIT/Apache/BSD/CC-BY components.
 2. **GPU offload latency** — Colab sessions die. Mitigation: per-trajectory checkpointing, idempotent rerun keys.
 3. **Model output instability across versions** — pin commit SHA + weights hash + CUDA in containers; document that exact reproducibility requires the same digest.
-4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: `--cheap` profile (RFdiff+MPNN on T4, 10 trajectories, ESM-2 pre-screen).
+4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: the `--cheap` profile, **shipped**: RFdiffusion+ProteinMPNN, `n_trajectories=10`, costed against a T4, and an ESM-2 pre-screen that keeps the 5 most representative designs per target before validation (`bindsight/design/prescreen.py`, applied inside `runners/job_exec.run_job` between design and validation — the only point where dropping a design saves GPU). On the demo config against Modal this takes the `--dry-run` estimate from ~$27.89 (A100) to ~$4.26 (T4). The pre-screen is off unless `params.design.prescreen_top_k` is set, degrades to validating everything if the optional `embed` extra is absent, and records what it screened out.
 5. **SURFACE-Bind coverage gaps** — 2,886 ≠ all surfaceome. Mitigation: graceful drop with `no_surfacebind_entry` tag; a planned fpocket fallback.
 6. **Designer choice will age.** Mitigation: plugin interface; ship RFdiff+MPNN default, BindCraft and BoltzGen as flags; benchmark all three in the paper.
 7. **Disease specificity is hard.** "Up in cancer, low in vital tissue" predictably finds known antigens. *This is a feature for v0.1* (rediscovery validation). Real novelty in v1.0 layers scRNA-seq + co-expression + immunopeptidomics.

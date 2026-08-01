@@ -120,7 +120,7 @@ to run alongside, both for sanity checks and for collaborator handoffs.
 
 **Why `bindsight` fits:**
 
-- All defaults are MIT/Apache/BSD/CC-BY ([LICENSING.md](../LICENSING.md)).
+- All defaults are MIT/Apache/BSD/CC-BY ([LICENSING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSING.md)).
 - Plugin interface lets you wrap your proprietary designer / validator
   without forking. Internal models stay private; only the wrappers are added.
 - Container-pinned reproducibility means a partner running the same Docker
@@ -161,5 +161,5 @@ In every scenario above, the value isn't a single algorithm — it's the
 design, with provenance preserved. You bring the data and the question;
 `bindsight` brings the pipeline.
 
-If your use case isn't here, [open a discussion](../CONTRIBUTING.md) — we'd
+If your use case isn't here, [open a discussion](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CONTRIBUTING.md) — we'd
 like to add it.

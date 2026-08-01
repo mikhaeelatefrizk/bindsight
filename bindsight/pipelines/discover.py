@@ -40,7 +40,7 @@ from bindsight import __version__
 from bindsight.config import RunConfig, TargetDiscoveryParams
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 from bindsight.epitopes.surface_bind import SURFACE_BIND_DATA_ENV, SurfaceBindClient
-from bindsight.io.paths import run_dir
+from bindsight.io.paths import adopt_structure, resolve_run_path, run_dir
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS, caveat_summary
 from bindsight.provenance import (
     InputRef,
@@ -71,6 +71,9 @@ _STRUCTURE_FETCH_CAP = 25
 # the most up-regulated and bound the (per-gene) Open Targets calls.
 _ENRICH_TOP_K = 300
 
+#: Sentinel for a gene with no UniProt mapping (see _do_discover).
+_NO_UNIPROT: str | None = None
+
 
 # ---------------------------------------------------------------------------
 # Public entry point
@@ -100,7 +103,12 @@ def run(
     _ensure_reference_data(config, surfy=surfy)
     surface_bind_client = _resolve_surface_bind_client(surface_bind_client)
 
-    manifest = new_manifest(name=config.name, config_path=str(config.inputs.counts.parent))
+    # Persist the effective configuration inside the run. Nothing used to write
+    # it, so a finished run — or an exported crate — could not say what produced
+    # it, and any CLI override (--backend, --cheap …) was lost entirely.
+    config_path = _write_run_config(config, root)
+
+    manifest = new_manifest(name=config.name, config_path=str(config_path))
 
     # ---- 1. DEG ----
     deg_table_path = root / "deg" / "results.parquet"
@@ -160,29 +168,53 @@ def _ensure_reference_data(config: RunConfig, *, surfy: frozenset[str] | None) -
         )
 
 
-def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
-    """Return the SURFY surface set, populating the full cache on first use.
+def _write_run_config(config: RunConfig, root: Path) -> Path:
+    """Write the effective run configuration to ``<run>/config.yaml``.
 
-    If an explicit set was injected (tests), use it. Otherwise populate the full
-    canonical SURFY cache when empty, falling back to the bundled offline list
-    only if allowed.
+    ``io/paths.py`` has always documented this file as part of the run layout,
+    and nothing ever produced it. Writing the *effective* config — after CLI
+    overrides are applied — is what makes a run self-describing and an exported
+    crate reproducible.
+
+    Args:
+        config: The resolved run configuration.
+        root: The run directory.
+
+    Returns:
+        Path to the written config file.
+    """
+    import yaml
+
+    out = root / "config.yaml"
+    payload = config.model_dump(mode="json", by_alias=True)
+    out.write_text(
+        "# Effective bindsight run configuration, written by the pipeline.\n"
+        "# Includes any command-line overrides applied to the source config.\n"
+        + yaml.safe_dump(payload, sort_keys=False),
+        encoding="utf-8",
+    )
+    return out
+
+
+def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
+    """Return the SURFY surface set.
+
+    No network access. The full canonical list is vendored with the package, so
+    discovery resolves the surfaceome from disk every time.
+
+    This used to try ``populate_surfy_cache()`` on a cache miss. That download
+    can no longer succeed — upstream serves an HTML page on one host and a
+    Git-LFS pointer on the other — so every fresh install either hard-failed or
+    silently degraded to a ten-protein list and surfaced almost nothing. Keeping
+    the attempt would only add five retries of latency before the same outcome.
+
+    An explicitly injected set (tests) still wins.
     """
     from bindsight.config import TargetDiscoveryParams
 
     assert isinstance(p, TargetDiscoveryParams)
     if surfy is not None:
         return surfy
-    if p.require_surfy:
-        from bindsight.surfaceome.surfy import _surfy_cache_path, populate_surfy_cache
-
-        if not _surfy_cache_path().exists():
-            LOG.info("SURFY cache empty; populating the full surfaceome list")
-            try:
-                populate_surfy_cache()
-            except Exception as e:  # network/parse failure
-                if not p.surfy_allow_offline_fallback:
-                    raise
-                LOG.warning("SURFY populate failed (%s); using bundled offline fallback", e)
     return load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
 
 
@@ -367,6 +399,10 @@ def _do_discover(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pure-data discovery logic; returns (candidates_df, epitopes_df, taxonomy_df)."""
     p = config.params.target_discovery
+    # The run root, derived the same way the taxonomy path is: the DEG table
+    # lives at <run>/deg/results.parquet. Structures are adopted into <run>/
+    # structures/ so the run stays portable.
+    run_root = deg_table_path.parent.parent
 
     # 1. Load DEGs and keep significant ones. Antibody targets need tumor
     #    over-expression, so carry the most up-regulated significant genes into
@@ -427,7 +463,11 @@ def _do_discover(
                 if ot_status == "skipped":
                     ot_status = "bundled_fallback"
 
-        for uniprot_id in uniprot_ids or [None]:
+        # [None] is the deliberate sentinel for 'gene mapped to no UniProt
+        # accession'; the row is still emitted so the failure taxonomy can
+        # record it as no_uniprot rather than dropping it silently.
+        candidates_for_gene: list[str | None] = list(uniprot_ids) or [_NO_UNIPROT]
+        for uniprot_id in candidates_for_gene:
             enriched_rows.append(
                 {
                     "gene_id": gene_id,
@@ -501,15 +541,28 @@ def _do_discover(
         fetch_uniprots = sorted(
             {u for u in candidates.head(n_fetch)["uniprot_id"].dropna().unique() if u}
         )
-        struct_paths: dict[str, Path | None] = {}
+        # Structures are fetched into the shared cache, then adopted into the
+        # run's own structures/ directory and referenced run-relatively. Storing
+        # the absolute cache path made every run — and every RO-Crate built from
+        # one — valid on exactly one machine.
+        struct_paths: dict[str, str] = {}
         for uid in fetch_uniprots:
             try:
-                struct_paths[uid] = afdb.fetch(uid)
+                cached = afdb.fetch(uid)
             except Exception as e:
                 LOG.warning("AlphaFoldDB fetch failed for %s: %s", uid, e)
-                struct_paths[uid] = None
+                continue
+            if cached is None:
+                continue
+            try:
+                struct_paths[uid] = adopt_structure(run_root, cached)
+            except OSError as e:
+                # A copy failure must not lose the structure; fall back to the
+                # cache path, which older runs used exclusively anyway.
+                LOG.warning("could not adopt structure for %s into the run (%s)", uid, e)
+                struct_paths[uid] = str(cached)
         candidates["alphafold_structure_path"] = candidates["uniprot_id"].map(
-            lambda u: str(struct_paths.get(u, "")) if u and struct_paths.get(u) else ""
+            lambda u: struct_paths.get(u, "") if u else ""
         )
         candidates["has_alphafold_structure"] = candidates["alphafold_structure_path"] != ""
     else:
@@ -521,7 +574,7 @@ def _do_discover(
     # gates carry-forward when ``min_mean_plddt`` is set. A mostly-disordered /
     # low-confidence model cannot be reliably designed against.
     candidates["mean_plddt"] = candidates["alphafold_structure_path"].map(
-        lambda pth: mean_plddt(pth) if pth else None
+        lambda pth: mean_plddt(resolved) if (resolved := resolve_run_path(run_root, pth)) else None
     )
     if p.min_mean_plddt > 0:
         low_conf = (

@@ -37,7 +37,7 @@ back to the patient cohort.
 ## How it relates to neighboring tools
 
 bindsight is an **orchestration + provenance layer**, not a new model. It stands on, and credits, the
-best open tools in each step (see [Acknowledgments](../README.md#acknowledgments)). Its contribution
+best open tools in each step (see [Acknowledgments](https://github.com/mikhaeelatefrizk/bindsight/blob/main/README.md#acknowledgments)). Its contribution
 is the *connective tissue*: the surfaceome/targetable-site filter
 ([SURFACE-Bind](https://www.pnas.org/doi/10.1073/pnas.2506269123)), the multi-objective ranking, the
 cost-aware GPU offload, the failure taxonomy, and the [PROV-O](https://www.w3.org/TR/prov-o/) +
