@@ -134,13 +134,15 @@ class OpenTargetsClient:
         body = resp.json()
         if "errors" in body:
             raise RuntimeError(f"Open Targets GraphQL errors: {body['errors']}")
-        return body["data"]
+        data: dict[str, Any] = body["data"]
+        return data
 
     def query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         """Execute a raw GraphQL query, with on-disk caching by query hash."""
         key = self._cache_key(query, variables)
         if key.exists():
-            return json.loads(key.read_text())
+            cached: dict[str, Any] = json.loads(key.read_text())
+            return cached
         data = self._post(query, variables)
         key.write_text(json.dumps(data))
         return data

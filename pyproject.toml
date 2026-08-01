@@ -159,6 +159,7 @@ packages = ["bindsight"]
 "examples/demo" = "bindsight_demo"
 
 [tool.hatch.build.targets.wheel.force-include]
+"bindsight/surfaceome/data/surfy_v1.uniprot.txt" = "bindsight/surfaceome/data/surfy_v1.uniprot.txt"
 "bindsight/surfaceome/data/surfy_offline.txt" = "bindsight/surfaceome/data/surfy_offline.txt"
 "bindsight/report/templates/report.html.j2"   = "bindsight/report/templates/report.html.j2"
 "bindsight/report/templates/report.css"       = "bindsight/report/templates/report.css"
@@ -213,6 +214,13 @@ module = [
     "kaggle.*",
     "torch.*",
     "transformers.*",
+    # pandas ships no inline types. The third-party pandas-stubs package was
+    # evaluated and rejected: it removes 12 "no stubs" errors but introduces
+    # ~16 overload conflicts against correct code (notably `.loc` indexing),
+    # each of which would need a cast or an ignore that a stub update could
+    # invalidate. Strict checking of bindsight's own code is the goal, and
+    # this keeps it without that churn.
+    "pandas.*",
 ]
 ignore_missing_imports = true
 # These third-party libs ship no type info; don't follow into them so calls

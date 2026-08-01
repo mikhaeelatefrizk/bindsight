@@ -22,7 +22,7 @@ import sys
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkg_version
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 from rich.console import Console
@@ -31,6 +31,10 @@ from rich.panel import Panel
 from rich.table import Table
 
 from bindsight import __version__
+
+if TYPE_CHECKING:  # pragma: no cover - typing only; runtime imports stay lazy
+    from bindsight.config import RunConfig
+    from bindsight.runners.protocol import CostEstimate
 
 
 def _force_utf8_io() -> None:
@@ -497,6 +501,8 @@ def run(
         cfg.params.design.designer = designer  # type: ignore[assignment]
     if validator:
         cfg.params.validate_.validator = validator  # type: ignore[assignment]
+    if cheap:
+        _apply_cheap_profile(cfg)
 
     if dry_run:
         from bindsight.cost import estimate_full_run
@@ -509,6 +515,7 @@ def run(
             validator=cfg.params.validate_.validator,
             n_targets=n_targets,
             n_trajectories=n_traj,
+            gpu_type=cfg.params.design.gpu_type,
         )
         _print_cost_panel(c, label="full run (combined design + validate)")
         return
@@ -659,8 +666,9 @@ def benchmark(
 def ui(port: int, no_browser: bool) -> None:
     """Launch the bindsight web interface in your browser.
 
-    Same app that's deployed on Streamlit Cloud — multi-page, with the demo,
-    'run on my data', and 'browse a run' panels. Local-first; no telemetry.
+    Same app that's deployed on the Hugging Face Space and Streamlit Cloud —
+    multi-page, with the real-results explorer, the demo, 'run on my data', and
+    'browse a run' panels. Local-first; telemetry is disabled explicitly below.
     """
     import subprocess
     import sys as _sys
@@ -689,6 +697,11 @@ def ui(port: int, no_browser: bool) -> None:
         str(entry),
         "--server.port",
         str(port),
+        # .streamlit/config.toml covers runs from a repo checkout, but a
+        # packaged install launched from elsewhere never sees it -- so the
+        # "no telemetry" promise above is enforced here too.
+        "--browser.gatherUsageStats",
+        "false",
     ]
     if no_browser:
         cmd += ["--server.headless", "true"]
@@ -852,9 +865,52 @@ def _count_designs(design_dir: Path) -> int:
     return max(1, len(pdbs)) if pdbs else 250
 
 
+#: The ``--cheap`` profile, as specified in ARCHITECTURE.md §10: "RFdiff+MPNN
+#: on T4, 10 trajectories, ESM-2 pre-screen". The flag was parsed and then
+#: silently ignored, so a user asking for the cheap profile got the expensive
+#: one and a cost estimate quoting A100 prices.
+CHEAP_DESIGNER = "rfdiff_mpnn"
+CHEAP_TRAJECTORIES = 10
+CHEAP_GPU_TYPE = "T4"
+CHEAP_PRESCREEN_TOP_K = 5
+
+
+def _apply_cheap_profile(cfg: RunConfig) -> None:
+    """Apply the T4-friendly profile in place.
+
+    Applied before the ``--dry-run`` branch so the printed estimate describes
+    the run that would actually happen.
+
+    Args:
+        cfg: The run configuration to modify.
+    """
+    design = cfg.params.design
+    design.designer = CHEAP_DESIGNER  # type: ignore[assignment]
+    design.n_trajectories = CHEAP_TRAJECTORIES
+    design.gpu_type = CHEAP_GPU_TYPE
+    design.prescreen_top_k = min(CHEAP_PRESCREEN_TOP_K, CHEAP_TRAJECTORIES)
+    console.print(
+        Panel(
+            f"designer={CHEAP_DESIGNER} · trajectories={CHEAP_TRAJECTORIES} · "
+            f"GPU={CHEAP_GPU_TYPE} · ESM-2 pre-screen keeps "
+            f"{design.prescreen_top_k} designs per target",
+            title="--cheap profile",
+            border_style="cyan",
+        )
+    )
+
+
 def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
-    """Return top-N targets (uniprot, structure_path, chain, residues) to design."""
+    """Return top-N targets (uniprot, structure_path, chain, residues) to design.
+
+    Structure references are resolved to absolute paths here, which is the one
+    place every design/validate consumer funnels through. New runs store them
+    run-relative so the run stays portable; runs made before that change stored
+    absolute cache paths. ``resolve_run_path`` accepts both.
+    """
     import pandas as pd
+
+    from bindsight.io.paths import resolve_run_path
 
     epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
     if not epitopes_parquet.exists():
@@ -862,10 +918,11 @@ def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
     df = pd.read_parquet(epitopes_parquet)
     targets: list[dict[str, Any]] = []
     for _, row in df.iterrows():
-        struct = str(row.get("structure_path") or "")
         uni = row.get("uniprot_id")
-        if not struct or not uni:
+        resolved = resolve_run_path(run_dir, row.get("structure_path"))
+        if resolved is None or not uni:
             continue
+        struct = str(resolved)
         residues = row.get("residues")
         residues = list(residues) if residues is not None and len(residues) else []
         targets.append(
@@ -937,9 +994,20 @@ def _structure_pdb_b64(structure_path: Path) -> str | None:
 
 
 def _launch_design(
-    run_dir: Path, *, backend: str, designer: str, validator: str, trajectories: int
+    run_dir: Path,
+    *,
+    backend: str,
+    designer: str,
+    validator: str,
+    trajectories: int,
+    prescreen_top_k: int | None = None,
 ) -> int:
-    """Run design+validation for each top target via a headless runner backend."""
+    """Run design+validation for each top target via a headless runner backend.
+
+    ``prescreen_top_k`` is passed through to the executor, which applies the
+    ESM-2 screen between design and validation — the only point at which
+    dropping a design saves GPU time. ``None`` validates every design.
+    """
     import shutil
 
     from bindsight.plugins import get_designer, get_runner
@@ -963,9 +1031,13 @@ def _launch_design(
             epitope_chain=t["chain"],
             n_trajectories=trajectories,
         )
-        spec = spec.model_copy(
-            update={"extra_params": {**spec.extra_params, "validator": validator}}
-        )
+        extra: dict[str, str | int | float | bool] = {
+            **spec.extra_params,
+            "validator": validator,
+        }
+        if prescreen_top_k:
+            extra["prescreen_top_k"] = int(prescreen_top_k)
+        spec = spec.model_copy(update={"extra_params": extra})
         result = plugin.submit(spec, runner)
         shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")
         mpath = Path(result.metrics_jsonl_path)
@@ -1030,7 +1102,7 @@ def _finalize_validate(run_dir: Path) -> int:
     return len(df)
 
 
-def _print_cost_panel(cost, label: str) -> None:
+def _print_cost_panel(cost: CostEstimate, label: str) -> None:
     """Render a CostEstimate as a Rich panel with the user-relevant fields."""
     usd = cost.usd_estimate or 0.0
     dollars = "free" if usd == 0 else f"~${usd:.2f}"

@@ -7,14 +7,18 @@ deployment to use the tool entirely in a browser.
 
 Pages:
 
-- **Home** — what this is, why it matters, "Try the demo" CTA
-- **Demo** — one-click run on a real TCGA-BRCA cohort with live progress
+- **Home** — what this is, why it matters, the headline results, CTAs
+- **Real results** — the committed benchmarks: rediscovery over six TCGA
+  cohorts, and the 20 real ERBB2 binders with their predicted complexes
+- **Demo** — one-click run on a real TCGA-BRCA cohort
 - **Run with my data** — upload counts.tsv + design.tsv, run the pipeline
 - **Browse a run** — open a run directory, inspect tables, view the report
 - **About** — links to docs, source, citation
 
-The app is intentionally one file so Streamlit Cloud can deploy from a
-single import path, and the layout is conservative so it works on phones.
+The app is intentionally one file so Streamlit Cloud can deploy from a single
+import path. Styling and brand constants come from
+:mod:`bindsight.report.theme`; the published numbers come from
+:mod:`bindsight.report.showcase`, so nothing on screen is hand-typed.
 """
 
 from __future__ import annotations
@@ -24,6 +28,12 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from bindsight.report import showcase, theme
+
+if TYPE_CHECKING:  # pragma: no cover - typing only; runtime imports stay lazy
+    from bindsight.config import RunConfig
 
 # Streamlit must be importable as the entry point. The rest is lazy-loaded
 # below so command-line flags + module probing work without it.
@@ -33,70 +43,122 @@ except ImportError:  # pragma: no cover
     st = None  # type: ignore[assignment]
 
 
+#: ``st.session_state`` keys. The app previously used no session state at all,
+#: so demo and user-run results were rendered inside the ``if st.button(...)``
+#: block and vanished the moment any other widget was touched.
+_NAV_KEY = "bs_nav"
+#: Streamlit forbids assigning to a widget's own key once that widget has been
+#: instantiated this run, so cross-page buttons record their intent here and
+#: ``main()`` applies it before building the navigation radio.
+_NAV_PENDING_KEY = "bs_nav_pending"
+_DEMO_RESULT_KEY = "bs_demo_result"
+_RUN_RESULT_KEY = "bs_run_result"
+
+
 def _inject_css() -> None:
-    st.markdown(
-        """
-        <style>
-            .block-container { max-width: 980px; padding-top: 2rem; }
-            h1 { color: #0b5394; letter-spacing: -0.02em; }
-            h2 { color: #0b5394; border-bottom: 1px solid #e3e6ea; padding-bottom: .3rem; }
-            .stButton button[kind="primary"] {
-                background-color: #0b5394; color: white; font-weight: 600;
-            }
-            .small-muted { color: #6c757d; font-size: 0.85rem; }
-            .pill {
-                display: inline-block; padding: .15rem .55rem;
-                background: #e8f0fb; color: #0b5394; border-radius: 999px;
-                font-size: .75rem; font-weight: 600; margin-right: .3rem;
-            }
-            .ok-pill   { background: #e8f5e9; color: #2e7d32; }
-            .warn-pill { background: #fff8e1; color: #b08400; }
-            .err-pill  { background: #ffebee; color: #c62828; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Apply the shared stylesheet from :mod:`bindsight.report.theme`."""
+    st.markdown(theme.app_css(), unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
+#: The pipeline, as a visitor should read it. ``gpu`` marks the stages that
+#: are offloaded rather than run in the browser.
+_PIPELINE_STAGES: tuple[tuple[str, str, bool], ...] = (
+    ("Patient RNA-seq", "counts + design", False),
+    ("Differential expression", "pydeseq2", False),
+    ("Cell-surface filter", "SURFY surfaceome", False),
+    ("Safety + tractability", "GTEx · Open Targets", False),
+    ("Targetable site", "SURFACE-Bind · AlphaFold", False),
+    ("Binder design", "RFdiffusion + MPNN", True),
+    ("Structure + affinity", "Boltz-2", True),
+    ("Ranked candidates", "multi-objective", False),
+    ("Provenance", "PROV-O · RO-Crate", False),
+)
+
+
+def _goto(page: str) -> None:
+    """Request a switch to ``page`` on the next run, then rerun."""
+    st.session_state[_NAV_PENDING_KEY] = page
+    st.rerun()
+
+
 def _page_home() -> None:
     from bindsight import __version__
 
-    st.title("bindsight")
     st.markdown(
-        "**RNA-seq counts → ranked de novo protein binder candidates, "
-        "with full provenance back to the patient cohort.**"
-    )
-    st.markdown(
-        '<div style="margin-bottom:1rem">'
-        f'<span class="pill ok-pill">v{__version__} ready</span>'
-        '<span class="pill">AGPL-3.0 license</span>'
-        '<span class="pill">CPU-friendly</span>'
-        '<span class="pill">PROV-O provenance</span>'
-        "</div>",
+        f"""
+        <div class="bs-hero">
+          <h1>bindsight</h1>
+          <p>{theme.TAGLINE}</p>
+          <div class="bs-hero-sub">
+            Genomics stops at &ldquo;here are the interesting genes&rdquo;.
+            Protein design starts at &ldquo;given a target structure&rdquo;.
+            bindsight is the open, citable bridge between them.
+          </div>
+        </div>
+        """,
         unsafe_allow_html=True,
+    )
+
+    # Headline numbers come from benchmarks/ via showcase.py -- never typed in,
+    # so this page cannot claim more than the committed results support.
+    stats = showcase.headline_stats()
+    if stats:
+        st.markdown(
+            '<div class="bs-stats">'
+            + "".join(
+                f'<div class="bs-stat"><div class="v">{s.value}</div>'
+                f'<div class="k">{s.label}</div>'
+                f'<div class="small-muted">{s.detail}</div></div>'
+                for s in stats
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+    cta = st.columns(3)
+    if cta[0].button("🔬  Explore real results", type="primary", use_container_width=True):
+        _goto("🔬 Real results")
+    if cta[1].button("✨  Run the live demo", use_container_width=True):
+        _goto("✨ Demo")
+    if cta[2].button("📤  Use my own data", use_container_width=True):
+        _goto("📤 Run on my data")
+
+    st.markdown("## How it works")
+    st.markdown(
+        '<div class="bs-flow">'
+        + "".join(
+            f'<div class="s{" gpu" if gpu else ""}">{name}<small>{tool}</small></div>'
+            for name, tool, gpu in _PIPELINE_STAGES
+        )
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Amber stages need a GPU and are offloaded to Colab, Kaggle, Modal or your own "
+        "Docker host — everything else runs on a CPU laptop, and in this browser."
     )
 
     col_left, col_right = st.columns([3, 2])
     with col_left:
         st.markdown(
             "### What this is\n"
-            "Two ecosystems in computational biology have run in parallel for years: "
-            "**genomics** (which stops at *here are the interesting genes*) and "
-            "**protein design** (which starts at *given a target structure*). "
-            "**bindsight is the first open-source tool that connects them.**\n\n"
             'Going from "this gene is up in disease" to "here is a designed '
             'binder candidate" used to take a competent grad student 4–6 weeks of '
             "glue scripting. bindsight does it in a single command on a CPU laptop, "
-            "with reproducibility that survives peer review."
+            "with reproducibility that survives peer review.\n\n"
+            "Every ranked candidate stays one click from its evidence — the patient "
+            "cohort, the differential expression, the structure, the trajectory seed, "
+            "the validator metrics."
         )
-        st.info(
-            "👉 Click **Demo** in the left sidebar for a 60-second guided run on a "
-            "tiny shipped cohort. The pipeline rediscovers HER2 and EGFR as the top "
-            "antibody-tractable surface antigens — the textbook cancer immunotherapy targets.",
-            icon="✨",
+        st.markdown("### Three commands cover the whole pipeline")
+        st.code(
+            "bindsight demo                                # guided demo, real TCGA cohort\n"
+            "bindsight run my_config.yaml --out runs/x     # your cohort end-to-end\n"
+            "bindsight ui                                  # this web interface, locally",
+            language="bash",
         )
 
     with col_right:
@@ -113,18 +175,18 @@ def _page_home() -> None:
             '<span class="pill ok-pill">✓</span> RO-Crate export (Zenodo-ready)<br>'
             '<span class="pill ok-pill">✓</span> GPU cost estimator<br>'
             '<span class="pill warn-pill">≈</span> RFdiffusion + ProteinMPNN + Boltz-2 '
-            "(Colab notebook)<br>"
+            "(GPU, offloaded)<br>"
             "</div>",
             unsafe_allow_html=True,
         )
-
-    st.markdown("### Three commands cover the whole pipeline")
-    st.code(
-        "bindsight demo                                # 60-second guided demo\n"
-        "bindsight run my_config.yaml --out runs/x     # your cohort end-to-end\n"
-        "bindsight ui                                  # this web interface, locally",
-        language="bash",
-    )
+        st.markdown(
+            f'<div style="margin-top:1rem">'
+            f'<span class="pill ok-pill">v{__version__}</span>'
+            f'<span class="pill">{theme.LICENSE_NAME}</span>'
+            f'<span class="pill">CPU-friendly</span>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         "### Who this is for\n\n"
@@ -133,6 +195,45 @@ def _page_home() -> None:
         "- **Method developers** benchmarking new designers/validators against a fixed upstream\n"
         "- **Pharma early-discovery teams** wanting an open, reproducible comparator"
     )
+
+
+def _demo_config(out_dir: Path) -> RunConfig:
+    """Build the demo run configuration.
+
+    Split out from :func:`_run_demo_cached` so the path handling is testable
+    without executing the pipeline.
+
+    The cohort is cached under the OS user-cache directory, exactly as
+    ``bindsight demo`` does (``cli.py``), rather than beside the bundled
+    ``examples/demo/config.yaml``. Three reasons:
+
+    1. ``examples/demo/counts.tsv`` does not exist and is asserted absent by
+       ``tests/test_demo_e2e.py``, so the previous paths could only ever
+       trigger a fresh download.
+    2. That download landed *inside the install tree*, which is read-only in
+       the Docker image behind the Hugging Face Space.
+    3. Sharing the CLI's cache means whichever runs first warms the other.
+
+    The file is ``counts.tsv.gz``; pandas infers compression from the
+    extension, so the name has to match what the GDC fetcher writes.
+
+    Args:
+        out_dir: Directory the run should write into.
+
+    Returns:
+        A ready-to-run :class:`bindsight.config.RunConfig`.
+    """
+    from bindsight.config import RunConfig
+    from bindsight.io.paths import cache_dir
+
+    cfg_path = _find_repo_root() / "examples" / "demo" / "config.yaml"
+    cfg = RunConfig.from_yaml(cfg_path)
+    cfg.out_dir = out_dir
+
+    cohort_dir = cache_dir("gdc") / "tcga_brca"
+    cfg.inputs.counts = cohort_dir / "counts.tsv.gz"
+    cfg.inputs.design = cohort_dir / "design.tsv"
+    return cfg
 
 
 def _run_demo_cached() -> tuple[Path, object, float, Path]:
@@ -146,17 +247,11 @@ def _run_demo_cached() -> tuple[Path, object, float, Path]:
     This is the difference between "the app crashes after the first demo" and
     "the app stays up indefinitely under heavy load".
     """
-    from bindsight.config import RunConfig
     from bindsight.pipelines import discover as discover_pipeline
     from bindsight.report import render_run
 
     out_dir = Path(tempfile.mkdtemp(prefix="bindsight_demo_")) / "demo_run"
-    repo_root = _find_repo_root()
-    cfg_path = repo_root / "examples" / "demo" / "config.yaml"
-    cfg = RunConfig.from_yaml(cfg_path)
-    cfg.out_dir = out_dir
-    cfg.inputs.counts = (cfg_path.parent / "counts.tsv").resolve()
-    cfg.inputs.design = (cfg_path.parent / "design.tsv").resolve()
+    cfg = _demo_config(out_dir)
 
     t0 = time.time()
     manifest = discover_pipeline.run(cfg, out_dir=out_dir)
@@ -165,7 +260,7 @@ def _run_demo_cached() -> tuple[Path, object, float, Path]:
     return out_dir, manifest, elapsed, report_path
 
 
-def _load_parquet_cached(path_str: str):
+def _load_parquet_cached(path_str: str) -> Any:
     """Cached parquet read so revisiting a run page doesn't re-read from disk."""
     import pandas as pd
 
@@ -201,10 +296,304 @@ def _page_demo() -> None:
         # @st.cache_resource, so only the first visitor pays the cold-run cost.
         with st.spinner("Running demo pipeline (cached after first run)…"):
             out_dir, manifest, elapsed, report_path = _run_demo_cached()
+        # Stash it so the result survives any later widget interaction.
+        st.session_state[_DEMO_RESULT_KEY] = (out_dir, manifest, elapsed, report_path)
 
-        st.progress(1.0, text=f"Done in {elapsed:.1f} s")
+    stashed = st.session_state.get(_DEMO_RESULT_KEY)
+    if stashed is not None:
+        out_dir, manifest, elapsed, report_path = stashed
         st.success(f"Demo complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
+
+
+def _render_complex(cif_path: Path, height: int = 420) -> bool:
+    """Render a predicted binder-target complex with py3Dmol.
+
+    ``py3Dmol`` has been a declared dependency of the ``report`` extra since the
+    beginning and was never imported anywhere; ``report/html.py`` even documents
+    a structure viewer that did not exist. This is that viewer.
+
+    Chain ``B`` is the designed binder, chain ``T`` the target antigen, so the
+    colouring shows the actual designed interface rather than a generic ribbon.
+
+    Args:
+        cif_path: Path to a validator-produced complex mmCIF.
+        height: Viewer height in pixels.
+
+    Returns:
+        ``True`` if the viewer was rendered, ``False`` if py3Dmol is unavailable.
+    """
+    try:
+        import py3Dmol
+    except ImportError:  # pragma: no cover - report extra always ships py3Dmol
+        st.info("Install the `report` extra to view structures: `pip install -e '.[report]'`")
+        return False
+
+    import streamlit.components.v1 as components
+
+    view = py3Dmol.view(width="100%", height=height)
+    view.addModel(cif_path.read_text(encoding="utf-8"), "cif")
+    view.setStyle({"chain": "T"}, {"cartoon": {"color": theme.NAVY, "opacity": 0.85}})
+    view.setStyle({"chain": "B"}, {"cartoon": {"color": theme.ACCENT}})
+    view.zoomTo()
+    components.html(view._make_html(), height=height + 10)
+    return True
+
+
+def _page_results() -> None:
+    """Show the real, committed benchmark results."""
+    import pandas as pd
+
+    st.title("Real results")
+    st.markdown(
+        "Everything on this page is read straight from `benchmarks/` in the "
+        "repository — the same files the paper and the README cite. Nothing here "
+        "is illustrative, recomputed on the fly, or hand-typed."
+    )
+
+    validation = showcase.load_validation()
+    designer = showcase.load_designer_benchmark()
+
+    if validation is None and designer is None:
+        st.warning(
+            "The `benchmarks/` tree isn't available in this install — it ships with "
+            "the repository, not the wheel."
+        )
+        st.markdown(
+            f"Browse the committed results on [GitHub]({theme.GITHUB_URL}/tree/main/benchmarks)."
+        )
+        return
+
+    # -- Rediscovery ------------------------------------------------------
+    if validation is not None:
+        st.markdown("## Does it rediscover antigens we already trust?")
+        st.markdown(
+            "Six real TCGA cohorts were run through the discovery half as "
+            "tumor-vs-adjacent-normal contrasts, then scored by where each "
+            "clinically-validated antigen landed in the shortlist. **Antigens are "
+            "grouped by their *measured* differential expression, not by clinical "
+            "fame** — an expression-based method can only surface what is actually "
+            "over-expressed, and the benchmark reports that precondition openly."
+        )
+
+        top = validation.headline
+        cols = st.columns(4)
+        if top is not None:
+            exp = top["expected"]
+            cols[0].metric(f"{exp['symbol']} rank", exp["rank"], help=top["cohort"]["label"])
+            cols[1].metric("log2 fold-change", f"{exp['log2fc']:.2f}")
+        for i, k in enumerate(("recall@5", "recall@20")):
+            if k in validation.recall_at_k:
+                cols[2 + i].metric(k, f"{validation.recall_at_k[k] * 100:.0f}%")
+
+        spec = validation.specificity or {}
+        if spec.get("n"):
+            st.success(
+                f"**Specificity: {spec.get('correctly_excluded')}/{spec['n']}.** Antigens that "
+                f"are *not* over-expressed at the bulk level are correctly kept out of the "
+                f"top {spec.get('k', 20)} — the pipeline keys on genuine over-expression, "
+                "not on clinical fame.",
+                icon="✅",
+            )
+
+        table = pd.DataFrame(validation.rows()).rename(columns={"over_expressed": "over-expressed"})
+        # `project` only repeats what the cohort label already says.
+        table = table.drop(columns=["project"])
+        # Coerce to real numeric dtypes: a column mixing floats with None stays
+        # object-typed and Streamlit prints the literal string "None".
+        for col in ("log2fc", "padj"):
+            table[col] = pd.to_numeric(table[col], errors="coerce")
+        # Rank is text so a missing rank reads as an em dash rather than a greyed
+        # "None" -- "not surfaced" is a real reportable outcome, not absent data.
+        # pd.isna, not `is None`: building the frame turns a mixed int/None
+        # column into float64, so the missing ranks arrive here as NaN.
+        table["rank"] = ["—" if pd.isna(r) else str(int(r)) for r in table["rank"]]
+        st.dataframe(
+            table,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "over-expressed": st.column_config.CheckboxColumn(
+                    disabled=True, help="Measured: FDR < 0.05 and log2fc >= 1.0"
+                ),
+                "log2fc": st.column_config.NumberColumn(
+                    format="%.2f", help="Measured tumor-vs-normal fold-change in this cohort"
+                ),
+                "padj": st.column_config.NumberColumn(format="%.2e"),
+                "rank": st.column_config.TextColumn(
+                    help="Position in the shortlist; — = not surfaced"
+                ),
+                "note": st.column_config.TextColumn("why", width="large"),
+            },
+        )
+
+        if validation.data_limited:
+            with st.expander("Antigens excluded for data reasons (reported for transparency)"):
+                for d in validation.data_limited:
+                    st.markdown(f"- **{d.get('symbol')}** ({d.get('project')}) — {d.get('reason')}")
+
+        fig_cols = st.columns(2)
+        for i, key in enumerate(("antigen_rank", "recall_at_k")):
+            if key in validation.figures:
+                fig_cols[i].image(str(validation.figures[key]), use_container_width=True)
+
+        volcanoes = {k: v for k, v in validation.figures.items() if k.startswith("volcano_")}
+        if volcanoes:
+            label = st.selectbox(
+                "Differential expression by cohort",
+                options=sorted(volcanoes),
+                format_func=lambda k: k.replace("volcano_", "").replace("_", " ").upper(),
+            )
+            st.image(str(volcanoes[label]), use_container_width=True)
+
+    # -- Designer benchmark ----------------------------------------------
+    if designer is not None:
+        st.markdown("## The binders it actually designed")
+        provenance = (
+            f"**Real GPU run**, not a simulation — backend `{designer.backend}`, "
+            f"GPU `{designer.gpu}`, validator `{designer.validator}`, "
+            f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}."
+        )
+        st.markdown(provenance)
+        if designer.targets:
+            st.caption(f"Target: {designer.targets[0]}")
+
+        best = designer.best
+        cols = st.columns(4)
+        cols[0].metric("Designs", designer.n_designs)
+        if best is not None and best.iptm is not None:
+            cols[1].metric("Best ipTM", f"{best.iptm:.2f}")
+        if designer.success_rate is not None:
+            cols[2].metric("Success @ ipTM 0.65", f"{designer.success_rate * 100:.0f}%")
+        paes = [b.pae_interaction for b in designer.binders if b.pae_interaction is not None]
+        if paes:
+            cols[3].metric("Mean PAE-int", f"{sum(paes) / len(paes):.1f} Å")
+
+        # -- 3D viewer ----------------------------------------------------
+        with_struct = designer.with_structures()
+        if with_struct:
+            st.markdown("### The predicted complexes")
+            st.markdown(
+                f"<span class='pill' style='background:{theme.ACCENT}22;color:{theme.ACCENT}'>"
+                "designed binder</span> docked against "
+                f"<span class='pill'>target antigen</span> — the real Boltz-2 predicted "
+                "structure behind each ipTM below.",
+                unsafe_allow_html=True,
+            )
+            choice = st.selectbox(
+                "Design",
+                options=[b.binder_id for b in with_struct],
+                format_func=lambda bid: (
+                    f"{bid} — ipTM {next(b.iptm for b in with_struct if b.binder_id == bid):.3f}"
+                ),
+            )
+            binder = next(b for b in with_struct if b.binder_id == choice)
+
+            view_col, meta_col = st.columns([3, 1])
+            with view_col:
+                if binder.complex_cif is not None:
+                    _render_complex(binder.complex_cif)
+            with meta_col:
+                if binder.iptm is not None:
+                    st.metric("ipTM", f"{binder.iptm:.3f}")
+                if binder.pae_interaction is not None:
+                    st.metric("PAE-int", f"{binder.pae_interaction:.1f} Å")
+                dev = binder.developability.get("developability_score")
+                if dev is not None:
+                    st.metric("Developability", f"{dev:.2f}")
+                if binder.target_uniprot:
+                    st.caption(f"Target {binder.target_uniprot}")
+                if binder.complex_cif is not None:
+                    # The viewer needs 3Dmol.js from a CDN. Offering the file
+                    # keeps the structure usable offline, behind a strict
+                    # network policy, or in PyMOL / ChimeraX.
+                    st.download_button(
+                        "⬇  mmCIF",
+                        data=binder.complex_cif.read_bytes(),
+                        file_name=binder.complex_cif.name,
+                        mime="chemical/x-cif",
+                        use_container_width=True,
+                    )
+            seq = binder.sequence
+            if seq:
+                st.code(seq, language=None)
+                st.caption(f"{len(seq)} aa · ProteinMPNN sequence · chain B in the structure above")
+            st.caption(
+                "The viewer loads 3Dmol.js from a CDN. If your network blocks it, download the "
+                "mmCIF and open it in PyMOL, ChimeraX or NGL — it is the same file."
+            )
+
+        # -- Per-design table ---------------------------------------------
+        st.markdown("### Every design, scored")
+        table = pd.DataFrame(
+            [
+                {
+                    "binder_id": b.binder_id,
+                    "ipTM": b.iptm,
+                    "PAE-int (Å)": b.pae_interaction,
+                    "developability": b.developability.get("developability_score"),
+                    "length": b.developability.get("length"),
+                    "instability": b.developability.get("instability_index"),
+                    "GRAVY": b.developability.get("gravy"),
+                    "free Cys": b.developability.get("n_cys"),
+                }
+                for b in designer.scored
+            ]
+        )
+        st.dataframe(
+            table,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "ipTM": st.column_config.ProgressColumn(
+                    min_value=0.0,
+                    max_value=1.0,
+                    format="%.3f",
+                    help="Boltz-2 interface confidence; ≥0.65 counts as success",
+                ),
+                "developability": st.column_config.ProgressColumn(
+                    min_value=0.0,
+                    max_value=1.0,
+                    format="%.2f",
+                    help="Composite of ProtParam sequence-biophysics descriptors",
+                ),
+                "PAE-int (Å)": st.column_config.NumberColumn(format="%.1f"),
+                "instability": st.column_config.NumberColumn(
+                    format="%.1f", help="ProtParam instability index; <40 predicts stable"
+                ),
+                "GRAVY": st.column_config.NumberColumn(format="%.3f"),
+            },
+        )
+
+        # -- Sequence space ------------------------------------------------
+        coords = [b for b in designer.binders if b.pc1 is not None and b.pc2 is not None]
+        if coords:
+            st.markdown("### Sequence space (ESM-2 → PCA)")
+            st.markdown(
+                "Each design's mean-pooled ESM-2 embedding projected to two dimensions — "
+                "a *pre-GPU* triage that shows which designs cluster and which are outliers "
+                "before spending compute on validation."
+            )
+            st.scatter_chart(
+                pd.DataFrame(
+                    {
+                        "PC1": [b.pc1 for b in coords],
+                        "PC2": [b.pc2 for b in coords],
+                        "ipTM": [b.iptm for b in coords],
+                    }
+                ),
+                x="PC1",
+                y="PC2",
+                color="ipTM",
+                use_container_width=True,
+            )
+
+    st.markdown("---")
+    st.markdown(
+        f"Reproduce these numbers yourself: "
+        f"[validation]({theme.GITHUB_URL}/blob/main/benchmarks/validation/RESULTS.md) · "
+        f"[designer benchmark]({theme.GITHUB_URL}/blob/main/benchmarks/designer_benchmark/RESULTS.md)"
+    )
 
 
 def _page_run() -> None:
@@ -294,43 +683,99 @@ def _page_run() -> None:
         from bindsight.report import render_run
 
         report_path = render_run(out_dir)
+        st.session_state[_RUN_RESULT_KEY] = (out_dir, manifest, elapsed, report_path)
+
+    stashed = st.session_state.get(_RUN_RESULT_KEY)
+    if stashed is not None:
+        out_dir, manifest, elapsed, report_path = stashed
         st.success(f"Pipeline complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
+
+
+def _discover_local_runs(limit: int = 25) -> list[Path]:
+    """Find run directories on this machine, newest first.
+
+    A run directory is identified by its provenance manifest, which every
+    front-end writes (``pipelines/discover.run`` and the Snakemake assembler
+    alike). Looks under the conventional ``runs/`` tree beside the working
+    directory and the repository root.
+
+    Args:
+        limit: Maximum number of runs to return.
+
+    Returns:
+        Paths to run directories, most recently modified first.
+    """
+    seen: dict[Path, float] = {}
+    for base in {Path.cwd() / "runs", _find_repo_root() / "runs"}:
+        if not base.is_dir():
+            continue
+        for manifest in base.glob("**/run_manifest.jsonld"):
+            run_dir = manifest.parent
+            try:
+                seen[run_dir] = manifest.stat().st_mtime
+            except OSError:  # pragma: no cover - race with a concurrent run
+                continue
+    return sorted(seen, key=lambda p: seen[p], reverse=True)[:limit]
 
 
 def _page_browse() -> None:
     st.title("Browse a run")
     st.markdown(
-        "Point the picker at a directory produced by `bindsight discover` or "
-        "`bindsight demo` to inspect its outputs."
+        "Inspect the outputs of any directory produced by `bindsight discover`, "
+        "`bindsight run` or `bindsight demo`."
     )
-    run_dir_str = st.text_input("Run directory path", "")
-    if not run_dir_str:
-        st.info("Enter a path above and press Enter.")
+
+    # The hosted deployments have no user-visible filesystem, so a bare path box
+    # was unusable there. Offer whatever runs exist locally first.
+    local = _discover_local_runs()
+    run_dir: Path | None = None
+    if local:
+        pick = st.selectbox(
+            "Runs found on this machine",
+            options=["—"] + [str(p) for p in local],
+            help="Directories under runs/ containing a provenance manifest.",
+        )
+        if pick != "—":
+            run_dir = Path(pick)
+    else:
+        st.info(
+            "No runs found under `runs/`. Run `bindsight demo` locally, or use the "
+            "**Demo** page here, then come back.",
+            icon="💡",
+        )
+
+    run_dir_str = st.text_input("…or enter a run directory path", "")
+    if run_dir_str:
+        run_dir = Path(run_dir_str)
+
+    if run_dir is None:
         return
-    run_dir = Path(run_dir_str)
-    if not run_dir.exists():
+    if not run_dir.is_dir():
         st.error(f"Not a directory: {run_dir}")
         return
     _show_run_summary(run_dir, manifest=None, report_path=run_dir / "report.html")
 
 
 def _page_about() -> None:
-    st.title("About bindsight")
     st.markdown(
-        """
+        f"""
+        # About bindsight
+
         bindsight is an open-source pipeline that takes RNA-seq counts and
         outputs ranked de novo protein binder candidates against
         differentially-expressed surface antigens. Every output is one click
         from its evidence chain — the patient cohort, the differential
         expression, the structure, the designer commit, the validator metrics.
 
-        **License:** AGPL-3.0-or-later.
-        **Source:** https://github.com/mikhaeelatefrizk/bindsight
-        **Docs:** [What is bindsight?](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/what-is-bindsight.md) ·
-        [How to use](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/how-to-use.md) ·
-        [Use cases](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/use-cases.md) ·
-        [Colab design recipe](https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/colab-design-howto.md)
+        **License:** {theme.LICENSE_NAME} ·
+        **Source:** [GitHub]({theme.GITHUB_URL}) ·
+        **Cite:** [Zenodo DOI]({theme.ZENODO_DOI_URL})
+
+        **Docs:** [What is bindsight?]({theme.docs_url("what-is-bindsight")}) ·
+        [How to use]({theme.docs_url("how-to-use")}) ·
+        [Use cases]({theme.docs_url("use-cases")}) ·
+        [Designing on Colab]({theme.docs_url("colab-design-howto")})
 
         **Built on the shoulders of:** RFdiffusion (BSD-3), ProteinMPNN (MIT),
         BindCraft (MIT), BoltzGen (MIT), Boltz-2 (MIT), Chai-1r (Apache-2),
@@ -354,7 +799,7 @@ def _find_repo_root() -> Path:
     return Path.cwd()
 
 
-def _show_run_summary(run_dir: Path, manifest, report_path: Path | None) -> None:
+def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) -> None:
     """Render KPIs, tables, and inline-report-iframe for a finished run."""
     candidates_p = run_dir / "targets" / "candidates.parquet"
     epitopes_p = run_dir / "epitopes" / "epitopes.parquet"
@@ -435,23 +880,50 @@ def main() -> None:
         print('Streamlit not installed. Run: pip install -e ".[report]"', file=sys.stderr)
         sys.exit(1)
 
-    st.set_page_config(page_title="bindsight", layout="wide", page_icon="🧬")
+    st.set_page_config(
+        page_title=theme.PAGE_TITLE,
+        layout=theme.PAGE_LAYOUT,
+        page_icon=theme.PAGE_ICON,
+        # "auto" = expanded on desktop, collapsed on phones. Forcing it open
+        # puts the sidebar overlay on top of the hero on a phone, hiding the
+        # pitch behind a panel the visitor has to dismiss. Mobile navigation is
+        # instead solved on the page itself: the Home call-to-action buttons
+        # reach Real results / Demo / Run without touching the sidebar.
+        initial_sidebar_state="auto",
+    )
     _inject_css()
+
+    # Apply any cross-page navigation requested by a button on the previous run.
+    # This must happen before the radio is instantiated.
+    pending = st.session_state.pop(_NAV_PENDING_KEY, None)
+    if pending is not None:
+        st.session_state[_NAV_KEY] = pending
 
     page = st.sidebar.radio(
         "Navigation",
-        options=("🏠 Home", "✨ Demo", "📤 Run on my data", "🔎 Browse a run", "ℹ️ About"),
+        options=(
+            "🏠 Home",
+            "🔬 Real results",
+            "✨ Demo",
+            "📤 Run on my data",
+            "🔎 Browse a run",
+            "ℹ️ About",
+        ),
         label_visibility="collapsed",
+        key=_NAV_KEY,
     )
     st.sidebar.markdown("---")
     st.sidebar.markdown(
-        '<span class="small-muted">bindsight · AGPL-3.0 · '
-        '<a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a></span>',
+        f'<span class="small-muted">bindsight · {theme.LICENSE_NAME} · '
+        f'<a href="{theme.GITHUB_URL}">GitHub</a> · '
+        f'<a href="{theme.DOCS_URL}">Docs</a></span>',
         unsafe_allow_html=True,
     )
 
     if page.startswith("🏠"):
         _page_home()
+    elif page.startswith("🔬"):
+        _page_results()
     elif page.startswith("✨"):
         _page_demo()
     elif page.startswith("📤"):
