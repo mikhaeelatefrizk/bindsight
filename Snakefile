@@ -124,11 +124,38 @@ rule rank:
         "scripts/run_rank.py"
 
 
+# ---------------------------------------------------------------------------
+# Provenance assembly — stitches the per-rule manifest fragments into a single
+# run_manifest.jsonld.
+#
+# This runs BEFORE `report`, not after. report/html.py reads
+# <run>/run_manifest.jsonld to render its provenance table, so while the
+# manifest was assembled last, every Snakemake-produced report shipped with an
+# empty "Provenance" section — the exact opposite of the point. The CLI never
+# had this problem because it writes the manifest during discover.
+#
+# `report` therefore takes the manifest as an input, and appends its own stage
+# record to it after rendering (see scripts/run_report.py). The report is the
+# terminal stage, so nothing downstream reads the manifest before that append.
+# ---------------------------------------------------------------------------
+rule manifest:
+    input:
+        fragments = expand(
+            OUT / "{stage}" / "manifest_fragment.jsonld",
+            stage=["deg", "discover", "design", "validate", "rank"],
+        ),
+    output:
+        manifest = OUT / "run_manifest.jsonld",
+    script:
+        "scripts/assemble_manifest.py"
+
+
 rule report:
     input:
         ranking = OUT / "rank" / "ranking.parquet",
         targets = OUT / "targets" / "candidates.parquet",
         epitopes = OUT / "epitopes" / "epitopes.parquet",
+        manifest = OUT / "run_manifest.jsonld",
     output:
         html = OUT / "report.html",
         manifest_fragment = OUT / "report" / "manifest_fragment.jsonld",
@@ -136,19 +163,3 @@ rule report:
         OUT / "report" / "log.txt",
     script:
         "scripts/run_report.py"
-
-
-# ---------------------------------------------------------------------------
-# Provenance assembly — stitches all per-rule manifest fragments into a
-# single run_manifest.jsonld and (optionally) packages an RO-Crate zip.
-# ---------------------------------------------------------------------------
-rule manifest:
-    input:
-        fragments = expand(
-            OUT / "{stage}" / "manifest_fragment.jsonld",
-            stage=["deg", "discover", "design", "validate", "rank", "report"],
-        ),
-    output:
-        manifest = OUT / "run_manifest.jsonld",
-    script:
-        "scripts/assemble_manifest.py"

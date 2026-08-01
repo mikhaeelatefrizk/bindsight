@@ -22,6 +22,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import requests
 from tenacity import (
@@ -74,7 +75,7 @@ class Topology:
         return sum(1 for r in residues if r in ecd) / len(residues)
 
 
-def parse_topology(uniprot_id: str, data: dict) -> Topology:
+def parse_topology(uniprot_id: str, data: dict[str, Any]) -> Topology:
     """Parse a UniProt entry JSON into a :class:`Topology` (pure; no I/O)."""
     extracellular: list[tuple[int, int]] = []
     transmembrane: list[tuple[int, int]] = []

@@ -11,8 +11,11 @@ Design choices:
 
 - **No Quarto / Jupyter dependency.** Pure Python with stdlib, jinja2, and
   matplotlib (which is already in the report extras). The output is one
-  self-contained HTML file (CSS embedded, plot embedded as base64 PNG, NGL
-  viewer pulled from a CDN).
+  genuinely self-contained HTML file — CSS embedded, volcano plot embedded as
+  a base64 PNG, and no external requests at all, so it survives being emailed
+  or opened offline. Interactive 3-D structure viewing deliberately lives in
+  the Streamlit app (``report/webapp.py``) instead, because a structure viewer
+  needs a script from a CDN and that would break self-containment.
 - **Looks like a paper, not a dashboard.** Sections, tables, captions,
   citations to the upstream tools — readable as a methods + results pair.
 - **Provenance front and center.** The manifest table shows every stage's
@@ -26,6 +29,7 @@ import io
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -143,7 +147,7 @@ _DISPOSITION_ORDER = (
 )
 
 
-def _disposition_counts(df: pd.DataFrame | None) -> list[dict]:
+def _disposition_counts(df: pd.DataFrame | None) -> list[dict[str, Any]]:
     """Per-disposition counts for the report, in funnel order (deepest drop → surfaced)."""
     if df is None or "disposition" not in df.columns or len(df) == 0:
         return []
@@ -165,11 +169,11 @@ def _maybe_read_parquet(path: Path) -> pd.DataFrame | None:
         return None
 
 
-def _maybe_read_jsonld(path: Path) -> dict | None:
+def _maybe_read_jsonld(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
-        body = json.loads(path.read_text(encoding="utf-8"))
+        body: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         body.pop("@context", None)
         return body
     except Exception as e:
@@ -177,7 +181,9 @@ def _maybe_read_jsonld(path: Path) -> dict | None:
         return None
 
 
-def _df_to_records(df: pd.DataFrame | None, cols: list[str], head: int = 20) -> list[dict]:
+def _df_to_records(
+    df: pd.DataFrame | None, cols: list[str], head: int = 20
+) -> list[dict[str, Any]]:
     """Return up to ``head`` rows of ``df`` as a list of dicts (only ``cols``)."""
     if df is None or len(df) == 0:
         return []
@@ -186,7 +192,8 @@ def _df_to_records(df: pd.DataFrame | None, cols: list[str], head: int = 20) -> 
     # Format floats so the report stays readable; pandas prints ugly otherwise.
     for c in sub.select_dtypes(include="float").columns:
         sub[c] = sub[c].apply(lambda v: f"{v:.3g}" if pd.notna(v) else "")
-    return sub.to_dict(orient="records")
+    records: list[dict[str, Any]] = sub.to_dict(orient="records")
+    return records
 
 
 def _render_volcano(deg_df: pd.DataFrame) -> str:

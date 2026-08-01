@@ -29,15 +29,23 @@
     {% set page_url = config.site_url %}
   {% endif %}
 
+  {# Absolute URL: Open Graph consumers do not resolve relative image paths. #}
+  {% set page_image = config.site_url ~ "assets/og-image.png" %}
+
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="bindsight">
   <meta property="og:title" content="{{ page_title }}">
   <meta property="og:description" content="{{ page_desc }}">
   <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:image" content="{{ page_image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="bindsight — expression to binder">
 
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ page_title }}">
   <meta name="twitter:description" content="{{ page_desc }}">
+  <meta name="twitter:image" content="{{ page_image }}">
 
   <script type="application/ld+json">
   {
