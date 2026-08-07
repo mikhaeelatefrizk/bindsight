@@ -51,7 +51,7 @@ reproducible.
 | Hardware | HPC assumed | CPU laptop + free Colab/Modal/Kaggle offload |
 | Cost-awareness | None | `--dry-run` estimates GPU $ before running |
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
-| Citability | Code dump | DOI per release, JSON-Schema-validated outputs |
+| Citability | Code dump | DOI per release, schema-validated outputs (Pydantic v2) |
 
 ## Roadmap
 

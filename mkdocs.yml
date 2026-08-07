@@ -51,6 +51,7 @@ nav:
   - Home: index.md
   - Real results: results.md
   - What is bindsight?: what-is-bindsight.md
+  - Glossary: glossary.md
   - How to use: how-to-use.md
   - Use cases: use-cases.md
   - Designing on Colab: colab-design-howto.md

@@ -102,6 +102,11 @@ def _page_home() -> None:
         unsafe_allow_html=True,
     )
 
+    # Plain-English on-ramp for a non-specialist visitor, before any jargon.
+    # Single-sourced with the docs site via theme.PLAIN_SUMMARY.
+    st.info(theme.PLAIN_SUMMARY, icon="💡")
+    st.caption("New to the terms below? See the **📖 Glossary** in the sidebar.")
+
     # Headline numbers come from benchmarks/ via showcase.py -- never typed in,
     # so this page cannot claim more than the committed results support.
     stats = showcase.headline_stats()
@@ -119,11 +124,11 @@ def _page_home() -> None:
         )
 
     cta = st.columns(3)
-    if cta[0].button("🔬  Explore real results", type="primary", use_container_width=True):
+    if cta[0].button("🔬  Explore real results", type="primary", width="stretch"):
         _goto("🔬 Real results")
-    if cta[1].button("✨  Run the live demo", use_container_width=True):
+    if cta[1].button("✨  Run the live demo", width="stretch"):
         _goto("✨ Demo")
-    if cta[2].button("📤  Use my own data", use_container_width=True):
+    if cta[2].button("📤  Use my own data", width="stretch"):
         _goto("📤 Run on my data")
 
     st.markdown("## How it works")
@@ -140,6 +145,28 @@ def _page_home() -> None:
         "Amber stages need a GPU and are offloaded to Colab, Kaggle, Modal or your own "
         "Docker host — everything else runs on a CPU laptop, and in this browser."
     )
+
+    with st.expander("What each step means, in plain English"):
+        st.markdown(
+            "1. **Patient RNA-seq** — start from a tumour's gene-activity readout.\n"
+            "2. **Differential expression** — find the genes far more active in tumour "
+            "than in healthy tissue.\n"
+            "3. **Cell-surface filter** — keep only proteins that sit on the cell "
+            "surface, where a drug could reach them.\n"
+            "4. **Safety + tractability** — drop targets also common in vital healthy "
+            "organs, and keep ones known to be druggable.\n"
+            "5. **Targetable site** — pick the exact spot on the target's 3-D structure "
+            "to aim a binder at.\n"
+            "6. **Binder design** — invent small proteins shaped to grip that spot "
+            "(AI: RFdiffusion + ProteinMPNN).\n"
+            "7. **Structure + affinity** — predict the binder-and-target complex to "
+            "check it would actually stick (AI: Boltz-2).\n"
+            "8. **Ranked candidates** — score and order the designs by how good and how "
+            "makeable they are.\n"
+            "9. **Provenance** — save a complete, reproducible record of every input and "
+            "step behind each result.\n\n"
+            "Every term here is defined on the **📖 Glossary** page."
+        )
 
     col_left, col_right = st.columns([3, 2])
     with col_left:
@@ -227,6 +254,18 @@ def _demo_config(out_dir: Path) -> RunConfig:
     from bindsight.io.paths import cache_dir
 
     cfg_path = _find_repo_root() / "examples" / "demo" / "config.yaml"
+    if not cfg_path.is_file():
+        # A bare ``pip install bindsight`` does not ship examples/; the Demo page
+        # only works from a source checkout (which both hosted deployments use).
+        # Raise a legible message rather than letting ``from_yaml`` surface a
+        # bare FileNotFoundError as a traceback on the page.
+        raise FileNotFoundError(
+            f"The bundled demo configuration was not found at {cfg_path}. The Demo "
+            "page needs the full source checkout — it ships with the hosted "
+            "Hugging Face Space and Streamlit Cloud deployments, but a plain "
+            "'pip install bindsight' does not include it. Run `bindsight demo` "
+            "from a repository clone, or use the hosted demo."
+        )
     cfg = RunConfig.from_yaml(cfg_path)
     cfg.out_dir = out_dir
 
@@ -279,6 +318,70 @@ if st is not None:
     _load_parquet_cached = st.cache_data(show_spinner=False)(_load_parquet_cached)
 
 
+def _stage_failures(manifest: Any) -> list[tuple[str, str | None]]:
+    """Return ``(stage_name, error)`` for every stage that did not complete.
+
+    A ``skipped_cache`` stage is a success (its output already existed), so only
+    ``failed`` stages count. Returns ``[]`` when the manifest is ``None`` or all
+    stages completed.
+    """
+    stages = getattr(manifest, "stages", None) or []
+    return [
+        (getattr(s, "name", "?"), getattr(s, "error", None))
+        for s in stages
+        if getattr(s, "status", None) == "failed"
+    ]
+
+
+def _render_stage_failures(manifest: Any) -> bool:
+    """Show a friendly error if any pipeline stage failed; return ``True`` if so.
+
+    This is the guard that stops a *broken* run from being presented as a
+    *successful, empty* one — the difference between "this cohort has no
+    surface-antigen candidates" (a real finding) and "the differential-expression
+    step crashed" (no finding at all). Conflating the two could let a scientist
+    read a failed run as a genuine negative result, so a failed stage must never
+    render as success.
+    """
+    failures = _stage_failures(manifest)
+    if not failures:
+        return False
+    names = ", ".join(name for name, _ in failures)
+    plural = "s" if len(failures) > 1 else ""
+    st.error(
+        f"The pipeline did not finish: the **{names}** stage{plural} failed. "
+        "These results are incomplete and must not be read as a real "
+        "(negative) finding.",
+        icon="🛑",
+    )
+    with st.expander("Technical details"):
+        for name, err in failures:
+            st.markdown(f"**{name}**")
+            st.code(err or "no error detail recorded", language="text")
+    return True
+
+
+def _render_pipeline_error(exc: Exception, *, context: str) -> None:
+    """Render an uncaught pipeline exception as a calm, actionable message.
+
+    The raw traceback is tucked behind an expander so a non-technical visitor
+    sees a sentence, not a stack dump — but a developer can still open it.
+    """
+    intro = {
+        "demo": "The demo could not run just now.",
+        "run": "The pipeline could not run on your data.",
+    }.get(context, "The pipeline could not run.")
+    hint = ""
+    if context == "demo":
+        hint = (
+            " This usually means the TCGA data source (NIH/GDC) was slow or "
+            "temporarily unreachable — please try again in a moment."
+        )
+    st.error(f"{intro}{hint}\n\n**Details:** {exc}", icon="⚠️")
+    with st.expander("Technical details"):
+        st.exception(exc)
+
+
 def _page_demo() -> None:
     st.title("Demo: real TCGA-BRCA discovery")
     st.markdown(
@@ -291,17 +394,25 @@ def _page_demo() -> None:
         "when their signal is present in the cohort."
     )
 
-    if st.button("▶  Run demo now", type="primary", use_container_width=True):
+    if st.button("▶  Run demo now", type="primary", width="stretch"):
         # The pipeline result is cached per server process via
         # @st.cache_resource, so only the first visitor pays the cold-run cost.
+        # cache_resource does not cache exceptions, so a transient GDC failure
+        # can be retried simply by clicking again.
         with st.spinner("Running demo pipeline (cached after first run)…"):
-            out_dir, manifest, elapsed, report_path = _run_demo_cached()
+            try:
+                out_dir, manifest, elapsed, report_path = _run_demo_cached()
+            except Exception as e:  # noqa: BLE001 - surface anything as a calm message
+                _render_pipeline_error(e, context="demo")
+                return
         # Stash it so the result survives any later widget interaction.
         st.session_state[_DEMO_RESULT_KEY] = (out_dir, manifest, elapsed, report_path)
 
     stashed = st.session_state.get(_DEMO_RESULT_KEY)
     if stashed is not None:
         out_dir, manifest, elapsed, report_path = stashed
+        if _render_stage_failures(manifest):
+            return
         st.success(f"Demo complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
 
@@ -329,14 +440,15 @@ def _render_complex(cif_path: Path, height: int = 420) -> bool:
         st.info("Install the `report` extra to view structures: `pip install -e '.[report]'`")
         return False
 
-    import streamlit.components.v1 as components
-
     view = py3Dmol.view(width="100%", height=height)
     view.addModel(cif_path.read_text(encoding="utf-8"), "cif")
     view.setStyle({"chain": "T"}, {"cartoon": {"color": theme.NAVY, "opacity": 0.85}})
     view.setStyle({"chain": "B"}, {"cartoon": {"color": theme.ACCENT}})
     view.zoomTo()
-    components.html(view._make_html(), height=height + 10)
+    # st.iframe auto-detects the HTML string and embeds it in a JS-capable iframe
+    # (py3Dmol needs script execution); it supersedes the deprecated
+    # components.v1.html. The HTML is generated by py3Dmol, not user input.
+    st.iframe(view._make_html(), height=height + 10)
     return True
 
 
@@ -411,7 +523,7 @@ def _page_results() -> None:
         st.dataframe(
             table,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "over-expressed": st.column_config.CheckboxColumn(
                     disabled=True, help="Measured: FDR < 0.05 and log2fc >= 1.0"
@@ -419,7 +531,11 @@ def _page_results() -> None:
                 "log2fc": st.column_config.NumberColumn(
                     format="%.2f", help="Measured tumor-vs-normal fold-change in this cohort"
                 ),
-                "padj": st.column_config.NumberColumn(format="%.2e"),
+                "padj": st.column_config.NumberColumn(
+                    format="%.2e",
+                    help="Multiple-testing-adjusted p-value (FDR); smaller = stronger "
+                    "evidence the change is real",
+                ),
                 "rank": st.column_config.TextColumn(
                     help="Position in the shortlist; — = not surfaced"
                 ),
@@ -435,7 +551,7 @@ def _page_results() -> None:
         fig_cols = st.columns(2)
         for i, key in enumerate(("antigen_rank", "recall_at_k")):
             if key in validation.figures:
-                fig_cols[i].image(str(validation.figures[key]), use_container_width=True)
+                fig_cols[i].image(str(validation.figures[key]), width="stretch")
 
         volcanoes = {k: v for k, v in validation.figures.items() if k.startswith("volcano_")}
         if volcanoes:
@@ -444,17 +560,28 @@ def _page_results() -> None:
                 options=sorted(volcanoes),
                 format_func=lambda k: k.replace("volcano_", "").replace("_", " ").upper(),
             )
-            st.image(str(volcanoes[label]), use_container_width=True)
+            st.image(str(volcanoes[label]), width="stretch")
 
     # -- Designer benchmark ----------------------------------------------
     if designer is not None:
         st.markdown("## The binders it actually designed")
-        provenance = (
-            f"**Real GPU run**, not a simulation — backend `{designer.backend}`, "
-            f"GPU `{designer.gpu}`, validator `{designer.validator}`, "
-            f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}."
-        )
-        st.markdown(provenance)
+        # Never assert "not a simulation" for a mock benchmark. The committed
+        # artifact is a real GPU run (is_mock=False), but guard the claim on the
+        # flag so a mock benchmark could never be mislabelled as genuine.
+        if designer.is_mock:
+            st.warning(
+                f"⚠️ **Mock backend** — these are synthetic, structurally-shaped "
+                f"numbers for orchestration/CI, **not** real GPU results. Backend "
+                f"`{designer.backend}`, validator `{designer.validator}`, "
+                f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}.",
+                icon="⚠️",
+            )
+        else:
+            st.markdown(
+                f"**Real GPU run**, not a simulation — backend `{designer.backend}`, "
+                f"GPU `{designer.gpu}`, validator `{designer.validator}`, "
+                f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}."
+            )
         if designer.targets:
             st.caption(f"Target: {designer.targets[0]}")
 
@@ -497,7 +624,12 @@ def _page_results() -> None:
                 if binder.iptm is not None:
                     st.metric("ipTM", f"{binder.iptm:.3f}")
                 if binder.pae_interaction is not None:
-                    st.metric("PAE-int", f"{binder.pae_interaction:.1f} Å")
+                    st.metric(
+                        "PAE-int",
+                        f"{binder.pae_interaction:.1f} Å",
+                        help="Predicted Aligned Error at the interface; lower is a more "
+                        "confident predicted contact",
+                    )
                 dev = binder.developability.get("developability_score")
                 if dev is not None:
                     st.metric("Developability", f"{dev:.2f}")
@@ -512,7 +644,7 @@ def _page_results() -> None:
                         data=binder.complex_cif.read_bytes(),
                         file_name=binder.complex_cif.name,
                         mime="chemical/x-cif",
-                        use_container_width=True,
+                        width="stretch",
                     )
             seq = binder.sequence
             if seq:
@@ -543,7 +675,7 @@ def _page_results() -> None:
         st.dataframe(
             table,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "ipTM": st.column_config.ProgressColumn(
                     min_value=0.0,
@@ -557,11 +689,23 @@ def _page_results() -> None:
                     format="%.2f",
                     help="Composite of ProtParam sequence-biophysics descriptors",
                 ),
-                "PAE-int (Å)": st.column_config.NumberColumn(format="%.1f"),
+                "PAE-int (Å)": st.column_config.NumberColumn(
+                    format="%.1f",
+                    help="Predicted Aligned Error at the binder–target interface, in "
+                    "ångströms; lower means a more reliable predicted contact",
+                ),
                 "instability": st.column_config.NumberColumn(
                     format="%.1f", help="ProtParam instability index; <40 predicts stable"
                 ),
-                "GRAVY": st.column_config.NumberColumn(format="%.3f"),
+                "GRAVY": st.column_config.NumberColumn(
+                    format="%.3f",
+                    help="Grand average of hydropathy; near 0 is soluble, strongly "
+                    "positive is hydrophobic (aggregation-prone)",
+                ),
+                "free Cys": st.column_config.NumberColumn(
+                    help="Count of cysteines; an odd number flags a disulfide / "
+                    "oxidation liability",
+                ),
             },
         )
 
@@ -585,7 +729,7 @@ def _page_results() -> None:
                 x="PC1",
                 y="PC2",
                 color="ipTM",
-                use_container_width=True,
+                width="stretch",
             )
 
     st.markdown("---")
@@ -594,6 +738,23 @@ def _page_results() -> None:
         f"[validation]({theme.GITHUB_URL}/blob/main/benchmarks/validation/RESULTS.md) · "
         f"[designer benchmark]({theme.GITHUB_URL}/blob/main/benchmarks/designer_benchmark/RESULTS.md)"
     )
+
+
+def _persist_upload(uploaded: Any, out_dir: Path, stem: str) -> Path:
+    """Write a Streamlit upload to disk, preserving gzip compression.
+
+    Streamlit hands us raw bytes and we choose the on-disk name. A gzipped
+    counts matrix written under a plain ``.tsv`` name would be read by pandas as
+    text and silently fail the DEG stage, so detect the gzip magic bytes (or a
+    ``.gz`` name) and pick the extension accordingly; pandas'
+    ``compression="infer"`` then reads it correctly.
+    """
+    data = uploaded.getvalue()
+    name = (getattr(uploaded, "name", "") or "").lower()
+    is_gzip = data[:2] == b"\x1f\x8b" or name.endswith(".gz")
+    path = out_dir / (f"{stem}.tsv.gz" if is_gzip else f"{stem}.tsv")
+    path.write_bytes(data)
+    return path
 
 
 def _page_run() -> None:
@@ -606,12 +767,13 @@ def _page_run() -> None:
 
     counts_file = st.file_uploader(
         "Counts matrix (TSV, gene_id × samples)",
-        type=["tsv", "tsv.gz", "txt"],
-        help="First column is gene_id (Ensembl ENSG…), other columns are sample IDs.",
+        type=["tsv", "txt", "gz"],
+        help="First column is gene_id (Ensembl ENSG…), other columns are sample IDs. "
+        "Plain or gzip-compressed (.tsv.gz) both work.",
     )
     design_file = st.file_uploader(
         "Sample design (TSV, sample × factors)",
-        type=["tsv", "txt"],
+        type=["tsv", "txt", "gz"],
         help="First column is sample (must match counts column names), then a 'condition' column.",
     )
 
@@ -622,7 +784,7 @@ def _page_run() -> None:
     log2fc = st.number_input("|log2FC| threshold", 0.0, 10.0, 1.0, step=0.1)
     top_n = st.number_input("Top-N targets", 1, 20, 5)
 
-    if st.button("▶  Run pipeline", type="primary", use_container_width=True):
+    if st.button("▶  Run pipeline", type="primary", width="stretch"):
         if not (counts_file and design_file):
             st.error("Please upload both files.")
             return
@@ -630,11 +792,10 @@ def _page_run() -> None:
         out_dir = Path(tempfile.mkdtemp(prefix="bindsight_user_")) / "run"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # Persist uploads to disk so the pipeline can read them with pandas.
-        counts_path = out_dir / "counts.tsv"
-        design_path = out_dir / "design.tsv"
-        counts_path.write_bytes(counts_file.getvalue())
-        design_path.write_bytes(design_file.getvalue())
+        # Persist uploads to disk so the pipeline can read them with pandas,
+        # preserving gzip compression so a .tsv.gz upload isn't misread as text.
+        counts_path = _persist_upload(counts_file, out_dir, "counts")
+        design_path = _persist_upload(design_file, out_dir, "design")
 
         from bindsight.config import (
             DEGParams,
@@ -675,9 +836,8 @@ def _page_run() -> None:
                 t0 = time.time()
                 manifest = discover_pipeline.run(cfg, out_dir=out_dir)
                 elapsed = time.time() - t0
-            except Exception as e:
-                st.error(f"Pipeline failed: {e}")
-                st.exception(e)
+            except Exception as e:  # noqa: BLE001 - surface anything as a calm message
+                _render_pipeline_error(e, context="run")
                 return
 
         from bindsight.report import render_run
@@ -688,6 +848,11 @@ def _page_run() -> None:
     stashed = st.session_state.get(_RUN_RESULT_KEY)
     if stashed is not None:
         out_dir, manifest, elapsed, report_path = stashed
+        # A stage can fail *without* raising (e.g. DESeq2 rejects the upload):
+        # discover.run() marks the stage failed and returns. Guard against
+        # presenting that broken run as a successful, empty result.
+        if _render_stage_failures(manifest):
+            return
         st.success(f"Pipeline complete in {elapsed:.1f} seconds.")
         _show_run_summary(out_dir, manifest, report_path)
 
@@ -755,6 +920,22 @@ def _page_browse() -> None:
         st.error(f"Not a directory: {run_dir}")
         return
     _show_run_summary(run_dir, manifest=None, report_path=run_dir / "report.html")
+
+
+def _page_glossary() -> None:
+    """A plain-English glossary of the domain terms the app uses.
+
+    Rendered from :data:`theme.GLOSSARY`, the same source that generates the
+    docs-site glossary, so the two never drift.
+    """
+    st.title("📖 Glossary")
+    st.markdown(
+        "Every specialist term bindsight uses, in plain language. If a word on "
+        "another page is unfamiliar, it is almost certainly defined here."
+    )
+    st.info(theme.PLAIN_SUMMARY, icon="💡")
+    for term, definition in theme.GLOSSARY:
+        st.markdown(f"**{term}** — {definition}")
 
 
 def _page_about() -> None:
@@ -837,7 +1018,7 @@ def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) ->
             )
             if c in cand.columns
         ]
-        st.dataframe(cand[cols_to_show], hide_index=True, use_container_width=True)
+        st.dataframe(cand[cols_to_show], hide_index=True, width="stretch")
 
         # Download buttons
         st.download_button(
@@ -855,12 +1036,13 @@ def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) ->
             file_name="report.html",
             mime="text/html",
         )
-        # Embed inline so the user sees it without leaving the app.
+        # Embed inline so the user sees it without leaving the app. st.iframe
+        # supersedes the deprecated components.v1.html; the report HTML is
+        # produced by our own renderer, not user input.
         with st.expander("Open the rendered report inline", expanded=True):
-            st.components.v1.html(
+            st.iframe(
                 report_path.read_text(encoding="utf-8"),
                 height=900,
-                scrolling=True,
             )
 
     manifest_p = run_dir / "run_manifest.jsonld"
@@ -907,6 +1089,7 @@ def main() -> None:
             "✨ Demo",
             "📤 Run on my data",
             "🔎 Browse a run",
+            "📖 Glossary",
             "ℹ️ About",
         ),
         label_visibility="collapsed",
@@ -930,6 +1113,8 @@ def main() -> None:
         _page_run()
     elif page.startswith("🔎"):
         _page_browse()
+    elif page.startswith("📖"):
+        _page_glossary()
     else:
         _page_about()
 
