@@ -28,7 +28,8 @@ def test_doctor_reports_real_surfaceome_size() -> None:
     from bindsight.surfaceome.surfy import load_vendored_surfy
 
     vendored = load_vendored_surfy()
-    assert vendored is not None and len(vendored) > 1000
+    assert vendored is not None
+    assert len(vendored) > 1000
 
     r = CliRunner().invoke(main, ["doctor"])
     assert r.exit_code == 0

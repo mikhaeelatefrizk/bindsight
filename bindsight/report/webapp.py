@@ -402,7 +402,7 @@ def _page_demo() -> None:
         with st.spinner("Running demo pipeline (cached after first run)…"):
             try:
                 out_dir, manifest, elapsed, report_path = _run_demo_cached()
-            except Exception as e:  # noqa: BLE001 - surface anything as a calm message
+            except Exception as e:  # surface anything as a calm message
                 _render_pipeline_error(e, context="demo")
                 return
         # Stash it so the result survives any later widget interaction.
@@ -836,7 +836,7 @@ def _page_run() -> None:
                 t0 = time.time()
                 manifest = discover_pipeline.run(cfg, out_dir=out_dir)
                 elapsed = time.time() - t0
-            except Exception as e:  # noqa: BLE001 - surface anything as a calm message
+            except Exception as e:  # surface anything as a calm message
                 _render_pipeline_error(e, context="run")
                 return
 
