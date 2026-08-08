@@ -110,7 +110,14 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
     target_pdb = work / "target.pdb"
     chain = spec.get("epitope_chain", "A")
     residues = [int(r) for r in spec.get("epitope_residues", [])]
-    lo, hi = _chain_span(target_pdb, chain)
+    ranges = _target_ranges(spec, target_pdb, chain)
+    # The sequence RFdiffusion is given — the kept segments only, which is what
+    # the output backbone's target chain will carry.
+    target_seq = "".join(
+        aa
+        for resi, aa in tools.chain_residues_from_pdb(target_pdb, chain)
+        if any(lo <= resi <= hi for lo, hi in ranges)
+    )
 
     rfdiff_out = work / "rfdiff_out"
     rfdiff_out.mkdir(parents=True, exist_ok=True)
@@ -120,10 +127,9 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
         output_prefix=rfdiff_out / "binder",
         num_designs=int(spec.get("n_trajectories", 5)),
         hotspot=tools.build_hotspot_str(chain, residues),
-        contig=tools.build_contig_str(
+        contig=tools.build_ranges_contig_str(
             chain,
-            lo,
-            hi,
+            ranges,
             int(spec.get("binder_length_min", 50)),
             int(spec.get("binder_length_max", 100)),
         ),
@@ -139,11 +145,15 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
     for backbone in sorted(rfdiff_out.glob("binder_*.pdb")):
         mpnn_out = work / "mpnn_out" / backbone.stem
         mpnn_out.mkdir(parents=True, exist_ok=True)
+        # Design the binder chain only; the target is context ProteinMPNN must
+        # not rewrite (its default is to design every chain).
+        binder_chain = tools.binder_chain_from_backbone(backbone, target_sequence=target_seq)
         _run(
             tools.build_mpnn_cmd(
                 mpnn_dir=mpnn_dir,
                 pdb_path=backbone,
                 out_folder=mpnn_out,
+                designed_chains=[binder_chain],
                 seed=int(spec.get("seed", 0)),
             )
         )
@@ -168,7 +178,7 @@ def _design_boltzgen(spec: dict[str, Any], work: Path, tools_root: Path) -> list
     residues = [int(r) for r in spec.get("epitope_residues", [])]
     _run(
         tools.build_boltzgen_cmd(
-            target_pdb=work / "target.pdb",
+            target_pdb=_target_structure_for_design(spec, work, chain),
             out_dir=out,
             num_designs=int(spec.get("n_trajectories", 5)),
             hotspot=tools.build_hotspot_str(chain, residues),
@@ -187,7 +197,9 @@ def _design_bindcraft(spec: dict[str, Any], work: Path, tools_root: Path) -> lis
             {
                 "design_path": str(out),
                 "binder_name": spec.get("target_uniprot", "binder"),
-                "starting_pdb": str(work / "target.pdb"),
+                "starting_pdb": str(
+                    _target_structure_for_design(spec, work, spec.get("epitope_chain", "A"))
+                ),
                 "chains": spec.get("epitope_chain", "A"),
                 "target_hotspot_residues": ",".join(
                     str(r) for r in spec.get("epitope_residues", [])
@@ -359,6 +371,76 @@ _VALIDATORS = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+def _target_ranges(spec: dict[str, Any], target_pdb: Path, chain: str) -> list[tuple[int, int]]:
+    """Target residue ranges to present to the designer, clipped to the structure.
+
+    ``spec['design_ranges']`` carries the extracellular ranges discovery annotated
+    from UniProt topology. Absent (or empty) means no topology was available, and
+    the whole chain — transmembrane helix and cytoplasmic tail included — becomes
+    the design surface; that is recorded loudly rather than assumed.
+
+    Args:
+        spec: The design spec dict.
+        target_pdb: The materialised target structure.
+        chain: The target chain id.
+
+    Returns:
+        Inclusive ``(lo, hi)`` ranges in the structure's numbering.
+
+    Raises:
+        ValueError: When ``design_ranges`` is given but overlaps no modelled residue.
+    """
+    lo, hi = _chain_span(target_pdb, chain)
+    raw = spec.get("design_ranges") or []
+    if not raw:
+        LOG.warning(
+            "no design_ranges in the spec: designing against the full length of chain %s "
+            "(%d-%d), including any transmembrane and cytoplasmic regions",
+            chain,
+            lo,
+            hi,
+        )
+        return [(lo, hi)]
+    clipped = [
+        (max(int(r[0]), lo), min(int(r[1]), hi)) for r in raw if int(r[0]) <= hi and int(r[1]) >= lo
+    ]
+    if not clipped:
+        raise ValueError(
+            f"design_ranges {[list(r) for r in raw]} do not overlap chain {chain} "
+            f"residues {lo}-{hi} of {target_pdb}"
+        )
+    LOG.info(
+        "designing against %d extracellular range(s) of chain %s: %s", len(clipped), chain, clipped
+    )
+    return clipped
+
+
+def _target_structure_for_design(spec: dict[str, Any], work: Path, chain: str) -> Path:
+    """Target structure trimmed to the spec's ``design_ranges``.
+
+    The one-shot designers take a structure rather than a contig, so the ranges
+    are applied by writing a trimmed copy. Returns ``target.pdb`` unchanged when
+    the ranges already span the whole chain.
+    """
+    target_pdb = work / "target.pdb"
+    ranges = _target_ranges(spec, target_pdb, chain)
+    if ranges == [_chain_span(target_pdb, chain)]:
+        return target_pdb
+    kept: list[str] = []
+    for line in target_pdb.read_text().splitlines():
+        if line.startswith(("ATOM", "HETATM")) and line[21] == chain:
+            try:
+                resi = int(line[22:26])
+            except ValueError:
+                continue
+            if not any(lo <= resi <= hi for lo, hi in ranges):
+                continue
+        kept.append(line)
+    trimmed = work / "target_design_region.pdb"
+    trimmed.write_text("\n".join(kept) + "\n")
+    return trimmed
+
+
 def _chain_span(pdb_path: Path, chain: str) -> tuple[int, int]:
     """Return (min, max) residue number for a chain in a PDB (default 1, 9999)."""
     nums: list[int] = []

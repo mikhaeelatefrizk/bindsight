@@ -4,6 +4,10 @@
 
 from __future__ import annotations
 
+import io
+import tarfile
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from bindsight import __version__
@@ -60,16 +64,51 @@ def test_cli_design_without_targets_exits_2(tmp_path) -> None:
     assert "nothing to do" in r.output.lower()
 
 
-def test_cli_validate_prints_cost_panel(tmp_path) -> None:
+def test_cli_validate_without_designs_reports_cost_unknown(tmp_path) -> None:
+    """An empty run has no designs, so there is no per-design cost to quote."""
     run = tmp_path / "run"
     run.mkdir()
     r = CliRunner().invoke(
         main, ["validate", str(run), "--backend", "modal", "--validator", "boltz2"]
     )
-    # validate prints the cost estimate, then a 'pending' panel pointing the
+    # validate says the cost is unknown, then a 'pending' panel pointing the
     # user at the GPU step. Exit code is 0 (work to do but not an error).
     assert r.exit_code == 0
+    assert "No designs found" in r.output
+    assert "Cost estimate" not in r.output
+    assert "GPU step pending" in r.output
+
+
+def _write_design_tarball(path: Path, *, n_designs: int) -> None:
+    """Stage a per-target results tarball holding ``n_designs`` design PDBs."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _add(tf: tarfile.TarFile, name: str, body: str) -> None:
+        raw = body.encode()
+        info = tarfile.TarInfo(name)
+        info.size = len(raw)
+        tf.addfile(info, io.BytesIO(raw))
+
+    with tarfile.open(path, "w:gz") as tf:
+        for i in range(n_designs):
+            _add(tf, f"design/binder_{i}.pdb", "ATOM\n")
+            _add(tf, f"design/binder_{i}.fasta", ">b\nGSH\n")
+        # Validator output is a prediction *of* a design, not another design.
+        _add(tf, "validate/binder_0/binder_0_model_0.pdb", "ATOM\n")
+
+
+def test_cli_validate_prints_cost_panel_for_designs_in_tarball(tmp_path) -> None:
+    """The panel quotes the designs actually on disk, tarball members included."""
+    run = tmp_path / "run"
+    run.mkdir()
+    _write_design_tarball(run / "design" / "_targets" / "P04626.tar.gz", n_designs=3)
+    r = CliRunner().invoke(
+        main, ["validate", str(run), "--backend", "modal", "--validator", "boltz2"]
+    )
+    assert r.exit_code == 0
     assert "Cost estimate" in r.output
+    assert "3 designs" in r.output
+    assert "No designs found" not in r.output
 
 
 def test_cli_validate_af2_ig_shows_license_banner(tmp_path) -> None:

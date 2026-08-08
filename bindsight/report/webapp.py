@@ -336,6 +336,26 @@ if st is not None:
     _load_parquet_cached = st.cache_data(show_spinner=False)(_load_parquet_cached)
 
 
+def _manifest_stages(manifest: Any) -> list[Any]:
+    """Return the stage records of ``manifest``, whatever shape it arrives in.
+
+    A live run hands us a :class:`~bindsight.provenance.manifest.RunManifest`
+    object; the Browse page reads ``run_manifest.jsonld`` back from disk and so
+    holds plain dicts. Both have to reach the failed-stage guard.
+    """
+    stages = (
+        manifest.get("stages") if isinstance(manifest, dict) else getattr(manifest, "stages", None)
+    )
+    return list(stages) if isinstance(stages, list) else []
+
+
+def _stage_field(stage: Any, field: str) -> Any:
+    """Read ``field`` off a stage record held as either an object or a dict."""
+    if isinstance(stage, dict):
+        return stage.get(field)
+    return getattr(stage, field, None)
+
+
 def _stage_failures(manifest: Any) -> list[tuple[str, str | None]]:
     """Return ``(stage_name, error)`` for every stage that did not complete.
 
@@ -343,12 +363,36 @@ def _stage_failures(manifest: Any) -> list[tuple[str, str | None]]:
     ``failed`` stages count. Returns ``[]`` when the manifest is ``None`` or all
     stages completed.
     """
-    stages = getattr(manifest, "stages", None) or []
-    return [
-        (getattr(s, "name", "?"), getattr(s, "error", None))
-        for s in stages
-        if getattr(s, "status", None) == "failed"
-    ]
+    failures: list[tuple[str, str | None]] = []
+    for s in _manifest_stages(manifest):
+        if _stage_field(s, "status") != "failed":
+            continue
+        error = _stage_field(s, "error")
+        failures.append(
+            (str(_stage_field(s, "name") or "?"), None if error is None else str(error))
+        )
+    return failures
+
+
+def _load_run_manifest(run_dir: Path) -> dict[str, Any] | None:
+    """Read a run directory's provenance manifest from disk.
+
+    Args:
+        run_dir: Directory produced by any bindsight front-end.
+
+    Returns:
+        The parsed manifest, or ``None`` when it is absent or unreadable.
+        ``None`` means *provenance unknown*, not *nothing failed*, so callers
+        must say so rather than presenting the run as verified.
+    """
+    path = run_dir / "run_manifest.jsonld"
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _render_stage_failures(manifest: Any) -> bool:
@@ -522,14 +566,15 @@ def _page_results() -> None:
             if k in validation.recall_at_k:
                 cols[2 + i].metric(k, f"{validation.recall_at_k[k] * 100:.0f}%")
 
-        spec = validation.specificity or {}
-        if spec.get("n"):
-            st.success(
-                f"**Specificity: {spec.get('correctly_excluded')}/{spec['n']}.** Antigens that "
-                f"are *not* over-expressed at the bulk level are correctly kept out of the "
-                f"top {spec.get('k', 20)} — the pipeline keys on genuine over-expression, "
-                "not on clinical fame.",
-                icon="✅",
+        check = validation.exclusion_check or {}
+        if check.get("n"):
+            st.info(
+                f"**Consistency check: {check.get('consistent')}/{check['n']}.** Antigens that "
+                f"are *not* over-expressed at the bulk level are absent from the top "
+                f"{check.get('k', 20)}. They fail the same over-expression rule that admits a "
+                "gene to the shortlist, so this cannot come out any other way — it confirms the "
+                "filter and the shortlist agree, and says nothing about ranking discrimination.",
+                icon="ℹ️",
             )
 
         table = pd.DataFrame(validation.rows()).rename(columns={"over_expressed": "over-expressed"})
@@ -591,8 +636,19 @@ def _page_results() -> None:
         st.markdown("## The binders it actually designed")
         # Never assert "not a simulation" for a mock benchmark. The committed
         # artifact is a real GPU run (is_mock=False), but guard the claim on the
-        # flag so a mock benchmark could never be mislabelled as genuine.
-        if designer.is_mock:
+        # flag so a mock benchmark could never be mislabelled as genuine. The
+        # claim needs an affirmative, present ``False``: an artifact that does
+        # not record its own provenance is unknown, and unknown is not real.
+        if designer.is_mock is None:
+            st.warning(
+                f"⚠️ **Provenance unrecorded** — this benchmark artifact does not state "
+                f"whether it came from a real GPU run or the mock backend, so these "
+                f"numbers are unverified and must not be cited as GPU results. Backend "
+                f"`{designer.backend}`, validator `{designer.validator}`, "
+                f"bindsight `{designer.bindsight_version}`, {designer.generated_utc[:10]}.",
+                icon="⚠️",
+            )
+        elif designer.is_mock:
             st.warning(
                 f"⚠️ **Mock backend** — these are synthetic, structurally-shaped "
                 f"numbers for orchestration/CI, **not** real GPU results. Backend "
@@ -785,8 +841,14 @@ def _page_run() -> None:
     st.title("Run on your own data")
     st.markdown(
         "Upload your **counts** matrix (gene × sample, integer counts) and "
-        "**sample design** TSV. The pipeline runs the discovery half end-to-end "
-        "and produces a paper-style HTML report you can download."
+        "**sample design** TSV. The pipeline runs the discovery half end-to-end — "
+        "pydeseq2 differential expression, gene → protein mapping and tractability "
+        "from Open Targets, the SURFY surfaceome filter, safety screening and "
+        "ranking — and produces a paper-style HTML report you can download.\n\n"
+        "The gene → protein mapping needs the **live Open Targets API**, so this "
+        "page needs network access. If Open Targets is unreachable the run falls "
+        "back to a small bundled gene map that covers only a handful of well-known "
+        "genes; the result is then flagged on screen as **not** genome-wide."
     )
 
     counts_file = st.file_uploader(
@@ -844,7 +906,12 @@ def _page_run() -> None:
                 ),
                 target_discovery=TargetDiscoveryParams(
                     surfy_allow_offline_fallback=True,
-                    use_open_targets=False,
+                    # Open Targets is the only genome-wide Ensembl → UniProt
+                    # source. Without it the run can only ever map the handful of
+                    # genes in the bundled offline table, so a stranger's cohort
+                    # would yield a "discovery" drawn from a fixed shortlist.
+                    # _render_open_targets_warning reports it when it degrades.
+                    use_open_targets=True,
                     require_tractable_modality=[],
                     max_safety_events=1000,
                     require_surface_bind_site=False,
@@ -943,7 +1010,17 @@ def _page_browse() -> None:
     if not run_dir.is_dir():
         st.error(f"Not a directory: {run_dir}")
         return
-    _show_run_summary(run_dir, manifest=None, report_path=run_dir / "report.html")
+    # The manifest is the only record of whether the run finished, so a browsed
+    # run is read from disk and routed through the same guard as a live one.
+    manifest = _load_run_manifest(run_dir)
+    if manifest is None:
+        st.warning(
+            "This directory has no readable `run_manifest.jsonld`, so there is nothing "
+            "to confirm the run finished. Treat everything below as unverified — an "
+            "empty table here may be a crash rather than a negative result.",
+            icon="⚠️",
+        )
+    _show_run_summary(run_dir, manifest, report_path=run_dir / "report.html")
 
 
 def _page_glossary() -> None:
@@ -1004,8 +1081,62 @@ def _find_repo_root() -> Path:
     return Path.cwd()
 
 
+#: ``open_targets_status`` written by ``pipelines.discover`` for a candidate whose
+#: enrichment came from a live Open Targets record. Every other value means the
+#: gene → UniProt mapping came from the bundled offline table instead.
+_OT_STATUS_LIVE = "ok"
+
+
+def _render_open_targets_warning(cand: Any) -> None:
+    """Warn when candidates were mapped offline instead of through Open Targets.
+
+    Open Targets is the only genome-wide Ensembl → UniProt source in the
+    pipeline. When it is unreachable (or disabled), the only mapping left is the
+    bundled table of a few well-known genes, and every gene missing from it is
+    dropped before the surfaceome filter. The resulting shortlist is drawn from
+    that fixed handful, not from the cohort, so it must not be read as a
+    genome-wide discovery — and an absence from it means nothing at all.
+
+    Args:
+        cand: The candidates table, or ``None`` when the run produced none.
+    """
+    if cand is None or "open_targets_status" not in getattr(cand, "columns", ()):
+        return
+    statuses = [str(s) for s in cand["open_targets_status"]]
+    degraded = [s for s in statuses if s != _OT_STATUS_LIVE]
+    if not degraded:
+        return
+    breakdown = ", ".join(f"`{s}` × {degraded.count(s)}" for s in dict.fromkeys(degraded))
+    lead = (
+        f"**{len(degraded)} of {len(statuses)} candidates were mapped from the bundled "
+        f"offline gene table, not from a live Open Targets record** ({breakdown})."
+    )
+    if len(degraded) == len(statuses):
+        # Nothing came back live, so the bundled table was the entire mapping.
+        tail = (
+            " Open Targets answered for none of them, so that table's handful of "
+            "well-known genes was the only gene → protein mapping available and every "
+            "other gene in this cohort was dropped before the surfaceome filter. "
+            "**This is not a genome-wide discovery**: a gene's absence from it is no "
+            "evidence about that gene."
+        )
+    else:
+        tail = (
+            " Open Targets answered for the rest, so the genes it failed on were dropped "
+            "before the surfaceome filter unless that table happened to list them. "
+            "**This shortlist is incomplete.**"
+        )
+    st.warning(f"{lead}{tail} Re-run with Open Targets reachable for a full discovery.", icon="⚠️")
+
+
 def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) -> None:
     """Render KPIs, tables, and inline-report-iframe for a finished run."""
+    # Last line of defence for every caller: a manifest recording a failed stage
+    # must never reach the success layout, where "0 candidates" would read as a
+    # measured negative rather than as a crash.
+    if _render_stage_failures(manifest):
+        return
+
     candidates_p = run_dir / "targets" / "candidates.parquet"
     epitopes_p = run_dir / "epitopes" / "epitopes.parquet"
     deg_p = run_dir / "deg" / "results.parquet"
@@ -1024,6 +1155,8 @@ def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) ->
     )
     cols[2].metric("Candidates", len(cand) if cand is not None else 0)
     cols[3].metric("Top-N epitopes", len(epi) if epi is not None else 0)
+
+    _render_open_targets_warning(cand)
 
     if cand is not None and not cand.empty:
         st.markdown("### Ranked target candidates")

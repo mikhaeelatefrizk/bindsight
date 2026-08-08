@@ -18,9 +18,9 @@ This complements the other provenance layers in `bindsight`:
 
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
-- The Zenodo DOI [10.5281/zenodo.20121496](https://doi.org/10.5281/zenodo.20121496)
-  archives the v0.1.0 release; v0.2.0 and later are archived on publish via
-  the GitHub–Zenodo integration (CERN-operated).
+- The Zenodo concept DOI [10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495)
+  resolves to the latest archived release; every tagged release gets its own
+  version DOI on publish via the GitHub–Zenodo integration (CERN-operated).
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)

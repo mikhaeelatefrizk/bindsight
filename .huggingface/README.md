@@ -21,9 +21,10 @@ tags:
 
 # bindsight
 
-> **Expression → Binder.** The first open-source pipeline that takes
-> RNA-seq counts and outputs ranked de novo protein binder candidates,
-> with full provenance back to the patient cohort.
+> **Expression → Binder.** An open-source pipeline that joins cohort
+> RNA-seq target discovery to de novo protein binder design in one
+> reproducible workflow, with machine-readable provenance from every
+> ranked binder back to the patient samples it came from.
 
 This Hugging Face Space is the **primary** hosted demo of bindsight.
 The canonical source repo, full documentation, JOSS submission, and
@@ -75,9 +76,18 @@ Two ecosystems in computational biology have run in parallel for years:
 - **Genomics** stops at *"here are the interesting genes."*
 - **Protein design** starts at *"given a target structure."*
 
-bindsight is the first open-source tool that connects them: from RNA-seq
-counts to ranked de novo protein binder candidates, with end-to-end W3C
-PROV-O JSON-LD provenance and an RO-Crate export for reproducibility.
+Binder-design workflows (BindCraft, BinderFlow, `dl_binder_design`,
+nf-proteindesign) start from a target you have already picked;
+expression- and surfaceome-based target-discovery work (pan-cancer
+surfaceome screens, pVACtools for neoantigens) stops at a ranked gene or
+peptide list.  bindsight is, as far as we are aware, the first
+open-source tool that runs **both halves end-to-end** and keeps a
+machine-readable audit trail *across the join*: from a designed binder
+back through the epitope, the structure, the surfaceome call and the
+differential-expression contrast to the individual patient samples —
+W3C PROV-O JSON-LD throughout, with an RO-Crate export.  The individual
+steps are the community's; the join, its defaults and its provenance are
+what bindsight contributes.
 
 The discovery half (PyDESeq2 → SURFY → Open Targets → AlphaFoldDB →
 SURFACE-Bind) runs on this Space's free CPU.  The design half templates
@@ -91,8 +101,11 @@ on GitHub for the full text and per-component commercial-use audit.
 
 ## Citation
 
-If you use bindsight in research, please cite the Zenodo DOI:
-[10.5281/zenodo.20121496](https://doi.org/10.5281/zenodo.20121496).
+If you use bindsight in research, please cite the Zenodo concept DOI
+[10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495), which
+always resolves to the latest archived version (v0.2.1 at the time of
+writing).
 
-JOSS paper and bioRxiv preprint are currently in review; both will be
-linked from the GitHub README when published.
+A JOSS software paper and a bioRxiv preprint are drafted but not yet
+submitted (sources under `paper/` in the GitHub repo); both will be
+linked from the GitHub README if and when they are published.

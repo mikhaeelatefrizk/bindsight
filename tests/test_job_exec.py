@@ -25,6 +25,35 @@ _TINY_PDB = (
 )
 _MPNN_FASTA = ">native, score=2.0\nMAG\n>T=0.1, sample=1, score=0.8\nGSHMSLEQKKGADII\n"
 
+#: Chain letters RFdiffusion gives the output complex. The target moves to B and
+#: the diffused binder takes A — deliberately *not* the input target's letter, so
+#: a chain choice made by letter rather than by content would pick the antigen.
+_TARGET_CHAIN = "B"
+_BINDER_CHAIN = "A"
+
+
+def _atom_line(serial: int, resname: str, chain: str, resi: int) -> str:
+    """One CA ATOM record in fixed PDB columns."""
+    return (
+        f"ATOM  {serial:>5d}  CA  {resname} {chain}{resi:>4d}"
+        "      0.0  0.0  0.0  1.0  0.0           C"
+    )
+
+
+def _backbone_pdb() -> str:
+    """An RFdiffusion binder-design backbone: target chain + diffused binder chain.
+
+    The target block carries the native residues copied off ``target.pdb``; the
+    binder is the poly-glycine RFdiffusion emits before ProteinMPNN gives it a
+    sequence. Two chains is what the real tool produces — a single-chain output
+    is not a binder-design complex at all.
+    """
+    lines = [
+        _atom_line(i, res, _TARGET_CHAIN, i) for i, res in enumerate(("MET", "ALA", "GLY"), start=1)
+    ]
+    lines += [_atom_line(3 + i, "GLY", _BINDER_CHAIN, i) for i in range(1, 61)]
+    return "\n".join(lines) + "\n"
+
 
 def _fake_run(cmd, *, cwd=None):
     """Mimic the design tools by writing their expected output files."""
@@ -34,7 +63,7 @@ def _fake_run(cmd, *, cwd=None):
         outdir = Path(prefix).parent
         outdir.mkdir(parents=True, exist_ok=True)
         for i in range(2):
-            (outdir / f"binder_{i}.pdb").write_text(_TINY_PDB)
+            (outdir / f"binder_{i}.pdb").write_text(_backbone_pdb())
     elif "protein_mpnn_run.py" in s:
         out_folder = Path(cmd[cmd.index("--out_folder") + 1])
         seqs = out_folder / "seqs"
@@ -56,7 +85,15 @@ def _fake_run(cmd, *, cwd=None):
 
 @pytest.fixture
 def mock_run(monkeypatch):
-    monkeypatch.setattr(job_exec, "_run", _fake_run)
+    """Patch the subprocess seam; yields the argv lists the executor ran."""
+    calls: list[list[str]] = []
+
+    def _record(cmd, *, cwd=None):
+        calls.append(list(cmd))
+        return _fake_run(cmd, cwd=cwd)
+
+    monkeypatch.setattr(job_exec, "_run", _record)
+    return calls
 
 
 def _spec() -> dict:
@@ -101,6 +138,17 @@ def test_run_job_rfdiff_boltz_produces_correct_layout(mock_run, tmp_path: Path) 
     assert "metrics.jsonl" in names
     assert any(n.startswith("validate/") for n in names)
     assert any(n.startswith("design/") for n in names)
+
+    # ProteinMPNN was told to design the binder chain only — the antigen is held
+    # fixed. Without --pdb_path_chains it designs every chain, i.e. rewrites the
+    # target and optimises the binder against a surface it partly invented.
+    mpnn_cmds = [c for c in mock_run if any("protein_mpnn_run.py" in a for a in c)]
+    assert len(mpnn_cmds) == 2  # one per backbone
+    for cmd in mpnn_cmds:
+        assert "--pdb_path_chains" in cmd
+        chains = cmd[cmd.index("--pdb_path_chains") + 1].split()
+        assert chains == [_BINDER_CHAIN]
+        assert _TARGET_CHAIN not in chains
 
 
 def test_run_job_rejects_unknown_designer(tmp_path: Path) -> None:

@@ -160,7 +160,9 @@ def test_examples_tcga_luad_yaml_validates() -> None:
     assert cfg.name == "tcga_luad_v01"
     assert cfg.params.deg.contrast == ["condition", "tumor", "normal"]
     assert cfg.params.target_discovery.top_n == 5
-    assert "Antibody" in cfg.params.target_discovery.require_tractable_modality
+    # Open Targets reports tractability as short codes; "Antibody" is a string the
+    # API never emits, so the shipped config would have filtered out every candidate.
+    assert cfg.params.target_discovery.require_tractable_modality == ["AB"]
 
 
 # ---------------------------------------------------------------------------
@@ -170,3 +172,47 @@ def test_target_discovery_defaults() -> None:
     p = TargetDiscoveryParams()
     assert "heart_left_ventricle" in p.vital_tissues
     assert p.require_surface_bind_site is True
+    assert p.require_tractable_modality == ["AB"]
+
+
+# ---------------------------------------------------------------------------
+# Tractability modality vocabulary — an unmatchable code silently emptied the
+# candidate table at run time, so it must now fail at load time instead.
+# ---------------------------------------------------------------------------
+def test_tractable_modality_accepts_open_targets_codes() -> None:
+    p = TargetDiscoveryParams(require_tractable_modality=["AB", "SM"])
+    assert p.require_tractable_modality == ["AB", "SM"]
+
+
+def test_tractable_modality_empty_list_disables_the_filter() -> None:
+    p = TargetDiscoveryParams(require_tractable_modality=[])
+    assert p.require_tractable_modality == []
+
+
+@pytest.mark.parametrize("bad", [["Antibody"], ["ab"], ["SmallMolecule"], ["AB", "PROTAC"]])
+def test_tractable_modality_rejects_values_open_targets_never_emits(bad: list[str]) -> None:
+    with pytest.raises(ValidationError) as exc:
+        TargetDiscoveryParams(require_tractable_modality=bad)
+    message = str(exc.value)
+    # The error has to teach the vocabulary, not merely refuse the value.
+    for code in ("AB", "OC", "PR", "SM"):
+        assert code in message
+
+
+def test_run_config_rejects_unknown_modality_before_any_compute(tmp_path: Path) -> None:
+    """A config carrying the old "Antibody" string must not load at all."""
+    with pytest.raises(ValidationError, match="unknown tractability modality"):
+        RunConfig.model_validate(
+            {
+                "name": "x",
+                "out_dir": str(tmp_path / "out"),
+                "inputs": {"counts": "c", "design": "d"},
+                "params": {
+                    "deg": {
+                        "design_formula": "~ condition",
+                        "contrast": ["condition", "t", "n"],
+                    },
+                    "target_discovery": {"require_tractable_modality": ["Antibody"]},
+                },
+            }
+        )

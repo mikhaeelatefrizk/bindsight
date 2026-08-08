@@ -163,9 +163,14 @@ Every run emits a single PROV-O JSON-LD manifest. **This is the moat.** A review
 - the gene's expression in the upstream cohort,
 - the structural model used,
 - the targetable site predicted,
-- the trajectory seed and designer commit SHA,
+- the trajectory seed and the resolved design parameters,
 - the validator metrics,
-- the container digest of every step.
+- the image digest of any containerised step, where that image was pulled by digest.
+
+The digest is recorded only when it can be verified from the local image store, so a
+containerised step carries a real digest or none at all — never a guessed one. CPU stages run
+outside a container in a normal CLI invocation, and remote Modal/Kaggle images cannot be
+inspected from the orchestrator.
 
 Schema is in `bindsight/provenance/manifest.py`, enforced by Pydantic v2 with `extra="forbid"` on every model, so a malformed stage record fails at write time. (A standalone `schemas/run_manifest.schema.json` for non-Python consumers is not yet emitted.)
 
@@ -337,8 +342,8 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [ ] mkdocs-material documentation site
 
 ### Phase 4 — Validation paper (in progress)
-- [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); specificity confirmed (EGFR/CEA correctly not surfaced). Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
-- [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.84, 50% success@0.65; real folded Boltz-2 complexes committed), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
+- [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); EGFR/CEA not surfaced — a consistency check on the over-expression rule, which excludes them by construction, not a discrimination measurement. Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
+- [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.84, 50% success@0.65; real folded Boltz-2 complexes committed), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **Pre-v0.2.1 protocol** — ProteinMPNN ran without `--pdb_path_chains` and redesigned the target chain, so these figures are provisional pending a corrected re-run. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
 - [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission
 - [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free P100); preprint DOI pending

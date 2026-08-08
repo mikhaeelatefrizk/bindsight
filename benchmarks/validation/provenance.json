@@ -1,20 +1,34 @@
 {
-  "schema": "bindsight-validation-provenance/1",
-  "generated_utc": "2026-08-07T21:28:25+00:00",
-  "bindsight_version": "0.2.0",
+  "schema": "bindsight-validation-provenance/2",
+  "generated_utc": "2026-08-08T23:07:27+00:00",
+  "bindsight_version": "0.1.0",
   "cbioportal_study": "brca_tcga_pan_can_atlas_2018",
   "sources": {
     "rna_seq": "NIH/GDC TCGA STAR-Counts (GENCODE v36), open access",
     "subtypes": "cBioPortal PAM50 (Parker et al. 2009)",
-    "known_antigens": "/home/user/bindsight/benchmarks/known.tsv"
+    "known_antigens": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\benchmarks\\known.tsv"
   },
   "cohorts": [
     {
       "key": "brca_her2",
       "project": "TCGA-BRCA",
+      "tumor_type": "BRCA",
       "subtype": "BRCA_Her2",
-      "n_tumor": 50,
-      "n_normal": 40,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 0,
+        "patients_in_both_arms": [],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -24,7 +38,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:08:03+00:00",
+        "retrieved_utc": "2026-08-08T21:52:34+00:00",
         "selection": "by_case",
         "requested_tumor_cases": [
           "TCGA-3C-AALI",
@@ -834,22 +848,52 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "677242ade098403ba27970b3385eb86abe3d8d05dd661a834c9ba7d517387ff0",
-            "bytes": 2964153
+            "sha256": "63b19e570bdfbff3cc0214b29e1b612e4b036a077aa64bff7697d786a56a51f8",
+            "bytes": 2966877
           },
           "design.tsv": {
             "sha256": "fcdc98bbb11c611c205a126bfc6ec57d985ed11c2ccfe4d04ddb9a313b194697",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 0,
+          "patients_in_both_arms": [],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     },
     {
       "key": "coad",
       "project": "TCGA-COAD",
+      "tumor_type": "COAD",
       "subtype": null,
-      "n_tumor": 50,
-      "n_normal": 40,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 49,
+        "n_normal": 40,
+        "n_patients_tumor": 49,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 4,
+        "patients_in_both_arms": [
+          "TCGA-AA-3527",
+          "TCGA-AA-3655",
+          "TCGA-AA-3712",
+          "TCGA-AZ-6600"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "4 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -859,11 +903,11 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:11:57+00:00",
+        "retrieved_utc": "2026-08-08T22:00:35+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
-        "n_tumor": 50,
+        "n_tumor": 49,
         "n_normal": 40,
         "n_genes": 19944,
         "samples": [
@@ -1210,14 +1254,6 @@
             "case_barcode": "TCGA-AA-A00O",
             "sample_barcode": "TCGA-AA-A00O-01A",
             "gdc_file_id": "13cc094c-3724-45cc-8a98-650d0c7a695a"
-          },
-          {
-            "sample": "T44",
-            "condition": "tumor",
-            "sample_type": "Primary Tumor",
-            "case_barcode": "TCGA-A6-6780",
-            "sample_barcode": "TCGA-A6-6780-01B",
-            "gdc_file_id": "14eb25f3-a5ea-4589-9fdc-73da9e2ca081"
           },
           {
             "sample": "T45",
@@ -1590,22 +1626,55 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "3a0d06e1675c824bc175340250c414aafb645ff1cd0f5a76b8794ed4ba7845bf",
-            "bytes": 2790565
+            "sha256": "429f61319eb5e41b1f7f02ce45936135da47f5cb56f0d77b79c7fdd1eb9c2048",
+            "bytes": 2764062
           },
           "design.tsv": {
-            "sha256": "b7f7295e4af617ced13f9ec3785f9e5ffd76a5342b1fb3356997a795a4f099f4",
-            "bytes": 8539
+            "sha256": "68953a5c039b7d5536d3e6a5359cc7c0263b42fa34fa4353ca3e07ab07ef1422",
+            "bytes": 8448
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 49,
+          "n_normal": 40,
+          "n_patients_tumor": 49,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 4,
+          "patients_in_both_arms": [
+            "TCGA-AA-3527",
+            "TCGA-AA-3655",
+            "TCGA-AA-3712",
+            "TCGA-AZ-6600"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "4 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     },
     {
       "key": "blca",
       "project": "TCGA-BLCA",
+      "tumor_type": "BLCA",
       "subtype": null,
-      "n_tumor": 50,
-      "n_normal": 19,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 19
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 19,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 19,
+        "n_patients_in_both_arms": 2,
+        "patients_in_both_arms": [
+          "TCGA-BL-A13J",
+          "TCGA-BT-A20N"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "2 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -1615,7 +1684,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:15:25+00:00",
+        "retrieved_utc": "2026-08-08T22:08:21+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -2178,22 +2247,56 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "f242fcb0ef1a01317e70059f10529c427bbe01c67be56cc6d329e5caacf26755",
-            "bytes": 2189556
+            "sha256": "8051dacbb45687b5d7a4074d2fef41f16cbff7b7b5f56ff3e3c39003b19aff1f",
+            "bytes": 2191967
           },
           "design.tsv": {
             "sha256": "000df6d3d8ddff4e9820aee04f467ce1719a3007402d561cdf8795ef1572552f",
             "bytes": 6481
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 19,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 19,
+          "n_patients_in_both_arms": 2,
+          "patients_in_both_arms": [
+            "TCGA-BL-A13J",
+            "TCGA-BT-A20N"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "2 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     },
     {
       "key": "luad",
       "project": "TCGA-LUAD",
+      "tumor_type": "LUAD",
       "subtype": null,
-      "n_tumor": 50,
-      "n_normal": 40,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 5,
+        "patients_in_both_arms": [
+          "TCGA-38-4627",
+          "TCGA-49-6744",
+          "TCGA-50-5936",
+          "TCGA-55-6984",
+          "TCGA-91-6831"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "5 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -2203,7 +2306,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:19:45+00:00",
+        "retrieved_utc": "2026-08-08T22:20:59+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -2934,22 +3037,53 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "2c8f5e383972c53b536090c5805a67f8156cff7fc870c41ee3e2f6c3064a1dfc",
-            "bytes": 2855372
+            "sha256": "8fe46a347c15ec3ca83710ce4787bf8c920ebac3189786270fe38243ae84d910",
+            "bytes": 2857704
           },
           "design.tsv": {
             "sha256": "319b4302f46ace58c323c08ec84191adea03c2861e9e387f7fe7f2c4f1b42b26",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 5,
+          "patients_in_both_arms": [
+            "TCGA-38-4627",
+            "TCGA-49-6744",
+            "TCGA-50-5936",
+            "TCGA-55-6984",
+            "TCGA-91-6831"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "5 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     },
     {
       "key": "paad",
       "project": "TCGA-PAAD",
+      "tumor_type": "PAAD",
       "subtype": null,
-      "n_tumor": 50,
-      "n_normal": 4,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 4
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 4,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 4,
+        "n_patients_in_both_arms": 0,
+        "patients_in_both_arms": [],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -2959,7 +3093,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:23:06+00:00",
+        "retrieved_utc": "2026-08-08T22:31:19+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -3402,22 +3536,51 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "7476bc18d8dc94cfbed714e329c2c6aeb5be3ede36ee5c33079c8519318a7618",
-            "bytes": 1805633
+            "sha256": "6ca8ebd82c8884016a3e989389c9eaab0bbaa4691a6f43696e77a471912f4221",
+            "bytes": 1807459
           },
           "design.tsv": {
             "sha256": "218575ff0419f23260b38262a2bc729b4d17b16f59eef394a88352a33f3957d0",
             "bytes": 5011
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 4,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 4,
+          "n_patients_in_both_arms": 0,
+          "patients_in_both_arms": [],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     },
     {
       "key": "prad",
       "project": "TCGA-PRAD",
+      "tumor_type": "PRAD",
       "subtype": null,
-      "n_tumor": 50,
-      "n_normal": 40,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 3,
+        "patients_in_both_arms": [
+          "TCGA-EJ-7321",
+          "TCGA-EJ-7784",
+          "TCGA-HC-8258"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "3 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "gdc": {
         "schema": "bindsight-gdc-cohort/1",
         "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
@@ -3427,7 +3590,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:27:02+00:00",
+        "retrieved_utc": "2026-08-08T22:52:02+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -4158,13 +4321,28 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "ed9361b70487f02a520b2aec0b2a8310a867d3cacf328606005d47a11b5646b3",
-            "bytes": 2926139
+            "sha256": "579a4b02a18f1666c9f48924f28c81cc718f35d95f0b180e6e1725eac41dcf44",
+            "bytes": 2929076
           },
           "design.tsv": {
             "sha256": "f82298f6578a3f2b0111eb2732209796cbdb7625c8aaa203c31764060b29c4c6",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 3,
+          "patients_in_both_arms": [
+            "TCGA-EJ-7321",
+            "TCGA-EJ-7784",
+            "TCGA-HC-8258"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "3 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       }
     }

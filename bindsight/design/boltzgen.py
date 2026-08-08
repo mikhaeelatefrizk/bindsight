@@ -39,6 +39,7 @@ class BoltzGenDesigner:
         target_structure_path: Path,
         epitope_residues: list[int],
         epitope_chain: str = "A",
+        design_ranges: list[tuple[int, int]] | None = None,
         n_trajectories: int = 50,
         seed: int = 0,
     ) -> DesignSpec:
@@ -48,6 +49,7 @@ class BoltzGenDesigner:
             target_structure_path=str(target_structure_path),
             epitope_chain=epitope_chain,
             epitope_residues=epitope_residues,
+            design_ranges=list(design_ranges or []),
             n_trajectories=n_trajectories,
             seed=seed,
             extra_params={

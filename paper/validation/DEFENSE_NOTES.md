@@ -14,7 +14,8 @@ documented as data limitations rather than fabricated."*
 
 **Headline numbers.** ERBB2 **rank 4** (HER2-enriched BRCA, 50 tumour / 40 normal;
 log2fc **4.36**, padj **1.7e-59**; 17,471 genes tested, 6,087 significant, 27 surface
-candidates). recall@5 = @10 = @20 = **33%**. Specificity **2/2**.
+candidates). recall@5 = @10 = @20 = **33%**. Consistency check **2/2** (see Q3 — this is
+not a discrimination measurement).
 
 ---
 
@@ -41,7 +42,7 @@ size.** A modest-fold antigen (PSMA is highly expressed but also abundant in nor
 prostate; Nectin-4 is only mildly elevated) won't clear a fold-change shortlist, and saying
 so is the honest scope statement.
 
-### Q3. Why are EGFR and CEA correctly NOT surfaced (specificity 2/2)?
+### Q3. Why are EGFR and CEA NOT surfaced (the "2/2" figure)?
 Because their tumour-selectivity isn't transcriptional:
 - **EGFR (LUAD)** drives cancer through **mutation/amplification**, not bulk over-expression
   — log2fc 0.42, *non-significant*. A specificity-respecting expression method must **not**
@@ -50,8 +51,13 @@ Because their tumour-selectivity isn't transcriptional:
   normal colon epithelium**, so the tumour-vs-adjacent-normal fold-change is ~0 (log2fc
   −0.31, ns). Lineage co-expression in the tissue-of-origin means bulk DE can't separate it.
 
-The point: the pipeline keys on **genuine tumour-selective over-expression, not clinical
-fame** — it doesn't cry wolf on famous-but-not-DE targets.
+**State this precisely.** Clinical fame enters the scoring nowhere, and 2/2 confirms the
+documented over-expression rule (FDR < 0.05, log2fc ≥ 1.0) was applied end-to-end. It does
+**not** measure ranking discrimination: antigens failing that rule are excluded from
+candidacy *by construction*, so their absence from the top-20 is guaranteed by the design,
+not earned by the ranking. Demonstrating discrimination needs antigens that pass the
+over-expression gate and should still rank low — a harder evaluation this panel does not
+contain.
 
 ### Q4. Why can't CD33 / CD123 (or CLDN6) be scored — the TCGA-LAML limitation?
 **TCGA-LAML ships zero matched solid-tissue-normal RNA-seq samples.** An AML-vs-normal

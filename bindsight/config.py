@@ -67,6 +67,17 @@ class InputsConfig(BaseModel):
     )
 
 
+# Open Targets' tractability vocabulary. The API reports modalities by these
+# two-letter codes only, so any other spelling ("Antibody") intersects nothing and
+# silently drops every candidate — the filter must reject it at load time instead.
+TRACTABLE_MODALITIES: dict[str, str] = {
+    "AB": "antibody",
+    "OC": "other clinical modality",
+    "PR": "PROTAC",
+    "SM": "small molecule",
+}
+
+
 # ---------------------------------------------------------------------------
 # Per-stage parameters
 # ---------------------------------------------------------------------------
@@ -132,8 +143,25 @@ class TargetDiscoveryParams(BaseModel):
 
     # Open Targets enrichment
     use_open_targets: bool = True
-    require_tractable_modality: list[str] = Field(default_factory=lambda: ["Antibody"])
+    require_tractable_modality: list[str] = Field(
+        default_factory=lambda: ["AB"],
+        description="Open Targets tractability modality codes a candidate must have "
+        "(see TRACTABLE_MODALITIES). [] disables the filter.",
+    )
     max_safety_events: int = Field(5, ge=0)
+
+    @field_validator("require_tractable_modality")
+    @classmethod
+    def _check_modalities(cls, v: list[str]) -> list[str]:
+        unknown = [m for m in v if m not in TRACTABLE_MODALITIES]
+        if unknown:
+            valid = ", ".join(f"{code} ({name})" for code, name in TRACTABLE_MODALITIES.items())
+            raise ValueError(
+                f"unknown tractability modality {unknown}: Open Targets reports "
+                f"modalities as {valid}. An unrecognised value matches nothing and "
+                "would drop every candidate."
+            )
+        return v
 
     # Normal-tissue safety (GTEx) — on-target/off-tumor toxicity. When enabled,
     # candidates whose median expression in any vital tissue exceeds

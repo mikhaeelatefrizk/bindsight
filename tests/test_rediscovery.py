@@ -12,6 +12,23 @@ import pandas as pd
 from bindsight.benchmark import rediscovery as R
 
 
+def _samples(n_tumor: int, n_normal: int) -> list[dict[str, str]]:
+    """A per-arm sample list of the shape a cohort's GDC provenance carries."""
+    rows: list[dict[str, str]] = []
+    for arm, n, aliquot in (("tumor", n_tumor, "01A"), ("normal", n_normal, "11A")):
+        for i in range(n):
+            case = f"TCGA-ZZ-{arm[0].upper()}{i:03d}"
+            rows.append(
+                {
+                    "sample": f"{case}-{aliquot}",
+                    "condition": arm,
+                    "case_barcode": case,
+                    "sample_barcode": f"{case}-{aliquot}",
+                }
+            )
+    return rows
+
+
 def _result(cohort: R.Cohort, rank: int | None, log2fc: float, padj: float, sig: bool) -> dict:
     ex = (
         None
@@ -26,16 +43,24 @@ def _result(cohort: R.Cohort, rank: int | None, log2fc: float, padj: float, sig:
         }
     )
     deg_expected = {"tested": True, "log2fc": log2fc, "padj": padj, "significant": sig}
+    # The achieved per-arm counts are measured from the run's own sample list and
+    # are deliberately two tumor samples short of the requested size: the
+    # requested cohort size is an input to the GDC query, never a measurement.
+    samples = _samples(cohort.requested_n_tumor - 2, cohort.requested_n_normal)
+    achieved = R._sampling_summary(samples, [])
     return {
         "cohort": asdict(cohort),
-        "n_tumor": cohort.n_tumor,
-        "n_normal": cohort.n_normal,
+        "requested": R._requested(cohort),
+        "achieved": achieved,
+        "n_tumor": achieved["n_tumor"],
+        "n_normal": achieved["n_normal"],
         "n_candidates": 40,
+        "cross_indication": [],
         "deg": {"n_genes_tested": 18000, "n_significant": 3000},
         "deg_expected": deg_expected,
         "expected": ex,
-        "category": R._categorise(deg_expected, cohort.n_normal),
-        "gdc_provenance": {"n_tumor": cohort.n_tumor, "n_normal": cohort.n_normal},
+        "category": R._categorise(deg_expected, achieved["n_normal"]),
+        "gdc_provenance": {"samples": samples},
         "run_dir": "/tmp/none",
     }
 
@@ -74,10 +99,16 @@ def test_aggregate_recall_over_overexpressed_only() -> None:
     # Denominator = 2 over-expressed (ERBB2 found@4, NECTIN4 missed): @5=1/2, @20=1/2.
     assert rec["recall@5"] == 0.5
     assert rec["recall@20"] == 0.5
-    spec = R._specificity(results)
-    # 1 not-over-expressed antigen (CEACAM5), correctly absent -> 1/1.
-    assert spec["n"] == 1
-    assert spec["fraction"] == 1.0
+    check = R._exclusion_consistency_check(results)
+    # 1 not-over-expressed antigen (CEACAM5), absent from the top-20 -> 1/1. The
+    # quantity is preserved, but it is an internal-consistency check that cannot
+    # fail by construction, not a measurement of specificity.
+    assert check["check"] == "non_over_expressed_absent_from_top_k"
+    assert check["n"] == 1
+    assert check["consistent"] == 1
+    assert check["fraction"] == 1.0
+    assert check["tautological_by_construction"] is True
+    assert "correctly_excluded" not in check
 
 
 def test_render_results_md_has_sections() -> None:
@@ -94,17 +125,24 @@ def test_render_results_md_has_sections() -> None:
         "ks": list(R.KS),
         "overexpression_rule": "FDR<0.05 and log2fc>=1.0",
         "recall_at_k": R._aggregate_recall(results),
-        "specificity": R._specificity(results),
+        "exclusion_consistency_check": R._exclusion_consistency_check(results),
         "cohorts": results,
         "data_limited": R.DATA_LIMITED,
     }
     md = R._render_results_md(summary)
     assert "over-expressed" in md.lower()
-    assert "Specificity" in md
+    # The tautological check is published as what it is, and the specificity
+    # claim it used to headline is gone.
+    assert "Internal-consistency check (not a specificity measurement)" in md
+    assert "by construction" in md
+    assert "Specificity" not in md
     assert "ERBB2" in md
     assert "CEACAM5" in md
     # ERBB2 fold-change is shown.
     assert "4.40" in md
+    # Achieved per-arm counts, with the requested cohort size named as an input.
+    assert "tumor: got (asked)" in md
+    assert "| 48 (50) |" in md
 
 
 def test_expected_deg_lookup(tmp_path: Path) -> None:

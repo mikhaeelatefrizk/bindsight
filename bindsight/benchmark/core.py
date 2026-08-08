@@ -8,11 +8,20 @@ table (``benchmarks/known.tsv``), compute, per run:
 
 - the rank of each known antigen in the candidate shortlist (by UniProt),
 - whether it was found at all, and whether it landed in the top-k,
-- recall@k aggregated across the known set.
+- recall@k aggregated across the run's *on-indication* known antigens.
 
 Then render a self-contained HTML report comparing the runs side by side. The
 math is intentionally simple and transparent so the benchmark is defensible:
-recall@k is just ``#{known antigens with rank ≤ k} / #{known antigens}``.
+recall@k is ``#{on-indication known antigens with rank ≤ k} /
+#{on-indication known antigens}``.
+
+Rediscovery is indication-scoped: a run of a colorectal cohort surfacing a
+breast antigen has not rediscovered anything, so a known antigen is credited
+only when its own ``tumor_type`` is the run's indication. Known antigens from
+other indications that do appear in a shortlist are reported separately as
+cross-indication cross-reactivity and never enter recall@k. A run whose
+indication is not supplied is scored over the whole known set and labelled as
+such, because the gate cannot be applied without it.
 """
 
 from __future__ import annotations
@@ -52,14 +61,29 @@ class _Hit:
 
 @dataclass
 class RunScore:
-    """Per-run rediscovery score over the known-antigen set."""
+    """Per-run rediscovery score over the known-antigen set.
+
+    ``per_antigen`` holds one row per *on-indication* known antigen (the
+    recall@k denominator); ``cross_indication`` holds the known antigens from
+    other indications that happen to appear in the shortlist, which are
+    cross-reactivity observations rather than rediscoveries. ``recall_basis``
+    records which of the two regimes produced ``recall_at``:
+    ``"on_indication"``, ``"indication_unknown"`` (no indication supplied for
+    the run) or ``"no_known_antigen_for_indication"`` (nothing to score, so
+    ``recall_at`` is left empty rather than reported as zero).
+    """
 
     run_name: str
     run_dir: str
-    per_antigen: list[dict[str, object]] = field(default_factory=list)  # one per known antigen
+    tumor_type: str | None = None
+    recall_basis: str = "indication_unknown"
+    per_antigen: list[dict[str, object]] = field(default_factory=list)  # on-indication antigens
+    cross_indication: list[dict[str, object]] = field(default_factory=list)
     recall_at: dict[int, float] = field(default_factory=dict)
     n_known: int = 0
+    n_on_indication: int = 0
     n_found: int = 0
+    n_cross_indication: int = 0
     n_candidates: int = 0
 
 
@@ -103,12 +127,18 @@ def _load_candidates(run_dir: Path) -> pd.DataFrame | None:
 # ---------------------------------------------------------------------------
 # Scoring
 # ---------------------------------------------------------------------------
+def _matches_indication(antigen_tumor_type: str, run_tumor_type: str) -> bool:
+    """True when a known antigen's own indication is the run's indication."""
+    return antigen_tumor_type.strip().casefold() == run_tumor_type.strip().casefold()
+
+
 def score_run(
     run_dir: Path | str,
     known: list[KnownAntigen],
     *,
     ks: tuple[int, ...] = DEFAULT_KS,
     run_name: str | None = None,
+    tumor_type: str | None = None,
 ) -> RunScore:
     """Score one run directory against the known-antigen set.
 
@@ -116,6 +146,21 @@ def score_run(
     (``candidates.uniprot_id``). Its ``rank`` is taken from the candidate table
     (the discover stage's 1-based rank). If the antigen never appears in the
     candidates it is recorded as not-found (rank ``None``).
+
+    Protein identity alone is not rediscovery: an antigen is credited (and
+    enters recall@k) only when its ``tumor_type`` is also the run's indication.
+    Matches from other indications are collected in
+    :attr:`RunScore.cross_indication` instead.
+
+    Args:
+        run_dir: a finished run directory containing ``targets/candidates.parquet``.
+        known: the known-antigen set to score against.
+        ks: top-k cutoffs for recall@k.
+        run_name: display name for the run (defaults to the directory name).
+        tumor_type: the run's indication, using the same vocabulary as the
+            known table's ``tumor_type`` column (e.g. ``"BRCA"``). When
+            ``None`` the indication gate cannot be applied; every known antigen
+            is then scored and ``recall_basis`` says so.
     """
     run_dir = Path(run_dir)
     name = run_name or run_dir.name
@@ -142,46 +187,63 @@ def score_run(
                     symbol=str(sym) if pd.notna(sym) else None,
                 )
 
-    per_antigen: list[dict[str, object]] = []
-    n_found = 0
+    on_indication: list[KnownAntigen] = []
+    off_indication: list[KnownAntigen] = []
     for ka in known:
-        hit = rank_by_uniprot.get(ka.uniprot)
-        found = hit is not None
-        n_found += int(found)
-        per_antigen.append(
-            {
-                "symbol": ka.symbol,
-                "uniprot": ka.uniprot,
-                "tumor_type": ka.tumor_type,
-                "found": found,
-                "rank": hit.rank if hit else None,
-                "log2fc": hit.log2fc if hit else None,
-                "padj": hit.padj if hit else None,
-                **{f"in_top_{k}": (hit is not None and hit.rank <= k) for k in ks},
-            }
-        )
+        on = tumor_type is None or _matches_indication(ka.tumor_type, tumor_type)
+        (on_indication if on else off_indication).append(ka)
 
-    recall_at = {
-        k: (
-            sum(
-                1
-                for ka in known
-                if (h := rank_by_uniprot.get(ka.uniprot)) is not None and h.rank <= k
-            )
-            / len(known)
-        )
-        if known
-        else 0.0
-        for k in ks
-    }
+    def _row(ka: KnownAntigen, hit: _Hit | None, on: bool | None) -> dict[str, object]:
+        return {
+            "symbol": ka.symbol,
+            "uniprot": ka.uniprot,
+            "tumor_type": ka.tumor_type,
+            "on_indication": on,
+            "found": hit is not None,
+            "rank": hit.rank if hit else None,
+            "log2fc": hit.log2fc if hit else None,
+            "padj": hit.padj if hit else None,
+            **{f"in_top_{k}": (hit is not None and hit.rank <= k) for k in ks},
+        }
+
+    per_antigen = [
+        _row(ka, rank_by_uniprot.get(ka.uniprot), None if tumor_type is None else True)
+        for ka in on_indication
+    ]
+    n_found = sum(1 for a in per_antigen if a["found"])
+    # Off-indication antigens are only worth reporting when they were surfaced;
+    # a miss in another cancer type is neither a rediscovery nor a failure.
+    cross_indication = [
+        _row(ka, hit, False)
+        for ka in off_indication
+        if (hit := rank_by_uniprot.get(ka.uniprot)) is not None
+    ]
+
+    recall_at: dict[int, float] = {}
+    if on_indication:
+        for k in ks:
+            hits = sum(1 for a in per_antigen if a[f"in_top_{k}"])
+            recall_at[k] = hits / len(on_indication)
+
+    if tumor_type is None:
+        basis = "indication_unknown"
+    elif on_indication:
+        basis = "on_indication"
+    else:
+        basis = "no_known_antigen_for_indication"
 
     return RunScore(
         run_name=name,
         run_dir=str(run_dir),
+        tumor_type=tumor_type,
+        recall_basis=basis,
         per_antigen=per_antigen,
+        cross_indication=cross_indication,
         recall_at=recall_at,
         n_known=len(known),
+        n_on_indication=len(on_indication),
         n_found=n_found,
+        n_cross_indication=len(cross_indication),
         n_candidates=n_candidates,
     )
 
@@ -216,40 +278,70 @@ def render_benchmark_html(
             return f"<td>{v:.3g}</td>"
         return f"<td>{e(str(v))}</td>"
 
-    # Summary table: one row per run, recall@k columns.
+    # Summary table: one row per run, recall@k columns over the on-indication set.
     summary_rows = ""
     for s in scores:
-        cells = "".join(f"<td>{s.recall_at[k]:.0%}</td>" for k in ks)
+        cells = "".join(
+            f"<td>{s.recall_at[k]:.0%}</td>" if k in s.recall_at else "<td class='miss'>n/a</td>"
+            for k in ks
+        )
+        indication = e(s.tumor_type) if s.tumor_type else "<span class='miss'>unknown</span>"
         summary_rows += (
-            f"<tr><td class='name'>{e(s.run_name)}</td>"
-            f"<td>{s.n_found}/{s.n_known}</td><td>{s.n_candidates}</td>{cells}</tr>"
+            f"<tr><td class='name'>{e(s.run_name)}</td><td>{indication}</td>"
+            f"<td>{s.n_found}/{s.n_on_indication}</td><td>{s.n_cross_indication}</td>"
+            f"<td>{s.n_candidates}</td>{cells}</tr>"
         )
     recall_headers = "".join(f"<th>recall@{k}</th>" for k in ks)
 
     # Per-run detail tables.
     detail_blocks = ""
     topk_headers = "".join(f"<th>top{k}</th>" for k in ks)
+    antigen_headers = (
+        "<tr><th>antigen</th><th>uniprot</th><th>tumor</th>"
+        f"<th>found</th><th>rank</th><th>log2fc</th>{topk_headers}</tr>"
+    )
 
     def _rank_key(a: dict[str, object]) -> tuple[bool, int]:
         r = a["rank"]
         return (r is None, r if isinstance(r, int) else 0)
 
-    for s in scores:
+    def _antigen_table(antigens: list[dict[str, object]]) -> str:
         rows = ""
-        for a in sorted(s.per_antigen, key=_rank_key):
+        for a in sorted(antigens, key=_rank_key):
             topk = "".join(_cell(a[f"in_top_{k}"]) for k in ks)
             rows += (
                 f"<tr><td class='name'>{e(str(a['symbol']))}</td>"
                 f"<td>{e(str(a['uniprot']))}</td><td>{e(str(a['tumor_type']))}</td>"
                 f"{_cell(a['found'])}{_cell(a['rank'])}{_cell(a['log2fc'])}{topk}</tr>"
             )
-        detail_blocks += (
-            f"<h3>{e(s.run_name)}</h3>"
-            f"<div class='sub'>{e(s.run_dir)}</div>"
-            "<table><thead><tr><th>antigen</th><th>uniprot</th><th>tumor</th>"
-            f"<th>found</th><th>rank</th><th>log2fc</th>{topk_headers}</tr></thead>"
-            f"<tbody>{rows}</tbody></table>"
-        )
+        return f"<table><thead>{antigen_headers}</thead><tbody>{rows}</tbody></table>"
+
+    for s in scores:
+        detail_blocks += f"<h3>{e(s.run_name)}</h3><div class='sub'>{e(s.run_dir)}</div>"
+        if s.recall_basis == "on_indication":
+            detail_blocks += (
+                f"<div class='scope'>Scored against the {e(str(s.tumor_type))} known "
+                "antigen(s) — the only ones this run can rediscover.</div>"
+            )
+        elif s.recall_basis == "indication_unknown":
+            detail_blocks += (
+                "<div class='scope warn'>Indication not supplied for this run, so no "
+                "indication gate could be applied: the whole known set is scored and a "
+                "match may belong to another cancer type.</div>"
+            )
+        else:
+            detail_blocks += (
+                f"<div class='scope warn'>No known antigen is annotated for indication "
+                f"{e(str(s.tumor_type))}, so recall@k is not defined for this run.</div>"
+            )
+        detail_blocks += _antigen_table(s.per_antigen)
+        if s.cross_indication:
+            detail_blocks += (
+                "<h4>Cross-indication cross-reactivity — NOT rediscovery</h4>"
+                "<div class='scope warn'>Known antigens of <em>other</em> cancer types that "
+                "this run surfaced. They are excluded from recall@k above.</div>"
+                + _antigen_table(s.cross_indication)
+            )
 
     return _HTML_TEMPLATE.format(
         recall_headers=recall_headers,
@@ -266,13 +358,36 @@ def run_benchmark(
     *,
     out_html: Path | str,
     ks: tuple[int, ...] = DEFAULT_KS,
+    tumor_types: list[str | None] | None = None,
 ) -> tuple[Path, list[RunScore]]:
     """Score every run against the known set and write the HTML report.
 
+    Args:
+        run_dirs: finished run directories to score.
+        known_antigens_path: the known-antigen table (``benchmarks/known.tsv``).
+        out_html: where to write the report.
+        ks: top-k cutoffs for recall@k.
+        tumor_types: each run's indication, positionally aligned with
+            ``run_dirs``. Runs without one are scored over the whole known set
+            and reported as indication-unknown, since rediscovery cannot be
+            told apart from cross-indication cross-reactivity without it.
+
     Returns ``(out_html_path, scores)``.
+
+    Raises:
+        ValueError: if ``tumor_types`` is given with a different length than
+            ``run_dirs``.
     """
+    if tumor_types is not None and len(tumor_types) != len(run_dirs):
+        raise ValueError(
+            f"tumor_types has {len(tumor_types)} entries for {len(run_dirs)} run dir(s)"
+        )
     known = load_known_antigens(known_antigens_path)
-    scores = [score_run(rd, known, ks=ks) for rd in run_dirs]
+    indications = tumor_types if tumor_types is not None else [None] * len(run_dirs)
+    scores = [
+        score_run(rd, known, ks=ks, tumor_type=tt)
+        for rd, tt in zip(run_dirs, indications, strict=True)
+    ]
     out = Path(out_html)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -290,8 +405,10 @@ _HTML_TEMPLATE = """\
 <style>
  body {{ font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
         margin: 2rem auto; max-width: 980px; color: #1a1a1a; line-height: 1.45; }}
- h1 {{ font-size: 1.5rem; }} h3 {{ margin-top: 1.6rem; }}
+ h1 {{ font-size: 1.5rem; }} h3 {{ margin-top: 1.6rem; }} h4 {{ margin: 1.1rem 0 .2rem; }}
  .sub {{ color: #666; font-size: .8rem; margin-bottom: .3rem; font-family: monospace; }}
+ .scope {{ color: #555; font-size: .82rem; margin-bottom: .25rem; }}
+ .scope.warn {{ color: #8a4b00; }}
  table {{ border-collapse: collapse; width: 100%; margin: .5rem 0 1.2rem; font-size: .9rem; }}
  th, td {{ border: 1px solid #ddd; padding: .35rem .55rem; text-align: center; }}
  th {{ background: #f4f4f6; }}
@@ -301,11 +418,17 @@ _HTML_TEMPLATE = """\
  .foot {{ color: #777; font-size: .8rem; margin-top: 2rem; }}
 </style></head><body>
 <h1>bindsight — rediscovery benchmark</h1>
-<p>How well each run resurfaces the held-out known antigens. Known set:
-   <code>{known_source}</code> · {n_runs} run(s).
-   <strong>recall@k</strong> = fraction of known antigens ranked in the top-k.</p>
+<p>How well each run resurfaces the held-out known antigens of <em>its own</em>
+   indication. Known set: <code>{known_source}</code> · {n_runs} run(s).
+   <strong>recall@k</strong> = fraction of the run's on-indication known antigens
+   ranked in the top-k. A known antigen of another cancer type is never counted as
+   a rediscovery; where a run surfaces one it is listed under
+   <em>cross-indication cross-reactivity</em>. Runs with no declared indication are
+   marked <em>unknown</em> and are scored over the whole known set, which cannot
+   distinguish rediscovery from cross-reactivity.</p>
 <h2>Summary</h2>
-<table><thead><tr><th>run</th><th>found</th><th>candidates</th>{recall_headers}</tr></thead>
+<table><thead><tr><th>run</th><th>indication</th><th>on-indication found</th>
+<th>cross-indication</th><th>candidates</th>{recall_headers}</tr></thead>
 <tbody>{summary_rows}</tbody></table>
 <h2>Per-antigen detail</h2>
 {detail_blocks}

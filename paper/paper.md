@@ -37,11 +37,18 @@ affinity"* — is currently an ad-hoc, project-specific exercise that takes a
 competent researcher several weeks of glue-scripting and is rarely
 reproducible across labs.
 
-`bindsight` closes this gap. It is the first open-source command-line tool
+`bindsight` closes this gap. It is an open-source command-line tool
 and web application that takes RNA-seq counts as input and produces ranked,
 structurally-validated *de novo* protein-binder candidates as output, with a
 complete `PROV-O` JSON-LD [@PROVO] / RO-Crate [@SoilandReyes2022] audit trail
-back to the patient cohort the targets came from. The pipeline runs entirely
+back to the patient cohort the targets came from. Open binder-design workflows
+(BindCraft [@Pacesa2025], BinderFlow, `dl_binder_design` [@Bennett2023],
+nf-proteindesign) all begin at a target the user has already chosen, and
+expression- or surfaceome-based target-discovery workflows end at a ranked gene
+or peptide list; to our knowledge `bindsight` is the first open-source tool to
+run both halves end-to-end and to carry machine-readable provenance across the
+join. The individual steps are the community's — the join, its defaults and its
+provenance are the contribution. The pipeline runs entirely
 on a CPU laptop for the discovery half (differential expression →
 surfaceome filter → druggability → structural pre-flight); the GPU half
 (`RFdiffusion` [@Watson2023] backbone generation, `ProteinMPNN`
@@ -59,10 +66,12 @@ candidates when their expression signal is present in the sampled cohort.
 A companion rediscovery validation (`benchmarks/validation/`,
 `paper/validation/manuscript.md`) runs the discovery half on six real
 indication-matched TCGA cohorts: it resurfaces ERBB2 at rank 4 in
-HER2-enriched breast cancer (using PAM50 subtype stratification) and is
-specific — antigens not transcriptionally over-expressed at the bulk level
-(e.g. EGFR, CEA) are correctly not surfaced, so sensitivity tracks
-differential-expression effect size.
+HER2-enriched breast cancer (using PAM50 subtype stratification). Antigens
+not transcriptionally over-expressed at the bulk level (e.g. EGFR, CEA) are
+not surfaced; because the over-expression rule excludes them from candidacy by
+construction, this is an internal consistency check on the documented rule
+rather than a measurement of ranking discrimination, and it shows sensitivity
+tracking differential-expression effect size.
 
 # Statement of need
 

@@ -1,0 +1,50 @@
+# bindsight — pinned scientific stack (pip constraints file).
+#
+# The version bounds in pyproject.toml say what bindsight *works with*; this
+# file says what a bindsight release was actually resolved and tested against,
+# so a number published today can be re-derived from the same code a year from
+# now. Constraints only bind packages that are being installed, so this file is
+# safe to apply to any bindsight install:
+#
+#     pip install -c envs/constraints.txt -e ".[discover,report]"
+#
+# The Docker image (see Dockerfile, pinned by base-image digest) installs with
+# it, so the container and a local install agree.
+#
+# Scope: the libraries whose release can change the numbers a run reports —
+# differential expression, the parquet encoding, structure parsing — plus the
+# transitive numeric dependencies pydeseq2 brings in. Presentation-only and
+# plumbing packages are deliberately left unpinned so this file stays
+# reviewable; the exact runtime is recorded per run in the manifest's
+# ``runtime.libraries`` regardless.
+#
+# Resolved for CPython 3.11 / manylinux (the platform of the Docker image).
+# Regenerate after a dependency bump with:
+#
+#     pip install --dry-run --report report.json \
+#         --python-version 3.11 --implementation cp --abi cp311 \
+#         --platform manylinux2014_x86_64 --only-binary=:all: \
+#         "pydeseq2>=0.5,<0.6" "numpy>=1.26,<3" "scipy>=1.11,<2" \
+#         "pandas>=2.2,<3" "pyarrow>=16,<25" "biopython>=1.83,<2"
+
+# ---- differential expression ----
+pydeseq2==0.5.4
+anndata==0.12.19
+formulaic==1.2.2
+formulaic-contrasts==1.0.0
+scikit-learn==1.7.2
+
+# ---- numerics / tabular I/O ----
+numpy==2.2.6
+scipy==1.16.3
+pandas==2.3.2
+pyarrow==20.0.0
+h5py==3.14.0
+zarr==3.1.6
+numcodecs==0.16.5
+
+# ---- structures ----
+biopython==1.88
+
+# ---- figures embedded in the report ----
+matplotlib==3.11.1

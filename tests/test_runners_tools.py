@@ -49,12 +49,16 @@ def test_build_mpnn_cmd() -> None:
         mpnn_dir=Path("/opt/ProteinMPNN"),
         pdb_path=Path("/w/b.pdb"),
         out_folder=Path("/w/mpnn"),
+        designed_chains=["B"],
         seed=7,
     )
     assert cmd[1].endswith("protein_mpnn_run.py")
     assert "--pdb_path" in cmd
     assert "--seed" in cmd
     assert "7" in cmd
+    # Only the named chain is designed; every other chain (the antigen on a
+    # binder-design complex) stays fixed context.
+    assert cmd[cmd.index("--pdb_path_chains") + 1] == "B"
 
 
 def test_build_boltz_cmd_msa_flag() -> None:
@@ -84,7 +88,10 @@ def test_interpreter_overrides_for_split_env_hosts(monkeypatch) -> None:
     )
     assert rf[0] == "/opt/se3_python.sh"
     mpnn = tools.build_mpnn_cmd(
-        mpnn_dir=Path("/opt/ProteinMPNN"), pdb_path=Path("/w/b.pdb"), out_folder=Path("/w/m")
+        mpnn_dir=Path("/opt/ProteinMPNN"),
+        pdb_path=Path("/w/b.pdb"),
+        out_folder=Path("/w/m"),
+        designed_chains=["A"],
     )
     assert mpnn[0] == "/opt/se3_python.sh"
     boltz = tools.build_boltz_cmd(yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"))
