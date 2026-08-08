@@ -24,6 +24,18 @@ hide:
   </div>
 </div>
 
+<div class="admonition info" markdown="0">
+  <p class="admonition-title">In plain terms</p>
+  <p>
+    bindsight reads a tumour's gene-activity data and looks for proteins that stud the
+    surface of cancer cells but not healthy ones. It then designs small custom proteins —
+    molecular &ldquo;keys&rdquo; — shaped to latch onto those targets, checks each design with
+    an AI structure model to see whether it would actually stick, ranks the best candidates,
+    and keeps a complete record of how it reached every answer.
+    New to the terms? See the <a href="glossary/">Glossary</a>.
+  </p>
+</div>
+
 <div class="bs-stats" markdown="0">
   <div class="bs-stat">
     <div class="v">rank 4</div>

@@ -17,5 +17,5 @@ gql[requests]>=3.5
 # ---- report ----
 matplotlib>=3.8
 seaborn>=0.13
-streamlit>=1.36
+streamlit>=1.60,<2
 py3Dmol>=2.0
