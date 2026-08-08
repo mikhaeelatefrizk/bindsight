@@ -8,6 +8,11 @@
 #
 # Build:  docker build -t bindsight:local .
 # Run:    docker run --rm -v "$PWD:/work" bindsight:local discover /work/my.yaml --out /work/runs/x
+#
+# NOTE: this is the CLI image (it runs `bindsight` and exits). It is NOT the
+# Hugging Face Space web entrypoint — the Space has its own Dockerfile that
+# launches Streamlit on port 8501 and lives in the Space's own git repo
+# (see .huggingface/README.md).
 FROM python:3.11.9-slim-bookworm
 
 # git: VCS-aware pip + the design tools' runtime clone; build-essential: wheels

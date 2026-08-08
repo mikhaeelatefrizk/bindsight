@@ -49,6 +49,25 @@ def test_generated_page_is_up_to_date(builder) -> None:
     assert GENERATED.read_text(encoding="utf-8") == builder.build()
 
 
+def test_generated_glossary_is_up_to_date(builder) -> None:
+    """docs/glossary.md matches what the generator produces from theme.GLOSSARY.
+
+    Keeps the docs glossary and the app's Glossary page (both rendered from the
+    same source) from drifting. If this fails, run
+    ``python scripts/build_docs_results.py`` and commit.
+    """
+    glossary = ROOT / "docs" / "glossary.md"
+    assert glossary.is_file()
+    assert glossary.read_text(encoding="utf-8") == builder.build_glossary()
+
+
+def test_glossary_covers_core_terms() -> None:
+    """The published glossary defines the jargon the app leads with."""
+    text = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+    for term in ("RNA-seq", "Surfaceome", "ipTM", "PAE", "Provenance", "ERBB2"):
+        assert term in text, f"glossary missing: {term}"
+
+
 def test_page_reports_the_published_numbers() -> None:
     """The public page states the same results the tests pin elsewhere."""
     text = GENERATED.read_text(encoding="utf-8")

@@ -1272,14 +1272,33 @@ def doctor() -> None:
     # Cache state
     base = cache_dir()
     _row("cache root", base.exists(), str(base))
+    # Report the surfaceome list discovery will *actually* use, not just whether
+    # a refreshed network cache exists. The full list is vendored with the
+    # package (2,886 accessions) and needs no network, so a missing cache is
+    # normal, not a degradation.
+    from bindsight.surfaceome.surfy import load_vendored_surfy
+
     surfy_cache = base / "surfy" / "surfy_v1.uniprot.txt"
-    _row(
-        "SURFY cache",
-        surfy_cache.exists(),
-        str(surfy_cache)
-        if surfy_cache.exists()
-        else "missing — using bundled offline fallback (~10 proteins)",
-    )
+    vendored = load_vendored_surfy()
+    if surfy_cache.exists():
+        n_cached = sum(
+            1
+            for ln in surfy_cache.read_text(encoding="utf-8").splitlines()
+            if ln.strip() and not ln.lstrip().startswith("#")
+        )
+        _row("SURFY surfaceome", n_cached > 0, f"{n_cached} accessions (refreshed cache)")
+    elif vendored is not None:
+        _row(
+            "SURFY surfaceome",
+            True,
+            f"{len(vendored)} accessions (vendored list — no network needed)",
+        )
+    else:
+        _row(
+            "SURFY surfaceome",
+            False,
+            "vendored list missing — reinstall bindsight (only a 10-protein fallback remains)",
+        )
     afdb_cache = base / "alphafolddb"
     n_afdb = len(list(afdb_cache.glob("*.cif"))) if afdb_cache.exists() else 0
     _row("AlphaFoldDB cache", afdb_cache.exists(), f"{n_afdb} mmCIF files cached")
@@ -1295,7 +1314,7 @@ def doctor() -> None:
         _row(
             "SURFACE-Bind data",
             sb_path.exists(),
-            f"env bindsight_SURFACE_BIND_DATA={sb_path}",
+            f"env BINDSIGHT_SURFACE_BIND_DATA={sb_path}",
         )
     else:
         _row(

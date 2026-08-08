@@ -61,9 +61,12 @@ jobs:
         if: runner.os == 'Linux'
         run: pip install -e ".[workflow]"
       # Coverage is configured in pyproject and was disabled here by --no-cov,
-      # so it had never actually run.
+      # so it had never actually run. It now runs AND gates: --cov-fail-under
+      # fails the build if coverage regresses below the floor. Kept a couple of
+      # points under the ~77% baseline so ordinary churn doesn't flake, while a
+      # real drop (e.g. a whole module left untested) still trips it.
       - name: Pytest (no GPU, no slow)
-        run: pytest -m "not gpu and not slow" --maxfail=5 -q
+        run: pytest -m "not gpu and not slow" --maxfail=5 -q --cov-fail-under=75
 
   build:
     name: Build wheel + sdist

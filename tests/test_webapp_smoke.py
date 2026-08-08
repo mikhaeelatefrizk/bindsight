@@ -34,6 +34,7 @@ PAGES = [
     "✨ Demo",
     "📤 Run on my data",
     "🔎 Browse a run",
+    "📖 Glossary",
     "ℹ️ About",
 ]
 

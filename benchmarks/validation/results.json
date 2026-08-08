@@ -1,9 +1,9 @@
 {
   "schema": "bindsight-validation/1",
-  "generated_utc": "2026-06-15T01:17:07+00:00",
-  "bindsight_version": "0.1.0",
+  "generated_utc": "2026-08-07T21:28:25+00:00",
+  "bindsight_version": "0.2.0",
   "cbioportal_study": "brca_tcga_pan_can_atlas_2018",
-  "known_set": "benchmarks/known.tsv",
+  "known_set": "/home/user/bindsight/benchmarks/known.tsv",
   "ks": [
     5,
     10,
@@ -62,8 +62,839 @@
         "in_top_20": true
       },
       "category": "over_expressed",
-      "run_dir": "runs/validation/brca_her2",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-BRCA",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:08:03+00:00",
+        "selection": "by_case",
+        "requested_tumor_cases": [
+          "TCGA-3C-AALI",
+          "TCGA-A2-A04W",
+          "TCGA-A2-A04X",
+          "TCGA-A2-A0CX",
+          "TCGA-A2-A0D1",
+          "TCGA-A2-A0EQ",
+          "TCGA-A2-A0T1",
+          "TCGA-A2-A3XV",
+          "TCGA-A2-A3XZ",
+          "TCGA-A8-A07I",
+          "TCGA-A8-A08B",
+          "TCGA-A8-A08J",
+          "TCGA-A8-A08L",
+          "TCGA-A8-A08X",
+          "TCGA-A8-A094",
+          "TCGA-A8-A09G",
+          "TCGA-A8-A09X",
+          "TCGA-A8-A0A7",
+          "TCGA-AC-A23H",
+          "TCGA-AC-A3W5",
+          "TCGA-AC-A5EH",
+          "TCGA-AN-A04C",
+          "TCGA-AN-A0FV",
+          "TCGA-AO-A0J2",
+          "TCGA-AO-A0JE",
+          "TCGA-AO-A12D",
+          "TCGA-AR-A0TX",
+          "TCGA-AR-A24U",
+          "TCGA-AR-A254",
+          "TCGA-B6-A0I9",
+          "TCGA-B6-A0IK",
+          "TCGA-B6-A0RH",
+          "TCGA-B6-A0RS",
+          "TCGA-BH-A0AW",
+          "TCGA-BH-A0B7",
+          "TCGA-BH-A0EE",
+          "TCGA-BH-A18P",
+          "TCGA-BH-A18R",
+          "TCGA-BH-A1EN",
+          "TCGA-BH-A1EV",
+          "TCGA-BH-A203",
+          "TCGA-C8-A12L",
+          "TCGA-C8-A12P",
+          "TCGA-C8-A12Q",
+          "TCGA-C8-A12T",
+          "TCGA-C8-A12Z",
+          "TCGA-C8-A135",
+          "TCGA-C8-A137",
+          "TCGA-C8-A138",
+          "TCGA-C8-A1HF",
+          "TCGA-C8-A1HK",
+          "TCGA-C8-A26X",
+          "TCGA-C8-A26Y",
+          "TCGA-C8-A275",
+          "TCGA-C8-A278",
+          "TCGA-C8-A8HP",
+          "TCGA-D8-A13Z",
+          "TCGA-D8-A1JA",
+          "TCGA-D8-A1JF",
+          "TCGA-D8-A1JG",
+          "TCGA-D8-A1XJ",
+          "TCGA-D8-A1XT",
+          "TCGA-E2-A14P",
+          "TCGA-E2-A14V",
+          "TCGA-E2-A152",
+          "TCGA-E2-A1B0",
+          "TCGA-E2-A1LB",
+          "TCGA-E9-A1RH",
+          "TCGA-E9-A248",
+          "TCGA-EW-A1OV",
+          "TCGA-EW-A2FR",
+          "TCGA-EW-A6SD",
+          "TCGA-GM-A2DB",
+          "TCGA-GM-A2DH",
+          "TCGA-LL-A5YO",
+          "TCGA-OL-A5RZ",
+          "TCGA-OL-A66P",
+          "TCGA-UU-A93S"
+        ],
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-B6-A0I9",
+            "sample_barcode": "TCGA-B6-A0I9-01A",
+            "gdc_file_id": "0710056c-2f04-4182-90ca-45492dd6444c"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A12P",
+            "sample_barcode": "TCGA-C8-A12P-01A",
+            "gdc_file_id": "09a491b5-1bfb-47d9-963f-69f6c7e6c1e5"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A09X",
+            "sample_barcode": "TCGA-A8-A09X-01A",
+            "gdc_file_id": "09f1c0ee-ee22-435f-88c9-d9f5c936c45c"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BH-A1EV",
+            "sample_barcode": "TCGA-BH-A1EV-01A",
+            "gdc_file_id": "0a7421d4-5722-427a-9643-da1074e5c25c"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A135",
+            "sample_barcode": "TCGA-C8-A135-01A",
+            "gdc_file_id": "0a74ea3f-dadc-4c9f-96ea-62a77c1e602c"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A094",
+            "sample_barcode": "TCGA-A8-A094-01A",
+            "gdc_file_id": "0c279a15-1250-4923-bcde-96cc3fd32d42"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E2-A1B0",
+            "sample_barcode": "TCGA-E2-A1B0-01A",
+            "gdc_file_id": "0caa1750-ec80-484f-9097-1e90fbfa41c2"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E9-A1RH",
+            "sample_barcode": "TCGA-E9-A1RH-01A",
+            "gdc_file_id": "0d140db1-dc0d-431d-b389-846d05bbb827"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-OL-A5RZ",
+            "sample_barcode": "TCGA-OL-A5RZ-01A",
+            "gdc_file_id": "0fc096b2-7fb5-4dc6-ae94-aa7dae6f885f"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A08B",
+            "sample_barcode": "TCGA-A8-A08B-01A",
+            "gdc_file_id": "111b2865-e7dc-45c9-b206-20b5713714bc"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A08X",
+            "sample_barcode": "TCGA-A8-A08X-01A",
+            "gdc_file_id": "12f8a326-1417-478e-a45e-abdff8b44266"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D8-A1XT",
+            "sample_barcode": "TCGA-D8-A1XT-01A",
+            "gdc_file_id": "130343f0-62f4-4400-8002-e596edb3c02a"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E2-A152",
+            "sample_barcode": "TCGA-E2-A152-01A",
+            "gdc_file_id": "1936440a-9cfc-4b04-af40-3fbc22fe87f6"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-OL-A66P",
+            "sample_barcode": "TCGA-OL-A66P-01A",
+            "gdc_file_id": "1af79ae6-8b40-40ae-8f68-195d8367ac38"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E9-A248",
+            "sample_barcode": "TCGA-E9-A248-01A",
+            "gdc_file_id": "1dd5828f-8e81-4196-992f-70b8203c915f"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A1HK",
+            "sample_barcode": "TCGA-C8-A1HK-01A",
+            "gdc_file_id": "2040d4e4-0ecb-4081-9478-9d2707833a1b"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A12Q",
+            "sample_barcode": "TCGA-C8-A12Q-01A",
+            "gdc_file_id": "2faa9332-e577-4884-94e4-b895827db8b6"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BH-A18R",
+            "sample_barcode": "TCGA-BH-A18R-01A",
+            "gdc_file_id": "373e0f41-a47e-4f4e-88fe-9703d16a840c"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A8HP",
+            "sample_barcode": "TCGA-C8-A8HP-01A",
+            "gdc_file_id": "37af19f9-56f9-48ec-97a9-5b0b6e364293"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A3XZ",
+            "sample_barcode": "TCGA-A2-A3XZ-01A",
+            "gdc_file_id": "3974a62d-d399-42f3-b550-336e793b0cfe"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A0CX",
+            "sample_barcode": "TCGA-A2-A0CX-01A",
+            "gdc_file_id": "3bb2e240-9cea-4dd2-be32-6bc6976a79b1"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EW-A6SD",
+            "sample_barcode": "TCGA-EW-A6SD-01A",
+            "gdc_file_id": "4a5803a6-942a-4992-8b9d-29e1091b10f6"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-GM-A2DH",
+            "sample_barcode": "TCGA-GM-A2DH-01A",
+            "gdc_file_id": "4ad2cbb3-5bca-462b-af1f-8a292c317722"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BH-A203",
+            "sample_barcode": "TCGA-BH-A203-01A",
+            "gdc_file_id": "4bf6ebc1-575d-49e4-9f66-068b537373c0"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D8-A1JA",
+            "sample_barcode": "TCGA-D8-A1JA-01A",
+            "gdc_file_id": "4c9005a5-2cca-4cc3-9a6d-09eb76d780ab"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A04X",
+            "sample_barcode": "TCGA-A2-A04X-01A",
+            "gdc_file_id": "4cac7145-605b-43d2-a1e3-309971cbe173"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E2-A14P",
+            "sample_barcode": "TCGA-E2-A14P-01A",
+            "gdc_file_id": "4ecc1f1a-8ff4-4552-a5e8-7a9652b6d1d5"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D8-A1JG",
+            "sample_barcode": "TCGA-D8-A1JG-01B",
+            "gdc_file_id": "4f4862e1-abfc-4577-bdb2-a96759ef2b53"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A12Z",
+            "sample_barcode": "TCGA-C8-A12Z-01A",
+            "gdc_file_id": "51948358-b1bb-46d7-a25c-8d3fe81557f0"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EW-A1OV",
+            "sample_barcode": "TCGA-EW-A1OV-01A",
+            "gdc_file_id": "57044315-cc7f-4677-90fa-2e959740bd9c"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A278",
+            "sample_barcode": "TCGA-C8-A278-01A",
+            "gdc_file_id": "5711aa8f-5cd6-41d0-b469-40f049556693"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A09G",
+            "sample_barcode": "TCGA-A8-A09G-01A",
+            "gdc_file_id": "575ef8e2-dfbc-48b3-9836-089b94498e09"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-GM-A2DB",
+            "sample_barcode": "TCGA-GM-A2DB-01A",
+            "gdc_file_id": "59bb8b6d-9827-4d5c-8714-cbc8ec3b8be5"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A3XV",
+            "sample_barcode": "TCGA-A2-A3XV-01A",
+            "gdc_file_id": "59f472a7-ce4f-4d3a-9193-8b3a4500d52b"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A08J",
+            "sample_barcode": "TCGA-A8-A08J-01A",
+            "gdc_file_id": "5db109b6-dbfe-4ec8-8697-bb7fff5beb4b"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AC-A3W5",
+            "sample_barcode": "TCGA-AC-A3W5-01A",
+            "gdc_file_id": "5e863e9f-1449-4a38-ac00-cfd7c21ba6e2"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A8-A07I",
+            "sample_barcode": "TCGA-A8-A07I-01A",
+            "gdc_file_id": "61647238-a8c4-4156-af15-c32947983cfd"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AO-A0J2",
+            "sample_barcode": "TCGA-AO-A0J2-01A",
+            "gdc_file_id": "62e7008b-f4ca-40e3-88b3-7354ba2585ac"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E2-A1LB",
+            "sample_barcode": "TCGA-E2-A1LB-01A",
+            "gdc_file_id": "63454d5d-a654-4be0-b812-dd5c98d07ea1"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-B6-A0RH",
+            "sample_barcode": "TCGA-B6-A0RH-01A",
+            "gdc_file_id": "6b62d6dd-bb6f-4f39-9041-992c47b875f3"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AN-A04C",
+            "sample_barcode": "TCGA-AN-A04C-01A",
+            "gdc_file_id": "6d505305-dc5f-4dc7-8721-817f444ff7ee"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D8-A1JF",
+            "sample_barcode": "TCGA-D8-A1JF-01A",
+            "gdc_file_id": "7300d49e-2e8c-42e0-873a-1674a19b71e6"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A0D1",
+            "sample_barcode": "TCGA-A2-A0D1-01A",
+            "gdc_file_id": "788a4858-c6c6-4a8d-9aef-dbd32d74776b"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AR-A24U",
+            "sample_barcode": "TCGA-AR-A24U-01A",
+            "gdc_file_id": "7af23ba7-e5bf-41b9-b91f-5709321dadb7"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BH-A0EE",
+            "sample_barcode": "TCGA-BH-A0EE-01A",
+            "gdc_file_id": "7b188e2a-4a56-49f9-b527-cd61a646f6c7"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C8-A138",
+            "sample_barcode": "TCGA-C8-A138-01A",
+            "gdc_file_id": "7dcadaff-5d95-4ba6-9ce7-50bb2e5f17aa"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E2-A14V",
+            "sample_barcode": "TCGA-E2-A14V-01A",
+            "gdc_file_id": "7efb7266-28ee-41d3-912a-b0f67135216f"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AO-A0JE",
+            "sample_barcode": "TCGA-AO-A0JE-01A",
+            "gdc_file_id": "7f1cbb4f-aecf-42be-91cc-fb35d03447df"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3C-AALI",
+            "sample_barcode": "TCGA-3C-AALI-01A",
+            "gdc_file_id": "927604f9-a38e-4c3f-b50f-3e0db4daf5ec"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A2-A04W",
+            "sample_barcode": "TCGA-A2-A04W-01A",
+            "gdc_file_id": "94468afc-faea-4091-af0f-d2df8aec37da"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A18V",
+            "sample_barcode": "TCGA-BH-A18V-11A",
+            "gdc_file_id": "040d00da-2bc9-49d4-bf6c-b4515b6a2bbf"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0BM",
+            "sample_barcode": "TCGA-BH-A0BM-11A",
+            "gdc_file_id": "046fe29e-7c99-4093-8565-f2f205a00796"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1F2",
+            "sample_barcode": "TCGA-BH-A1F2-11A",
+            "gdc_file_id": "0972f396-9045-4faa-98f8-e8c3e02f9901"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1F8",
+            "sample_barcode": "TCGA-BH-A1F8-11B",
+            "gdc_file_id": "0d11c50a-8648-48ea-a107-e138a1d3e086"
+          },
+          {
+            "sample": "N05",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A18S",
+            "sample_barcode": "TCGA-BH-A18S-11A",
+            "gdc_file_id": "0e89f9f0-419f-46e7-981d-781a1302e4be"
+          },
+          {
+            "sample": "N06",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0AY",
+            "sample_barcode": "TCGA-BH-A0AY-11A",
+            "gdc_file_id": "1320db11-22a5-417f-8ec7-65c0bf4681a2"
+          },
+          {
+            "sample": "N07",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0DG",
+            "sample_barcode": "TCGA-BH-A0DG-11A",
+            "gdc_file_id": "1479c033-ebe7-423d-8460-bbe84fd5ffb6"
+          },
+          {
+            "sample": "N08",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0C0",
+            "sample_barcode": "TCGA-BH-A0C0-11A",
+            "gdc_file_id": "15f0e499-8d53-4e97-a392-334875d25cf4"
+          },
+          {
+            "sample": "N09",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0BA",
+            "sample_barcode": "TCGA-BH-A0BA-11A",
+            "gdc_file_id": "165fe176-2dea-489f-92d6-34b0c6848312"
+          },
+          {
+            "sample": "N10",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E2-A1LH",
+            "sample_barcode": "TCGA-E2-A1LH-11A",
+            "gdc_file_id": "18b0bd2d-505f-4ecb-9bea-b52e6a74cebd"
+          },
+          {
+            "sample": "N11",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1FM",
+            "sample_barcode": "TCGA-BH-A1FM-11B",
+            "gdc_file_id": "1ce0d66a-176d-4d8a-b1c4-64d847e299be"
+          },
+          {
+            "sample": "N12",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1NG",
+            "sample_barcode": "TCGA-E9-A1NG-11A",
+            "gdc_file_id": "207ea988-6795-460c-bfeb-382d8c758f31"
+          },
+          {
+            "sample": "N13",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0E0",
+            "sample_barcode": "TCGA-BH-A0E0-11A",
+            "gdc_file_id": "21f16535-a7bb-4bbd-affe-bff937467374"
+          },
+          {
+            "sample": "N14",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A7-A0CE",
+            "sample_barcode": "TCGA-A7-A0CE-11A",
+            "gdc_file_id": "23bf74db-bb4e-44c5-8473-e651b818e460"
+          },
+          {
+            "sample": "N15",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1N5",
+            "sample_barcode": "TCGA-E9-A1N5-11A",
+            "gdc_file_id": "247f1d7d-fc33-4f35-aca7-60aa1c9631ad"
+          },
+          {
+            "sample": "N16",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1FC",
+            "sample_barcode": "TCGA-BH-A1FC-11A",
+            "gdc_file_id": "248ac510-a5af-4608-9cdc-5c8673633b82"
+          },
+          {
+            "sample": "N17",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1RI",
+            "sample_barcode": "TCGA-E9-A1RI-11A",
+            "gdc_file_id": "2a18db7b-b054-4210-b8cb-a647c26f90c1"
+          },
+          {
+            "sample": "N18",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E2-A15I",
+            "sample_barcode": "TCGA-E2-A15I-11A",
+            "gdc_file_id": "2a898b49-54b6-4cb6-8af4-fb69d0818562"
+          },
+          {
+            "sample": "N19",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0DK",
+            "sample_barcode": "TCGA-BH-A0DK-11A",
+            "gdc_file_id": "2bf56d2d-8c5e-4579-847b-03fd0ba46143"
+          },
+          {
+            "sample": "N20",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1EN",
+            "sample_barcode": "TCGA-BH-A1EN-11A",
+            "gdc_file_id": "2d148c3a-7bbd-414f-872e-dd916d0e3ccf"
+          },
+          {
+            "sample": "N21",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1N4",
+            "sample_barcode": "TCGA-E9-A1N4-11A",
+            "gdc_file_id": "2d75b6a1-0f93-4c6a-9554-73a214969c6b"
+          },
+          {
+            "sample": "N22",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0B7",
+            "sample_barcode": "TCGA-BH-A0B7-11A",
+            "gdc_file_id": "3071e512-94ea-4820-9573-668235188e34"
+          },
+          {
+            "sample": "N23",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A18Q",
+            "sample_barcode": "TCGA-BH-A18Q-11A",
+            "gdc_file_id": "336f0e3e-878e-4ee8-b2aa-cc536f3432f3"
+          },
+          {
+            "sample": "N24",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0BV",
+            "sample_barcode": "TCGA-BH-A0BV-11A",
+            "gdc_file_id": "3448aa6c-0de2-4d47-9bac-19507aee7492"
+          },
+          {
+            "sample": "N25",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1ET",
+            "sample_barcode": "TCGA-BH-A1ET-11B",
+            "gdc_file_id": "38854c85-fc09-4a51-93a7-257762517583"
+          },
+          {
+            "sample": "N26",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1RC",
+            "sample_barcode": "TCGA-E9-A1RC-11A",
+            "gdc_file_id": "392edd04-fdec-4eb7-ba2e-cef02519c219"
+          },
+          {
+            "sample": "N27",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0HA",
+            "sample_barcode": "TCGA-BH-A0HA-11A",
+            "gdc_file_id": "3aad7b0b-9f82-41d0-b3e5-5614afcac6a8"
+          },
+          {
+            "sample": "N28",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1RD",
+            "sample_barcode": "TCGA-E9-A1RD-11A",
+            "gdc_file_id": "4376b78e-bfec-4142-8407-b967883d7b6b"
+          },
+          {
+            "sample": "N29",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1RB",
+            "sample_barcode": "TCGA-E9-A1RB-11A",
+            "gdc_file_id": "447e3faf-a5f2-4739-b2aa-c907f33b634a"
+          },
+          {
+            "sample": "N30",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A18J",
+            "sample_barcode": "TCGA-BH-A18J-11A",
+            "gdc_file_id": "456bc30b-59f8-4427-b798-5b113ca635a0"
+          },
+          {
+            "sample": "N31",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A7-A13F",
+            "sample_barcode": "TCGA-A7-A13F-11A",
+            "gdc_file_id": "4c2bb8e3-2527-466b-a3bb-0f36c3b2a3e7"
+          },
+          {
+            "sample": "N32",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0AZ",
+            "sample_barcode": "TCGA-BH-A0AZ-11A",
+            "gdc_file_id": "4cce67eb-0cb7-4c8f-a81e-0e521c2b0168"
+          },
+          {
+            "sample": "N33",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0DO",
+            "sample_barcode": "TCGA-BH-A0DO-11A",
+            "gdc_file_id": "4df2233b-3bbc-4d20-9abc-2a09b3f37383"
+          },
+          {
+            "sample": "N34",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A1FE",
+            "sample_barcode": "TCGA-BH-A1FE-11B",
+            "gdc_file_id": "4f54add3-c33d-4bc9-9e1f-c75f52d15f1e"
+          },
+          {
+            "sample": "N35",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A7-A13E",
+            "sample_barcode": "TCGA-A7-A13E-11A",
+            "gdc_file_id": "50260fba-c435-480a-9bb8-f2839ba499a4"
+          },
+          {
+            "sample": "N36",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-E9-A1NF",
+            "sample_barcode": "TCGA-E9-A1NF-11A",
+            "gdc_file_id": "50721c97-1a23-405b-b7b3-2955e4c62e5a"
+          },
+          {
+            "sample": "N37",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AC-A2FM",
+            "sample_barcode": "TCGA-AC-A2FM-11B",
+            "gdc_file_id": "52151eca-7819-496e-bf31-4875b68d429d"
+          },
+          {
+            "sample": "N38",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A18N",
+            "sample_barcode": "TCGA-BH-A18N-11A",
+            "gdc_file_id": "542856ab-164d-4edd-833a-925da96d1eeb"
+          },
+          {
+            "sample": "N39",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BH-A0BZ",
+            "sample_barcode": "TCGA-BH-A0BZ-11A",
+            "gdc_file_id": "573241d2-e298-426a-84a0-2c3889bae923"
+          },
+          {
+            "sample": "N40",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GI-A2C9",
+            "sample_barcode": "TCGA-GI-A2C9-11A",
+            "gdc_file_id": "5e789924-9d98-4765-a348-90a27349d906"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "677242ade098403ba27970b3385eb86abe3d8d05dd661a834c9ba7d517387ff0",
+            "bytes": 2964153
+          },
+          "design.tsv": {
+            "sha256": "fcdc98bbb11c611c205a126bfc6ec57d985ed11c2ccfe4d04ddb9a313b194697",
+            "bytes": 8539
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/brca_her2"
     },
     {
       "cohort": {
@@ -105,8 +936,760 @@
         "in_top_20": false
       },
       "category": "not_over_expressed",
-      "run_dir": "runs/validation/coad",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-COAD",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:11:57+00:00",
+        "selection": "first_n",
+        "requested_tumor_cases": null,
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-6780",
+            "sample_barcode": "TCGA-A6-6780-01A",
+            "gdc_file_id": "00ae9ab8-6eaa-4085-af72-26f96df97fa3"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-5868",
+            "sample_barcode": "TCGA-CM-5868-01A",
+            "gdc_file_id": "00cdff29-697a-4a17-ba67-cf55c006b827"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-6165",
+            "sample_barcode": "TCGA-CM-6165-01A",
+            "gdc_file_id": "01947597-c83a-4c5d-8a45-f1fe27992ad5"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3956",
+            "sample_barcode": "TCGA-AA-3956-01A",
+            "gdc_file_id": "0194feb1-d8be-45e5-9b95-0596090e9ecc"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3527",
+            "sample_barcode": "TCGA-AA-3527-01A",
+            "gdc_file_id": "019bfec7-ec6c-4cd6-808b-3e6e058e55f9"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CA-6716",
+            "sample_barcode": "TCGA-CA-6716-01A",
+            "gdc_file_id": "01d414a2-2b77-41e8-8622-98b277f5dc85"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D5-6930",
+            "sample_barcode": "TCGA-D5-6930-01A",
+            "gdc_file_id": "02033780-6bc1-407d-bd0f-45b6d74ae87b"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AY-A8YK",
+            "sample_barcode": "TCGA-AY-A8YK-01A",
+            "gdc_file_id": "025bf99d-1e89-43f3-b0b7-8dfe5d43e192"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-6164",
+            "sample_barcode": "TCGA-CM-6164-01A",
+            "gdc_file_id": "028cf419-71ca-4bcd-9f45-3c1c394f1f17"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D5-6530",
+            "sample_barcode": "TCGA-D5-6530-01A",
+            "gdc_file_id": "03277451-4bc3-4c62-947a-0951276ee8e9"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G4-6323",
+            "sample_barcode": "TCGA-G4-6323-01A",
+            "gdc_file_id": "0361fa03-68ca-498f-9de5-0efa5cbf8c70"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3521",
+            "sample_barcode": "TCGA-AA-3521-01A",
+            "gdc_file_id": "03dfd378-4df6-48b6-a160-60d6d9f11533"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-NH-A50V",
+            "sample_barcode": "TCGA-NH-A50V-01A",
+            "gdc_file_id": "03fc84ec-ac67-4fdd-a7ce-f677cf8b82e6"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-5661",
+            "sample_barcode": "TCGA-A6-5661-01B",
+            "gdc_file_id": "04288a35-71ba-421d-80a4-52bb0853aa9f"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-4107",
+            "sample_barcode": "TCGA-A6-4107-01A",
+            "gdc_file_id": "04981c65-5d1e-4ced-bfd0-8db2e078b5c2"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AY-4070",
+            "sample_barcode": "TCGA-AY-4070-01A",
+            "gdc_file_id": "055ffec2-1932-4a20-84b8-b841fc0054eb"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-QL-A97D",
+            "sample_barcode": "TCGA-QL-A97D-01A",
+            "gdc_file_id": "059526c3-7cb1-4bdf-ac9a-0b887014b5fa"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3530",
+            "sample_barcode": "TCGA-AA-3530-01A",
+            "gdc_file_id": "05f2ad36-dc5f-4df4-8f79-afe4f46f81fb"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-5666",
+            "sample_barcode": "TCGA-A6-5666-01A",
+            "gdc_file_id": "07576e90-dbad-4c35-8fcd-e9ef89c8addc"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3655",
+            "sample_barcode": "TCGA-AA-3655-01A",
+            "gdc_file_id": "08239799-b042-41c2-90cd-6a0dad35e54d"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-5656",
+            "sample_barcode": "TCGA-A6-5656-01A",
+            "gdc_file_id": "08872f38-d20f-4610-898c-aff8fe15bfe2"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-6653",
+            "sample_barcode": "TCGA-A6-6653-01A",
+            "gdc_file_id": "08c9b174-59f5-4d74-8f01-99fbd2531f20"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DM-A0XD",
+            "sample_barcode": "TCGA-DM-A0XD-01A",
+            "gdc_file_id": "09866ae2-461d-4bc5-88e7-0cc338e502fd"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DM-A28K",
+            "sample_barcode": "TCGA-DM-A28K-01A",
+            "gdc_file_id": "09e969eb-37d0-4502-ad3f-5856b6ad8f43"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-A565",
+            "sample_barcode": "TCGA-A6-A565-01A",
+            "gdc_file_id": "0a41ee42-3997-4fde-8928-c005b34bc0d9"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AD-6890",
+            "sample_barcode": "TCGA-AD-6890-01A",
+            "gdc_file_id": "0ab52521-ed65-49f9-8508-e90062281352"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-2676",
+            "sample_barcode": "TCGA-A6-2676-01A",
+            "gdc_file_id": "0c62b002-8912-4ce0-a2e5-41bc1e3f9996"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-5862",
+            "sample_barcode": "TCGA-CM-5862-01A",
+            "gdc_file_id": "0caeddec-a904-4c53-be6d-56c83975eae0"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3815",
+            "sample_barcode": "TCGA-AA-3815-01A",
+            "gdc_file_id": "0cb1ff53-394b-4638-a754-8e9fed5ee614"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-6648",
+            "sample_barcode": "TCGA-A6-6648-01A",
+            "gdc_file_id": "0cb4425b-6b54-44ef-8594-f91b3b13d403"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-D5-5541",
+            "sample_barcode": "TCGA-D5-5541-01A",
+            "gdc_file_id": "0d104bd9-575e-483f-b827-55e617bb6d65"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-6679",
+            "sample_barcode": "TCGA-CM-6679-01A",
+            "gdc_file_id": "0d1e7193-6623-4c34-b3fe-5a7f0a6a9913"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-A02K",
+            "sample_barcode": "TCGA-AA-A02K-01A",
+            "gdc_file_id": "0d42dff4-8815-4b8d-b11c-705dfdb0a5b8"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-3810",
+            "sample_barcode": "TCGA-A6-3810-01A",
+            "gdc_file_id": "0d6ba88c-ba7a-4e82-96b0-67e2b084b088"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-6677",
+            "sample_barcode": "TCGA-CM-6677-01A",
+            "gdc_file_id": "0da581b5-c86b-4b79-95b8-6633e7246e3f"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G4-6306",
+            "sample_barcode": "TCGA-G4-6306-01A",
+            "gdc_file_id": "0e065804-8df9-4294-8a02-0b288cc68b81"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3693",
+            "sample_barcode": "TCGA-AA-3693-01A",
+            "gdc_file_id": "0e6df121-536a-4bb2-8197-4e8891c24181"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3712",
+            "sample_barcode": "TCGA-AA-3712-01A",
+            "gdc_file_id": "1035f31d-080e-4a79-ada7-6637ed571ee3"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3837",
+            "sample_barcode": "TCGA-AA-3837-01A",
+            "gdc_file_id": "1083930a-42f7-49dc-a448-f8cafa7313e5"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-3807",
+            "sample_barcode": "TCGA-A6-3807-01A",
+            "gdc_file_id": "11fb2ab9-4116-4cea-95f9-0c0ca111cc2f"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CM-6170",
+            "sample_barcode": "TCGA-CM-6170-01A",
+            "gdc_file_id": "13048c52-e0c7-4289-b7a3-86e0042f3c7b"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AZ-6600",
+            "sample_barcode": "TCGA-AZ-6600-01A",
+            "gdc_file_id": "13a72fbf-f601-4f67-aca4-796716f78293"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-A00O",
+            "sample_barcode": "TCGA-AA-A00O-01A",
+            "gdc_file_id": "13cc094c-3724-45cc-8a98-650d0c7a695a"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-A6-6780",
+            "sample_barcode": "TCGA-A6-6780-01B",
+            "gdc_file_id": "14eb25f3-a5ea-4589-9fdc-73da9e2ca081"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3941",
+            "sample_barcode": "TCGA-AA-3941-01A",
+            "gdc_file_id": "1530ffe4-22f1-40b1-96d8-57f1509a0171"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-F4-6856",
+            "sample_barcode": "TCGA-F4-6856-01A",
+            "gdc_file_id": "1630f3a7-898d-43ee-93ad-b9486024d323"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DM-A1HA",
+            "sample_barcode": "TCGA-DM-A1HA-01A",
+            "gdc_file_id": "1661a686-4738-4d21-80ae-65b8bae655e4"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3495",
+            "sample_barcode": "TCGA-AA-3495-01A",
+            "gdc_file_id": "17721431-150a-4fee-bfbe-b20a969f67a7"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-AA-3862",
+            "sample_barcode": "TCGA-AA-3862-01A",
+            "gdc_file_id": "17add25f-e442-4c52-b75a-a35b890ed565"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-F4-6460",
+            "sample_barcode": "TCGA-F4-6460-01A",
+            "gdc_file_id": "17d28300-aacf-4723-b21a-87c1fea5d6d1"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-5659",
+            "sample_barcode": "TCGA-A6-5659-11A",
+            "gdc_file_id": "026818a6-8180-4d9c-9357-b88a832b374e"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2682",
+            "sample_barcode": "TCGA-A6-2682-11A",
+            "gdc_file_id": "11c21f13-84a0-416f-a7ca-25fc1c2ee0f9"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3534",
+            "sample_barcode": "TCGA-AA-3534-11A",
+            "gdc_file_id": "1cdc3d1e-a447-4a23-a649-d1678f1cae0d"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3489",
+            "sample_barcode": "TCGA-AA-3489-11A",
+            "gdc_file_id": "2315807c-35c4-422a-bf00-91b366d53113"
+          },
+          {
+            "sample": "N05",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2678",
+            "sample_barcode": "TCGA-A6-2678-11A",
+            "gdc_file_id": "35c3dc03-a8cc-46e1-b5f6-4106ff5875f6"
+          },
+          {
+            "sample": "N06",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3520",
+            "sample_barcode": "TCGA-AA-3520-11A",
+            "gdc_file_id": "40fa17c0-c7e8-40df-8375-f1dde93d5e9c"
+          },
+          {
+            "sample": "N07",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3511",
+            "sample_barcode": "TCGA-AA-3511-11A",
+            "gdc_file_id": "477b8769-8e6d-408d-a1d6-a57ece08fb9a"
+          },
+          {
+            "sample": "N08",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2671",
+            "sample_barcode": "TCGA-A6-2671-11A",
+            "gdc_file_id": "4cf322d0-afa6-4109-aa0e-a25e587619f8"
+          },
+          {
+            "sample": "N09",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-5662",
+            "sample_barcode": "TCGA-A6-5662-11A",
+            "gdc_file_id": "50df857e-33c7-402e-ae42-6df5c8ea9a34"
+          },
+          {
+            "sample": "N10",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2686",
+            "sample_barcode": "TCGA-A6-2686-11A",
+            "gdc_file_id": "530bff57-a892-435d-94df-ddc7dbd45fb9"
+          },
+          {
+            "sample": "N11",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3663",
+            "sample_barcode": "TCGA-AA-3663-11A",
+            "gdc_file_id": "5f4a46f3-0fbe-4521-ab43-20bcb15793f1"
+          },
+          {
+            "sample": "N12",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3527",
+            "sample_barcode": "TCGA-AA-3527-11A",
+            "gdc_file_id": "62884f50-b796-4894-b76e-4b8df0985ec6"
+          },
+          {
+            "sample": "N13",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2683",
+            "sample_barcode": "TCGA-A6-2683-11A",
+            "gdc_file_id": "6869f997-6119-4a64-9dd8-4fe7266171e9"
+          },
+          {
+            "sample": "N14",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3514",
+            "sample_barcode": "TCGA-AA-3514-11A",
+            "gdc_file_id": "756b1010-09e1-425f-8682-f9f8144b3c4c"
+          },
+          {
+            "sample": "N15",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3516",
+            "sample_barcode": "TCGA-AA-3516-11A",
+            "gdc_file_id": "815fe2c4-9815-416b-b44f-9cd48c6aba89"
+          },
+          {
+            "sample": "N16",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3517",
+            "sample_barcode": "TCGA-AA-3517-11A",
+            "gdc_file_id": "88473424-2ecc-4684-af54-42d6fad65ad1"
+          },
+          {
+            "sample": "N17",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2679",
+            "sample_barcode": "TCGA-A6-2679-11A",
+            "gdc_file_id": "8de9cb61-cdb8-47f3-8c83-8ebaac2d0cb4"
+          },
+          {
+            "sample": "N18",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3531",
+            "sample_barcode": "TCGA-AA-3531-11A",
+            "gdc_file_id": "8eaead17-aacf-49b0-9f62-30fb80df9df3"
+          },
+          {
+            "sample": "N19",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2685",
+            "sample_barcode": "TCGA-A6-2685-11A",
+            "gdc_file_id": "9320a7d1-3c17-40a9-b632-defebb42b351"
+          },
+          {
+            "sample": "N20",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3713",
+            "sample_barcode": "TCGA-AA-3713-11A",
+            "gdc_file_id": "932db5dc-d38c-478c-8f8f-13b33282920a"
+          },
+          {
+            "sample": "N21",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3522",
+            "sample_barcode": "TCGA-AA-3522-11A",
+            "gdc_file_id": "962bc9cc-9173-4fb5-ac07-ae576e7eca76"
+          },
+          {
+            "sample": "N22",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6603",
+            "sample_barcode": "TCGA-AZ-6603-11A",
+            "gdc_file_id": "a06c89f2-be32-4102-b126-45dcfd364dae"
+          },
+          {
+            "sample": "N23",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3712",
+            "sample_barcode": "TCGA-AA-3712-11A",
+            "gdc_file_id": "a11f48e9-775c-420a-99d1-04b1a5bc1419"
+          },
+          {
+            "sample": "N24",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3496",
+            "sample_barcode": "TCGA-AA-3496-11A",
+            "gdc_file_id": "a699ac84-2b1c-4cea-99f2-62d8873b4940"
+          },
+          {
+            "sample": "N25",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6600",
+            "sample_barcode": "TCGA-AZ-6600-11A",
+            "gdc_file_id": "b03ee962-4866-4e02-bba9-357e1542b3ca"
+          },
+          {
+            "sample": "N26",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6601",
+            "sample_barcode": "TCGA-AZ-6601-11A",
+            "gdc_file_id": "b315758e-62d1-408b-9510-fc0a4294f7ec"
+          },
+          {
+            "sample": "N27",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3518",
+            "sample_barcode": "TCGA-AA-3518-11A",
+            "gdc_file_id": "b97a37c0-eda8-44c5-9bd2-606a708bdb75"
+          },
+          {
+            "sample": "N28",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6605",
+            "sample_barcode": "TCGA-AZ-6605-11A",
+            "gdc_file_id": "ba4ed4b0-664f-4773-ac2b-52821a614dfd"
+          },
+          {
+            "sample": "N29",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-F4-6704",
+            "sample_barcode": "TCGA-F4-6704-11A",
+            "gdc_file_id": "bb6cdb4c-198d-4908-a2cc-c1e760083aa8"
+          },
+          {
+            "sample": "N30",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-5665",
+            "sample_barcode": "TCGA-A6-5665-11A",
+            "gdc_file_id": "bdb54e47-4d66-4ca2-9709-e17c808c606f"
+          },
+          {
+            "sample": "N31",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3662",
+            "sample_barcode": "TCGA-AA-3662-11A",
+            "gdc_file_id": "c63c52c9-82ba-46f8-bd0c-9459f25e98f2"
+          },
+          {
+            "sample": "N32",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2675",
+            "sample_barcode": "TCGA-A6-2675-11A",
+            "gdc_file_id": "cc6e41a2-f851-4a1a-a7b7-91db1076d6ee"
+          },
+          {
+            "sample": "N33",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6599",
+            "sample_barcode": "TCGA-AZ-6599-11A",
+            "gdc_file_id": "d0b39c4a-a06f-4c52-84b4-3c6483651685"
+          },
+          {
+            "sample": "N34",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3660",
+            "sample_barcode": "TCGA-AA-3660-11A",
+            "gdc_file_id": "d3980bb6-edb0-482e-a8fb-2da0d0ca36d9"
+          },
+          {
+            "sample": "N35",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3655",
+            "sample_barcode": "TCGA-AA-3655-11A",
+            "gdc_file_id": "dc0b07cb-49fb-44d0-b4d0-e99d50532d6d"
+          },
+          {
+            "sample": "N36",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2680",
+            "sample_barcode": "TCGA-A6-2680-11A",
+            "gdc_file_id": "eb39fa39-ad3c-406f-b6dc-86b68419877d"
+          },
+          {
+            "sample": "N37",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-A6-2684",
+            "sample_barcode": "TCGA-A6-2684-11A",
+            "gdc_file_id": "ee9a460d-1b5e-451e-8b4b-7608a21f093d"
+          },
+          {
+            "sample": "N38",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3525",
+            "sample_barcode": "TCGA-AA-3525-11A",
+            "gdc_file_id": "f15bfb93-71dc-4593-9ef4-e5e909a8fe64"
+          },
+          {
+            "sample": "N39",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AA-3697",
+            "sample_barcode": "TCGA-AA-3697-11A",
+            "gdc_file_id": "f6ee3045-d3fb-4641-99d8-f1ecc13b3e2e"
+          },
+          {
+            "sample": "N40",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-AZ-6598",
+            "sample_barcode": "TCGA-AZ-6598-11A",
+            "gdc_file_id": "f90ba917-21bf-4822-bc55-00f933c9ec34"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "3a0d06e1675c824bc175340250c414aafb645ff1cd0f5a76b8794ed4ba7845bf",
+            "bytes": 2790565
+          },
+          "design.tsv": {
+            "sha256": "b7f7295e4af617ced13f9ec3785f9e5ffd76a5342b1fb3356997a795a4f099f4",
+            "bytes": 8539
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/coad"
     },
     {
       "cohort": {
@@ -148,8 +1731,592 @@
         "in_top_20": false
       },
       "category": "over_expressed",
-      "run_dir": "runs/validation/blca",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-BLCA",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:15:25+00:00",
+        "selection": "first_n",
+        "requested_tumor_cases": null,
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 19,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-ZF-A9RN",
+            "sample_barcode": "TCGA-ZF-A9RN-01A",
+            "gdc_file_id": "0180b8ef-dbca-4edd-bce1-3f793f354f13"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CF-A1HR",
+            "sample_barcode": "TCGA-CF-A1HR-01A",
+            "gdc_file_id": "01d381c7-6398-47cb-925c-078cd538852f"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XF-A8HH",
+            "sample_barcode": "TCGA-XF-A8HH-01A",
+            "gdc_file_id": "0240ae8f-9354-4123-b791-5333317ae9f0"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-ZF-AA4W",
+            "sample_barcode": "TCGA-ZF-AA4W-01A",
+            "gdc_file_id": "047dc5b6-c15e-4dad-b753-de55ca6e171c"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XF-A9SU",
+            "sample_barcode": "TCGA-XF-A9SU-01A",
+            "gdc_file_id": "048da4d7-cab0-49c5-8bc9-78b1bf0b365b"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3IQ",
+            "sample_barcode": "TCGA-DK-A3IQ-01A",
+            "gdc_file_id": "04be771c-5256-4c74-ab24-83ba23db4b8b"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FD-A6TK",
+            "sample_barcode": "TCGA-FD-A6TK-01A",
+            "gdc_file_id": "05e5accb-e761-4534-a81e-bf0354f7810c"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A1A7",
+            "sample_barcode": "TCGA-DK-A1A7-01A",
+            "gdc_file_id": "06ea34ab-c935-429d-a2e8-f264a103138c"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CU-A5W6",
+            "sample_barcode": "TCGA-CU-A5W6-01A",
+            "gdc_file_id": "06fa3d61-9460-4edf-8711-370536d645bc"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3X1",
+            "sample_barcode": "TCGA-DK-A3X1-01A",
+            "gdc_file_id": "07355e77-912a-458c-abb0-01533f5d4a9e"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XF-A9ST",
+            "sample_barcode": "TCGA-XF-A9ST-01A",
+            "gdc_file_id": "0787f4dc-16a6-4f22-9c32-ce6e0bf7b38b"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CF-A9FM",
+            "sample_barcode": "TCGA-CF-A9FM-01A",
+            "gdc_file_id": "085c6f32-93b3-4047-b165-bc486c3959db"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BT-A20V",
+            "sample_barcode": "TCGA-BT-A20V-01A",
+            "gdc_file_id": "094bd0ca-5f46-4ff7-b674-04c5b9001951"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-GV-A3QF",
+            "sample_barcode": "TCGA-GV-A3QF-01A",
+            "gdc_file_id": "09549fc0-c1a5-45a8-b053-dacfc261f40c"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A2I4",
+            "sample_barcode": "TCGA-DK-A2I4-01A",
+            "gdc_file_id": "097c2575-7a0d-4d3e-ad4e-00926dcfe44a"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A6B2",
+            "sample_barcode": "TCGA-DK-A6B2-01A",
+            "gdc_file_id": "0aacd6c6-c2cb-4304-8d2d-ff63e15629c2"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A1AG",
+            "sample_barcode": "TCGA-DK-A1AG-01A",
+            "gdc_file_id": "0ae9c185-e126-4848-bf85-65cd2bd7f1b2"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XF-A9SZ",
+            "sample_barcode": "TCGA-XF-A9SZ-01A",
+            "gdc_file_id": "0b2988c8-f381-40f2-903b-3a0a8ccde0bc"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E7-A519",
+            "sample_barcode": "TCGA-E7-A519-01A",
+            "gdc_file_id": "0b4e6a1c-99aa-45e3-a343-c16c26923d40"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2F-A9KO",
+            "sample_barcode": "TCGA-2F-A9KO-01A",
+            "gdc_file_id": "0be0d83b-9baa-4898-967c-81c466e8fb78"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-ZF-A9R1",
+            "sample_barcode": "TCGA-ZF-A9R1-01A",
+            "gdc_file_id": "0c1581e7-b516-4eae-83d6-e6b12d778be9"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-4Z-AA7S",
+            "sample_barcode": "TCGA-4Z-AA7S-01A",
+            "gdc_file_id": "0c884015-1384-42a9-b74e-79e525d562da"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BL-A13J",
+            "sample_barcode": "TCGA-BL-A13J-01A",
+            "gdc_file_id": "0d50ca90-4dfc-4dc8-b353-0d2af65649d6"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3IK",
+            "sample_barcode": "TCGA-DK-A3IK-01A",
+            "gdc_file_id": "0d9f45b0-f107-46cf-8683-8d9cbb93a8bf"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-C4-A0F1",
+            "sample_barcode": "TCGA-C4-A0F1-01A",
+            "gdc_file_id": "0dd57486-1eb3-4711-b4ec-8e9de0c4c5a2"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3IS",
+            "sample_barcode": "TCGA-DK-A3IS-01A",
+            "gdc_file_id": "0eb7d661-320f-4b56-9a22-5750cfb4f34f"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-UY-A9PH",
+            "sample_barcode": "TCGA-UY-A9PH-01A",
+            "gdc_file_id": "0faf322c-e776-45ea-9b14-ce8129173697"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E5-A4TZ",
+            "sample_barcode": "TCGA-E5-A4TZ-01A",
+            "gdc_file_id": "10587870-10fd-408b-bf8f-f97bbf668952"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3WW",
+            "sample_barcode": "TCGA-DK-A3WW-01A",
+            "gdc_file_id": "10a9933f-e28e-463b-ad62-68622cc1b539"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-K4-A5RH",
+            "sample_barcode": "TCGA-K4-A5RH-01A",
+            "gdc_file_id": "10fd912f-aa39-41a9-a412-45c280ee6825"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-ZF-AA56",
+            "sample_barcode": "TCGA-ZF-AA56-01A",
+            "gdc_file_id": "11528963-2ae3-44cc-a1fa-3a1ef205570c"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-UY-A8OB",
+            "sample_barcode": "TCGA-UY-A8OB-01A",
+            "gdc_file_id": "11e9f587-e1cd-446e-bba0-9991b1540e83"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-YC-A9TC",
+            "sample_barcode": "TCGA-YC-A9TC-01A",
+            "gdc_file_id": "123dbb78-446c-4172-bc3e-a5fe1255a7d8"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CF-A7I0",
+            "sample_barcode": "TCGA-CF-A7I0-01A",
+            "gdc_file_id": "1272d054-b190-487f-83d5-77a8cfda9c0c"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-K4-A5RJ",
+            "sample_barcode": "TCGA-K4-A5RJ-01A",
+            "gdc_file_id": "13624e34-f4d6-43d0-8fea-36dc5b731f2a"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-YF-AA3L",
+            "sample_barcode": "TCGA-YF-AA3L-01A",
+            "gdc_file_id": "152372fc-eebb-4fb5-b388-acdfec0f5e4d"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CF-A3MI",
+            "sample_barcode": "TCGA-CF-A3MI-01A",
+            "gdc_file_id": "16618053-5ef2-48d4-aeca-2adac22b0835"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A6B0",
+            "sample_barcode": "TCGA-DK-A6B0-01A",
+            "gdc_file_id": "17c85380-56c8-42d6-8beb-ea4379155172"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A6B1",
+            "sample_barcode": "TCGA-DK-A6B1-01A",
+            "gdc_file_id": "19bc1add-e899-47fe-a536-8fcfdc110f19"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G2-AA3C",
+            "sample_barcode": "TCGA-G2-AA3C-01A",
+            "gdc_file_id": "1abd183c-a740-42d6-b913-7c41a794a3a8"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XF-AAN3",
+            "sample_barcode": "TCGA-XF-AAN3-01A",
+            "gdc_file_id": "1b490f2b-97bb-4229-853d-d566ecc341d6"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CU-A0YO",
+            "sample_barcode": "TCGA-CU-A0YO-01A",
+            "gdc_file_id": "1b70e7f7-f918-415f-bfee-039e445e2208"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BT-A3PJ",
+            "sample_barcode": "TCGA-BT-A3PJ-01A",
+            "gdc_file_id": "1c69388f-5363-4762-ad0e-ecc431de99d2"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CF-A47Y",
+            "sample_barcode": "TCGA-CF-A47Y-01A",
+            "gdc_file_id": "1cd41b2d-6f24-4478-851a-5e20e456173d"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FD-A62O",
+            "sample_barcode": "TCGA-FD-A62O-01A",
+            "gdc_file_id": "1de8df86-f564-44c1-91ad-a58df8004911"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BL-A0C8",
+            "sample_barcode": "TCGA-BL-A0C8-01B",
+            "gdc_file_id": "1dffefdd-9d5e-44f2-9646-a949b3a23972"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-E7-A7DV",
+            "sample_barcode": "TCGA-E7-A7DV-01A",
+            "gdc_file_id": "1f2028e7-ec61-4fe1-b8bc-26e909957068"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-DK-A3WY",
+            "sample_barcode": "TCGA-DK-A3WY-01A",
+            "gdc_file_id": "1f517491-321e-44e9-9aa8-082267ec9607"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-BT-A20N",
+            "sample_barcode": "TCGA-BT-A20N-01A",
+            "gdc_file_id": "1f8056d2-b99e-4a81-bb13-999bda6719d6"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G2-A2ES",
+            "sample_barcode": "TCGA-G2-A2ES-01A",
+            "gdc_file_id": "20a68a0c-d0c3-4bf1-a1e1-0f0f2f1906b7"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GC-A3BM",
+            "sample_barcode": "TCGA-GC-A3BM-11A",
+            "gdc_file_id": "0494aded-dab8-4ad7-a884-ab4536520a6d"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-CU-A0YR",
+            "sample_barcode": "TCGA-CU-A0YR-11A",
+            "gdc_file_id": "2725f72c-af0a-40d0-a3eb-2288a0a1fa41"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-K4-A3WV",
+            "sample_barcode": "TCGA-K4-A3WV-11A",
+            "gdc_file_id": "2cbb7e35-46d4-4370-82f6-8b82103806f9"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A20N",
+            "sample_barcode": "TCGA-BT-A20N-11A",
+            "gdc_file_id": "369d20fb-7c1a-4386-8732-c1c5bce0a344"
+          },
+          {
+            "sample": "N05",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BL-A13J",
+            "sample_barcode": "TCGA-BL-A13J-11A",
+            "gdc_file_id": "443fc087-28b0-408b-8e71-66198f1f15a1"
+          },
+          {
+            "sample": "N06",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A2LA",
+            "sample_barcode": "TCGA-BT-A2LA-11A",
+            "gdc_file_id": "560f0fec-b04d-40f2-b575-b9dde46fa704"
+          },
+          {
+            "sample": "N07",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A2LB",
+            "sample_barcode": "TCGA-BT-A2LB-11A",
+            "gdc_file_id": "683d0af9-e330-4d12-9dcd-28f0fcd30678"
+          },
+          {
+            "sample": "N08",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GD-A2C5",
+            "sample_barcode": "TCGA-GD-A2C5-11A",
+            "gdc_file_id": "6a8f129f-936b-40ff-a631-bf3df5473456"
+          },
+          {
+            "sample": "N09",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A20Q",
+            "sample_barcode": "TCGA-BT-A20Q-11A",
+            "gdc_file_id": "716e7829-401e-42de-b8c4-a07ca3e275cc"
+          },
+          {
+            "sample": "N10",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A20W",
+            "sample_barcode": "TCGA-BT-A20W-11A",
+            "gdc_file_id": "871e347d-aca1-4dd4-b8dd-85c1d5bbdfae"
+          },
+          {
+            "sample": "N11",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-K4-A54R",
+            "sample_barcode": "TCGA-K4-A54R-11A",
+            "gdc_file_id": "91383643-c0b3-42b6-8169-d9363a35806c"
+          },
+          {
+            "sample": "N12",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GD-A3OQ",
+            "sample_barcode": "TCGA-GD-A3OQ-11A",
+            "gdc_file_id": "944dea08-22a6-4679-8548-d05426589a99"
+          },
+          {
+            "sample": "N13",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GC-A6I3",
+            "sample_barcode": "TCGA-GC-A6I3-11A",
+            "gdc_file_id": "aa463feb-707d-4f3f-b8ed-ca51d0054302"
+          },
+          {
+            "sample": "N14",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-CU-A0YN",
+            "sample_barcode": "TCGA-CU-A0YN-11A",
+            "gdc_file_id": "c3fc2fca-efd6-46f2-8ec1-431758aff82b"
+          },
+          {
+            "sample": "N15",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-K4-A5RI",
+            "sample_barcode": "TCGA-K4-A5RI-11A",
+            "gdc_file_id": "cc1b9d9f-e507-4067-8bfe-3162af3376ef"
+          },
+          {
+            "sample": "N16",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A20U",
+            "sample_barcode": "TCGA-BT-A20U-11A",
+            "gdc_file_id": "d11cd62b-2e3c-4f5c-9122-14ea55b8b1be"
+          },
+          {
+            "sample": "N17",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GC-A3WC",
+            "sample_barcode": "TCGA-GC-A3WC-11A",
+            "gdc_file_id": "d6d294a6-caa8-49d2-87a3-73b0aff9e07e"
+          },
+          {
+            "sample": "N18",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-BT-A20R",
+            "sample_barcode": "TCGA-BT-A20R-11A",
+            "gdc_file_id": "db5ffcf5-d843-49dd-a7c9-929c17218f40"
+          },
+          {
+            "sample": "N19",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-GD-A3OP",
+            "sample_barcode": "TCGA-GD-A3OP-11A",
+            "gdc_file_id": "fb8555db-257d-44e0-9bd8-42d6cb84a6cd"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "f242fcb0ef1a01317e70059f10529c427bbe01c67be56cc6d329e5caacf26755",
+            "bytes": 2189556
+          },
+          "design.tsv": {
+            "sha256": "000df6d3d8ddff4e9820aee04f467ce1719a3007402d561cdf8795ef1572552f",
+            "bytes": 6481
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/blca"
     },
     {
       "cohort": {
@@ -191,8 +2358,760 @@
         "in_top_20": false
       },
       "category": "not_over_expressed",
-      "run_dir": "runs/validation/luad",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-LUAD",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:19:45+00:00",
+        "selection": "first_n",
+        "requested_tumor_cases": null,
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-35-5375",
+            "sample_barcode": "TCGA-35-5375-01A",
+            "gdc_file_id": "0052ae83-7ae5-470a-a125-5cd94a9fa9e9"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-A4DF",
+            "sample_barcode": "TCGA-55-A4DF-01A",
+            "gdc_file_id": "023a34d9-c000-4053-b695-5b984b4a6fc1"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-95-8039",
+            "sample_barcode": "TCGA-95-8039-01A",
+            "gdc_file_id": "030d778f-ecb4-44eb-8baa-4286e18c9fdd"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-MP-A4T4",
+            "sample_barcode": "TCGA-MP-A4T4-01A",
+            "gdc_file_id": "0344d3bb-8bb2-459e-bc1f-ba31c7470d08"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-62-A471",
+            "sample_barcode": "TCGA-62-A471-01A",
+            "gdc_file_id": "03680aea-84a2-4775-bb9c-24f8c5907247"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-L9-A5IP",
+            "sample_barcode": "TCGA-L9-A5IP-01A",
+            "gdc_file_id": "04778fc1-a821-4029-a383-d88e711f3bee"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-50-5936",
+            "sample_barcode": "TCGA-50-5936-01A",
+            "gdc_file_id": "055fcce9-7448-4a16-ad18-d235dac7ce97"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-49-AARR",
+            "sample_barcode": "TCGA-49-AARR-01A",
+            "gdc_file_id": "05fa4573-6ca5-40dc-a48b-ec847b7c58ad"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-78-8662",
+            "sample_barcode": "TCGA-78-8662-01A",
+            "gdc_file_id": "06a639d9-ade5-4cbb-91b0-a41449ce4f49"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-05-4430",
+            "sample_barcode": "TCGA-05-4430-01A",
+            "gdc_file_id": "06d5f913-5f62-4200-8a51-26c8fa2052b4"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-44-7659",
+            "sample_barcode": "TCGA-44-7659-01A",
+            "gdc_file_id": "0737eb23-c066-4522-8f5c-dbb4b3b516b0"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-44-6146",
+            "sample_barcode": "TCGA-44-6146-01A",
+            "gdc_file_id": "074b0792-df3c-4b59-9f50-793bc14bcb81"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-L9-A50W",
+            "sample_barcode": "TCGA-L9-A50W-01A",
+            "gdc_file_id": "0765d9e8-0fec-46bc-832a-89945435d5b1"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-75-7025",
+            "sample_barcode": "TCGA-75-7025-01A",
+            "gdc_file_id": "0766019a-c9b7-4224-973e-f1cfa16082ac"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-05-4424",
+            "sample_barcode": "TCGA-05-4424-01A",
+            "gdc_file_id": "07a53d2a-ebf6-4517-880a-064bae5ee972"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-62-A46P",
+            "sample_barcode": "TCGA-62-A46P-01A",
+            "gdc_file_id": "0869efb9-b167-45af-8b2c-67433e39baad"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-38-4627",
+            "sample_barcode": "TCGA-38-4627-01A",
+            "gdc_file_id": "08971a88-cb64-4030-93e5-08d77d2ed654"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-86-8073",
+            "sample_barcode": "TCGA-86-8073-01A",
+            "gdc_file_id": "08d83462-5fcb-40c6-9d44-dbc42faa4df6"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-69-7765",
+            "sample_barcode": "TCGA-69-7765-01A",
+            "gdc_file_id": "0905662e-ae14-4807-94ef-69db108fa2ee"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-44-5645",
+            "sample_barcode": "TCGA-44-5645-01B",
+            "gdc_file_id": "091d2c9e-a8cb-4212-a434-7c7d4fd75f7b"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-6984",
+            "sample_barcode": "TCGA-55-6984-01A",
+            "gdc_file_id": "09296d1f-9877-438d-96d8-7b4cc52940dd"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-69-7764",
+            "sample_barcode": "TCGA-69-7764-01A",
+            "gdc_file_id": "09f9f414-db5b-4b54-9e8e-234bf9d7c678"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-NJ-A4YI",
+            "sample_barcode": "TCGA-NJ-A4YI-01A",
+            "gdc_file_id": "0b73f593-b6e8-4897-9b9b-f09e65e436b7"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-86-A4P7",
+            "sample_barcode": "TCGA-86-A4P7-01A",
+            "gdc_file_id": "0c09a94d-8885-49fb-91c1-aa0ebf52386a"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-8620",
+            "sample_barcode": "TCGA-55-8620-01A",
+            "gdc_file_id": "0c212a58-9a27-4850-bb22-540502e893dc"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-97-8177",
+            "sample_barcode": "TCGA-97-8177-01A",
+            "gdc_file_id": "0e6fc8f1-34ca-4f3b-9d71-5a867e5efb07"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-50-6595",
+            "sample_barcode": "TCGA-50-6595-01A",
+            "gdc_file_id": "0e9c2659-4131-4274-b0b4-3e191239f5f3"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-A492",
+            "sample_barcode": "TCGA-55-A492-01A",
+            "gdc_file_id": "0ece8b9b-d1c3-4f03-b70d-6bc06c6f52ce"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-78-7633",
+            "sample_barcode": "TCGA-78-7633-01A",
+            "gdc_file_id": "0f01f50f-495a-455d-986d-28c65e345a80"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-97-A4LX",
+            "sample_barcode": "TCGA-97-A4LX-01A",
+            "gdc_file_id": "0f37f5ba-3582-4c61-8c70-bf9b0ede6e71"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-78-7220",
+            "sample_barcode": "TCGA-78-7220-01A",
+            "gdc_file_id": "1098101e-1770-4055-ae41-d6c15e1c7b90"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-53-7624",
+            "sample_barcode": "TCGA-53-7624-01A",
+            "gdc_file_id": "1120d776-47df-4f72-862e-427d3c44dd43"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-49-AARN",
+            "sample_barcode": "TCGA-49-AARN-01A",
+            "gdc_file_id": "119e7a6c-7fd1-4a2d-bfdc-35cb13d39414"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-62-A46R",
+            "sample_barcode": "TCGA-62-A46R-01A",
+            "gdc_file_id": "12272d02-341e-43a2-aa23-7232a8dde730"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-78-7156",
+            "sample_barcode": "TCGA-78-7156-01A",
+            "gdc_file_id": "129f7ee5-6342-4a24-9317-d52462ce6a70"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-50-8457",
+            "sample_barcode": "TCGA-50-8457-01A",
+            "gdc_file_id": "12c95903-cae1-4f9f-97c7-05ab05f4fd7f"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-91-8496",
+            "sample_barcode": "TCGA-91-8496-01A",
+            "gdc_file_id": "12f5eaa4-9f64-4465-bfa6-3d9307e9f980"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-8092",
+            "sample_barcode": "TCGA-55-8092-01A",
+            "gdc_file_id": "133bfadb-ed2e-4b10-a5bf-46d31ade6dd4"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-75-5122",
+            "sample_barcode": "TCGA-75-5122-01A",
+            "gdc_file_id": "13f74ba9-96c5-4074-9589-3ce0e183c0e9"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-NJ-A4YQ",
+            "sample_barcode": "TCGA-NJ-A4YQ-01A",
+            "gdc_file_id": "140633c2-a8e9-4a2d-a044-082cd099ff98"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-50-5072",
+            "sample_barcode": "TCGA-50-5072-01A",
+            "gdc_file_id": "148c1368-6302-4daf-b389-2c92f5da0529"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-91-6831",
+            "sample_barcode": "TCGA-91-6831-01A",
+            "gdc_file_id": "14d76abd-84f2-4875-8d03-5a27b4505715"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-91-A4BD",
+            "sample_barcode": "TCGA-91-A4BD-01A",
+            "gdc_file_id": "1529d8e6-10d2-4e7c-bfb1-66820434c835"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-69-8255",
+            "sample_barcode": "TCGA-69-8255-01A",
+            "gdc_file_id": "157223aa-aab5-4522-8ff2-8104ea3561d9"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-69-8253",
+            "sample_barcode": "TCGA-69-8253-01A",
+            "gdc_file_id": "15998b11-5041-4e2d-94d9-cf714c796c13"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-86-A4D0",
+            "sample_barcode": "TCGA-86-A4D0-01A",
+            "gdc_file_id": "15a57d06-841c-473e-b89e-389f1df3504a"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-78-8640",
+            "sample_barcode": "TCGA-78-8640-01A",
+            "gdc_file_id": "169b5555-f64c-4bbd-9c07-af0c42ddb6aa"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-97-8174",
+            "sample_barcode": "TCGA-97-8174-01A",
+            "gdc_file_id": "16dc015e-0f5b-4278-a0cb-9ae30a280161"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-55-6987",
+            "sample_barcode": "TCGA-55-6987-01A",
+            "gdc_file_id": "1860869f-ecb5-43ae-9714-328ff5748c2a"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-49-6744",
+            "sample_barcode": "TCGA-49-6744-01A",
+            "gdc_file_id": "1876b908-e911-464f-be23-2b4eae0a43b6"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-49-4512",
+            "sample_barcode": "TCGA-49-4512-11A",
+            "gdc_file_id": "09fb135f-1c19-45d6-ae31-a8c32a0e06bf"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-49-6742",
+            "sample_barcode": "TCGA-49-6742-11A",
+            "gdc_file_id": "0d1f21df-73b3-4dd0-9ad4-fd5c7a5d2424"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6982",
+            "sample_barcode": "TCGA-55-6982-11A",
+            "gdc_file_id": "1a06f92b-21c5-4666-b666-8b9135a4482a"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-49-6745",
+            "sample_barcode": "TCGA-49-6745-11A",
+            "gdc_file_id": "24079217-3899-4843-81fc-638293771d93"
+          },
+          {
+            "sample": "N05",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6968",
+            "sample_barcode": "TCGA-55-6968-11A",
+            "gdc_file_id": "29dd3ad7-f2c6-4abf-8e81-6734e4bd8a6a"
+          },
+          {
+            "sample": "N06",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-6778",
+            "sample_barcode": "TCGA-44-6778-11A",
+            "gdc_file_id": "2d99f93c-797e-49a5-8892-a4e31e17b9c3"
+          },
+          {
+            "sample": "N07",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-91-6828",
+            "sample_barcode": "TCGA-91-6828-11A",
+            "gdc_file_id": "2fe6f165-3396-4abd-a0cd-07968d826828"
+          },
+          {
+            "sample": "N08",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5935",
+            "sample_barcode": "TCGA-50-5935-11A",
+            "gdc_file_id": "2ff24c33-39c6-4171-af42-f54e4ee8b021"
+          },
+          {
+            "sample": "N09",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-2661",
+            "sample_barcode": "TCGA-44-2661-11A",
+            "gdc_file_id": "359d07bf-89e3-49fd-8237-723ffb299cfb"
+          },
+          {
+            "sample": "N10",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6979",
+            "sample_barcode": "TCGA-55-6979-11A",
+            "gdc_file_id": "3ce6800e-9df0-45a7-9e18-7e141911e4e9"
+          },
+          {
+            "sample": "N11",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-91-6829",
+            "sample_barcode": "TCGA-91-6829-11A",
+            "gdc_file_id": "3f441cc8-98bd-4650-b5ad-19ae8542b666"
+          },
+          {
+            "sample": "N12",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6986",
+            "sample_barcode": "TCGA-55-6986-11A",
+            "gdc_file_id": "3f474548-c7b2-4d5e-9f8d-03c800a094fe"
+          },
+          {
+            "sample": "N13",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6983",
+            "sample_barcode": "TCGA-55-6983-11A",
+            "gdc_file_id": "46ef57a2-e2ce-4ffe-9ce8-c043c6065863"
+          },
+          {
+            "sample": "N14",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-6148",
+            "sample_barcode": "TCGA-44-6148-11A",
+            "gdc_file_id": "4756b201-87c2-4428-b2cd-f933422fe8cf"
+          },
+          {
+            "sample": "N15",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6984",
+            "sample_barcode": "TCGA-55-6984-11A",
+            "gdc_file_id": "53b14fb6-9f29-412a-921b-49e270fa2039"
+          },
+          {
+            "sample": "N16",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-38-4632",
+            "sample_barcode": "TCGA-38-4632-11A",
+            "gdc_file_id": "54a00dd0-503f-471f-88e4-8d6fcdcf8483"
+          },
+          {
+            "sample": "N17",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-2668",
+            "sample_barcode": "TCGA-44-2668-11A",
+            "gdc_file_id": "55831884-c907-457d-bb2c-7c7b3f7c4cd1"
+          },
+          {
+            "sample": "N18",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-2665",
+            "sample_barcode": "TCGA-44-2665-11A",
+            "gdc_file_id": "56e9a740-ee72-4c10-a90d-921034141b42"
+          },
+          {
+            "sample": "N19",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-38-4627",
+            "sample_barcode": "TCGA-38-4627-11A",
+            "gdc_file_id": "5a37129a-9672-4fda-8576-e7de1db7b2c2"
+          },
+          {
+            "sample": "N20",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-3398",
+            "sample_barcode": "TCGA-44-3398-11B",
+            "gdc_file_id": "5d65e761-0cb3-4e52-b14f-79be5850dba4"
+          },
+          {
+            "sample": "N21",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-38-4625",
+            "sample_barcode": "TCGA-38-4625-11A",
+            "gdc_file_id": "661b6fed-d56a-452b-adaa-4b48ee9f4dbb"
+          },
+          {
+            "sample": "N22",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6985",
+            "sample_barcode": "TCGA-55-6985-11A",
+            "gdc_file_id": "6c20a899-c806-46d0-b744-a26e53a9cb45"
+          },
+          {
+            "sample": "N23",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5932",
+            "sample_barcode": "TCGA-50-5932-11A",
+            "gdc_file_id": "75473987-65e2-43eb-a5bb-04cb7a40c902"
+          },
+          {
+            "sample": "N24",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-91-6831",
+            "sample_barcode": "TCGA-91-6831-11A",
+            "gdc_file_id": "7671d2c4-d6da-46d5-8ef0-baab496456d2"
+          },
+          {
+            "sample": "N25",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5939",
+            "sample_barcode": "TCGA-50-5939-11A",
+            "gdc_file_id": "81152340-ffac-4122-8b21-bef3a474a18e"
+          },
+          {
+            "sample": "N26",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6970",
+            "sample_barcode": "TCGA-55-6970-11A",
+            "gdc_file_id": "89bdfb20-8991-4bc4-b112-6e9be096b566"
+          },
+          {
+            "sample": "N27",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6975",
+            "sample_barcode": "TCGA-55-6975-11A",
+            "gdc_file_id": "8dbb93bd-bf45-4148-acdb-6609d5c4a1e3"
+          },
+          {
+            "sample": "N28",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5931",
+            "sample_barcode": "TCGA-50-5931-11A",
+            "gdc_file_id": "94613d97-0a68-4212-beef-3c97a0b363ef"
+          },
+          {
+            "sample": "N29",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5930",
+            "sample_barcode": "TCGA-50-5930-11A",
+            "gdc_file_id": "94913b2f-256e-4487-90ed-2c9b3869ca6b"
+          },
+          {
+            "sample": "N30",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6969",
+            "sample_barcode": "TCGA-55-6969-11A",
+            "gdc_file_id": "9ad544f6-b684-4a97-8d05-f812267962bb"
+          },
+          {
+            "sample": "N31",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-49-6744",
+            "sample_barcode": "TCGA-49-6744-11A",
+            "gdc_file_id": "9c7f6057-8225-4447-adb3-aed12aa974ad"
+          },
+          {
+            "sample": "N32",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-91-6847",
+            "sample_barcode": "TCGA-91-6847-11A",
+            "gdc_file_id": "9f01664c-19be-4841-afb4-297483d22ec8"
+          },
+          {
+            "sample": "N33",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-2662",
+            "sample_barcode": "TCGA-44-2662-11A",
+            "gdc_file_id": "a4377fa6-f7e2-4289-ac2d-3cc87b6cc289"
+          },
+          {
+            "sample": "N34",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6972",
+            "sample_barcode": "TCGA-55-6972-11A",
+            "gdc_file_id": "a4b8b2f2-6a56-4999-bd95-c2c8e4aa3bd0"
+          },
+          {
+            "sample": "N35",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-6776",
+            "sample_barcode": "TCGA-44-6776-11A",
+            "gdc_file_id": "a5c19494-731c-4519-b8a7-b7307aea2f9c"
+          },
+          {
+            "sample": "N36",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-44-6777",
+            "sample_barcode": "TCGA-44-6777-11A",
+            "gdc_file_id": "a6298ad5-dd68-44f6-85cf-f1d2c7673aa3"
+          },
+          {
+            "sample": "N37",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5933",
+            "sample_barcode": "TCGA-50-5933-11A",
+            "gdc_file_id": "a71c722c-3483-4910-926d-c79b6c9a4e7d"
+          },
+          {
+            "sample": "N38",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6980",
+            "sample_barcode": "TCGA-55-6980-11A",
+            "gdc_file_id": "a8252e2f-1dbd-4f3c-9e11-599a33d6fd24"
+          },
+          {
+            "sample": "N39",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-55-6981",
+            "sample_barcode": "TCGA-55-6981-11A",
+            "gdc_file_id": "aab3583f-37ca-4f2f-8428-aa8eda2c2274"
+          },
+          {
+            "sample": "N40",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-50-5936",
+            "sample_barcode": "TCGA-50-5936-11A",
+            "gdc_file_id": "ad62355a-f287-49b2-84a9-64c0f5847c20"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "2c8f5e383972c53b536090c5805a67f8156cff7fc870c41ee3e2f6c3064a1dfc",
+            "bytes": 2855372
+          },
+          "design.tsv": {
+            "sha256": "319b4302f46ace58c323c08ec84191adea03c2861e9e387f7fe7f2c4f1b42b26",
+            "bytes": 8539
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/luad"
     },
     {
       "cohort": {
@@ -234,8 +3153,472 @@
         "in_top_20": false
       },
       "category": "underpowered",
-      "run_dir": "runs/validation/paad",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-PAAD",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:23:06+00:00",
+        "selection": "first_n",
+        "requested_tumor_cases": null,
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 4,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-8002",
+            "sample_barcode": "TCGA-HZ-8002-01A",
+            "gdc_file_id": "0110e743-ac32-4b78-8eed-6e6cb8b75849"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9IN",
+            "sample_barcode": "TCGA-3A-A9IN-01A",
+            "gdc_file_id": "024ade99-be76-426d-b392-bdd488eed535"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-8519",
+            "sample_barcode": "TCGA-HZ-8519-01A",
+            "gdc_file_id": "08675d5b-7408-489c-8b5b-a37fe94d8c4d"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-AAPY",
+            "sample_barcode": "TCGA-FB-AAPY-01A",
+            "gdc_file_id": "0c098157-254b-492b-ad08-54cf813814d9"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-A7LX",
+            "sample_barcode": "TCGA-IB-A7LX-01A",
+            "gdc_file_id": "0e23faa2-0df2-4140-aec5-ba8e840844ea"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XN-A8T5",
+            "sample_barcode": "TCGA-XN-A8T5-01A",
+            "gdc_file_id": "0e94fd0c-0f14-412a-80c3-7cb8b9d01c75"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9IX",
+            "sample_barcode": "TCGA-3A-A9IX-01A",
+            "gdc_file_id": "103eafcd-aa33-4f6a-b3c4-a3002c951254"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9IB",
+            "sample_barcode": "TCGA-3A-A9IB-01A",
+            "gdc_file_id": "1244d7e1-7a90-4a47-b92b-fd93edd8561f"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-7646",
+            "sample_barcode": "TCGA-IB-7646-01A",
+            "gdc_file_id": "124ae6a1-e656-4f54-84b2-0df788351384"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2J-AAB4",
+            "sample_barcode": "TCGA-2J-AAB4-01A",
+            "gdc_file_id": "127d29e6-393d-40c7-8c55-1ef072e3a525"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9IH",
+            "sample_barcode": "TCGA-3A-A9IH-01A",
+            "gdc_file_id": "1500117c-5da7-43ba-8453-64d20170eb86"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-7890",
+            "sample_barcode": "TCGA-IB-7890-01A",
+            "gdc_file_id": "188fd6b9-4291-47c9-bb04-e9e67d4b0465"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-AAUO",
+            "sample_barcode": "TCGA-IB-AAUO-01A",
+            "gdc_file_id": "1985d153-e7f9-44e7-99f9-d71b5d4d565e"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-A77O",
+            "sample_barcode": "TCGA-HZ-A77O-01A",
+            "gdc_file_id": "1a5d463c-ace6-4ab6-83f4-407cb2d97db7"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-AAPQ",
+            "sample_barcode": "TCGA-FB-AAPQ-01A",
+            "gdc_file_id": "1a96328e-49a7-4655-abcd-d463138f457f"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9IL",
+            "sample_barcode": "TCGA-3A-A9IL-01A",
+            "gdc_file_id": "1b055aea-842c-4e66-8c0b-0fdbf707809b"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-8638",
+            "sample_barcode": "TCGA-HZ-8638-01A",
+            "gdc_file_id": "1b31e73d-5229-4a65-b629-1371f8aa8b62"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-AAPS",
+            "sample_barcode": "TCGA-FB-AAPS-01A",
+            "gdc_file_id": "1bccd28f-ef99-486b-b191-e07c17185d57"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-A7M4",
+            "sample_barcode": "TCGA-IB-A7M4-01A",
+            "gdc_file_id": "1c49d2cb-2071-473f-a517-2010e28475ab"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-8126",
+            "sample_barcode": "TCGA-IB-8126-01A",
+            "gdc_file_id": "1e3a2f00-8824-47ca-94ac-cff42deb90f3"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-8636",
+            "sample_barcode": "TCGA-HZ-8636-01A",
+            "gdc_file_id": "215525e7-fa5f-4495-a84d-17cd952dfcd3"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-US-A77J",
+            "sample_barcode": "TCGA-US-A77J-01A",
+            "gdc_file_id": "241606d3-f359-4df7-ba9e-1c2a86c17d10"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-A8P0",
+            "sample_barcode": "TCGA-HZ-A8P0-01A",
+            "gdc_file_id": "245632c2-f70b-4b31-b4b4-81ff6a860bc4"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-AAUS",
+            "sample_barcode": "TCGA-IB-AAUS-01A",
+            "gdc_file_id": "2493df6e-8c76-4557-a7af-6d1264e9dac4"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3E-AAAZ",
+            "sample_barcode": "TCGA-3E-AAAZ-01A",
+            "gdc_file_id": "25179d11-adde-4105-a3cb-ecfa7ea16b33"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-8001",
+            "sample_barcode": "TCGA-HZ-8001-01A",
+            "gdc_file_id": "2542cead-e252-4c01-bd34-8cf170d49f4f"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-S4-A8RO",
+            "sample_barcode": "TCGA-S4-A8RO-01A",
+            "gdc_file_id": "26842740-dfe2-4b42-b625-1f5719500851"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-7889",
+            "sample_barcode": "TCGA-IB-7889-01A",
+            "gdc_file_id": "284c58ee-b128-4d55-911c-1207d003ce52"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-AAPP",
+            "sample_barcode": "TCGA-FB-AAPP-01A",
+            "gdc_file_id": "2b89b4e4-a150-44cb-b533-4d55272841d6"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-A4P6",
+            "sample_barcode": "TCGA-FB-A4P6-01A",
+            "gdc_file_id": "2ef39ad3-7a20-43f7-8dc2-6997a89d3077"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2L-AAQE",
+            "sample_barcode": "TCGA-2L-AAQE-01A",
+            "gdc_file_id": "30d82c00-417a-42b1-8b59-6815cce20578"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-A5SO",
+            "sample_barcode": "TCGA-IB-A5SO-01A",
+            "gdc_file_id": "330772f0-6c6f-45b6-8b22-342325fbad53"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-AAPU",
+            "sample_barcode": "TCGA-FB-AAPU-01A",
+            "gdc_file_id": "333abc63-0410-4b63-b64d-11ecb404305e"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-7886",
+            "sample_barcode": "TCGA-IB-7886-01A",
+            "gdc_file_id": "3386c8d6-43ac-4149-ae83-d6f479bad39a"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2J-AABR",
+            "sample_barcode": "TCGA-2J-AABR-01A",
+            "gdc_file_id": "34fe7a7d-8120-4527-8d7f-d136f2bb010c"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XD-AAUL",
+            "sample_barcode": "TCGA-XD-AAUL-01A",
+            "gdc_file_id": "35088c7e-99d5-46d4-a8df-ae85794c019b"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-F2-A8YN",
+            "sample_barcode": "TCGA-F2-A8YN-01A",
+            "gdc_file_id": "35e2ac4f-1f27-4c48-9a15-9bb66a81b6ac"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-A49I",
+            "sample_barcode": "TCGA-HZ-A49I-01A",
+            "gdc_file_id": "3946d6e3-4460-43f8-9c1b-defceee3fe4f"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2J-AABE",
+            "sample_barcode": "TCGA-2J-AABE-01A",
+            "gdc_file_id": "3982f99d-d2ad-48cb-b3d5-840502c5bf53"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2J-AAB8",
+            "sample_barcode": "TCGA-2J-AAB8-01A",
+            "gdc_file_id": "3af1813a-c75f-45d8-8289-d19e6979f919"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-US-A774",
+            "sample_barcode": "TCGA-US-A774-01A",
+            "gdc_file_id": "3d055cb9-0bad-46bf-8579-259aac4607a2"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-AAUV",
+            "sample_barcode": "TCGA-IB-AAUV-01A",
+            "gdc_file_id": "3d21cf04-a049-44ce-b698-4c033cf1669c"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2J-AABK",
+            "sample_barcode": "TCGA-2J-AABK-01A",
+            "gdc_file_id": "3e270d2f-1ba3-4c2f-8eaf-55b97080fdab"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FB-A5VM",
+            "sample_barcode": "TCGA-FB-A5VM-01A",
+            "gdc_file_id": "3e88a838-0909-4b94-8747-9003414d422d"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-3A-A9I7",
+            "sample_barcode": "TCGA-3A-A9I7-01A",
+            "gdc_file_id": "3eb32ae7-a542-4c58-8394-fef21dbeaac7"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-8127",
+            "sample_barcode": "TCGA-IB-8127-01A",
+            "gdc_file_id": "3f463d35-ef25-4e5f-9cea-81576d0fde07"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-AAUU",
+            "sample_barcode": "TCGA-IB-AAUU-01A",
+            "gdc_file_id": "3f69c795-598c-491f-b4ae-3812a974daa3"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-IB-7651",
+            "sample_barcode": "TCGA-IB-7651-01A",
+            "gdc_file_id": "40f2771e-e140-46ed-b472-91c0233e6528"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-S4-A8RP",
+            "sample_barcode": "TCGA-S4-A8RP-01A",
+            "gdc_file_id": "425613bb-a981-4984-95d5-50839b89a04e"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HZ-A4BH",
+            "sample_barcode": "TCGA-HZ-A4BH-01A",
+            "gdc_file_id": "439c7ab0-445d-42e7-8be5-144db4245626"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HV-A5A3",
+            "sample_barcode": "TCGA-HV-A5A3-11A",
+            "gdc_file_id": "4fb9dcda-853a-41e5-b840-8595f0c6927e"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-YB-A89D",
+            "sample_barcode": "TCGA-YB-A89D-11A",
+            "gdc_file_id": "6604da06-00ac-4894-92c6-4a7c0b48acd3"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-H6-A45N",
+            "sample_barcode": "TCGA-H6-A45N-11A",
+            "gdc_file_id": "812d3bd6-7bb6-4fb5-aac7-ffd7b4fcafed"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-H6-8124",
+            "sample_barcode": "TCGA-H6-8124-11A",
+            "gdc_file_id": "f6e10a0d-b15f-46a9-909a-0a9fa7a130bd"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "7476bc18d8dc94cfbed714e329c2c6aeb5be3ede36ee5c33079c8519318a7618",
+            "bytes": 1805633
+          },
+          "design.tsv": {
+            "sha256": "218575ff0419f23260b38262a2bc729b4d17b16f59eef394a88352a33f3957d0",
+            "bytes": 5011
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/paad"
     },
     {
       "cohort": {
@@ -277,8 +3660,760 @@
         "in_top_20": false
       },
       "category": "over_expressed",
-      "run_dir": "runs/validation/prad",
-      "gdc_provenance": {}
+      "stage_status": {
+        "deg": "completed",
+        "discover": "completed"
+      },
+      "gdc_provenance": {
+        "schema": "bindsight-gdc-cohort/1",
+        "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+        "project": "TCGA-PRAD",
+        "workflow": "STAR - Counts (GENCODE v36)",
+        "data_column": "unstranded",
+        "gene_types": [
+          "protein_coding"
+        ],
+        "retrieved_utc": "2026-08-07T21:27:02+00:00",
+        "selection": "first_n",
+        "requested_tumor_cases": null,
+        "requested_normal_cases": null,
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_genes": 19944,
+        "samples": [
+          {
+            "sample": "T01",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-A48F",
+            "sample_barcode": "TCGA-HC-A48F-01A",
+            "gdc_file_id": "0007888f-8d96-4c01-8251-7fef6cc71596"
+          },
+          {
+            "sample": "T02",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-7321",
+            "sample_barcode": "TCGA-EJ-7321-01A",
+            "gdc_file_id": "00d6b6a9-179f-4b2a-826f-f8326197b17d"
+          },
+          {
+            "sample": "T03",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-KK-A8IH",
+            "sample_barcode": "TCGA-KK-A8IH-01A",
+            "gdc_file_id": "012f91be-31a2-4e38-9922-2ee6f9b3328c"
+          },
+          {
+            "sample": "T04",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-8216",
+            "sample_barcode": "TCGA-HC-8216-01A",
+            "gdc_file_id": "019f09cc-0a29-434b-a43a-1f458548cc82"
+          },
+          {
+            "sample": "T05",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-J4-AAU2",
+            "sample_barcode": "TCGA-J4-AAU2-01A",
+            "gdc_file_id": "01ef4ff8-b71e-40bf-bce6-4f854ce84d40"
+          },
+          {
+            "sample": "T06",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-VN-A88Q",
+            "sample_barcode": "TCGA-VN-A88Q-01A",
+            "gdc_file_id": "0203cc17-8a29-42e5-a6d1-924734b4d160"
+          },
+          {
+            "sample": "T07",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-7820",
+            "sample_barcode": "TCGA-HC-7820-01A",
+            "gdc_file_id": "0379c8cf-e9ab-44a7-a737-7a78ccd4fc55"
+          },
+          {
+            "sample": "T08",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-J4-A6G1",
+            "sample_barcode": "TCGA-J4-A6G1-01A",
+            "gdc_file_id": "04414ae9-75ff-40ce-bca3-65986ce49c11"
+          },
+          {
+            "sample": "T09",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-KK-A6E6",
+            "sample_barcode": "TCGA-KK-A6E6-01A",
+            "gdc_file_id": "05555a43-e14b-493c-919f-085d28597798"
+          },
+          {
+            "sample": "T10",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XJ-A9DX",
+            "sample_barcode": "TCGA-XJ-A9DX-01A",
+            "gdc_file_id": "05df8980-5345-45e9-9651-e4bdfe1270f0"
+          },
+          {
+            "sample": "T11",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-7784",
+            "sample_barcode": "TCGA-EJ-7784-01A",
+            "gdc_file_id": "06d4e72e-c4bb-45be-8a1b-c5c171f0df1d"
+          },
+          {
+            "sample": "T12",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FC-A4JI",
+            "sample_barcode": "TCGA-FC-A4JI-01A",
+            "gdc_file_id": "074cb88b-0948-433f-b2ad-bd9387b1038b"
+          },
+          {
+            "sample": "T13",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-A7NH",
+            "sample_barcode": "TCGA-EJ-A7NH-01A",
+            "gdc_file_id": "08146401-044e-4e12-b952-235e35d0bb32"
+          },
+          {
+            "sample": "T14",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HI-7168",
+            "sample_barcode": "TCGA-HI-7168-01A",
+            "gdc_file_id": "08aeaf89-9824-4064-8689-edc267d6d09b"
+          },
+          {
+            "sample": "T15",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G9-6332",
+            "sample_barcode": "TCGA-G9-6332-01A",
+            "gdc_file_id": "09470372-94fe-42e0-99ec-b8a0e7f0f859"
+          },
+          {
+            "sample": "T16",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-ZG-A9L1",
+            "sample_barcode": "TCGA-ZG-A9L1-01A",
+            "gdc_file_id": "0a7fb2b5-24c0-4eab-bedc-ba84d3c8395e"
+          },
+          {
+            "sample": "T17",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-5502",
+            "sample_barcode": "TCGA-EJ-5502-01A",
+            "gdc_file_id": "0afc563f-75a9-4e20-9094-9bbc83bfb7f6"
+          },
+          {
+            "sample": "T18",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-5498",
+            "sample_barcode": "TCGA-EJ-5498-01A",
+            "gdc_file_id": "0c99fd7e-87f9-4e82-82bb-9b35f3b3f671"
+          },
+          {
+            "sample": "T19",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-V1-A8MG",
+            "sample_barcode": "TCGA-V1-A8MG-01A",
+            "gdc_file_id": "0ce8b8c9-2829-4c5f-ae01-a1951a75cad2"
+          },
+          {
+            "sample": "T20",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-5524",
+            "sample_barcode": "TCGA-EJ-5524-01A",
+            "gdc_file_id": "0dacffa4-34d3-4e1c-b189-c0dc465d28a8"
+          },
+          {
+            "sample": "T21",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CH-5764",
+            "sample_barcode": "TCGA-CH-5764-01A",
+            "gdc_file_id": "0de94f0b-d06b-460c-aed0-c18380d4fc94"
+          },
+          {
+            "sample": "T22",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-A8CY",
+            "sample_barcode": "TCGA-HC-A8CY-01A",
+            "gdc_file_id": "0e606b57-4c63-46b5-a194-1a3faa2dd002"
+          },
+          {
+            "sample": "T23",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-X4-A8KQ",
+            "sample_barcode": "TCGA-X4-A8KQ-01A",
+            "gdc_file_id": "0f472603-0065-41f4-8a11-e0f996051909"
+          },
+          {
+            "sample": "T24",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-VP-A87H",
+            "sample_barcode": "TCGA-VP-A87H-01A",
+            "gdc_file_id": "0fe951bf-419b-481f-a815-19659d89da45"
+          },
+          {
+            "sample": "T25",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-8258",
+            "sample_barcode": "TCGA-HC-8258-01A",
+            "gdc_file_id": "107b0ba8-f479-42dc-a916-385b845a162c"
+          },
+          {
+            "sample": "T26",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HI-7170",
+            "sample_barcode": "TCGA-HI-7170-01A",
+            "gdc_file_id": "10957836-8d8c-4cfb-965d-67e27514bf87"
+          },
+          {
+            "sample": "T27",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CH-5737",
+            "sample_barcode": "TCGA-CH-5737-01A",
+            "gdc_file_id": "10e760a6-6410-4f2f-acdd-1cff022dfda9"
+          },
+          {
+            "sample": "T28",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-5514",
+            "sample_barcode": "TCGA-EJ-5514-01A",
+            "gdc_file_id": "11305b7a-7160-42f7-a577-88b546f7c5cb"
+          },
+          {
+            "sample": "T29",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CH-5767",
+            "sample_barcode": "TCGA-CH-5767-01A",
+            "gdc_file_id": "11ef7a70-afe8-4882-a705-20623aa0b3fb"
+          },
+          {
+            "sample": "T30",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-VP-A875",
+            "sample_barcode": "TCGA-VP-A875-01A",
+            "gdc_file_id": "1373d436-3021-4d0d-8316-687f5249f295"
+          },
+          {
+            "sample": "T31",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-YL-A8SH",
+            "sample_barcode": "TCGA-YL-A8SH-01B",
+            "gdc_file_id": "143f05b1-fb66-4f24-a2f1-bdb1917d36c2"
+          },
+          {
+            "sample": "T32",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-KK-A59Y",
+            "sample_barcode": "TCGA-KK-A59Y-01A",
+            "gdc_file_id": "152d2082-59de-4e7b-9715-fc7166b24507"
+          },
+          {
+            "sample": "T33",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-A8FS",
+            "sample_barcode": "TCGA-EJ-A8FS-01A",
+            "gdc_file_id": "1636439e-0fcd-46ba-8c1a-d4ac34d15ef0"
+          },
+          {
+            "sample": "T34",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CH-5745",
+            "sample_barcode": "TCGA-CH-5745-01A",
+            "gdc_file_id": "17606720-0f73-4145-894c-dda680498dea"
+          },
+          {
+            "sample": "T35",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-A8D1",
+            "sample_barcode": "TCGA-HC-A8D1-01A",
+            "gdc_file_id": "17b9171a-bd88-4000-8ed7-feccae4fb26a"
+          },
+          {
+            "sample": "T36",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-YL-A9WH",
+            "sample_barcode": "TCGA-YL-A9WH-01A",
+            "gdc_file_id": "17ddf15f-80b7-4c8a-9cf6-d77bcb3e99f0"
+          },
+          {
+            "sample": "T37",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-FC-A8O0",
+            "sample_barcode": "TCGA-FC-A8O0-01A",
+            "gdc_file_id": "18212b0b-3e60-4ee7-a70e-b0c2182e99f0"
+          },
+          {
+            "sample": "T38",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-A8FP",
+            "sample_barcode": "TCGA-EJ-A8FP-01A",
+            "gdc_file_id": "18558fbd-7b19-443b-85fe-13062861c228"
+          },
+          {
+            "sample": "T39",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-G9-6354",
+            "sample_barcode": "TCGA-G9-6354-01A",
+            "gdc_file_id": "18df3508-adb6-4fb8-9610-6d69ea1c71cf"
+          },
+          {
+            "sample": "T40",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-CH-5746",
+            "sample_barcode": "TCGA-CH-5746-01A",
+            "gdc_file_id": "19687c96-30a3-4f24-ba15-2fbd1093c49f"
+          },
+          {
+            "sample": "T41",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-HC-A6AQ",
+            "sample_barcode": "TCGA-HC-A6AQ-01A",
+            "gdc_file_id": "197bedd1-cca1-4ee0-aaf5-60b6d303ca12"
+          },
+          {
+            "sample": "T42",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-J4-A83J",
+            "sample_barcode": "TCGA-J4-A83J-01A",
+            "gdc_file_id": "19c2cf7d-b0e6-45a8-aaae-ea679ee34f2e"
+          },
+          {
+            "sample": "T43",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-5510",
+            "sample_barcode": "TCGA-EJ-5510-01A",
+            "gdc_file_id": "19f4b8b7-e241-45cd-88c3-ab787e901d3f"
+          },
+          {
+            "sample": "T44",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-2A-AAYU",
+            "sample_barcode": "TCGA-2A-AAYU-01A",
+            "gdc_file_id": "1a6126f3-97a5-48ac-803a-0c4377d21cf6"
+          },
+          {
+            "sample": "T45",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-A7NK",
+            "sample_barcode": "TCGA-EJ-A7NK-01A",
+            "gdc_file_id": "1bd1bb1d-f8a6-48e5-b7a4-07d73a4b6c05"
+          },
+          {
+            "sample": "T46",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-M7-A71Y",
+            "sample_barcode": "TCGA-M7-A71Y-01A",
+            "gdc_file_id": "1e0a3771-f73d-403b-8ecb-00df6fad9158"
+          },
+          {
+            "sample": "T47",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-XK-AAIR",
+            "sample_barcode": "TCGA-XK-AAIR-01A",
+            "gdc_file_id": "1e585cda-d2b3-4f0e-bb52-e3ae5952b838"
+          },
+          {
+            "sample": "T48",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-EJ-A46E",
+            "sample_barcode": "TCGA-EJ-A46E-01A",
+            "gdc_file_id": "1eb0b91c-4ccb-4546-a6f2-ead7fbac895b"
+          },
+          {
+            "sample": "T49",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-KK-A6E3",
+            "sample_barcode": "TCGA-KK-A6E3-01A",
+            "gdc_file_id": "1f12acd4-1569-431c-b7b2-448638086ca4"
+          },
+          {
+            "sample": "T50",
+            "condition": "tumor",
+            "sample_type": "Primary Tumor",
+            "case_barcode": "TCGA-VP-A87E",
+            "sample_barcode": "TCGA-VP-A87E-01A",
+            "gdc_file_id": "1f2028e1-2ac9-4094-8258-cfa74628a584"
+          },
+          {
+            "sample": "N01",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7737",
+            "sample_barcode": "TCGA-HC-7737-11A",
+            "gdc_file_id": "0427d696-a33d-4005-ac1d-c5363754226e"
+          },
+          {
+            "sample": "N02",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7738",
+            "sample_barcode": "TCGA-HC-7738-11A",
+            "gdc_file_id": "10ac475b-ebab-4164-abd5-0c53bdf5c558"
+          },
+          {
+            "sample": "N03",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7331",
+            "sample_barcode": "TCGA-EJ-7331-11A",
+            "gdc_file_id": "1db84a0e-7ed1-423a-918e-23ac556360df"
+          },
+          {
+            "sample": "N04",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6348",
+            "sample_barcode": "TCGA-G9-6348-11A",
+            "gdc_file_id": "1ee06261-6298-41fa-a253-145d457772e1"
+          },
+          {
+            "sample": "N05",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7789",
+            "sample_barcode": "TCGA-EJ-7789-11A",
+            "gdc_file_id": "1f4a9a3f-ceff-4065-93c6-7f59f24c8ddf"
+          },
+          {
+            "sample": "N06",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-CH-5768",
+            "sample_barcode": "TCGA-CH-5768-11A",
+            "gdc_file_id": "207a5cf3-061a-4766-b857-99b807de2649"
+          },
+          {
+            "sample": "N07",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-8259",
+            "sample_barcode": "TCGA-HC-8259-11A",
+            "gdc_file_id": "21e42b51-03fd-4ca7-bd14-7fa4a90d15a1"
+          },
+          {
+            "sample": "N08",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-8260",
+            "sample_barcode": "TCGA-HC-8260-11A",
+            "gdc_file_id": "2354013f-1b41-4e7b-8756-5697fa8757fd"
+          },
+          {
+            "sample": "N09",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-8262",
+            "sample_barcode": "TCGA-HC-8262-11A",
+            "gdc_file_id": "29d3f44a-ce3c-4162-9c5b-c62eff90bd91"
+          },
+          {
+            "sample": "N10",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7327",
+            "sample_barcode": "TCGA-EJ-7327-11A",
+            "gdc_file_id": "2f6ca933-3daf-41dc-9403-880fa45ef36c"
+          },
+          {
+            "sample": "N11",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6496",
+            "sample_barcode": "TCGA-G9-6496-11A",
+            "gdc_file_id": "3a643e32-8ece-4e7f-93a0-9fab9c33ddd3"
+          },
+          {
+            "sample": "N12",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7782",
+            "sample_barcode": "TCGA-EJ-7782-11A",
+            "gdc_file_id": "418d89ca-5818-48b5-8aae-9346dd96af2d"
+          },
+          {
+            "sample": "N13",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-8258",
+            "sample_barcode": "TCGA-HC-8258-11A",
+            "gdc_file_id": "45dfb0ee-7d53-4bd8-b1d0-4a0a3275e4b5"
+          },
+          {
+            "sample": "N14",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7742",
+            "sample_barcode": "TCGA-HC-7742-11A",
+            "gdc_file_id": "508f82a6-c6c1-4452-851c-2e77f4799601"
+          },
+          {
+            "sample": "N15",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6362",
+            "sample_barcode": "TCGA-G9-6362-11A",
+            "gdc_file_id": "509fc559-6750-46e0-881d-71a4a313d270"
+          },
+          {
+            "sample": "N16",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6365",
+            "sample_barcode": "TCGA-G9-6365-11A",
+            "gdc_file_id": "5190374f-ea8a-43a3-b443-79fac4506a48"
+          },
+          {
+            "sample": "N17",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7211",
+            "sample_barcode": "TCGA-HC-7211-11A",
+            "gdc_file_id": "553daef5-9cde-42f2-a921-f7f90d087886"
+          },
+          {
+            "sample": "N18",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7314",
+            "sample_barcode": "TCGA-EJ-7314-11A",
+            "gdc_file_id": "578187d6-1510-4c26-ac25-b1df3183f502"
+          },
+          {
+            "sample": "N19",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7328",
+            "sample_barcode": "TCGA-EJ-7328-11A",
+            "gdc_file_id": "57cbed7b-24d1-4704-b613-7539260edcfe"
+          },
+          {
+            "sample": "N20",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-A8FO",
+            "sample_barcode": "TCGA-EJ-A8FO-11A",
+            "gdc_file_id": "61fb3d31-24d9-45ad-a3ee-7959fdafcd26"
+          },
+          {
+            "sample": "N21",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7747",
+            "sample_barcode": "TCGA-HC-7747-11A",
+            "gdc_file_id": "656e67f9-b280-480b-a7a5-444ddf979027"
+          },
+          {
+            "sample": "N22",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7330",
+            "sample_barcode": "TCGA-EJ-7330-11A",
+            "gdc_file_id": "677534b8-e9e9-421c-94d3-f50571c355f4"
+          },
+          {
+            "sample": "N23",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7797",
+            "sample_barcode": "TCGA-EJ-7797-11A",
+            "gdc_file_id": "68caa1a5-bea8-4191-b96b-92d6adab99eb"
+          },
+          {
+            "sample": "N24",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7752",
+            "sample_barcode": "TCGA-HC-7752-11A",
+            "gdc_file_id": "76d4a24e-56c2-4ac0-97d6-1a7ddc8f286f"
+          },
+          {
+            "sample": "N25",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7317",
+            "sample_barcode": "TCGA-EJ-7317-11A",
+            "gdc_file_id": "7e37fa46-f809-4e8a-8a5e-a8b220d4e5c1"
+          },
+          {
+            "sample": "N26",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7793",
+            "sample_barcode": "TCGA-EJ-7793-11A",
+            "gdc_file_id": "8207dbc1-61c6-4f2d-b92c-a43d495091a6"
+          },
+          {
+            "sample": "N27",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7745",
+            "sample_barcode": "TCGA-HC-7745-11A",
+            "gdc_file_id": "83bc9228-d1e5-4985-b37c-3d97232f2669"
+          },
+          {
+            "sample": "N28",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7786",
+            "sample_barcode": "TCGA-EJ-7786-11A",
+            "gdc_file_id": "84a81bac-6f26-4787-b7a6-8abab21ef7eb"
+          },
+          {
+            "sample": "N29",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7781",
+            "sample_barcode": "TCGA-EJ-7781-11A",
+            "gdc_file_id": "88e4e48c-b3f2-43a1-b25b-c9cc254fd0b6"
+          },
+          {
+            "sample": "N30",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6363",
+            "sample_barcode": "TCGA-G9-6363-11A",
+            "gdc_file_id": "8a3152f5-82ae-45fd-a47c-16faef15c86d"
+          },
+          {
+            "sample": "N31",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6499",
+            "sample_barcode": "TCGA-G9-6499-11A",
+            "gdc_file_id": "8a3d6d97-cbdf-41ce-acc0-28248199cbab"
+          },
+          {
+            "sample": "N32",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7784",
+            "sample_barcode": "TCGA-EJ-7784-11A",
+            "gdc_file_id": "8f1b4d8a-4845-4774-9fc2-0a459303bef8"
+          },
+          {
+            "sample": "N33",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7315",
+            "sample_barcode": "TCGA-EJ-7315-11A",
+            "gdc_file_id": "95f0ecc5-a02f-4426-8a55-4def0758e267"
+          },
+          {
+            "sample": "N34",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6356",
+            "sample_barcode": "TCGA-G9-6356-11A",
+            "gdc_file_id": "9ffd93f3-b429-4876-a145-964cb53b0ae0"
+          },
+          {
+            "sample": "N35",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-CH-5769",
+            "sample_barcode": "TCGA-CH-5769-11A",
+            "gdc_file_id": "a0911555-5095-463b-8d22-cb236576e6f6"
+          },
+          {
+            "sample": "N36",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-CH-5761",
+            "sample_barcode": "TCGA-CH-5761-11A",
+            "gdc_file_id": "a149b835-a3bb-43d8-8b40-3a84bcf46e89"
+          },
+          {
+            "sample": "N37",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-G9-6351",
+            "sample_barcode": "TCGA-G9-6351-11A",
+            "gdc_file_id": "a47f3dac-45bb-4f7d-ad28-a7ead099891e"
+          },
+          {
+            "sample": "N38",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-HC-7740",
+            "sample_barcode": "TCGA-HC-7740-11A",
+            "gdc_file_id": "a82b0819-225b-4aa8-bb97-3cbd4873bc54"
+          },
+          {
+            "sample": "N39",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7123",
+            "sample_barcode": "TCGA-EJ-7123-11A",
+            "gdc_file_id": "abb04117-9caf-4882-a8fc-80450bdc9446"
+          },
+          {
+            "sample": "N40",
+            "condition": "normal",
+            "sample_type": "Solid Tissue Normal",
+            "case_barcode": "TCGA-EJ-7321",
+            "sample_barcode": "TCGA-EJ-7321-11A",
+            "gdc_file_id": "ad30d409-9b81-469f-8447-99a50dfcd1de"
+          }
+        ],
+        "outputs": {
+          "counts.tsv.gz": {
+            "sha256": "ed9361b70487f02a520b2aec0b2a8310a867d3cacf328606005d47a11b5646b3",
+            "bytes": 2926139
+          },
+          "design.tsv": {
+            "sha256": "f82298f6578a3f2b0111eb2732209796cbdb7625c8aaa203c31764060b29c4c6",
+            "bytes": 8539
+          }
+        }
+      },
+      "run_dir": "/home/user/bindsight/runs/validation/prad"
     }
   ],
   "data_limited": [
