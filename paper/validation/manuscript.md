@@ -20,9 +20,11 @@ contrast? Using GDC STAR-Counts and cBioPortal PAM50 calls, we run six
 indication-matched cohorts and score the rank of each known antigen in the
 candidate shortlist. The pipeline rediscovers **ERBB2 (HER2) at rank 4** in
 HER2-enriched breast cancer — a result that depends on PAM50 subtype
-stratification — and exhibits clean **specificity**: antigens that are *not*
-transcriptionally over-expressed at the bulk level (EGFR, CEA) are correctly
-left out, even though they are famous drug targets. Sensitivity tracks
+stratification. Antigens that are *not* transcriptionally over-expressed at the
+bulk level (EGFR, CEA) are left out even though they are famous drug targets —
+an internal consistency check on the over-expression rule, which excludes them
+from candidacy by construction, rather than a measurement of how well the
+ranking discriminates. Sensitivity tracks
 differential-expression effect size, the expected behaviour of a DE-based
 method. We report every number transparently, including the misses, and use
 them to delineate the scope of bulk-DE discovery and motivate the multi-modal
@@ -97,13 +99,19 @@ TCGA-BRCA, ERBB2's signal is diluted across subtypes. recall@5 = recall@10 =
 recall@20 = 33% (1/3): ERBB2 is found; NECTIN4 (log2fc 1.59) and FOLH1
 (log2fc 1.32) are only modestly over-expressed and fall below the shortlist.
 
-**Specificity.** **2/2** antigens that are not over-expressed at the bulk level
-are correctly kept out of the top-20. EGFR drives lung adenocarcinoma through
-mutation and amplification, not bulk mRNA over-expression (log2fc 0.42, n.s.);
-CEA (CEACAM5) is abundantly expressed in *normal* colon epithelium too, so its
-tumor-vs-normal fold-change is ≈ 0 (log2fc −0.31, n.s., baseMean ≈ 1.7×10⁵ in
-both arms). The pipeline keys on genuine over-expression, not clinical fame — it
-does not manufacture false positives from famous targets.
+**Internal consistency (reported as "2/2").** Both antigens that are not
+over-expressed at the bulk level stay out of the top-20. EGFR drives lung
+adenocarcinoma through mutation and amplification, not bulk mRNA
+over-expression (log2fc 0.42, n.s.); CEA (CEACAM5) is abundantly expressed in
+*normal* colon epithelium too, so its tumor-vs-normal fold-change is ≈ 0
+(log2fc −0.31, n.s., baseMean ≈ 1.7×10⁵ in both arms). This figure must not be
+read as a measurement of ranking discrimination: the discovery rule requires
+FDR < 0.05 and log2fc ≥ 1.0, so an antigen failing it is excluded from
+candidacy **by construction**. What 2/2 shows is that the documented rule was
+applied end-to-end and that clinical fame does not enter the scoring anywhere —
+not that the ranking was tested against famous-but-not-over-expressed
+competitors it could have surfaced. Measuring discrimination would require
+antigens that *pass* the over-expression gate and should still rank low.
 
 **Sensitivity tracks effect size.** Across the panel, whether an antigen is
 surfaced is governed by its differential-expression magnitude (Figure 2): the

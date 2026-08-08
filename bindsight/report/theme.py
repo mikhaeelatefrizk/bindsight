@@ -64,7 +64,10 @@ GITHUB_URL = "https://github.com/mikhaeelatefrizk/bindsight"
 DOCS_URL = "https://mikhaeelatefrizk.github.io/bindsight/"
 HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
 STREAMLIT_URL = "https://bindsight.streamlit.app/"
-ZENODO_DOI_URL = "https://doi.org/10.5281/zenodo.20121496"
+# The concept DOI, which always resolves to the latest release; a version DOI
+# would pin readers to whichever release happened to be current when this was
+# written.
+ZENODO_DOI_URL = "https://doi.org/10.5281/zenodo.20121495"
 LICENSE_NAME = "AGPL-3.0-or-later"
 
 

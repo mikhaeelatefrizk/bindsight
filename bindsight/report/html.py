@@ -90,6 +90,7 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
         n_taxonomy=len(taxonomy_df) if taxonomy_df is not None else 0,
         manifest=manifest,
         stages=manifest.get("stages", []) if manifest else [],
+        failed_stages=_failed_stages(manifest),
         limitations=[{"title": t, "body": b} for t, b in DISCOVERY_LIMITATIONS],
     )
 
@@ -145,6 +146,28 @@ _DISPOSITION_ORDER = (
     "no_surface_bind_site",
     "surfaced",
 )
+
+
+def _failed_stages(manifest: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Return ``{name, error}`` for every stage the manifest records as failed.
+
+    A crashed run leaves the same empty tables behind as a run that genuinely
+    surfaced nothing. Only the manifest separates them, so the report reads it
+    and refuses to offer "loosen the thresholds" advice for a pipeline that
+    never got as far as applying them.
+
+    Args:
+        manifest: Parsed ``run_manifest.jsonld`` body, or ``None``.
+
+    Returns:
+        The failed stages in manifest order; empty when nothing failed.
+    """
+    stages = (manifest or {}).get("stages") or []
+    return [
+        {"name": str(s.get("name") or "?"), "error": s.get("error")}
+        for s in stages
+        if isinstance(s, dict) and s.get("status") == "failed"
+    ]
 
 
 def _disposition_counts(df: pd.DataFrame | None) -> list[dict[str, Any]]:

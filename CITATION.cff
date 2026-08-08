@@ -19,6 +19,13 @@ authors:
     orcid: "https://orcid.org/0009-0006-1069-9558"
 repository-code: "https://github.com/mikhaeelatefrizk/bindsight"
 url: "https://github.com/mikhaeelatefrizk/bindsight"
+# Zenodo concept DOI — always resolves to the latest archived version, which is
+# the DOI to cite for "the software" rather than one specific release.
+doi: "10.5281/zenodo.20121495"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20121495"
+    description: "Concept DOI for all versions of bindsight"
 license: AGPL-3.0-or-later
 keywords:
   - protein-design
@@ -35,5 +42,5 @@ keywords:
   - RO-Crate
   - target-discovery
   - cancer-immunotherapy
-version: 0.2.0
-date-released: "2026-06-25"
+version: 0.2.1
+date-released: "2026-08-09"

@@ -12,12 +12,20 @@ description: What bindsight is — an open-source pipeline that turns RNA-seq co
 
 ## The one-sentence pitch
 
-**`bindsight` is the first open-source tool that takes RNA-seq counts as input
-and produces ranked, structurally-validated de novo protein binder candidates
-as output, with a complete audit trail back to the patient cohort the targets
-came from.**
+**`bindsight` joins cohort RNA-seq target discovery to de novo protein binder
+design in one reproducible workflow, and keeps a machine-readable audit trail
+from every ranked binder back to the patient samples the target came from.**
 
 That's it. Counts in, designed binders out, every step documented.
+
+Neither half is new on its own — that is the point. Binder-design workflows
+(BindCraft, BinderFlow, `dl_binder_design`, nf-proteindesign) begin at a target
+you have already chosen; expression- and surfaceome-based target discovery
+(pan-cancer surfaceome screens, pVACtools for neoantigens) ends at a ranked gene
+or peptide list. As far as we are aware, bindsight is the first open-source tool
+that runs both halves end-to-end and carries provenance *across the join*. The
+individual steps belong to the community; the join, its defaults and its receipts
+are what bindsight adds.
 
 ---
 
@@ -96,9 +104,9 @@ Every binder PDB the pipeline outputs is one click from:
 - the differential-expression statistics that flagged the target,
 - the AlphaFoldDB structure used,
 - the SURFACE-Bind site predicted,
-- the trajectory seed and designer commit SHA,
+- the trajectory seed and the resolved design parameters,
 - the validator metrics,
-- the container digest of every step.
+- the image digest of any containerised step, where that image was pulled by digest.
 
 This is recorded as a [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifest
 and packaged as an [RO-Crate](https://www.researchobject.org/ro-crate/) — both

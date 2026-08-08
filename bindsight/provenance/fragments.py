@@ -171,7 +171,7 @@ def stage_record_from_fragment(payload: dict[str, Any]) -> StageRecord:
     """
     name = str(payload.get("stage") or "unknown")
     status = str(payload.get("status") or "completed")
-    if status not in {"running", "completed", "failed", "skipped_cache"}:
+    if status not in {"running", "completed", "failed", "skipped", "skipped_cache"}:
         status = "completed"
 
     tool_payload = payload.get("tool") or default_tool()

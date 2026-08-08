@@ -116,6 +116,30 @@ def _as_float(value: object) -> float | None:
         return None
 
 
+def _as_optional_bool(value: object) -> bool | None:
+    """Coerce a JSON boolean, returning ``None`` when it is absent or unreadable.
+
+    Provenance that cannot be read must never collapse into ``False``: an
+    artifact with no flag has *unknown* provenance, and a caller has to be able
+    to tell that apart from an affirmative "this was recorded as real".
+
+    Args:
+        value: The raw value read from the artifact, or ``None`` when absent.
+
+    Returns:
+        The boolean, or ``None`` when the artifact did not state one.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "yes", "1"}:
+            return True
+        if lowered in {"false", "no", "0"}:
+            return False
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Rediscovery validation
 # ---------------------------------------------------------------------------
@@ -259,7 +283,10 @@ class DesignerShowcase:
     gpu: str
     validator: str
     n_trajectories: int
-    is_mock: bool
+    #: ``True`` mock backend, ``False`` real GPU run, ``None`` when the artifact
+    #: never stated it. Unknown is not "real": a benchmark that does not record
+    #: its own provenance cannot be advertised as a genuine GPU result.
+    is_mock: bool | None
     targets: list[str]
     designers: list[dict[str, Any]]
     binders: list[BinderDesign]
@@ -358,7 +385,7 @@ def load_designer_benchmark(root: Path | None = None) -> DesignerShowcase | None
         gpu=str(data.get("gpu", "")),
         validator=str(data.get("validator", "")),
         n_trajectories=int(data.get("n_trajectories") or 0),
-        is_mock=bool(data.get("is_mock", False)),
+        is_mock=_as_optional_bool(data.get("is_mock")),
         targets=[str(t) for t in (data.get("targets") or [])],
         designers=list(data.get("designers") or []),
         binders=binders,

@@ -20,6 +20,32 @@
 
 <main>
 
+{% if failed_stages %}
+<section id="incomplete">
+  <h2>Incomplete run &mdash; a stage failed</h2>
+  <p class="note err">
+    <strong>These results are incomplete: a pipeline stage failed, so this is not a
+    real negative result.</strong>
+    The run stopped at
+    {% for f in failed_stages %}<code>{{ f.name }}</code>{% if not loop.last %}, {% endif %}{% endfor %},
+    which means the counts and tables below record a crash rather than a
+    measurement. Nothing here supports a conclusion &mdash; not even a negative one
+    &mdash; until the failure is fixed and the run repeated.
+  </p>
+  <table>
+    <thead><tr><th>failed stage</th><th>error</th></tr></thead>
+    <tbody>
+    {% for f in failed_stages %}
+      <tr>
+        <td><strong>{{ f.name }}</strong></td>
+        <td><code>{{ f.error or 'no error detail recorded' }}</code></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
 <section>
   <h2>Summary</h2>
   <div class="kpi-row">
@@ -28,6 +54,12 @@
     <div class="kpi"><div class="num">{{ candidates_table|length }}</div><div class="label">candidate targets</div></div>
     <div class="kpi"><div class="num">{{ epitopes_table|length }}</div><div class="label">top-N epitopes</div></div>
   </div>
+  {% if failed_stages %}
+  <p class="note err">
+    The counts above are whatever the crashed run left on disk &mdash; they are not
+    measurements. See <a href="#incomplete">Incomplete run</a>.
+  </p>
+  {% endif %}
   <p class="note info">
     Every number above is one click from its evidence in the
     <a href="#provenance">provenance</a> section. The artifacts on disk
@@ -86,6 +118,12 @@
     {% endfor %}
     </tbody>
   </table>
+  {% elif failed_stages %}
+  <p class="note err">
+    No candidate table exists because the run did not finish (see
+    <a href="#incomplete">above</a>). The filters were never reached, so loosening
+    them would be answering a question that was never asked.
+  </p>
   {% else %}
   <p class="note">No candidates survived the filters. Loosen thresholds in the config and re-run.</p>
   {% endif %}

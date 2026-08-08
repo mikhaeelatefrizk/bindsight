@@ -494,6 +494,7 @@ def _do_discover(
             surfy_set,
             p,
             surface_bind_active=surface_bind_client is not None,
+            structure_queried=frozenset(),
         )
         return _empty_candidates_frame(), _empty_epitopes_frame(), taxonomy
 
@@ -534,6 +535,12 @@ def _do_discover(
     #    forward to design, so we fetch structures for the top ones by |log2fc|
     #    (capped) rather than every surface DE gene — on a real cohort that can
     #    be hundreds, and the rest are never used downstream.
+    #
+    #    ``structure_queried`` records the accessions whose AlphaFoldDB lookup
+    #    actually completed. Everything else — below the cap, or a lookup that
+    #    errored — was never assessed, which the taxonomy must not report as
+    #    "no model exists".
+    structure_queried: set[str] = set()
     if not candidates.empty:
         candidates["pi_score"] = _pi_score(candidates)
         candidates = candidates.sort_values(by="pi_score", ascending=False).reset_index(drop=True)
@@ -550,8 +557,11 @@ def _do_discover(
             try:
                 cached = afdb.fetch(uid)
             except Exception as e:
+                # A failed lookup is not evidence that no model exists; leaving the
+                # accession out of ``structure_queried`` keeps the taxonomy honest.
                 LOG.warning("AlphaFoldDB fetch failed for %s: %s", uid, e)
                 continue
+            structure_queried.add(uid)
             if cached is None:
                 continue
             try:
@@ -659,16 +669,31 @@ def _do_discover(
             )
 
     # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
-    #    2014), structures first (only structure-bearing candidates can proceed
-    #    to design). Higher π = more confidently over-expressed.
+    #    2014). Higher π = more confidently over-expressed. π is the *only* rank
+    #    key, so a published rank is a deterministic function of the statistics:
+    #    structure availability is network-dependent (fetched only for a capped
+    #    head of the list, and a failed fetch is indistinguishable from a missing
+    #    model), so ranking on it let a transient AlphaFoldDB outage reorder the
+    #    table. Gene/accession break π ties so equal scores order identically
+    #    across runs.
     if "pi_score" not in candidates.columns:
         candidates["pi_score"] = _pi_score(candidates)
     candidates = candidates.sort_values(
-        by=["has_alphafold_structure", "pi_score"],
-        ascending=[False, False],
+        by=["pi_score", "gene_id", "uniprot_id"],
+        ascending=[False, True, True],
+        kind="stable",
     ).reset_index(drop=True)
     candidates["rank"] = range(1, len(candidates) + 1)
-    candidates["rank_in_top_n"] = candidates["rank"] <= p.top_n
+    # Design eligibility is a separate criterion, carried by the
+    # has_alphafold_structure column rather than by the rank: only
+    # structure-bearing candidates can proceed to design, so the design
+    # shortlist takes those first, in rank order.
+    design_shortlist = candidates.sort_values(
+        by=["has_alphafold_structure", "rank"],
+        ascending=[False, True],
+        kind="stable",
+    ).index[: p.top_n]
+    candidates["rank_in_top_n"] = candidates.index.isin(design_shortlist)
 
     # 8. Build the epitopes table from SURFACE-Bind targetable sites when the
     # data is vendored; otherwise design against the whole surface, recorded
@@ -689,6 +714,7 @@ def _do_discover(
         surfy_set,
         p,
         surface_bind_active=surface_bind_client is not None,
+        structure_queried=frozenset(structure_queried),
     )
     return candidates, epitopes, taxonomy
 
@@ -696,16 +722,23 @@ def _do_discover(
 # Negative-result taxonomy: the ordered dispositions a DEG gene can land in, from
 # "never in contention" to "surfaced". The funnel is exhaustive, so the per-
 # disposition counts always sum to the total DEG gene count.
+#
+# ``uniprot_lookup_failed`` and ``structure_not_queried`` are *not* findings: they
+# mark genes whose lookup errored or was never attempted. Only a lookup that ran
+# and came back empty earns ``no_uniprot`` / ``no_alphafold_model``, so a network
+# outage can never be published as a negative result.
 TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "not_significant",
     "down_regulated",
     "below_enrichment_cutoff",
+    "uniprot_lookup_failed",
     "no_uniprot",
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
     "high_normal_tissue_expression",
     "no_extracellular_domain",
+    "structure_not_queried",
     "no_alphafold_model",
     "low_confidence_structure",
     "not_top_n",
@@ -724,6 +757,7 @@ def _build_taxonomy(
     p: TargetDiscoveryParams,
     *,
     surface_bind_active: bool,
+    structure_queried: frozenset[str],
 ) -> pd.DataFrame:
     """One disposition per DEG gene explaining why it is / isn't a surfaced candidate.
 
@@ -731,15 +765,38 @@ def _build_taxonomy(
     perturbing the candidate/epitope outputs — so the failure modes (the "negative
     results") become an auditable, first-class artifact. The funnel is exhaustive:
     the per-disposition counts always sum to the total DEG gene count.
+
+    Args:
+        deg: The full DEG table; every gene in it gets exactly one row out.
+        enriched_gene_ids: Genes carried into Open Targets enrichment.
+        enriched_all: Enrichment rows before any filter, one per gene × UniProt.
+        candidates: The surviving candidates, ranked.
+        epitopes: The epitope table for the design shortlist.
+        surfy_set: The resolved SURFY surfaceome.
+        p: Target-discovery parameters.
+        surface_bind_active: Whether SURFACE-Bind data was actually vendored.
+        structure_queried: UniProt accessions whose AlphaFoldDB lookup actually
+            ran to completion. Accessions outside this set were never assessed,
+            so their genes are reported as ``structure_not_queried`` rather than
+            as an absent model.
+
+    Returns:
+        One row per DEG gene with its disposition and the Open Targets status
+        that produced it.
     """
     wanted = {m for m in (p.require_tractable_modality or [])}
 
     # Per-gene "furthest stage reached", collapsed over a gene's UniProt rows.
     reach: dict[str, dict[str, bool]] = {}
     sym_map: dict[str, object] = {}
+    ot_status_map: dict[str, str] = {}
     for r in enriched_all.itertuples(index=False):
         gid = str(r.gene_id)
         sym_map.setdefault(gid, getattr(r, "symbol", None))
+        ot_status = str(getattr(r, "open_targets_status", "") or "")
+        # An errored lookup dominates: it is the reason the gene has no mapping.
+        if gid not in ot_status_map or ot_status.startswith("error:"):
+            ot_status_map[gid] = ot_status
         uniprot = getattr(r, "uniprot_id", None)
         has_u = bool(uniprot) and pd.notna(uniprot)
         surf = has_u and (not p.require_surfy or is_surface_protein(str(uniprot), surfy=surfy_set))
@@ -758,6 +815,7 @@ def _build_taxonomy(
 
     cand_gids: set[str] = set()
     struct_gids: set[str] = set()
+    queried_gids: set[str] = set()
     topn_gids: set[str] = set()
     low_conf_gids: set[str] = set()
     no_ecd_gids: set[str] = set()
@@ -767,6 +825,10 @@ def _build_taxonomy(
         struct_gids = {
             str(g) for g in candidates.loc[candidates["has_alphafold_structure"], "gene_id"]
         }
+        was_queried = candidates["uniprot_id"].map(
+            lambda u: isinstance(u, str) and u in structure_queried
+        )
+        queried_gids = {str(g) for g in candidates.loc[was_queried, "gene_id"]}
         topn_gids = {str(g) for g in candidates.loc[candidates["rank_in_top_n"], "gene_id"]}
         if "low_confidence_structure" in candidates.columns:
             low_conf_gids = {
@@ -815,13 +877,18 @@ def _build_taxonomy(
             elif gid in low_conf_gids:
                 disp = "low_confidence_structure"
             elif gid not in struct_gids:
-                disp = "no_alphafold_model"
+                # Past the fetch cap, or the lookup errored: nothing was measured.
+                disp = "no_alphafold_model" if gid in queried_gids else "structure_not_queried"
             else:
                 disp = "not_top_n"
         elif gid in enriched_gene_ids:
             d = reach.get(gid, {"u": False, "surf": False, "tract": False, "safe": False})
             if not d["u"]:
-                disp = "no_uniprot"
+                disp = (
+                    "uniprot_lookup_failed"
+                    if ot_status_map.get(gid, "").startswith("error:")
+                    else "no_uniprot"
+                )
             elif p.require_surfy and not d["surf"]:
                 disp = "not_surfaceome"
             elif wanted and not d["tract"]:
@@ -841,9 +908,16 @@ def _build_taxonomy(
                 "log2fc": log2fc,
                 "padj": padj,
                 "disposition": disp,
+                # Kept alongside the disposition so a reader can tell a real
+                # negative from a lookup that never ran; it is dropped from the
+                # candidates table for genes that never became candidates.
+                "open_targets_status": ot_status_map.get(gid),
             }
         )
-    return pd.DataFrame(rows, columns=["gene_id", "symbol", "log2fc", "padj", "disposition"])
+    return pd.DataFrame(
+        rows,
+        columns=["gene_id", "symbol", "log2fc", "padj", "disposition", "open_targets_status"],
+    )
 
 
 def _pi_score(df: pd.DataFrame) -> pd.Series:
@@ -926,20 +1000,36 @@ def _build_epitopes(
     while ``False`` carries every top-N candidate (whole-surface where no site
     exists). Without vendored data there is nothing to require, so every
     candidate falls back to whole-surface design.
+
+    Two columns describe the region a designer must restrict itself to:
+
+    - ``design_ranges``       — list of ``[start, end]`` residue ranges, 1-based
+      and inclusive, in UniProt numbering: the extracellular parts of the
+      receptor. ``None`` when no topology was resolved, in which case the
+      designer has no evidence to narrow the target and must say so rather than
+      assume the whole chain is reachable;
+    - ``design_range_source`` — ``uniprot_topology`` when the ranges came from a
+      resolved UniProt topology, ``not_available`` when none was.
+
+    A binder only ever reaches the extracellular part of a surface protein, so a
+    consumer that ignores ``design_ranges`` designs against the transmembrane
+    helix and cytoplasmic tail too.
     """
     tmap = topology_map or {}
     rows: list[dict[str, Any]] = []
     for _, row in top.iterrows():
         uni = row["uniprot_id"]
         topo = tmap.get(uni) if isinstance(uni, str) else None
-        # ECD ranges to target for whole-surface design; None = no topology → whole protein.
-        design_ranges = [list(r) for r in topo.extracellular_ranges] if topo else None
+        design_ranges = (
+            [[int(start), int(end)] for start, end in topo.extracellular_ranges] if topo else None
+        )
         base = {
             "gene_id": row["gene_id"],
             "symbol": row["symbol"],
             "uniprot_id": uni,
             "structure_path": row["alphafold_structure_path"],
             "design_ranges": design_ranges,
+            "design_range_source": "uniprot_topology" if topo else "not_available",
         }
         sites: list[Any] = []
         if client is not None and isinstance(uni, str) and uni:
@@ -997,6 +1087,8 @@ def _empty_epitopes_frame() -> pd.DataFrame:
             "symbol",
             "uniprot_id",
             "structure_path",
+            "design_ranges",
+            "design_range_source",
             "site_id",
             "chain",
             "residues",
@@ -1004,7 +1096,6 @@ def _empty_epitopes_frame() -> pd.DataFrame:
             "seed_pdb_path",
             "epitope_status",
             "mean_epitope_plddt",
-            "design_ranges",
             "fraction_extracellular",
         ]
     )

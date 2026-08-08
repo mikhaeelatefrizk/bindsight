@@ -31,7 +31,7 @@ clinically-validated antigen landed in the candidate shortlist.
 <div class="bs-stat"><div class="v">log2fc 4.36</div><div class="k">fold-change</div><div class="d">padj 1.7e-59</div></div>
 <div class="bs-stat"><div class="v">33%</div><div class="k">recall@5</div><div class="d">over over-expressed antigens</div></div>
 <div class="bs-stat"><div class="v">33%</div><div class="k">recall@20</div><div class="d">over over-expressed antigens</div></div>
-<div class="bs-stat"><div class="v">2/2</div><div class="k">specificity</div><div class="d">kept out of the top 20</div></div>
+<div class="bs-stat"><div class="v">2/2</div><div class="k">consistency check</div><div class="d">not-over-expressed antigens excluded by construction</div></div>
 </div>
 
 | antigen | cohort | over-expressed | log2fc | padj | rank |
@@ -94,6 +94,15 @@ clinically-validated antigen landed in the candidate shortlist.
 ## The binders it actually designed
 
 A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla P100-16GB (Kaggle free)`, validator `boltz2`, bindsight `0.2.0`, 2026-06-25.
+
+!!! warning "Provisional — these figures predate the target-chain fix"
+
+    This run invoked ProteinMPNN without `--pdb_path_chains`, so the sequence
+    designer was free to rewrite the antigen as well as the binder: the binders
+    were optimised against a partly-invented ERBB2 surface and then scored against
+    the native one. The measurements below are honest — they simply measure a
+    mis-configured protocol, so treat them as provisional. Fixed in v0.2.1; these
+    numbers will be superseded by a corrected re-run.
 
 **Target:** ERBB2 domain IV (UniProt P04626, residues 511-652; trastuzumab epitope)
 

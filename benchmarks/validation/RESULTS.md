@@ -12,7 +12,7 @@ Does bindsight's expression-based discovery resurface clinically-validated cell-
 
 - **Sensitivity:** of 3 antigen(s) genuinely over-expressed in their cohort, **ERBB2** is rediscovered at **rank 4** in TCGA-BRCA (BRCA_Her2 subtype) — log2fc 4.36, padj 1.7e-59.
 - **recall@k over over-expressed antigens:** recall@5=33%, recall@10=33%, recall@20=33%.
-- **Specificity:** 2/2 antigens that are NOT over-expressed at the bulk level are correctly kept out of the top-20 — the pipeline keys on genuine over-expression, not clinical fame.
+- **Consistency check ("specificity" 2/2):** 2/2 antigens that are NOT over-expressed at the bulk level stay out of the top-20. Because the discovery rule (FDR < 0.05, log2fc ≥ 1.0) excludes them from candidacy by construction, this confirms the documented rule was applied end-to-end — it is not a measurement of how well the ranking discriminates real over-expression from clinical fame.
 
 ## Reproduce
 

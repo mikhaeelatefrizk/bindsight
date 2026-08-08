@@ -11,14 +11,17 @@ dependencies:
   - rich>=13.7
   - pyyaml>=6.0
   - tenacity>=8.4
-  # Data layer
-  - pandas>=2.2
-  - pyarrow>=16
-  - numpy>=1.26
+  # Data layer. Upper bounds match pyproject.toml: these are the libraries whose
+  # release can change the numbers a run reports. envs/constraints.txt carries
+  # the exact versions this release was tested against.
+  - pandas>=2.2,<3
+  - pyarrow>=16,<25
+  - numpy>=1.26,<3
+  - scipy>=1.11,<2
   # DEG (default backend)
-  - pydeseq2>=0.5
+  - pydeseq2>=0.5,<0.6
   # Bio I/O
-  - biopython>=1.83
+  - biopython>=1.83,<2
   # Provenance / validation
   - pydantic>=2.6
   - pydantic-settings>=2.2
