@@ -105,11 +105,26 @@ def test_validation_rows_flag_over_expression() -> None:
 
 
 def test_validation_cohort_partition() -> None:
-    """Over-expressed and specificity cohorts partition the cohort list."""
+    """Over-expressed and not-over-expressed cohorts partition the cohort list."""
     v = showcase.load_validation()
     assert v is not None
     assert len(v.over_expressed) + len(v.not_over_expressed) == len(v.cohorts)
-    assert v.specificity["correctly_excluded"] == v.specificity["n"]
+    assert v.exclusion_check["consistent"] == v.exclusion_check["n"]
+
+
+def test_exclusion_check_is_not_presented_as_specificity() -> None:
+    """The check is tautological, so it must not be surfaced as a measurement.
+
+    A gene that fails the over-expression rule is excluded from candidacy by that
+    same rule, so it can never reach the top-k. Labelling the result
+    "specificity" claims the ranking discriminates when nothing was discriminated.
+    """
+    v = showcase.load_validation()
+    assert v is not None
+    assert v.exclusion_check["tautological_by_construction"] is True
+    labels = {s.label for s in showcase.headline_stats()}
+    assert "specificity" not in labels
+    assert "consistency check" in labels
 
 
 # ---------------------------------------------------------------------------

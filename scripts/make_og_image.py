@@ -96,9 +96,9 @@ def main() -> int:
     draw.text((258, 190), "Expression → Binder", font=_font(34), fill=(150, 200, 245))
 
     body = [
-        "The first open-source pipeline that takes RNA-seq counts",
-        "and outputs ranked de novo protein binder candidates —",
-        "with full provenance back to the patient cohort.",
+        "Joins cohort RNA-seq target discovery to de novo binder",
+        "design in one reproducible workflow — with provenance",
+        "from every ranked binder back to the patient samples.",
     ]
     for i, line in enumerate(body):
         draw.text((80, 290 + i * 46), line, font=_font(33), fill=(226, 238, 250))

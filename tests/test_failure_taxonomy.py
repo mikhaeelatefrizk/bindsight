@@ -32,12 +32,38 @@ class _FakeOpenTargets:
         return self.mapping.get(ensembl_id)
 
 
+class _FlakyOpenTargets:
+    """Open Targets stand-in whose lookup *raises* for the listed genes."""
+
+    def __init__(self, mapping: dict[str, TargetEvidence], errors: frozenset[str]) -> None:
+        self.mapping = mapping
+        self.errors = errors
+
+    def get_target(self, ensembl_id: str) -> TargetEvidence | None:
+        if ensembl_id in self.errors:
+            raise ConnectionError(f"Open Targets unreachable for {ensembl_id}")
+        return self.mapping.get(ensembl_id)
+
+
 class _FakeAlphaFoldDB:
     def __init__(self, mapping: dict[str, Path | None]) -> None:
         self.mapping = mapping
+        self.calls: list[str] = []
 
     def fetch(self, uniprot_id: str) -> Path | None:
+        self.calls.append(uniprot_id)
         return self.mapping.get(uniprot_id)
+
+
+class _OutageAlphaFoldDB:
+    """A total AlphaFoldDB outage: every lookup raises, nothing is ever assessed."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def fetch(self, uniprot_id: str) -> Path | None:
+        self.calls.append(uniprot_id)
+        raise ConnectionError(f"AlphaFoldDB unreachable for {uniprot_id}")
 
 
 class _FakeTopology:
@@ -55,7 +81,7 @@ def _evidence(gene_id: str, uniprot: str, symbol: str) -> TargetEvidence:
         name=symbol,
         biotype="protein_coding",
         uniprot_ids=[uniprot],
-        tractability_modalities=["Antibody"],
+        tractability_modalities=["AB"],
         safety_event_count=1,
     )
 
@@ -82,7 +108,7 @@ def _cfg(tmp_path: Path, fixtures_dir: Path) -> RunConfig:
                     "require_surfy": True,
                     "surfy_allow_offline_fallback": True,
                     "use_open_targets": True,
-                    "require_tractable_modality": ["Antibody"],
+                    "require_tractable_modality": ["AB"],
                     "max_safety_events": 5,
                     "require_surface_bind_site": False,
                     "top_n": 3,
@@ -156,7 +182,9 @@ def test_failure_taxonomy_is_exhaustive(tmp_path: Path, fixtures_dir: Path) -> N
     assert disp["ENSG00000141736"] == "surfaced"  # ERBB2
     assert disp["ENSG00000142208"] == "not_significant"  # AKT1
     assert disp["ENSG00000147889"] == "no_uniprot"  # CDKN2A (no UniProt)
-    assert disp["ENSG00000146648"] == "no_alphafold_model"  # EGFR (no structure here)
+    # EGFR earns ``no_alphafold_model``: its lookup actually ran and came back empty.
+    assert "P00533" in afdb.calls
+    assert disp["ENSG00000146648"] == "no_alphafold_model"
 
 
 def test_low_confidence_structure_disposition(tmp_path: Path, fixtures_dir: Path) -> None:
@@ -324,6 +352,162 @@ def test_high_normal_tissue_expression_disposition(tmp_path: Path, fixtures_dir:
     erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
     assert float(erbb2["max_vital_tissue_tpm"]) == pytest.approx(47.78, rel=1e-2)
     assert bool(erbb2["high_normal_tissue_expression"]) is True
+
+
+# ---------------------------------------------------------------------------
+# I2 — "we never looked" must never be published as "we looked and found nothing".
+# ---------------------------------------------------------------------------
+def test_errored_structure_fetch_is_not_a_missing_model(tmp_path: Path, fixtures_dir: Path) -> None:
+    """A swallowed AlphaFoldDB error yields structure_not_queried, not no_alphafold_model."""
+    ot = _FakeOpenTargets({"ENSG00000141736": _evidence("ENSG00000141736", "P04626", "ERBB2")})
+
+    outage = _OutageAlphaFoldDB()
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            _cfg(tmp_path / "outage", fixtures_dir),
+            out_dir=tmp_path / "outage" / "out",
+            open_targets_client=ot,
+            alphafolddb_client=outage,
+            surfy=frozenset({"P04626"}),
+        )
+    tax = pd.read_parquet(tmp_path / "outage" / "out" / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert outage.calls == ["P04626"]  # the lookup was attempted...
+    assert disp["ENSG00000141736"] == "structure_not_queried"  # ...but never completed
+    assert disp["ENSG00000141736"] != "no_alphafold_model"
+
+    # Contrast: a lookup that *ran* and came back empty is a real negative.
+    absent = _FakeAlphaFoldDB({})
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            _cfg(tmp_path / "absent", fixtures_dir),
+            out_dir=tmp_path / "absent" / "out",
+            open_targets_client=ot,
+            alphafolddb_client=absent,
+            surfy=frozenset({"P04626"}),
+        )
+    tax2 = pd.read_parquet(tmp_path / "absent" / "out" / "taxonomy" / "failure_taxonomy.parquet")
+    disp2 = dict(zip(tax2["gene_id"], tax2["disposition"], strict=True))
+    assert absent.calls == ["P04626"]
+    assert disp2["ENSG00000141736"] == "no_alphafold_model"
+
+
+def test_candidates_past_the_structure_fetch_cap_are_not_missing_models(
+    tmp_path: Path, fixtures_dir: Path
+) -> None:
+    """Only the capped head of the list is queried; the tail is not a finding."""
+    n_genes = 30  # must exceed max(top_n, _STRUCTURE_FETCH_CAP) == 25
+    gene_ids = [f"ENSGTEST{i:08d}" for i in range(n_genes)]
+    uniprots = [f"P{i:05d}" for i in range(n_genes)]
+    # Strictly decreasing pi score, so the fetch cap falls at a known place.
+    fake_deg = pd.DataFrame(
+        {
+            "log2FoldChange": [float(n_genes - i) for i in range(n_genes)],
+            "lfcSE": [0.5] * n_genes,
+            "stat": [7.0] * n_genes,
+            "pvalue": [1e-10] * n_genes,
+            "padj": [1e-9] * n_genes,
+            "baseMean": [800.0] * n_genes,
+        },
+        index=gene_ids,
+    )
+    ot = _FakeOpenTargets({g: _evidence(g, u, g) for g, u in zip(gene_ids, uniprots, strict=True)})
+    afdb = _FakeAlphaFoldDB({})  # AlphaFoldDB answers, but holds no model for any of them
+
+    out = tmp_path / "out"
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=fake_deg,
+    ):
+        discover_pipeline.run(
+            _cfg(tmp_path, fixtures_dir),
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=afdb,
+            surfy=frozenset(uniprots),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    assert set(tax["disposition"]).issubset(set(TAXONOMY_DISPOSITIONS))
+    counts = tax["disposition"].value_counts().to_dict()
+    assert counts == {"no_alphafold_model": 25, "structure_not_queried": 5}
+    assert int(sum(counts.values())) == n_genes  # still exhaustive
+
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    # The 25 strongest were looked up; the tail never was.
+    assert len(afdb.calls) == 25
+    assert disp[gene_ids[0]] == "no_alphafold_model"
+    assert uniprots[0] in afdb.calls
+    assert disp[gene_ids[-1]] == "structure_not_queried"
+    assert uniprots[-1] not in afdb.calls
+
+
+def test_open_targets_error_is_not_reported_as_no_uniprot(
+    tmp_path: Path, fixtures_dir: Path
+) -> None:
+    """An errored gene->protein lookup is uniprot_lookup_failed, never the finding no_uniprot."""
+    errored = "ENSGTEST00000001"  # absent from the bundled ENSG->UniProt map
+    empty_record = "ENSGTEST00000002"
+    no_record = "ENSGTEST00000003"
+
+    fake_deg = pd.DataFrame(
+        {
+            "log2FoldChange": [3.5, 3.0, 2.5],
+            "lfcSE": [0.5] * 3,
+            "stat": [7.0, 6.0, 5.0],
+            "pvalue": [1e-10] * 3,
+            "padj": [1e-9] * 3,
+            "baseMean": [800.0] * 3,
+        },
+        index=[errored, empty_record, no_record],
+    )
+    ot = _FlakyOpenTargets(
+        {
+            empty_record: TargetEvidence(
+                ensembl_id=empty_record,
+                symbol="EMPTY",
+                uniprot_ids=[],  # the lookup ran and genuinely carried no accession
+                tractability_modalities=[],
+            )
+            # no_record is deliberately absent -> get_target returns None
+        },
+        errors=frozenset({errored}),
+    )
+
+    out = tmp_path / "out"
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=fake_deg,
+    ):
+        discover_pipeline.run(
+            _cfg(tmp_path, fixtures_dir),
+            out_dir=out,
+            open_targets_client=ot,
+            alphafolddb_client=_FakeAlphaFoldDB({}),
+            surfy=frozenset(),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    assert set(tax["disposition"]).issubset(set(TAXONOMY_DISPOSITIONS))
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    status = dict(zip(tax["gene_id"], tax["open_targets_status"], strict=True))
+
+    assert disp[errored] == "uniprot_lookup_failed"
+    assert disp[errored] != "no_uniprot"
+    # The artifact carries the evidence for its own disposition.
+    assert status[errored] == "error:ConnectionError"
+
+    # Contrast: lookups that completed and came back empty stay real findings.
+    assert disp[empty_record] == "no_uniprot"
+    assert status[empty_record] == "ok"
+    assert disp[no_record] == "no_uniprot"
+    assert status[no_record] == "no_record"
 
 
 def test_gtex_safe_target_surfaces(tmp_path: Path, fixtures_dir: Path) -> None:

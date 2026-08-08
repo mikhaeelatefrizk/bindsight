@@ -8,9 +8,10 @@ hide:
 <div class="bs-hero" markdown="0">
   <h1>Expression → Binder</h1>
   <p class="bs-lede">
-    The first open-source pipeline that takes RNA-seq counts and outputs ranked
-    <em>de novo</em> protein-binder candidates against over-expressed cell-surface
-    antigens — with full provenance back to the patient cohort.
+    An open-source pipeline that joins cohort RNA-seq target discovery to
+    <em>de novo</em> protein-binder design in one reproducible workflow — with
+    machine-readable provenance from every ranked binder back to the patient
+    samples it came from.
   </p>
   <p class="bs-sub">
     Genomics stops at &ldquo;here are the interesting genes&rdquo;. Protein design starts at
@@ -54,14 +55,29 @@ hide:
   </div>
   <div class="bs-stat">
     <div class="v">2/2</div>
-    <div class="k">specificity</div>
-    <div class="d">non-elevated antigens correctly kept out of the top 20</div>
+    <div class="k">consistency check</div>
+    <div class="d">antigens with no measured over-expression stay out of the top 20</div>
   </div>
 </div>
 
 Those numbers are not illustrative — they come from runs whose inputs, outputs
 and provenance are committed in the repository. **[See exactly how they were
 produced](results.md).**
+
+!!! warning "Read the binder numbers as provisional"
+    The ipTM figures above come from a real Boltz-2 run whose metrics reproduce
+    exactly, but the run predates the ProteinMPNN target-chain fix shipped in
+    v0.2.1: ProteinMPNN was invoked without `--pdb_path_chains`, so it redesigned
+    the HER2 target chain as well as the binder. The designs were therefore
+    optimised against a partly-invented target surface and scored against the
+    native one. A corrected re-run will supersede them.
+
+!!! note "What 2/2 does and does not show"
+    Antigens that fail the over-expression rule (FDR&nbsp;<&nbsp;0.05,
+    log2fc&nbsp;≥&nbsp;1.0) are excluded from candidacy **by construction**, so
+    finding them outside the top 20 confirms the rule is applied as documented.
+    It is an internal consistency check, not a measurement of how well the
+    ranking discriminates between real over-expression and clinical fame.
 
 ## How it works
 
@@ -132,6 +148,8 @@ how to add a designer / validator / runner plugin.
 ## Cite it
 
 bindsight is AGPL-3.0-or-later and archived on Zenodo with a DOI. If it helps
-your work, please cite it — see
-[`CITATION.cff`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CITATION.cff)
-or the [Zenodo record](https://doi.org/10.5281/zenodo.20121496).
+your work, please cite the concept DOI
+[10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495) — it always
+resolves to the latest archived version, which is what you want when citing the
+software rather than one specific release. Ready-made entries are in
+[`CITATION.cff`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CITATION.cff).

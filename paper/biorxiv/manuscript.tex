@@ -50,11 +50,15 @@ assumes the user has already chosen the target. Bridging the two —
 \textit{``this gene is up in disease, low in healthy tissue, surface-exposed,
 and here is a designed binder candidate ranked by predicted affinity''} —
 is currently an ad-hoc, project-specific exercise. We present
-\textbf{\texttt{bindsight}}, the first open-source command-line tool and web
+\textbf{\texttt{bindsight}}, an open-source command-line tool and web
 application that ingests RNA-seq counts and outputs ranked, structurally-
 validated \textit{de novo} protein-binder candidates with a complete
 PROV-O~/~RO-Crate audit trail back to the patient cohort the targets came
-from. The discovery half of the pipeline (differential expression $\to$
+from. Existing open binder-design workflows begin at a chosen target, and
+existing expression- or surfaceome-based target-discovery workflows end at a
+ranked gene list; to our knowledge \texttt{bindsight} is the first open-source
+tool to run both halves end-to-end and to carry machine-readable provenance
+across the join. The discovery half of the pipeline (differential expression $\to$
 surfaceome filter $\to$ druggability $\to$ AlphaFoldDB structure pull) runs
 on a CPU laptop; the GPU half (RFdiffusion backbone $\to$
 ProteinMPNN sequence $\to$ Boltz-2 validation) executes end-to-end on free
@@ -67,8 +71,9 @@ NIH/GDC), the pipeline discovers antibody-tractable cell-surface antigens
 over-expressed in tumor with full provenance; established targets such as ERBB2
 (HER2) surface among the candidates when their expression signal is present.
 Software is
-MIT-licensed and archived at Zenodo with permanent DOI
-\href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}.
+licensed GNU AGPL-3.0-or-later and archived at Zenodo under the concept DOI
+\href{https://doi.org/10.5281/zenodo.20121495}{10.5281/zenodo.20121495}, which
+resolves to the latest archived version.
 \end{abstract}
 
 % --------------------------------------------------------------------
@@ -308,8 +313,14 @@ the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
 runs the test suite on Linux, macOS, and Windows for both Python 3.11 and
 3.12; all six platform jobs pass on every commit to \texttt{main}.
 
-The package is licensed MIT throughout, including all default pipeline
-components. Optional opt-in components with non-commercial restrictions
+The package itself is licensed \textbf{GNU AGPL-3.0-or-later}: it may be used,
+studied, modified and redistributed freely, with the copyleft condition that a
+modified version which is distributed --- or run as a network service --- must
+make its corresponding source available under the same terms. The orchestrated
+upstream components keep their own licences, and every default pipeline
+component is permissive (MIT / Apache-2.0 / BSD / CC-BY); manuscripts, figures
+and generated results under \texttt{paper/} are CC BY 4.0.
+Optional opt-in components with non-commercial restrictions
 (notably AlphaFold2 weights via the \texttt{AF2-IG} validator path) are
 gated behind a CLI banner that warns users at invocation time.
 A per-component license inventory is shipped in \texttt{LICENSING.md} and
@@ -320,7 +331,7 @@ pipeline, conda environment specifications, container Dockerfile, GitHub
 Actions workflows, examples, and documentation, is publicly available at
 \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight}
 and permanently archived at Zenodo
-(\href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}).
+(\href{https://doi.org/10.5281/zenodo.20121495}{10.5281/zenodo.20121495}).
 The Streamlit web demo is hosted at
 \href{https://bindsight.streamlit.app}{bindsight.streamlit.app}.
 
@@ -347,11 +358,14 @@ each known antigen in the unsupervised candidate shortlist, the pipeline
 rediscovers \textbf{ERBB2 (HER2) at rank~4} in HER2-enriched breast cancer
 (log2fc~4.36, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
 on stratifying TCGA-BRCA by its PAM50 subtype, which otherwise averages the HER2
-signal away. The pipeline is also \textit{specific}: antigens that are not
-transcriptionally over-expressed at the bulk level --- EGFR (mutation/
-amplification-driven) and CEA (co-expressed in normal colon) --- are correctly
-left out of the top-20, so sensitivity tracks differential-expression effect
-size as expected for a DE-based method. Antigens without matched TCGA normals
+signal away. Antigens that are not transcriptionally over-expressed at the bulk
+level --- EGFR (mutation/amplification-driven) and CEA (co-expressed in normal
+colon) --- do not appear in the top-20. That outcome is an \textit{internal
+consistency check} rather than a measurement of ranking discrimination: the
+over-expression rule (FDR $<$ 0.05, log2fc $\geq$ 1.0) excludes such antigens
+from candidacy by construction, so their absence confirms the documented rule
+was applied and shows that sensitivity tracks differential-expression effect
+size, as expected for a DE-based method. Antigens without matched TCGA normals
 (CLDN6, CD33/CD123) are documented as data limitations rather than reported with
 a manufactured number. A complementary, CPU-tested three-way \textit{designer
 benchmark} (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable
@@ -370,8 +384,8 @@ expected practice in the field.
 \section*{Code and data availability}
 
 \begin{itemize}
-  \item \textbf{Source code:} \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight} (MIT license)
-  \item \textbf{Permanent archive:} Zenodo, \href{https://doi.org/10.5281/zenodo.20121496}{10.5281/zenodo.20121496}
+  \item \textbf{Source code:} \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight} (GNU AGPL-3.0-or-later)
+  \item \textbf{Permanent archive:} Zenodo, concept DOI \href{https://doi.org/10.5281/zenodo.20121495}{10.5281/zenodo.20121495} (resolves to the latest version)
   \item \textbf{Web demo:} \href{https://bindsight.streamlit.app}{bindsight.streamlit.app}
   \item \textbf{Documentation:} \href{https://github.com/mikhaeelatefrizk/bindsight#readme}{github.com/mikhaeelatefrizk/bindsight\#readme}
   \item \textbf{Demo data:} bundled in \texttt{examples/demo/} (CC0)

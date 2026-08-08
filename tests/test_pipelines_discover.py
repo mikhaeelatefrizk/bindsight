@@ -21,7 +21,7 @@ def _fake_evidence(gene_id: str, uniprot: str, symbol: str) -> TargetEvidence:
         name=symbol,
         biotype="protein_coding",
         uniprot_ids=[uniprot],
-        tractability_modalities=["Antibody"],
+        tractability_modalities=["AB"],
         safety_event_count=1,
         top_disease_associations=[
             {
@@ -58,6 +58,17 @@ class _FakeAlphaFoldDB:
         return self.mapping.get(uniprot_id)
 
 
+class _OutageAlphaFoldDB:
+    """Stands in for a total AlphaFoldDB outage: every lookup raises."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def fetch(self, uniprot_id: str) -> Path | None:
+        self.calls.append(uniprot_id)
+        raise ConnectionError(f"AlphaFoldDB unreachable for {uniprot_id}")
+
+
 def _build_cfg(tmp_path: Path, fixtures_dir: Path) -> RunConfig:
     out = tmp_path / "out"
     return RunConfig.model_validate(
@@ -81,7 +92,7 @@ def _build_cfg(tmp_path: Path, fixtures_dir: Path) -> RunConfig:
                     "require_surfy": True,
                     "surfy_allow_offline_fallback": True,
                     "use_open_targets": True,
-                    "require_tractable_modality": ["Antibody"],
+                    "require_tractable_modality": ["AB"],
                     "max_safety_events": 5,
                     "require_surface_bind_site": False,
                     "top_n": 3,
@@ -171,6 +182,126 @@ def test_discover_pipeline_end_to_end(tmp_path: Path, fixtures_dir: Path) -> Non
     # No SURFACE-Bind data vendored in the test env → whole-surface fallback.
     assert all(epitopes_df["epitope_status"] == "surface_bind_not_configured")
     assert len(epitopes_df) == 2  # both top-N candidates
+
+
+# ---------------------------------------------------------------------------
+# I1: ``rank`` is a deterministic function of the DE statistics. Structure
+# availability is network-dependent (capped fetch, swallowed failures), so it
+# must never reorder the published table.
+# ---------------------------------------------------------------------------
+_TWO_GENE_DEG = pd.DataFrame(
+    {
+        "log2FoldChange": [4.0, 3.0],
+        "lfcSE": [0.5, 0.5],
+        "stat": [8.0, 6.0],
+        "pvalue": [1e-11, 1e-10],
+        "padj": [1e-10, 1e-9],
+        "baseMean": [1000, 800],
+    },
+    index=[
+        "ENSG00000141736",  # ERBB2 / P04626 — higher pi, but no AlphaFold model
+        "ENSG00000146648",  # EGFR / P00533 — lower pi, and the only structure
+    ],
+)
+
+_TWO_GENE_EVIDENCE = {
+    "ENSG00000141736": _fake_evidence("ENSG00000141736", "P04626", "ERBB2"),
+    "ENSG00000146648": _fake_evidence("ENSG00000146648", "P00533", "EGFR"),
+}
+
+
+def _run_ranked(
+    tmp_path: Path,
+    fixtures_dir: Path,
+    *,
+    out_name: str,
+    alphafolddb_client: object,
+    deg: pd.DataFrame,
+) -> pd.DataFrame:
+    """Run discovery into ``out_name`` and return the candidates table."""
+    cfg = _build_cfg(tmp_path, fixtures_dir)
+    out = tmp_path / out_name
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=deg,
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=_FakeOpenTargets(_TWO_GENE_EVIDENCE),
+            alphafolddb_client=alphafolddb_client,
+            surfy=frozenset({"P04626", "P00533"}),
+        )
+    return pd.read_parquet(out / "targets" / "candidates.parquet")
+
+
+def test_rank_is_unchanged_by_an_alphafolddb_outage(tmp_path: Path, fixtures_dir: Path) -> None:
+    """Same statistics, two structure worlds → identical published ranks."""
+    struct = tmp_path / "egfr.cif"
+    struct.write_text("# fake mmCIF\n")
+
+    healthy = _run_ranked(
+        tmp_path,
+        fixtures_dir,
+        out_name="out_healthy",
+        # Only the LOWER-pi candidate has a model, which is exactly the case
+        # that used to promote it to rank 1.
+        alphafolddb_client=_FakeAlphaFoldDB({"P00533": struct, "P04626": None}),
+        deg=_TWO_GENE_DEG,
+    )
+    outage_client = _OutageAlphaFoldDB()
+    outage = _run_ranked(
+        tmp_path,
+        fixtures_dir,
+        out_name="out_outage",
+        alphafolddb_client=outage_client,
+        deg=_TWO_GENE_DEG,
+    )
+
+    # The two runs really did differ in what the structure fetch returned.
+    assert outage_client.calls  # the outage run did attempt the lookups
+    assert dict(zip(healthy["uniprot_id"], healthy["has_alphafold_structure"], strict=True)) == {
+        "P04626": False,
+        "P00533": True,
+    }
+    assert not outage["has_alphafold_structure"].any()
+
+    healthy_ranks = dict(zip(healthy["uniprot_id"], healthy["rank"], strict=True))
+    outage_ranks = dict(zip(outage["uniprot_id"], outage["rank"], strict=True))
+    assert healthy_ranks == outage_ranks
+    # …and the order is the one the statistics dictate: higher pi ranks first.
+    assert healthy_ranks == {"P04626": 1, "P00533": 2}
+
+
+def test_rank_ties_break_on_gene_id_not_on_structure(tmp_path: Path, fixtures_dir: Path) -> None:
+    """Equal pi scores order by gene_id, stably, whoever happens to have a model."""
+    tied = _TWO_GENE_DEG.copy()
+    tied["log2FoldChange"] = [3.0, 3.0]
+    tied["padj"] = [1e-9, 1e-9]
+    struct = tmp_path / "egfr.cif"
+    struct.write_text("# fake mmCIF\n")
+
+    first = _run_ranked(
+        tmp_path,
+        fixtures_dir,
+        out_name="out_tie_a",
+        alphafolddb_client=_FakeAlphaFoldDB({"P00533": struct, "P04626": None}),
+        deg=tied,
+    )
+    second = _run_ranked(
+        tmp_path,
+        fixtures_dir,
+        out_name="out_tie_b",
+        alphafolddb_client=_FakeAlphaFoldDB({"P00533": struct, "P04626": None}),
+        deg=tied,
+    )
+
+    assert first["pi_score"].nunique() == 1  # the tie is real
+    # ENSG00000141736 (ERBB2) < ENSG00000146648 (EGFR), and EGFR is the one with
+    # the structure — so a structure-aware sort would have inverted this.
+    expected = {"P04626": 1, "P00533": 2}
+    assert dict(zip(first["uniprot_id"], first["rank"], strict=True)) == expected
+    assert dict(zip(second["uniprot_id"], second["rank"], strict=True)) == expected
 
 
 def test_discover_records_failure_when_inputs_missing(tmp_path: Path) -> None:

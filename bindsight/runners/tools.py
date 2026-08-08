@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 from bindsight.validate.boltz2 import build_boltz_yaml, parse_boltz_output
@@ -126,7 +127,29 @@ def build_contig_str(
     chain break (``/0``), then diffuse a new binder of length bmin–bmax. The span
     is derived from the actual structure (not hard-coded ``A1-9999``).
     """
-    return f"[{target_chain}{target_lo}-{target_hi}/0 {binder_len_min}-{binder_len_max}]"
+    return build_ranges_contig_str(
+        target_chain, [(target_lo, target_hi)], binder_len_min, binder_len_max
+    )
+
+
+def build_ranges_contig_str(
+    target_chain: str,
+    ranges: Sequence[tuple[int, int]],
+    binder_len_min: int,
+    binder_len_max: int,
+) -> str:
+    """RFdiffusion contig keeping only ``ranges`` of the target chain.
+
+    Segments of the same chain are joined by ``/`` and the residues between them
+    are dropped, so a single-pass receptor can be presented by its extracellular
+    ranges alone — ``[A23-652/A700-720/0 50-100]``. Without this the diffusion
+    model sees the transmembrane helix and the cytoplasmic tail as part of the
+    binding surface, which no extracellular binder can reach.
+    """
+    if not ranges:
+        raise ValueError("at least one target range is required to build a contig")
+    segments = "/".join(f"{target_chain}{lo}-{hi}" for lo, hi in ranges)
+    return f"[{segments}/0 {binder_len_min}-{binder_len_max}]"
 
 
 # ---------------------------------------------------------------------------
@@ -158,16 +181,30 @@ def build_mpnn_cmd(
     mpnn_dir: Path,
     pdb_path: Path,
     out_folder: Path,
+    designed_chains: Sequence[str],
     num_seq_per_target: int = 2,
     sampling_temp: float = 0.1,
     seed: int = 0,
 ) -> list[str]:
-    """ProteinMPNN ``protein_mpnn_run.py`` argv for sequence design on a backbone."""
+    """ProteinMPNN ``protein_mpnn_run.py`` argv for sequence design on a backbone.
+
+    ``designed_chains`` is mandatory: ProteinMPNN designs *every* chain when
+    ``--pdb_path_chains`` is absent, so on a binder–target complex it would
+    redesign the target too and the binder would be optimised against a surface
+    the model partly invented. Chains left out of ``--pdb_path_chains`` are kept
+    as fixed context, which is the conditioning binder design needs — whole
+    chains are held, so per-position ``--fixed_positions_jsonl`` is not required,
+    and ``--chain_id_jsonl`` only applies to the folder-of-PDBs input mode.
+    """
+    if not designed_chains:
+        raise ValueError("designed_chains must name at least one chain to design")
     return [
         _design_python(),
         str(Path(mpnn_dir) / "protein_mpnn_run.py"),
         "--pdb_path",
         str(pdb_path),
+        "--pdb_path_chains",
+        " ".join(designed_chains),
         "--out_folder",
         str(out_folder),
         "--num_seq_per_target",
@@ -243,21 +280,91 @@ def build_af2ig_cmd(*, dl_binder_design_dir: Path, silent_or_pdb: Path, out_dir:
 # ---------------------------------------------------------------------------
 # Parsers
 # ---------------------------------------------------------------------------
+def chain_residues_from_pdb(pdb_path: Path, chain: str = "A") -> list[tuple[int, str]]:
+    """Extract ``(residue number, 1-letter code)`` for a chain (CA atoms, in order)."""
+    residues: list[tuple[int, str]] = []
+    seen: set[int] = set()
+    for line in Path(pdb_path).read_text().splitlines():
+        if line.startswith("ATOM") and line[12:16].strip() == "CA":
+            if line[21] != chain:
+                continue
+            resi = int(line[22:26])
+            if resi not in seen:
+                seen.add(resi)
+                residues.append((resi, _AA3TO1.get(line[17:20].strip(), "X")))
+    return residues
+
+
 def chain_sequence_from_pdb(pdb_path: Path, chain: str = "A") -> str:
     """Extract a chain's 1-letter sequence from a PDB (CA atoms, in order)."""
-    seq: list[str] = []
-    seen: set[tuple[str, int]] = set()
+    return "".join(aa for _, aa in chain_residues_from_pdb(pdb_path, chain))
+
+
+def pdb_chain_ids(pdb_path: Path) -> list[str]:
+    """Chain ids present in a PDB, in first-appearance order (CA atoms)."""
+    chains: list[str] = []
     for line in Path(pdb_path).read_text().splitlines():
         if line.startswith("ATOM") and line[12:16].strip() == "CA":
             ch = line[21]
-            if ch != chain:
-                continue
-            resi = int(line[22:26])
-            key = (ch, resi)
-            if key not in seen:
-                seen.add(key)
-                seq.append(_AA3TO1.get(line[17:20].strip(), "X"))
-    return "".join(seq)
+            if ch not in chains:
+                chains.append(ch)
+    return chains
+
+
+def _target_likeness(seq: str, target_sequence: str, k: int = 6) -> float:
+    """Fraction of ``seq``'s k-mers that also occur in ``target_sequence`` (0–1).
+
+    A k-mer profile rather than string equality, so a target chain that RFdiffusion
+    trimmed or renumbered still scores ~1 while a diffused (poly-glycine) binder
+    scores ~0.
+    """
+    if not seq or not target_sequence:
+        return 0.0
+    if len(seq) < k:
+        return 1.0 if seq in target_sequence else 0.0
+    kmers = [seq[i : i + k] for i in range(len(seq) - k + 1)]
+    return sum(1 for km in kmers if km in target_sequence) / len(kmers)
+
+
+#: k-mer identity above which a backbone chain is considered part of the target.
+_TARGET_LIKENESS_CUTOFF = 0.5
+
+
+def binder_chain_from_backbone(backbone_pdb: Path, *, target_sequence: str) -> str:
+    """Chain id of the diffused binder in an RFdiffusion binder-design backbone.
+
+    RFdiffusion assigns output chain letters from the contig, so the binder's
+    letter is not the input structure's and must not be hard-coded. The target
+    block keeps its native residue identities while the diffused binder does not,
+    so the binder is identified as the chain that does not match the target.
+
+    Args:
+        backbone_pdb: An RFdiffusion output backbone (target + binder complex).
+        target_sequence: The target sequence RFdiffusion was given — the
+            concatenation of the contig's kept target segments.
+
+    Returns:
+        The binder's chain id.
+
+    Raises:
+        ValueError: When exactly one non-target chain cannot be identified.
+            Guessing here would hand ProteinMPNN the wrong chain to hold fixed,
+            which silently redesigns the antigen.
+    """
+    chains = pdb_chain_ids(backbone_pdb)
+    scores = {
+        ch: _target_likeness(chain_sequence_from_pdb(backbone_pdb, ch), target_sequence)
+        for ch in chains
+    }
+    binders = [ch for ch, s in scores.items() if s < _TARGET_LIKENESS_CUTOFF]
+    targets = [ch for ch, s in scores.items() if s >= _TARGET_LIKENESS_CUTOFF]
+    if len(binders) != 1 or not targets:
+        raise ValueError(
+            f"cannot identify the binder chain in {backbone_pdb}: "
+            f"target-likeness per chain = { {c: round(s, 3) for c, s in scores.items()} }; "
+            "refusing to run ProteinMPNN without knowing which chain to hold fixed"
+        )
+    return binders[0]
 
 
 def parse_mpnn_fasta(fasta_path: Path) -> list[tuple[str, str]]:
@@ -358,6 +465,7 @@ def _to_float(v: object) -> float | None:
 # Re-export the canonical Boltz YAML builder + JSON parser so there is exactly
 # one of each in the codebase.
 __all__ = [
+    "binder_chain_from_backbone",
     "build_af2ig_cmd",
     "build_bindcraft_cmd",
     "build_boltz_cmd",
@@ -367,13 +475,16 @@ __all__ = [
     "build_contig_str",
     "build_hotspot_str",
     "build_mpnn_cmd",
+    "build_ranges_contig_str",
     "build_rfdiff_cmd",
+    "chain_residues_from_pdb",
     "chain_sequence_from_pdb",
     "mpnn_design_sequences",
     "parse_af2ig_output",
     "parse_boltz_output",
     "parse_chai_output",
     "parse_mpnn_fasta",
+    "pdb_chain_ids",
 ]
 
 

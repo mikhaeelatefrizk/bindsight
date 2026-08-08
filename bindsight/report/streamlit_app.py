@@ -51,6 +51,23 @@ def _read_run(run_dir: Path) -> Any:
     return deg, candidates, epitopes, manifest
 
 
+def _failed_stages(manifest: Any) -> list[dict[str, Any]]:
+    """Return the manifest stages that recorded a failure.
+
+    A run whose stage crashed leaves behind the same empty tables as a run that
+    genuinely surfaced nothing, so the two must never render alike: one is a
+    finding, the other is no result at all.
+
+    Args:
+        manifest: Parsed ``run_manifest.jsonld`` body, or ``None``.
+
+    Returns:
+        The failed stage records, in manifest order.
+    """
+    stages = (manifest or {}).get("stages") or []
+    return [s for s in stages if isinstance(s, dict) and s.get("status") == "failed"]
+
+
 def main() -> None:
     """Streamlit entry point."""
     import streamlit as st
@@ -72,36 +89,55 @@ def main() -> None:
     st.title("bindsight report")
     st.caption(f"run: **{name}**  ·  dir: `{run_dir}`")
 
-    # ---- KPIs ----
-    cols = st.columns(4)
-    cols[0].metric("Genes tested", len(deg) if deg is not None else 0)
-    cols[1].metric(
-        "Significant DEGs",
-        int(deg["significant"].sum()) if deg is not None and "significant" in deg.columns else 0,
-    )
-    cols[2].metric("Candidates", len(candidates) if candidates is not None else 0)
-    cols[3].metric("Top-N epitopes", len(epitopes) if epitopes is not None else 0)
-
-    # ---- DEG ----
-    st.header("Differential expression")
-    if deg is not None and len(deg):
-        st.dataframe(deg, hide_index=True, width="stretch")
+    # A failed stage means there is no result to summarise. Rendering the KPI row
+    # and the empty-state advice below it would present a crash as a measured
+    # negative, so the summary is replaced by the failure and the provenance that
+    # explains it.
+    failed = _failed_stages(manifest)
+    if failed:
+        names = ", ".join(str(s.get("name") or "?") for s in failed)
+        st.error(
+            f"**These results are incomplete — the {names} stage failed.** The run never "
+            "finished, so this is not a real negative result and no filter should be "
+            "loosened on the strength of it. The failing stage is detailed under "
+            "Provenance below.",
+            icon="🛑",
+        )
     else:
-        st.info("No DEG output found.")
+        # ---- KPIs ----
+        cols = st.columns(4)
+        cols[0].metric("Genes tested", len(deg) if deg is not None else 0)
+        cols[1].metric(
+            "Significant DEGs",
+            (
+                int(deg["significant"].sum())
+                if deg is not None and "significant" in deg.columns
+                else 0
+            ),
+        )
+        cols[2].metric("Candidates", len(candidates) if candidates is not None else 0)
+        cols[3].metric("Top-N epitopes", len(epitopes) if epitopes is not None else 0)
 
-    # ---- candidates ----
-    st.header("Candidate targets")
-    if candidates is not None and len(candidates):
-        st.dataframe(candidates, hide_index=True, width="stretch")
-    else:
-        st.info("No candidates produced. Loosen filters in the config and re-run.")
+        # ---- DEG ----
+        st.header("Differential expression")
+        if deg is not None and len(deg):
+            st.dataframe(deg, hide_index=True, width="stretch")
+        else:
+            st.info("No DEG output found.")
 
-    # ---- epitopes ----
-    st.header("Top-N epitopes")
-    if epitopes is not None and len(epitopes):
-        st.dataframe(epitopes, hide_index=True, width="stretch")
-    else:
-        st.info("No top-N epitopes produced.")
+        # ---- candidates ----
+        st.header("Candidate targets")
+        if candidates is not None and len(candidates):
+            st.dataframe(candidates, hide_index=True, width="stretch")
+        else:
+            st.info("No candidates produced. Loosen filters in the config and re-run.")
+
+        # ---- epitopes ----
+        st.header("Top-N epitopes")
+        if epitopes is not None and len(epitopes):
+            st.dataframe(epitopes, hide_index=True, width="stretch")
+        else:
+            st.info("No top-N epitopes produced.")
 
     # ---- provenance ----
     st.header("Provenance")
@@ -109,7 +145,11 @@ def main() -> None:
         st.write(f"Run ID: `{manifest.get('run_id')}`")
         st.write(f"Created: `{manifest.get('created_at')}`")
         for stage in manifest.get("stages", []):
-            with st.expander(f"stage: {stage['name']} — {stage['status']}", expanded=False):
+            # A failed stage opens by default: its error is the whole story.
+            with st.expander(
+                f"stage: {stage['name']} — {stage['status']}",
+                expanded=stage.get("status") == "failed",
+            ):
                 st.json(stage)
     else:
         st.warning("No manifest found.")

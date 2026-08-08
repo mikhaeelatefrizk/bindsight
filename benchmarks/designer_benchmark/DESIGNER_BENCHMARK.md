@@ -12,6 +12,16 @@ Kaggle's free P100 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs,
 mean ipTM 0.59, 50% success@0.65), with the real Boltz-2-predicted complexes
 (`binders/*_complex.cif`) and the raw metrics in `results.json`.
 
+> ⚠️ **The committed result predates the ProteinMPNN target-chain fix released in
+> v0.2.1.** It was produced without `--pdb_path_chains`, so ProteinMPNN redesigned
+> the ERBB2 target chain as well as the binder: the designs were optimised against
+> a partly-invented HER2 surface and then scored against the native one. The
+> metrics are genuine Boltz-2 output and reproduce exactly — the protocol was
+> mis-set, not the measurement — but they are **provisional** and a corrected
+> re-run will supersede them. Any new run following the steps below uses the fixed
+> invocation and is not affected. See [`RESULTS.md`](RESULTS.md) for the full
+> statement.
+
 > **Free-GPU quickstart ($0):** to reproduce or extend it on a Kaggle free GPU,
 > follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below are the
 > full/Modal protocol for the complete three-way comparison.

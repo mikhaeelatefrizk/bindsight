@@ -28,6 +28,12 @@ class DesignSpec(BaseModel):
     # (valid before SURFACE-Bind epitope prediction is wired); RFdiffusion then
     # runs without ``ppi.hotspot_res``.
     epitope_residues: list[int] = Field(default_factory=list)
+    # Inclusive residue ranges of the target the binder may be designed against —
+    # the extracellular domain(s) annotated by discovery. Empty means no topology
+    # was available, so the whole chain (transmembrane helix and cytoplasmic tail
+    # included) is the design surface; the executor says so rather than implying
+    # the full-length receptor was intended.
+    design_ranges: list[tuple[int, int]] = Field(default_factory=list)
     binder_length_min: int = 50
     binder_length_max: int = 100
     n_trajectories: int = 50
@@ -66,6 +72,7 @@ class Designer(Protocol):
         target_structure_path: Path,
         epitope_residues: list[int],
         epitope_chain: str = "A",
+        design_ranges: list[tuple[int, int]] | None = None,
         n_trajectories: int = 50,
         seed: int = 0,
     ) -> DesignSpec:

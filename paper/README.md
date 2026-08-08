@@ -9,11 +9,18 @@ paper/
 ├── paper.bib          ← BibTeX bibliography (for JOSS)
 └── biorxiv/
     ├── manuscript.tex ← Full bioRxiv preprint (LaTeX)
-    ├── manuscript.pdf ← Compiled (7 pages, 328 KB) — ready for direct upload
+    ├── manuscript.pdf ← Compiled output — STALE, see the warning below
     └── references.bib ← BibTeX bibliography (same content + a few extras)
 ```
 
-Both target the same v0.1.0 release (Zenodo DOI `10.5281/zenodo.20121496`).
+> ⚠️ **`manuscript.pdf` is out of date and must not be deposited as-is.** It was
+> compiled before the v0.2.1 corrections and still carries the wrong licence
+> ("MIT"), the superseded Zenodo version DOI, and the pre-correction Boltz-2
+> reference. Recompile from `manuscript.tex` (Step 1 below) before any upload.
+
+Both cite the software by its Zenodo **concept DOI** `10.5281/zenodo.20121495`,
+which always resolves to the latest archived version — the right thing to cite
+for "the software"; use a version DOI only to pin an exact release.
 Same author (Mikhaeel Atef Rizk Wahba, ORCID `0009-0006-1069-9558`). Same code
 and demo. Different audiences and review processes.
 
@@ -47,7 +54,7 @@ review happens transparently on GitHub.
    - **Branch:** `main`
    - **Version:** `v0.1.0`
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
-   - **Software archive:** `https://doi.org/10.5281/zenodo.20121496`
+   - **Software archive:** `https://doi.org/10.5281/zenodo.20121495`
 4. Submit. The JOSS editor assigns a handling editor and at least two
    reviewers. Reviewers open issues in your GitHub repo with comments;
    you address them; the editor publishes when the criteria are met.
@@ -120,7 +127,7 @@ compile.
    - **Competing interests:** None
    - **Data availability:** "All source code, data, and materials are
      available at https://github.com/mikhaeelatefrizk/bindsight and
-     archived at Zenodo (DOI 10.5281/zenodo.20121496)."
+     archived at Zenodo (concept DOI 10.5281/zenodo.20121495)."
 8. Review and submit. bioRxiv editors do an initial check (typically
    within 48 hours) and assign a DOI like `10.1101/2026.05.11.NNNNNN`.
 
@@ -176,8 +183,10 @@ To stay honest:
 - **Rediscovery validation: done (discovery half).** A companion report
   (`paper/validation/manuscript.md`, artifacts in `benchmarks/validation/`)
   runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
-  is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified), with
-  confirmed specificity (EGFR/CEA correctly not surfaced). The three-way
+  is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified). EGFR
+  and CEA are not surfaced, which the report presents as an internal
+  consistency check on the over-expression rule (it excludes them by
+  construction) rather than as evidence of ranking discrimination. The three-way
   *designer* benchmark is GPU-only; a runnable, CPU-tested harness + protocol
   ship in `benchmarks/designer_benchmark/`, pending a GPU run.
 - **No claims of experimental validation.** Wet-lab work is out of scope

@@ -209,3 +209,4 @@ a:hover { color: #094078; }
 
 .note.ok    { background: #e8f5e9; border-left-color: var(--ok); }
 .note.info  { background: var(--accent-soft); border-left-color: var(--accent); }
+.note.err   { background: #ffebee; border-left-color: var(--err); }

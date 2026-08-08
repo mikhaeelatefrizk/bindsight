@@ -96,7 +96,7 @@ def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
     top = v.headline
     if top is not None:
         exp = top["expected"]
-        spec = v.specificity or {}
+        spec = v.exclusion_check or {}
         stats = [
             (f"rank {exp['rank']}", f"{exp['symbol']} rediscovered", top["cohort"]["label"]),
             ("log2fc " + f"{exp['log2fc']:.2f}", "fold-change", f"padj {exp['padj']:.1e}"),
@@ -105,11 +105,15 @@ def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
             if k in v.recall_at_k:
                 stats.append((f"{v.recall_at_k[k] * 100:.0f}%", k, "over over-expressed antigens"))
         if spec.get("n"):
+            # Antigens that fail the over-expression rule are excluded from
+            # candidacy by that same rule, so this can only ever come out clean.
+            # It is an internal consistency check, not a measure of ranking
+            # discrimination, and must not be labelled "specificity".
             stats.append(
                 (
-                    f"{spec.get('correctly_excluded')}/{spec['n']}",
-                    "specificity",
-                    f"kept out of the top {spec.get('k', 20)}",
+                    f"{spec.get('consistent')}/{spec['n']}",
+                    "consistency check",
+                    "not-over-expressed antigens excluded by construction",
                 )
             )
         lines += ['<div class="bs-stats">']
@@ -176,6 +180,15 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
         f"A **real GPU run**, not a simulation — backend `{d.backend}`, GPU `{d.gpu}`, "
         f"validator `{d.validator}`, bindsight `{d.bindsight_version}`, "
         f"{d.generated_utc[:10]}.",
+        "",
+        '!!! warning "Provisional — these figures predate the target-chain fix"',
+        "",
+        "    This run invoked ProteinMPNN without `--pdb_path_chains`, so the sequence",
+        "    designer was free to rewrite the antigen as well as the binder: the binders",
+        "    were optimised against a partly-invented ERBB2 surface and then scored against",
+        "    the native one. The measurements below are honest — they simply measure a",
+        "    mis-configured protocol, so treat them as provisional. Fixed in v0.2.1; these",
+        "    numbers will be superseded by a corrected re-run.",
         "",
     ]
     if d.targets:

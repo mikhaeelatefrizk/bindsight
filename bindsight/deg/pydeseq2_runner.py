@@ -35,6 +35,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from bindsight.config import DEGParams
@@ -67,6 +68,73 @@ class PyDESeq2Runner:
     def load_design(path: Path) -> pd.DataFrame:
         """Read a sample design TSV. The first column must be the sample ID."""
         return pd.read_csv(path, sep="\t", index_col=0)
+
+    # ------------------------------------------------------------------ #
+    # Validation                                                         #
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _require_integer_counts(counts: pd.DataFrame) -> None:
+        """Reject a counts matrix holding non-integer values.
+
+        DESeq2's negative-binomial model is defined on raw counts. A TPM/FPKM/
+        normalised matrix silently truncates toward zero on the integer cast
+        (0.7 → 0, 3.9 → 3), after which the test still returns confident
+        p-values that mean nothing. Integral floats (``5.0``) are accepted —
+        count matrices routinely round-trip through float dtypes. Non-finite
+        values are left to the cast, which rejects them on its own.
+
+        Args:
+            counts: Gene × sample matrix as read from disk.
+
+        Raises:
+            ValueError: If any value is finite but not integral, naming a few
+                offending gene/sample cells.
+        """
+        values = np.asarray(counts.to_numpy(), dtype=np.float64)
+        non_integer = np.isfinite(values) & (values != np.trunc(values))
+        if not bool(non_integer.any()):
+            return
+        rows, cols = np.nonzero(non_integer)
+        examples = ", ".join(
+            f"{counts.index[i]}/{counts.columns[j]}={values[i, j]:g}"
+            for i, j in zip(rows[:3], cols[:3], strict=True)
+        )
+        raise ValueError(
+            "counts matrix contains non-integer values — DESeq2 requires raw integer "
+            "counts, not TPM/FPKM/normalised expression; "
+            f"{int(non_integer.sum())} of {values.size} values are non-integer "
+            f"(e.g. {examples})"
+        )
+
+    def _require_replicated_contrast_levels(self, design: pd.DataFrame) -> None:
+        """Reject a design whose contrast levels are not both replicated.
+
+        The total-sample check upstream is blind to how the samples split: a
+        5-tumour / 1-normal cohort clears ``2 * min_replicates`` yet leaves
+        DESeq2 estimating a within-group dispersion from a single sample.
+
+        Args:
+            design: Sample design restricted to the samples actually analysed.
+
+        Raises:
+            ValueError: If the contrast factor is absent, or either contrast
+                level has fewer than ``min_replicates`` samples.
+        """
+        factor, numerator, denominator = self.params.contrast
+        if factor not in design.columns:
+            raise ValueError(
+                f"contrast factor {factor!r} is not a column of the design "
+                f"(columns: {sorted(map(str, design.columns))})"
+            )
+        per_level = design[factor].astype(str).value_counts()
+        for level in (numerator, denominator):
+            n_level = int(per_level.get(level, 0))
+            if n_level < self.params.min_replicates:
+                raise ValueError(
+                    f"contrast level {factor}={level!r} has {n_level} sample(s); "
+                    f"need at least min_replicates={self.params.min_replicates} per level "
+                    "for a valid dispersion estimate"
+                )
 
     # ------------------------------------------------------------------ #
     # Filtering                                                          #
@@ -119,6 +187,9 @@ class PyDESeq2Runner:
         counts = counts[common]
         design = design.loc[common]
 
+        self._require_integer_counts(counts)
+        self._require_replicated_contrast_levels(design)
+
         # Filter low-count genes BEFORE pydeseq2 (faster + more stable estimates).
         counts = self._low_count_filter(counts)
 
@@ -167,7 +238,14 @@ class PyDESeq2Runner:
         )
         dds.deseq2()
 
-        ds = DeseqStats(dds, contrast=self.params.contrast, quiet=True)
+        # alpha drives pydeseq2's independent filtering, so it must be the FDR the
+        # user configured — otherwise the filter is tuned for a threshold nobody asked for.
+        ds = DeseqStats(
+            dds,
+            contrast=self.params.contrast,
+            alpha=self.params.fdr_threshold,
+            quiet=True,
+        )
         ds.summary()
         return ds.results_df
 

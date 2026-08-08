@@ -55,8 +55,10 @@ reproducible.
 
 ## Roadmap
 
-- **v0.2.0 (now)** — discovery half end-to-end on CPU; design + validation **proven on a free GPU**
-  (bindsight's first real ERBB2 binders — see the designer benchmark); multi-page web UI live.
+- **v0.2.1 (now)** — discovery half end-to-end on CPU; design + validation **demonstrated on a free GPU**
+  (bindsight's first real ERBB2 binders — see the designer benchmark, whose figures predate the
+  ProteinMPNN target-chain fix in this release and will be superseded by a corrected re-run);
+  multi-page web UI live.
 - **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
   fully wired; scRNA-seq input.
 - **v1.0.0** — JOSS submission + validation paper (blinded rediscovery of HER2/EGFR/MSLN/CLDN6).

@@ -6,10 +6,17 @@
 The GPU runners (Kaggle / Colab) return a ``<handle>.tar.gz`` containing
 ``metrics.jsonl`` (one validator row per design) plus ``design/`` and
 ``validate/``. This script turns that into the committed benchmark artifacts —
-``results.json`` (the :mod:`bindsight.benchmark.designer_bench` schema, marked
-``is_mock=False``) and a human-readable ``RESULTS.md`` — and copies the designed
-binders into ``binders/`` for provenance. It does **no** GPU work; it just
-aggregates real metrics that already exist.
+``results.json`` (the :mod:`bindsight.benchmark.designer_bench` schema) and a
+human-readable ``RESULTS.md`` — and copies the designed binders into
+``binders/`` for provenance. It does **no** GPU work; it just aggregates real
+metrics that already exist.
+
+``is_mock`` and the validator identity are *derived* from the metrics rows: the
+mock runner stamps ``validator_name="mock"``, so a tarball with any mock row —
+or with absent/ambiguous validator metadata — is refused with a non-zero exit
+rather than published as a real result. The tarball records neither the backend
+nor the GPU, so those stay operator-declared and are labelled as such in both
+artifacts.
 
     python benchmarks/designer_benchmark/score_run.py RUN.tar.gz \
         --designer rfdiff_mpnn --gpu "Tesla P100-16GB (Kaggle free)" \
@@ -46,6 +53,33 @@ def _read_metrics(tar: Path) -> list[dict]:
     return [json.loads(ln) for ln in text.splitlines() if ln.strip()]
 
 
+def _derive_validator(rows: list[dict], tar: Path) -> tuple[str, str]:
+    """Derive the validator identity from the metrics rows, or refuse to score.
+
+    The only run-provenance the tarball carries is the ``validator_name`` /
+    ``validator_version`` stamped on each row by the validator that produced it;
+    the mock runner writes ``"mock"``. Anything that cannot prove it is a
+    non-mock run must not be published as one, so this exits non-zero instead of
+    writing an artifact that claims otherwise.
+    """
+    if not rows:
+        raise SystemExit(f"{tar}: metrics.jsonl has no rows; refusing to claim a real run")
+    names = {str(r.get("validator_name") or "").strip() for r in rows}
+    if "" in names or len(names) != 1:
+        raise SystemExit(
+            f"{tar}: metrics.jsonl validator_name is absent or ambiguous ({sorted(names)}); "
+            "refusing to claim a real run"
+        )
+    name = names.pop()
+    if name == "mock":
+        raise SystemExit(
+            f"{tar}: metrics.jsonl was produced by the mock runner "
+            "(validator_name='mock'); refusing to claim a real run"
+        )
+    versions = {str(r.get("validator_version") or "").strip() for r in rows}
+    return name, versions.pop() if len(versions) == 1 else ""
+
+
 def _score(designer: str, rows: list[dict]) -> DesignerScore:
     """Aggregate validator rows into a DesignerScore (real, not mock)."""
     iptm = [r["iptm"] for r in rows if isinstance(r.get("iptm"), (int, float))]
@@ -72,24 +106,41 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tarball", type=Path)
     ap.add_argument("--designer", default="rfdiff_mpnn")
-    ap.add_argument("--validator", default="boltz2")
-    ap.add_argument("--gpu", default="Tesla P100-16GB (Kaggle free)")
+    ap.add_argument(
+        "--backend",
+        default="kaggle",
+        help="Backend the run was submitted to. Operator-declared: the results "
+        "tarball does not record it.",
+    )
+    ap.add_argument(
+        "--gpu",
+        default="Tesla P100-16GB (Kaggle free)",
+        help="GPU the run used. Operator-declared: the results tarball does not record it.",
+    )
     ap.add_argument("--target", default="ERBB2 domain IV (P04626, trastuzumab epitope)")
     ap.add_argument("--n-trajectories", type=int, default=2)
     ap.add_argument("--out", type=Path, default=Path("benchmarks/designer_benchmark"))
     args = ap.parse_args()
 
     rows = _read_metrics(args.tarball)
+    validator, validator_version = _derive_validator(rows, args.tarball)
     score = _score(args.designer, rows)
     summary = {
         "schema": "bindsight-designer-benchmark/1",
         "generated_utc": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "bindsight_version": __version__,
-        "backend": "kaggle",
+        "backend": args.backend,
         "gpu": args.gpu,
-        "validator": args.validator,
+        "validator": validator,
+        "validator_version": validator_version,
         "n_trajectories": args.n_trajectories,
         "is_mock": False,
+        "provenance_basis": {
+            "is_mock": f"derived: none of the {len(rows)} metrics.jsonl rows is a mock row",
+            "validator": "derived from metrics.jsonl validator_name/validator_version",
+            "backend": "operator-declared (--backend); not recorded in the results tarball",
+            "gpu": "operator-declared (--gpu); not recorded in the results tarball",
+        },
         "targets": [args.target],
         "designers": [_score_dict(score)],
     }
@@ -99,8 +150,14 @@ def main() -> None:
     md = _render_md(summary)
     md += (
         "\n## Run provenance\n\n"
-        f"- **Real GPU run** — backend `kaggle`, GPU `{args.gpu}`, "
-        f"date `{summary['generated_utc']}`, bindsight `{__version__}`.\n"
+        f"- **Not a mock run** — all {len(rows)} metric rows were stamped by validator "
+        f"`{validator}`"
+        + (f" v`{validator_version}`" if validator_version else "")
+        + ", derived from the run's own `metrics.jsonl`; the mock runner stamps "
+        '`validator_name="mock"` and is refused by `score_run.py`.\n'
+        f"- **Operator-declared** (the results tarball records neither): backend "
+        f"`{args.backend}`, GPU `{args.gpu}`. Date `{summary['generated_utc']}`, "
+        f"bindsight `{__version__}`.\n"
         f"- **Target:** {args.target}. The full ERBB2 (1255 aa) does not fit a free 16 GB "
         "GPU, so binders are designed against extracellular **domain IV** — the clinically "
         "validated trastuzumab epitope — extracted from the AlphaFold model "

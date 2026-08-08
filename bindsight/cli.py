@@ -323,8 +323,15 @@ def validate(run_dir: Path, backend: str, validator: str) -> None:
 
     design_dir = run_dir / "design"
     n_designs = _count_designs(design_dir)
-    cost = estimate(backend=backend, stage="validate", plugin=validator, n_units=n_designs)
-    _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
+    if n_designs is None:
+        # No designs on disk yet, so any per-design figure would be invented.
+        console.print(
+            f"[yellow]No designs found under {design_dir}[/yellow] — "
+            "cost is unknown until the design step has produced binders."
+        )
+    else:
+        cost = estimate(backend=backend, stage="validate", plugin=validator, n_units=n_designs)
+        _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
 
     # The design step (headless backends) runs design + validation together via
     # the executor, writing per-design metrics into the design tarballs. Here we
@@ -857,12 +864,33 @@ def _count_top_targets(epitopes_parquet: Path) -> int:
         return 5
 
 
-def _count_designs(design_dir: Path) -> int:
-    """Count design tarballs / metrics for cost estimation; fall back to 250."""
+def _count_designs(design_dir: Path) -> int | None:
+    """Count the designs actually present in ``<run>/design``; None when unknown.
+
+    The executor ships designs inside per-target tarballs, so the loose ``*.pdb``
+    files a plain glob sees are only the ones a user unpacked by hand — both are
+    counted, tarball members by name. ``None`` means nothing countable is there
+    yet (the GPU step hasn't run), which the caller must report as unknown rather
+    than quote a made-up number.
+    """
+    import tarfile
+
     if not design_dir.exists():
-        return 250
-    pdbs = list(design_dir.rglob("*.pdb"))
-    return max(1, len(pdbs)) if pdbs else 250
+        return None
+    n = len({p for p in design_dir.rglob("*.pdb") if "validate" not in p.parts})
+    for archive in sorted(design_dir.rglob("*.tar.gz")):
+        try:
+            with tarfile.open(archive, "r:gz") as tf:
+                # Only the archive's own design/ members; the per-target tarballs
+                # nested inside results.tar.gz are counted from their own files.
+                n += sum(
+                    1
+                    for name in tf.getnames()
+                    if name.lower().endswith(".pdb") and Path(name).parts[:1] == ("design",)
+                )
+        except (tarfile.TarError, OSError) as e:
+            LOG_CLI.warning("could not read %s: %s", archive, e)
+    return n or None
 
 
 #: The ``--cheap`` profile, as specified in ARCHITECTURE.md §10: "RFdiff+MPNN
@@ -901,12 +929,18 @@ def _apply_cheap_profile(cfg: RunConfig) -> None:
 
 
 def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
-    """Return top-N targets (uniprot, structure_path, chain, residues) to design.
+    """Return top-N targets (uniprot, structure_path, chain, residues, ranges) to design.
 
     Structure references are resolved to absolute paths here, which is the one
     place every design/validate consumer funnels through. New runs store them
     run-relative so the run stays portable; runs made before that change stored
     absolute cache paths. ``resolve_run_path`` accepts both.
+
+    ``design_ranges`` (the extracellular ranges discovery annotated from UniProt
+    topology) is carried through to the design job so binders are designed against
+    the reachable part of the receptor. Targets without it are named on the console
+    — designing against the full length, transmembrane helix and cytoplasmic tail
+    included, is a real difference the user has to know about.
     """
     import pandas as pd
 
@@ -917,6 +951,7 @@ def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
         return []
     df = pd.read_parquet(epitopes_parquet)
     targets: list[dict[str, Any]] = []
+    no_ranges: list[str] = []
     for _, row in df.iterrows():
         uni = row.get("uniprot_id")
         resolved = resolve_run_path(run_dir, row.get("structure_path"))
@@ -925,15 +960,42 @@ def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
         struct = str(resolved)
         residues = row.get("residues")
         residues = list(residues) if residues is not None and len(residues) else []
+        ranges = _design_ranges(row.get("design_ranges") if "design_ranges" in df.columns else None)
+        if not ranges:
+            no_ranges.append(str(uni))
         targets.append(
             {
                 "uniprot": str(uni),
                 "structure_path": struct,
                 "chain": str(row.get("chain") or "A"),
                 "residues": [int(r) for r in residues],
+                "design_ranges": ranges,
             }
         )
+    if no_ranges:
+        console.print(
+            f"[yellow]No extracellular ranges for {', '.join(sorted(set(no_ranges)))}[/yellow] — "
+            "designing against the full-length chain (transmembrane and cytoplasmic "
+            "regions included). Enable params.target_discovery.use_uniprot_topology "
+            "in discover to restrict design to the extracellular domain."
+        )
     return targets
+
+
+def _design_ranges(raw: Any) -> list[tuple[int, int]]:
+    """Coerce an epitopes-table ``design_ranges`` cell to ``[(lo, hi), ...]``.
+
+    The column holds a nested array (or NaN/None when topology wasn't annotated),
+    which is exactly the "we never determined the extracellular domain" case.
+    """
+    if raw is None or not hasattr(raw, "__len__") or len(raw) == 0:
+        return []
+    ranges: list[tuple[int, int]] = []
+    for r in raw:
+        if r is None or len(r) != 2:
+            continue
+        ranges.append((int(r[0]), int(r[1])))
+    return ranges
 
 
 def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) -> int:
@@ -951,6 +1013,7 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
             target_structure_path=Path(t["structure_path"]),
             epitope_residues=t["residues"],
             epitope_chain=t["chain"],
+            design_ranges=t["design_ranges"],
             n_trajectories=trajectories,
         )
         spec_dict = spec.model_dump()
@@ -1029,6 +1092,7 @@ def _launch_design(
             target_structure_path=Path(t["structure_path"]),
             epitope_residues=t["residues"],
             epitope_chain=t["chain"],
+            design_ranges=t["design_ranges"],
             n_trajectories=trajectories,
         )
         extra: dict[str, str | int | float | bool] = {

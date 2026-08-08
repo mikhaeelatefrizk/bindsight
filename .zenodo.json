@@ -1,0 +1,40 @@
+{
+  "title": "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design",
+  "description": "<p><strong>Expression → Binder.</strong> bindsight is an open-source Python package that joins cohort RNA-seq target discovery to de novo protein binder design in one reproducible workflow, and carries machine-readable provenance across the join — from a ranked binder back through the epitope, the AlphaFold structure, the surfaceome call, and the differential-expression contrast to the patient samples the signal came from.</p>\n<p><strong>What it does.</strong> The CPU discovery half runs differential expression (PyDESeq2), enriches targets via Open Targets, filters against the human surfaceome (SURFY) and SURFACE-Bind targetable sites, pulls AlphaFoldDB structures, and emits a ranked candidate shortlist together with an exhaustive <em>failure taxonomy</em> — one disposition per gene, so the negative results are a first-class output rather than silence. The GPU design half runs de novo binder design (RFdiffusion + ProteinMPNN, BindCraft, or BoltzGen) and affinity validation (Boltz-2, Chai-1r, or AF2-IG) through a pluggable runner backend (Modal, Kaggle, local Docker, or Colab).</p>\n<p><strong>Reproducibility.</strong> Every run emits a <code>run_manifest.jsonld</code> — PROV-O JSON-LD in which each stage is a <code>prov:Activity</code>, each artifact a content-addressed <code>prov:Entity</code> with its SHA-256, and each tool or container image a <code>prov:SoftwareAgent</code> — plus the resolved versions of the scientific stack the numbers were produced with. A finished run exports as an RO-Crate suitable for deposit.</p>\n<p><strong>Scope and honesty.</strong> mRNA abundance is not cell-surface protein abundance, and bulk expression cannot separate tumour cells from infiltrating stroma; bindsight states these limitations in its logs, its manifest and every report rather than hiding them. Candidates are hypotheses to confirm at the protein level, not validated targets. The de novo binder figures shipped with this release are provisional — see the benchmark README for the protocol caveat.</p>\n<p><strong>Licence:</strong> AGPL-3.0-or-later. <strong>Source:</strong> <a href=\"https://github.com/mikhaeelatefrizk/bindsight\">github.com/mikhaeelatefrizk/bindsight</a>. <strong>Documentation:</strong> <a href=\"https://mikhaeelatefrizk.github.io/bindsight/\">mikhaeelatefrizk.github.io/bindsight</a>.</p>",
+  "creators": [
+    {
+      "name": "Wahba, Mikhaeel Atef Rizk",
+      "affiliation": "Independent researcher",
+      "orcid": "0009-0006-1069-9558"
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "AGPL-3.0-or-later",
+  "version": "v0.2.1",
+  "keywords": [
+    "protein-design",
+    "de-novo-binder-design",
+    "bioinformatics",
+    "RNA-seq",
+    "differential-expression",
+    "target-discovery",
+    "surfaceome",
+    "epitope",
+    "AlphaFold",
+    "RFdiffusion",
+    "ProteinMPNN",
+    "BindCraft",
+    "BoltzGen",
+    "Boltz-2",
+    "cancer-immunotherapy",
+    "antibody",
+    "reproducibility",
+    "provenance",
+    "PROV-O",
+    "RO-Crate",
+    "workflow",
+    "Snakemake",
+    "open-science"
+  ]
+}

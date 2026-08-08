@@ -54,7 +54,8 @@ params:
     # use_uniprot_topology: true           # parse UniProt transmembrane/topology
     # require_extracellular_domain: true   # restrict design to the extracellular domain
     use_open_targets: true
-    require_tractable_modality: ["Antibody"]
+    # Open Targets modality codes: AB (antibody), SM, PR, OC.
+    require_tractable_modality: ["AB"]
     max_safety_events: 5
     require_surface_bind_site: false
     top_n: 20                              # wide enough to score recall@20

@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # -----------------------------------------------------------------------------
 [project]
 name = "bindsight"
-version = "0.2.0"
+version = "0.2.1"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -64,19 +64,24 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Upper bounds on the scientific stack are deliberate: a new major — or, for
+# 0.x pydeseq2, a new minor — can change the numbers a run reports, and a
+# published result has to stay re-derivable. `envs/constraints.txt` pins the
+# exact versions this release was resolved and tested against.
 discover = [
-    "pydeseq2>=0.5",
-    "pandas>=2.2",
-    "pyarrow>=16",
-    "numpy>=1.26",
-    "biopython>=1.83",
+    "pydeseq2>=0.5,<0.6",
+    "pandas>=2.2,<3",
+    "pyarrow>=16,<25",
+    "numpy>=1.26,<3",
+    "scipy>=1.11,<2",      # arrives via pydeseq2; its numerics move DEG results
+    "biopython>=1.83,<2",
     "gql[requests]>=3.5",  # Open Targets GraphQL
     "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [
     "streamlit>=1.60,<2",  # web UI: `bindsight ui` + `bindsight report --format streamlit`; floor for st.iframe + width=, cap major against breaking removals
     "py3Dmol>=2.0",
-    "matplotlib>=3.8",
+    "matplotlib>=3.8,<4",  # renders the volcano plot embedded in every report
     "seaborn>=0.13",
     "jupyter>=1.0",
 ]

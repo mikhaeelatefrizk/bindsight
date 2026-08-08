@@ -13,7 +13,11 @@
 # Hugging Face Space web entrypoint — the Space has its own Dockerfile that
 # launches Streamlit on port 8501 and lives in the Space's own git repo
 # (see .huggingface/README.md).
-FROM python:3.11.9-slim-bookworm
+# Pinned by digest, not by tag: `python:3.11.9-slim-bookworm` is republished
+# whenever its base is patched, so the tag alone does not identify an image and
+# a rebuild in a year would not be the same environment. The tag is kept
+# alongside for readability only — the digest is what Docker resolves.
+FROM python:3.11.9-slim-bookworm@sha256:8fb099199b9f2d70342674bd9dbccd3ed03a258f26bbd1d556822c6dfc60c317
 
 # git: VCS-aware pip + the design tools' runtime clone; build-essential: wheels
 # that need a compiler on slim.
@@ -23,7 +27,9 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY . /app
-RUN pip install --no-cache-dir -e ".[discover,report]"
+# Constraints pin the scientific stack to the versions this release was tested
+# against, so the image and a local `pip install -c envs/constraints.txt` agree.
+RUN pip install --no-cache-dir -c envs/constraints.txt -e ".[discover,report]"
 
 ENTRYPOINT ["bindsight"]
 CMD ["--help"]

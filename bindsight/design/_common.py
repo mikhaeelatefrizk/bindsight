@@ -98,6 +98,7 @@ def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:
             spec.target_uniprot,
             spec.epitope_chain,
             ",".join(str(r) for r in sorted(spec.epitope_residues)),
+            ",".join(f"{lo}-{hi}" for lo, hi in spec.design_ranges),
             str(spec.binder_length_min),
             str(spec.binder_length_max),
             str(spec.n_trajectories),
