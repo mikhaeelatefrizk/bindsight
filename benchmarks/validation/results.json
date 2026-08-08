@@ -1,9 +1,9 @@
 {
-  "schema": "bindsight-validation/1",
-  "generated_utc": "2026-08-07T21:28:25+00:00",
-  "bindsight_version": "0.2.0",
+  "schema": "bindsight-validation/2",
+  "generated_utc": "2026-08-08T23:07:27+00:00",
+  "bindsight_version": "0.1.0",
   "cbioportal_study": "brca_tcga_pan_can_atlas_2018",
-  "known_set": "/home/user/bindsight/benchmarks/known.tsv",
+  "known_set": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\benchmarks\\known.tsv",
   "ks": [
     5,
     10,
@@ -15,11 +15,14 @@
     "recall@10": 0.3333,
     "recall@20": 0.3333
   },
-  "specificity": {
+  "exclusion_consistency_check": {
+    "check": "non_over_expressed_absent_from_top_k",
     "n": 2,
-    "correctly_excluded": 2,
+    "consistent": 2,
     "fraction": 1.0,
-    "k": 20
+    "k": 20,
+    "tautological_by_construction": true,
+    "interpretation": "Antigens failing the over-expression rule are excluded from candidacy by construction, so this check confirms internal consistency between the DE filter and the shortlist; it does not measure ranking discrimination."
   },
   "cohorts": [
     {
@@ -27,36 +30,68 @@
         "key": "brca_her2",
         "label": "BRCA HER2-enriched",
         "project": "TCGA-BRCA",
+        "tumor_type": "BRCA",
         "expected_symbol": "ERBB2",
         "expected_uniprot": "P04626",
         "expected_ensembl": "ENSG00000141736",
         "subtype": "BRCA_Her2",
-        "n_tumor": 50,
-        "n_normal": 40,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 40,
         "expectation": "positive",
         "note": "PAM50 HER2-enriched tumors are ERBB2-amplified, so ERBB2 mRNA is high."
+      },
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 0,
+        "patients_in_both_arms": [],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
       },
       "n_tumor": 50,
       "n_normal": 40,
       "n_candidates": 27,
+      "cross_indication": [
+        {
+          "symbol": "CEACAM5",
+          "uniprot": "P06731",
+          "tumor_type": "COAD",
+          "on_indication": false,
+          "found": true,
+          "rank": 3,
+          "log2fc": 7.302368810782208,
+          "padj": 3.9304777542165485e-36,
+          "in_top_5": true,
+          "in_top_10": true,
+          "in_top_20": true
+        }
+      ],
       "deg": {
         "n_genes_tested": 17471,
         "n_significant": 6087
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": 4.363304469431895,
-        "padj": 1.6950382025881024e-59,
+        "log2fc": 4.363304469425647,
+        "padj": 1.6943645187999953e-59,
         "significant": true
       },
       "expected": {
         "symbol": "ERBB2",
         "uniprot": "P04626",
         "tumor_type": "BRCA",
+        "on_indication": true,
         "found": true,
         "rank": 4,
-        "log2fc": 4.363304469431895,
-        "padj": 1.6950382025881024e-59,
+        "log2fc": 4.363304469425647,
+        "padj": 1.6943645187999953e-59,
         "in_top_5": true,
         "in_top_10": true,
         "in_top_20": true
@@ -75,7 +110,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:08:03+00:00",
+        "retrieved_utc": "2026-08-08T21:52:34+00:00",
         "selection": "by_case",
         "requested_tumor_cases": [
           "TCGA-3C-AALI",
@@ -885,48 +920,82 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "677242ade098403ba27970b3385eb86abe3d8d05dd661a834c9ba7d517387ff0",
-            "bytes": 2964153
+            "sha256": "63b19e570bdfbff3cc0214b29e1b612e4b036a077aa64bff7697d786a56a51f8",
+            "bytes": 2966877
           },
           "design.tsv": {
             "sha256": "fcdc98bbb11c611c205a126bfc6ec57d985ed11c2ccfe4d04ddb9a313b194697",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 0,
+          "patients_in_both_arms": [],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/brca_her2"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\brca_her2"
     },
     {
       "cohort": {
         "key": "coad",
         "label": "COAD",
         "project": "TCGA-COAD",
+        "tumor_type": "COAD",
         "expected_symbol": "CEACAM5",
         "expected_uniprot": "P06731",
         "expected_ensembl": "ENSG00000105388",
         "subtype": null,
-        "n_tumor": 50,
-        "n_normal": 40,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 40,
         "expectation": "positive",
         "note": "CEA (target of tusamitamab ravtansine / labetuzumab govitecan) is a classic colorectal marker, but it is also abundantly expressed in normal colon epithelium, so the bulk tumor-vs-adjacent-normal fold-change is ~0."
       },
-      "n_tumor": 50,
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 49,
+        "n_normal": 40,
+        "n_patients_tumor": 49,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 4,
+        "patients_in_both_arms": [
+          "TCGA-AA-3527",
+          "TCGA-AA-3655",
+          "TCGA-AA-3712",
+          "TCGA-AZ-6600"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "4 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
+      "n_tumor": 49,
       "n_normal": 40,
-      "n_candidates": 46,
+      "n_candidates": 45,
+      "cross_indication": [],
       "deg": {
-        "n_genes_tested": 16987,
-        "n_significant": 5158
+        "n_genes_tested": 16946,
+        "n_significant": 5146
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": -0.30788902687272024,
-        "padj": 0.18558835736134172,
+        "log2fc": -0.28295408358078666,
+        "padj": 0.2192825030116884,
         "significant": false
       },
       "expected": {
         "symbol": "CEACAM5",
         "uniprot": "P06731",
         "tumor_type": "COAD",
+        "on_indication": true,
         "found": false,
         "rank": null,
         "log2fc": null,
@@ -949,11 +1018,11 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:11:57+00:00",
+        "retrieved_utc": "2026-08-08T22:00:35+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
-        "n_tumor": 50,
+        "n_tumor": 49,
         "n_normal": 40,
         "n_genes": 19944,
         "samples": [
@@ -1300,14 +1369,6 @@
             "case_barcode": "TCGA-AA-A00O",
             "sample_barcode": "TCGA-AA-A00O-01A",
             "gdc_file_id": "13cc094c-3724-45cc-8a98-650d0c7a695a"
-          },
-          {
-            "sample": "T44",
-            "condition": "tumor",
-            "sample_type": "Primary Tumor",
-            "case_barcode": "TCGA-A6-6780",
-            "sample_barcode": "TCGA-A6-6780-01B",
-            "gdc_file_id": "14eb25f3-a5ea-4589-9fdc-73da9e2ca081"
           },
           {
             "sample": "T45",
@@ -1680,48 +1741,99 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "3a0d06e1675c824bc175340250c414aafb645ff1cd0f5a76b8794ed4ba7845bf",
-            "bytes": 2790565
+            "sha256": "429f61319eb5e41b1f7f02ce45936135da47f5cb56f0d77b79c7fdd1eb9c2048",
+            "bytes": 2764062
           },
           "design.tsv": {
-            "sha256": "b7f7295e4af617ced13f9ec3785f9e5ffd76a5342b1fb3356997a795a4f099f4",
-            "bytes": 8539
+            "sha256": "68953a5c039b7d5536d3e6a5359cc7c0263b42fa34fa4353ca3e07ab07ef1422",
+            "bytes": 8448
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 49,
+          "n_normal": 40,
+          "n_patients_tumor": 49,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 4,
+          "patients_in_both_arms": [
+            "TCGA-AA-3527",
+            "TCGA-AA-3655",
+            "TCGA-AA-3712",
+            "TCGA-AZ-6600"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "4 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/coad"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\coad"
     },
     {
       "cohort": {
         "key": "blca",
         "label": "BLCA",
         "project": "TCGA-BLCA",
+        "tumor_type": "BLCA",
         "expected_symbol": "NECTIN4",
         "expected_uniprot": "Q96NY8",
         "expected_ensembl": "ENSG00000143217",
         "subtype": null,
-        "n_tumor": 50,
-        "n_normal": 19,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 19,
         "expectation": "positive",
         "note": "Nectin-4 (target of enfortumab vedotin, Padcev) is elevated in urothelial carcinoma, but only modestly at the bulk-mRNA level (log2fc ~1.6), below the discovery shortlist."
+      },
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 19
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 19,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 19,
+        "n_patients_in_both_arms": 2,
+        "patients_in_both_arms": [
+          "TCGA-BL-A13J",
+          "TCGA-BT-A20N"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "2 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
       },
       "n_tumor": 50,
       "n_normal": 19,
       "n_candidates": 26,
+      "cross_indication": [
+        {
+          "symbol": "MSLN",
+          "uniprot": "Q13421",
+          "tumor_type": "PAAD",
+          "on_indication": false,
+          "found": true,
+          "rank": 12,
+          "log2fc": 3.8674633500631472,
+          "padj": 4.835870048445343e-07,
+          "in_top_5": false,
+          "in_top_10": false,
+          "in_top_20": true
+        }
+      ],
       "deg": {
         "n_genes_tested": 17289,
-        "n_significant": 4409
+        "n_significant": 4410
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": 1.592878427550153,
-        "padj": 0.003936171214340757,
+        "log2fc": 1.5928784276022978,
+        "padj": 0.00393550364634943,
         "significant": true
       },
       "expected": {
         "symbol": "NECTIN4",
         "uniprot": "Q96NY8",
         "tumor_type": "BLCA",
+        "on_indication": true,
         "found": false,
         "rank": null,
         "log2fc": null,
@@ -1744,7 +1856,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:15:25+00:00",
+        "retrieved_utc": "2026-08-08T22:08:21+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -2307,48 +2419,100 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "f242fcb0ef1a01317e70059f10529c427bbe01c67be56cc6d329e5caacf26755",
-            "bytes": 2189556
+            "sha256": "8051dacbb45687b5d7a4074d2fef41f16cbff7b7b5f56ff3e3c39003b19aff1f",
+            "bytes": 2191967
           },
           "design.tsv": {
             "sha256": "000df6d3d8ddff4e9820aee04f467ce1719a3007402d561cdf8795ef1572552f",
             "bytes": 6481
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 19,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 19,
+          "n_patients_in_both_arms": 2,
+          "patients_in_both_arms": [
+            "TCGA-BL-A13J",
+            "TCGA-BT-A20N"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "2 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/blca"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\blca"
     },
     {
       "cohort": {
         "key": "luad",
         "label": "LUAD (EGFR negative control)",
         "project": "TCGA-LUAD",
+        "tumor_type": "LUAD",
         "expected_symbol": "EGFR",
         "expected_uniprot": "P00533",
         "expected_ensembl": "ENSG00000146648",
         "subtype": null,
-        "n_tumor": 50,
-        "n_normal": 40,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 40,
         "expectation": "negative_control",
         "note": "EGFR drives LUAD via mutation/amplification, not bulk mRNA over-expression, so a specificity-respecting pipeline should NOT surface it on expression alone."
       },
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 5,
+        "patients_in_both_arms": [
+          "TCGA-38-4627",
+          "TCGA-49-6744",
+          "TCGA-50-5936",
+          "TCGA-55-6984",
+          "TCGA-91-6831"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "5 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
+      },
       "n_tumor": 50,
       "n_normal": 40,
-      "n_candidates": 33,
+      "n_candidates": 32,
+      "cross_indication": [
+        {
+          "symbol": "CLDN6",
+          "uniprot": "P56747",
+          "tumor_type": "OV",
+          "on_indication": false,
+          "found": true,
+          "rank": 10,
+          "log2fc": 5.945659515791704,
+          "padj": 1.9927856326802803e-26,
+          "in_top_5": false,
+          "in_top_10": true,
+          "in_top_20": true
+        }
+      ],
       "deg": {
         "n_genes_tested": 17488,
         "n_significant": 4912
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": 0.41933868385342293,
-        "padj": 0.13245855665111786,
+        "log2fc": 0.4193386838627001,
+        "padj": 0.1324683614993948,
         "significant": false
       },
       "expected": {
         "symbol": "EGFR",
         "uniprot": "P00533",
         "tumor_type": "LUAD",
+        "on_indication": true,
         "found": false,
         "rank": null,
         "log2fc": null,
@@ -2371,7 +2535,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:19:45+00:00",
+        "retrieved_utc": "2026-08-08T22:20:59+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -3102,48 +3266,83 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "2c8f5e383972c53b536090c5805a67f8156cff7fc870c41ee3e2f6c3064a1dfc",
-            "bytes": 2855372
+            "sha256": "8fe46a347c15ec3ca83710ce4787bf8c920ebac3189786270fe38243ae84d910",
+            "bytes": 2857704
           },
           "design.tsv": {
             "sha256": "319b4302f46ace58c323c08ec84191adea03c2861e9e387f7fe7f2c4f1b42b26",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 5,
+          "patients_in_both_arms": [
+            "TCGA-38-4627",
+            "TCGA-49-6744",
+            "TCGA-50-5936",
+            "TCGA-55-6984",
+            "TCGA-91-6831"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "5 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/luad"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\luad"
     },
     {
       "cohort": {
         "key": "paad",
         "label": "PAAD (MSLN, limited)",
         "project": "TCGA-PAAD",
+        "tumor_type": "PAAD",
         "expected_symbol": "MSLN",
         "expected_uniprot": "Q13421",
         "expected_ensembl": "ENSG00000102854",
         "subtype": null,
-        "n_tumor": 50,
-        "n_normal": 4,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 4,
         "expectation": "limited",
         "note": "Mesothelin is over-expressed in PDAC, but TCGA-PAAD ships only 4 matched normals, so the contrast is underpowered (reported for transparency)."
+      },
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 4
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 4,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 4,
+        "n_patients_in_both_arms": 0,
+        "patients_in_both_arms": [],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
       },
       "n_tumor": 50,
       "n_normal": 4,
       "n_candidates": 62,
+      "cross_indication": [],
       "deg": {
         "n_genes_tested": 17203,
         "n_significant": 604
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": 2.3080859358592374,
-        "padj": 0.13138514952817248,
+        "log2fc": 2.308085780892364,
+        "padj": 0.14108372183947504,
         "significant": false
       },
       "expected": {
         "symbol": "MSLN",
         "uniprot": "Q13421",
         "tumor_type": "PAAD",
+        "on_indication": true,
         "found": false,
         "rank": null,
         "log2fc": null,
@@ -3166,7 +3365,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:23:06+00:00",
+        "retrieved_utc": "2026-08-08T22:31:19+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -3609,48 +3808,81 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "7476bc18d8dc94cfbed714e329c2c6aeb5be3ede36ee5c33079c8519318a7618",
-            "bytes": 1805633
+            "sha256": "6ca8ebd82c8884016a3e989389c9eaab0bbaa4691a6f43696e77a471912f4221",
+            "bytes": 1807459
           },
           "design.tsv": {
             "sha256": "218575ff0419f23260b38262a2bc729b4d17b16f59eef394a88352a33f3957d0",
             "bytes": 5011
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 4,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 4,
+          "n_patients_in_both_arms": 0,
+          "patients_in_both_arms": [],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "0 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/paad"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\paad"
     },
     {
       "cohort": {
         "key": "prad",
         "label": "PRAD (FOLH1, limited)",
         "project": "TCGA-PRAD",
+        "tumor_type": "PRAD",
         "expected_symbol": "FOLH1",
         "expected_uniprot": "Q04609",
         "expected_ensembl": "ENSG00000086205",
         "subtype": null,
-        "n_tumor": 50,
-        "n_normal": 40,
+        "requested_n_tumor": 50,
+        "requested_n_normal": 40,
         "expectation": "limited",
         "note": "PSMA (FOLH1) is highly expressed but also abundant in normal prostate, so the tumor-vs-normal fold-change is modest (reported for transparency)."
+      },
+      "requested": {
+        "n_tumor": 50,
+        "n_normal": 40
+      },
+      "achieved": {
+        "n_tumor": 50,
+        "n_normal": 40,
+        "n_patients_tumor": 50,
+        "n_patients_normal": 40,
+        "n_patients_in_both_arms": 3,
+        "patients_in_both_arms": [
+          "TCGA-EJ-7321",
+          "TCGA-EJ-7784",
+          "TCGA-HC-8258"
+        ],
+        "dropped_replicate_samples": [],
+        "one_sample_per_patient_per_arm": true,
+        "unpaired_design_disclosure": "3 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
       },
       "n_tumor": 50,
       "n_normal": 40,
       "n_candidates": 49,
+      "cross_indication": [],
       "deg": {
         "n_genes_tested": 17231,
         "n_significant": 2763
       },
       "deg_expected": {
         "tested": true,
-        "log2fc": 1.3234579589780577,
-        "padj": 0.00033745976377097514,
+        "log2fc": 1.3234579589778332,
+        "padj": 0.00033752351608583233,
         "significant": true
       },
       "expected": {
         "symbol": "FOLH1",
         "uniprot": "Q04609",
         "tumor_type": "PRAD",
+        "on_indication": true,
         "found": false,
         "rank": null,
         "log2fc": null,
@@ -3673,7 +3905,7 @@
         "gene_types": [
           "protein_coding"
         ],
-        "retrieved_utc": "2026-08-07T21:27:02+00:00",
+        "retrieved_utc": "2026-08-08T22:52:02+00:00",
         "selection": "first_n",
         "requested_tumor_cases": null,
         "requested_normal_cases": null,
@@ -4404,16 +4636,31 @@
         ],
         "outputs": {
           "counts.tsv.gz": {
-            "sha256": "ed9361b70487f02a520b2aec0b2a8310a867d3cacf328606005d47a11b5646b3",
-            "bytes": 2926139
+            "sha256": "579a4b02a18f1666c9f48924f28c81cc718f35d95f0b180e6e1725eac41dcf44",
+            "bytes": 2929076
           },
           "design.tsv": {
             "sha256": "f82298f6578a3f2b0111eb2732209796cbdb7625c8aaa203c31764060b29c4c6",
             "bytes": 8539
           }
+        },
+        "patient_sampling": {
+          "n_tumor": 50,
+          "n_normal": 40,
+          "n_patients_tumor": 50,
+          "n_patients_normal": 40,
+          "n_patients_in_both_arms": 3,
+          "patients_in_both_arms": [
+            "TCGA-EJ-7321",
+            "TCGA-EJ-7784",
+            "TCGA-HC-8258"
+          ],
+          "dropped_replicate_samples": [],
+          "one_sample_per_patient_per_arm": true,
+          "unpaired_design_disclosure": "3 patient(s) contribute a sample to both arms; the DE design is unpaired (~ condition), so that pairing is not modelled."
         }
       },
-      "run_dir": "/home/user/bindsight/runs/validation/prad"
+      "run_dir": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\runs\\validation\\prad"
     }
   ],
   "data_limited": [

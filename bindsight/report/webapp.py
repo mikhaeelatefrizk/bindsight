@@ -566,14 +566,15 @@ def _page_results() -> None:
             if k in validation.recall_at_k:
                 cols[2 + i].metric(k, f"{validation.recall_at_k[k] * 100:.0f}%")
 
-        spec = validation.specificity or {}
-        if spec.get("n"):
-            st.success(
-                f"**Specificity: {spec.get('correctly_excluded')}/{spec['n']}.** Antigens that "
-                f"are *not* over-expressed at the bulk level are correctly kept out of the "
-                f"top {spec.get('k', 20)} — the pipeline keys on genuine over-expression, "
-                "not on clinical fame.",
-                icon="✅",
+        check = validation.exclusion_check or {}
+        if check.get("n"):
+            st.info(
+                f"**Consistency check: {check.get('consistent')}/{check['n']}.** Antigens that "
+                f"are *not* over-expressed at the bulk level are absent from the top "
+                f"{check.get('k', 20)}. They fail the same over-expression rule that admits a "
+                "gene to the shortlist, so this cannot come out any other way — it confirms the "
+                "filter and the shortlist agree, and says nothing about ranking discrimination.",
+                icon="ℹ️",
             )
 
         table = pd.DataFrame(validation.rows()).rename(columns={"over_expressed": "over-expressed"})

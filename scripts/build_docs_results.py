@@ -96,7 +96,7 @@ def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
     top = v.headline
     if top is not None:
         exp = top["expected"]
-        spec = v.specificity or {}
+        spec = v.exclusion_check or {}
         stats = [
             (f"rank {exp['rank']}", f"{exp['symbol']} rediscovered", top["cohort"]["label"]),
             ("log2fc " + f"{exp['log2fc']:.2f}", "fold-change", f"padj {exp['padj']:.1e}"),
@@ -111,7 +111,7 @@ def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
             # discrimination, and must not be labelled "specificity".
             stats.append(
                 (
-                    f"{spec.get('correctly_excluded')}/{spec['n']}",
+                    f"{spec.get('consistent')}/{spec['n']}",
                     "consistency check",
                     "not-over-expressed antigens excluded by construction",
                 )

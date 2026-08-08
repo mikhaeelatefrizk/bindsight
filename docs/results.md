@@ -37,10 +37,10 @@ clinically-validated antigen landed in the candidate shortlist.
 | antigen | cohort | over-expressed | log2fc | padj | rank |
 |---|---|:--:|--:|--:|--:|
 | **ERBB2** | BRCA HER2-enriched | ✓ | 4.36 | 1.7e-59 | 4 |
-| **CEACAM5** | COAD | · | -0.31 | 1.9e-01 | — |
+| **CEACAM5** | COAD | · | -0.28 | 2.2e-01 | — |
 | **NECTIN4** | BLCA | ✓ | 1.59 | 3.9e-03 | — |
 | **EGFR** | LUAD (EGFR negative control) | · | 0.42 | 1.3e-01 | — |
-| **MSLN** | PAAD (MSLN, limited) | · | 2.31 | 1.3e-01 | — |
+| **MSLN** | PAAD (MSLN, limited) | · | 2.31 | 1.4e-01 | — |
 | **FOLH1** | PRAD (FOLH1, limited) | ✓ | 1.32 | 3.4e-04 | — |
 
 `rank` is the antigen's position in that cohort's shortlist; — = not surfaced.

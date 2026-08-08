@@ -150,7 +150,9 @@ class ValidationShowcase:
     generated_utc: str
     bindsight_version: str
     recall_at_k: dict[str, float]
-    specificity: dict[str, Any]
+    # Not a specificity measurement: antigens failing the over-expression rule
+    # are excluded from candidacy by that same rule, so the check cannot fail.
+    exclusion_check: dict[str, Any]
     cohorts: list[dict[str, Any]]
     data_limited: list[dict[str, Any]]
     figures: dict[str, Path]
@@ -234,7 +236,7 @@ def load_validation(root: Path | None = None) -> ValidationShowcase | None:
         generated_utc=str(data.get("generated_utc", "")),
         bindsight_version=str(data.get("bindsight_version", "")),
         recall_at_k={str(k): float(v) for k, v in (data.get("recall_at_k") or {}).items()},
-        specificity=data.get("specificity") or {},
+        exclusion_check=data.get("exclusion_consistency_check") or {},
         cohorts=list(data.get("cohorts") or []),
         data_limited=list(data.get("data_limited") or []),
         figures=figures,
@@ -427,13 +429,13 @@ def headline_stats() -> list[Headline]:
                     detail=f"{top['cohort']['label']} · log2fc {exp['log2fc']:.2f}",
                 )
             )
-        spec = validation.specificity or {}
-        if spec.get("n"):
+        check = validation.exclusion_check or {}
+        if check.get("n"):
             stats.append(
                 Headline(
-                    value=f"{spec.get('correctly_excluded', 0)}/{spec['n']}",
-                    label="specificity",
-                    detail=f"non-elevated antigens kept out of the top {spec.get('k', 20)}",
+                    value=f"{check.get('consistent', 0)}/{check['n']}",
+                    label="consistency check",
+                    detail="not-over-expressed antigens excluded by construction",
                 )
             )
 
