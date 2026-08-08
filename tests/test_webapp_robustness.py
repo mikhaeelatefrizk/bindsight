@@ -34,6 +34,53 @@ def _stage(name: str, status: str, error: str | None = None) -> SimpleNamespace:
 
 
 # --------------------------------------------------------------------------- #
+# Flake fix — the JS iframe is skipped under AppTest, rendered in production
+# --------------------------------------------------------------------------- #
+def test_under_app_test_detects_harness() -> None:
+    """The harness marker is the streamlit.testing import, present in this run."""
+    import sys
+
+    assert "streamlit.testing" in sys.modules
+    assert webapp._under_app_test() is True
+
+
+def test_render_complex_skips_iframe_under_harness(monkeypatch, tmp_path: Path) -> None:
+    """Under AppTest the 3-D viewer must not emit an st.iframe.
+
+    That iframe is what nondeterministically trips Streamlit's AppTest
+    ``event_data[-1]["client_state"]`` bug and flaked CI; skipping it there makes
+    the smoke tests deterministic.
+    """
+    calls: list[str] = []
+    fake_st = SimpleNamespace(
+        iframe=lambda *a, **k: calls.append("iframe"),
+        info=lambda *a, **k: None,
+    )
+    monkeypatch.setattr(webapp, "st", fake_st)
+    monkeypatch.setattr(webapp, "_under_app_test", lambda: True)
+    cif = tmp_path / "c.cif"
+    cif.write_text("data_test\n")
+    assert webapp._render_complex(cif) is True
+    assert calls == []
+
+
+def test_render_complex_renders_iframe_in_production(monkeypatch, tmp_path: Path) -> None:
+    """Outside the harness the real viewer renders via st.iframe."""
+    pytest.importorskip("py3Dmol")
+    calls: list[str] = []
+    fake_st = SimpleNamespace(
+        iframe=lambda *a, **k: calls.append("iframe"),
+        info=lambda *a, **k: None,
+    )
+    monkeypatch.setattr(webapp, "st", fake_st)
+    monkeypatch.setattr(webapp, "_under_app_test", lambda: False)
+    cif = tmp_path / "c.cif"
+    cif.write_text("data_test\n_atom_site.label_atom_id\n")
+    assert webapp._render_complex(cif) is True
+    assert calls == ["iframe"]
+
+
+# --------------------------------------------------------------------------- #
 # C1 — a failed stage is never a success
 # --------------------------------------------------------------------------- #
 def test_stage_failures_flags_failed_stage() -> None:

@@ -60,6 +60,24 @@ def _inject_css() -> None:
     st.markdown(theme.app_css(), unsafe_allow_html=True)
 
 
+def _under_app_test() -> bool:
+    """True when running inside Streamlit's ``AppTest`` harness.
+
+    ``AppTest`` (1.60 and 1.61 alike) has a nondeterministic internal bug when an
+    ``st.iframe`` is in the render tree: ``run()`` indexes
+    ``event_data[-1]["client_state"]`` assuming the last script event is
+    ``SHUTDOWN``, but an iframe reorders the event stream so that key can be
+    absent → ``KeyError('client_state')``, which flakes the smoke tests on some
+    CI runners. The iframe also cannot do anything useful without a browser to
+    execute its JavaScript, so the app skips it under the harness.
+
+    The signal is the harness's import footprint: the deployed app is launched
+    with ``streamlit run`` and never imports ``streamlit.testing``, so its
+    presence in ``sys.modules`` reliably and side-effect-free marks a test run.
+    """
+    return "streamlit.testing" in sys.modules
+
+
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
@@ -439,6 +457,12 @@ def _render_complex(cif_path: Path, height: int = 420) -> bool:
     except ImportError:  # pragma: no cover - report extra always ships py3Dmol
         st.info("Install the `report` extra to view structures: `pip install -e '.[report]'`")
         return False
+
+    if _under_app_test():  # pragma: no cover - exercised only under AppTest
+        # The JS viewer needs a browser the harness doesn't have, and its iframe
+        # trips a nondeterministic AppTest bug (see _under_app_test). The
+        # deployed app takes the real path below.
+        return True
 
     view = py3Dmol.view(width="100%", height=height)
     view.addModel(cif_path.read_text(encoding="utf-8"), "cif")
@@ -1038,12 +1062,14 @@ def _show_run_summary(run_dir: Path, manifest: Any, report_path: Path | None) ->
         )
         # Embed inline so the user sees it without leaving the app. st.iframe
         # supersedes the deprecated components.v1.html; the report HTML is
-        # produced by our own renderer, not user input.
+        # produced by our own renderer, not user input. Skipped under the test
+        # harness for the same reason as the 3-D viewer (see _under_app_test).
         with st.expander("Open the rendered report inline", expanded=True):
-            st.iframe(
-                report_path.read_text(encoding="utf-8"),
-                height=900,
-            )
+            if not _under_app_test():
+                st.iframe(
+                    report_path.read_text(encoding="utf-8"),
+                    height=900,
+                )
 
     manifest_p = run_dir / "run_manifest.jsonld"
     if manifest_p.exists():
