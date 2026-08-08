@@ -40,7 +40,7 @@ cd .. && rm -rf tmp_clone
 Skip the `data/surface_bind/` subtree entirely and set:
 
 ```bash
-export bindsight_SURFACE_BIND_DATA=/path/to/your/surface_bind/sites
+export BINDSIGHT_SURFACE_BIND_DATA=/path/to/your/surface_bind/sites
 ```
 
 The `bindsight` SURFACE-Bind client reads this environment variable in

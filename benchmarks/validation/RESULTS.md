@@ -4,9 +4,9 @@ Does bindsight's expression-based discovery resurface clinically-validated cell-
 
 **All numbers below are produced by the runs; none are hand-set. Antigens are grouped by their _measured_ differential expression (rule: FDR<0.05 and log2fc>=1.0), not by any prior label — an expression-based method can only surface antigens that are actually over-expressed, and we report that precondition transparently.**
 
-- Generated: `2026-06-15T01:17:07+00:00` · bindsight `0.1.0`
+- Generated: `2026-08-07T21:28:25+00:00` · bindsight `0.2.0`
 - PAM50 subtypes: cBioPortal study `brca_tcga_pan_can_atlas_2018`
-- Known-antigen set: `benchmarks/known.tsv`
+- Known-antigen set: `/home/user/bindsight/benchmarks/known.tsv`
 
 ## Headline
 

@@ -85,21 +85,21 @@ def main() -> None:
     # ---- DEG ----
     st.header("Differential expression")
     if deg is not None and len(deg):
-        st.dataframe(deg, hide_index=True, use_container_width=True)
+        st.dataframe(deg, hide_index=True, width="stretch")
     else:
         st.info("No DEG output found.")
 
     # ---- candidates ----
     st.header("Candidate targets")
     if candidates is not None and len(candidates):
-        st.dataframe(candidates, hide_index=True, use_container_width=True)
+        st.dataframe(candidates, hide_index=True, width="stretch")
     else:
         st.info("No candidates produced. Loosen filters in the config and re-run.")
 
     # ---- epitopes ----
     st.header("Top-N epitopes")
     if epitopes is not None and len(epitopes):
-        st.dataframe(epitopes, hide_index=True, use_container_width=True)
+        st.dataframe(epitopes, hide_index=True, width="stretch")
     else:
         st.info("No top-N epitopes produced.")
 

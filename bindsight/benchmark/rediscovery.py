@@ -322,6 +322,14 @@ def run_and_score_cohort(
     if any(v != "completed" for v in statuses.values()):
         LOG.warning("%s: stages not all completed: %s", cohort.key, statuses)
 
+    # Persist the GDC provenance into the run directory so a later
+    # ``rescore_from_runs`` (which only sees ``runs_root``) can recover the real
+    # file UUIDs / barcodes / checksums instead of emitting an empty object.
+    run_out.mkdir(parents=True, exist_ok=True)
+    (run_out / "gdc_provenance.json").write_text(
+        json.dumps(gdc_prov, indent=2) + "\n", encoding="utf-8"
+    )
+
     # Score the whole known set (for the side-by-side report) and pull out the
     # expected antigen for the headline.
     full_score = score_run(run_out, known, ks=KS, run_name=cohort.label)
@@ -454,11 +462,19 @@ def rescore_from_runs(
             (a for a in full_score.per_antigen if a["uniprot"] == cohort.expected_uniprot), None
         )
         deg_expected = _expected_deg(run_out, cohort.expected_ensembl)
-        n_normal = cohort.n_normal
+        # Recover the GDC provenance persisted by the fresh run (see
+        # ``run_and_score_cohort``); fall back to the cohort's declared counts
+        # only if an older run dir predates that persistence.
+        gdc_prov_path = run_out / "gdc_provenance.json"
+        gdc_prov: dict[str, Any] = (
+            json.loads(gdc_prov_path.read_text()) if gdc_prov_path.exists() else {}
+        )
+        n_tumor = int(gdc_prov.get("n_tumor", cohort.n_tumor))
+        n_normal = int(gdc_prov.get("n_normal", cohort.n_normal))
         results.append(
             {
                 "cohort": asdict(cohort),
-                "n_tumor": cohort.n_tumor,
+                "n_tumor": n_tumor,
                 "n_normal": n_normal,
                 "n_candidates": full_score.n_candidates,
                 "deg": _deg_stats(run_out),
@@ -466,7 +482,7 @@ def rescore_from_runs(
                 "expected": expected,
                 "category": _categorise(deg_expected, n_normal),
                 "run_dir": str(run_out),
-                "gdc_provenance": {},
+                "gdc_provenance": gdc_prov,
             }
         )
     return _write_artifacts(out_dir, results, known, study_id, known_path)

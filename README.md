@@ -17,7 +17,7 @@
 
 Zero install — runs in your browser. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those locally via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
 
-> Both hosts are free-tier and will sleep after several days without traffic; a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
+> Both hosts are free-tier and sleep after a quiet spell (the Hugging Face Space after about 48 h, Streamlit Cloud after about a week); a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
 > 🚀 **v0.2.0** — discovery half end-to-end on CPU (real TCGA data); design + validation now **proven** end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
@@ -38,7 +38,7 @@ Anyone visiting either URL above gets:
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
-The Hugging Face Space is the primary mirror (16 GB CPU). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on smaller free-tier infrastructure (1 GB CPU). Both hosts sleep after several days of inactivity; a 6-hourly GitHub Actions ping keeps them warm, but the very first visit after a long quiet period can still take ~30–120 s to wake.
+The Hugging Face Space is the primary mirror (16 GB CPU). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on smaller free-tier infrastructure (1 GB CPU). Both hosts sleep after a quiet spell (the Space after about 48 h, Streamlit Cloud after about a week); a 6-hourly GitHub Actions ping keeps them warm, but the very first visit after a long quiet period can still take ~30–120 s to wake.
 
 ### 2. Local web app (one command)
 

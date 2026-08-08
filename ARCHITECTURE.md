@@ -74,8 +74,11 @@ bindsight/
 ├── rank/            # Multi-objective scoring (incl. developability component)
 ├── pipelines/       # End-to-end orchestrators (discover.py) + honesty caveats
 ├── benchmark/       # Rediscovery + designer-benchmark scoring harness
-├── provenance/      # Pydantic schema for run_manifest.jsonld, RO-Crate emitter
+├── provenance/      # Pydantic schema for run_manifest.jsonld + provenance fragments
+├── export/          # RO-Crate emitter (FAIR bundle for Zenodo)
 ├── report/          # HTML report template + Streamlit app (+ Limitations section)
+├── cost.py          # Per-run cost estimation (GPU-type aware)
+├── plugins.py       # Designer/validator plugin registry
 ├── config.py        # Pydantic run-configuration models
 └── cli.py           # Click entrypoint
 ```
