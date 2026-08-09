@@ -206,10 +206,10 @@ Linux, Python 3.11+):
 
 ```bash
 # a specific release, straight from the attached wheel
-pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/v0.2.1/bindsight-0.2.1-py3-none-any.whl
+pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/v0.2.2/bindsight-0.2.2-py3-none-any.whl
 
 # or resolve the extras from the tagged source
-pip install "bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@v0.2.1"
+pip install "bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@v0.2.2"
 ```
 
 Verify a downloaded artifact against the published checksums with

@@ -8,6 +8,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-09
+
+A distribution and metadata release. No code behaviour changes; the archived v0.2.1
+snapshot still directed readers to a Hugging Face mirror that had not been rebuilt since
+May 2026, and an archive is permanent, so the corrected pointers are cut into a release of
+their own.
+
+### Added
+
+- Every release now ships a built wheel, an sdist and a `SHA256SUMS` file as release
+  assets, so a pinned, verifiable build installs without PyPI:
+  `pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/v0.2.2/bindsight-0.2.2-py3-none-any.whl`.
+  `release-artifacts.yml` builds and attaches them automatically, and carries a PyPI job
+  wired for trusted publishing (OIDC, no stored token) that stays inert until the project
+  is registered as a trusted publisher.
+- `sync-hf-space.yml` uploads this repository's own Space landing page to the Hugging Face
+  Space and factory-rebuilds it on every release. A plain restart reuses the cached image
+  and would keep serving whatever bindsight revision the last build resolved; only a
+  factory reboot re-runs pip against `main`. Dormant, and skipped rather than failed, until
+  an `HF_TOKEN` secret exists.
+- `codemeta.json`, for software registries and citation indexers, pinned by tests to agree
+  with `pyproject.toml` on version and licence and to cite the concept DOI.
+
+### Changed
+
+- The README leads with the surfaces that are current — the static results page and the
+  Streamlit deploy, which tracks `main` — and states plainly that the Hugging Face mirror
+  is serving an older build. Overstating a mirror's freshness is the same class of error
+  v0.2.1 set out to fix.
+- Install instructions document the release-asset and tagged `git+` paths, and checksum
+  verification.
+
 ## [0.2.1] - 2026-08-09
 
 A correctness-and-honesty release. No new capability: v0.2.1 fixes defects in what v0.2.0
