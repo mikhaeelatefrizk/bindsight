@@ -11,7 +11,7 @@
   "upload_type": "software",
   "access_right": "open",
   "license": "AGPL-3.0-or-later",
-  "version": "v0.2.1",
+  "version": "v0.2.2",
   "keywords": [
     "protein-design",
     "de-novo-binder-design",
