@@ -26,10 +26,10 @@ tags:
 > reproducible workflow, with machine-readable provenance from every
 > ranked binder back to the patient samples it came from.
 
-This Hugging Face Space is the **primary** hosted demo of bindsight.
-The canonical source repo, full documentation, JOSS submission, and
-bioRxiv preprint live at <https://github.com/mikhaeelatefrizk/bindsight>;
-a Streamlit Community Cloud mirror lives at
+This Space hosts the bindsight web app. The canonical source repo and the
+full documentation live at
+<https://github.com/mikhaeelatefrizk/bindsight>; a Streamlit Community
+Cloud deployment of the same app lives at
 <https://bindsight.streamlit.app/>.
 
 > Free-tier Spaces sleep after about 48 h of no traffic. A GitHub Actions
@@ -43,17 +43,15 @@ a Streamlit Community Cloud mirror lives at
 
 This Space is a Docker-based deployment that pulls `bindsight` from the
 GitHub `main` branch at build time (see `requirements.txt` and
-`Dockerfile` on this Space). To update the deployed code:
+`Dockerfile` on this Space).
 
-1. Push to <https://github.com/mikhaeelatefrizk/bindsight> `main`.
-2. On this Space: Settings → "Factory rebuild" (forces a fresh `pip
-   install` from the new `main`).
-
-The `.huggingface/README.md` in the source repo is a **documentation
-mirror** of the metadata block above; the file actually rendered on
-this page lives in the Space's own git repo at
-`https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight`. Keep the
-two in sync by hand when you change wording.
+Both the deployed code and this page follow `main` automatically:
+`sync-hf-space.yml` in the source repo uploads `.huggingface/README.md`
+over this file and issues a **factory** rebuild on every published
+release. A plain restart would reuse the cached image and keep serving
+whatever bindsight revision the last build resolved, so only a factory
+reboot picks up new code. Do not edit this page on the Space — the next
+release overwrites it; edit `.huggingface/README.md` in the repo instead.
 
 ## Quick start
 
@@ -103,7 +101,7 @@ on GitHub for the full text and per-component commercial-use audit.
 
 If you use bindsight in research, please cite the Zenodo concept DOI
 [10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495), which
-always resolves to the latest archived version (v0.2.1 at the time of
+always resolves to the latest archived version (v0.2.2 at the time of
 writing).
 
 A JOSS software paper and a bioRxiv preprint are drafted but not yet

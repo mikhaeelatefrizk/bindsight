@@ -18,7 +18,7 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 **Run it in your browser** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/) — tracks `main`. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
 
-> ⚠️ The [Hugging Face Space mirror](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) is **serving a build from May 2026** and has not been rebuilt since. Its own page still carries pre-v0.2.0 wording — including an MIT licence label that no longer applies and a superseded DOI. Use the links above until it is rebuilt; `.github/workflows/sync-hf-space.yml` fixes and re-syncs it automatically once an `HF_TOKEN` secret is present.
+**Mirror** (Hugging Face Space, 16 GB CPU): [huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) — the same app on larger free hardware. `.github/workflows/sync-hf-space.yml` republishes its landing page and factory-rebuilds it on every release, so it tracks `main` too.
 
 > Free-tier hosts sleep after a quiet spell; a GitHub Actions cron pings them every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
@@ -43,7 +43,7 @@ Anyone visiting either URL above gets:
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
-`bindsight.streamlit.app` (Streamlit Cloud, 1 GB CPU) tracks `main` and is the deploy to use. The Hugging Face Space is a mirror on larger free hardware (16 GB CPU), but it is currently serving a May 2026 build — see the warning above. Free-tier hosts sleep after a quiet spell; a 6-hourly GitHub Actions ping keeps them warm, but the first visit after a long quiet period can still take ~30–120 s to wake.
+`bindsight.streamlit.app` (Streamlit Cloud, 1 GB CPU) redeploys from `main` on every push; the Hugging Face Space (16 GB CPU) is factory-rebuilt from `main` on every release by `sync-hf-space.yml`. Free-tier hosts sleep after a quiet spell; a 6-hourly GitHub Actions ping keeps them warm, but the first visit after a long quiet period can still take ~30–120 s to wake.
 
 ### 2. Local web app (one command)
 
