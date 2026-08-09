@@ -19,6 +19,7 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 PYPROJECT = REPO_ROOT / "pyproject.toml"
 ZENODO = REPO_ROOT / ".zenodo.json"
+CODEMETA = REPO_ROOT / "codemeta.json"
 CONSTRAINTS = REPO_ROOT / "envs" / "constraints.txt"
 DOCKERFILE = REPO_ROOT / "Dockerfile"
 
@@ -136,3 +137,25 @@ def test_dockerfile_installs_through_the_constraints_file() -> None:
     text = DOCKERFILE.read_text(encoding="utf-8")
     assert "envs/constraints.txt" in text
     assert re.search(r"pip install[^\n]*-c\s+envs/constraints\.txt", text)
+
+
+# ---------------------------------------------------------------------------
+# codemeta.json — read by software registries and citation indexers
+# ---------------------------------------------------------------------------
+def test_codemeta_agrees_with_pyproject_and_zenodo() -> None:
+    """Three metadata files describe one release; drift misattributes it."""
+    codemeta = json.loads(CODEMETA.read_text(encoding="utf-8"))
+    pyproject = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
+    zenodo = json.loads(ZENODO.read_text(encoding="utf-8"))
+
+    assert codemeta["version"] == pyproject["version"]
+    assert codemeta["version"] == zenodo["version"].removeprefix("v")
+    # SPDX identifier, expressed as the licence URL codemeta expects.
+    assert codemeta["license"].rstrip("/").endswith(pyproject["license"])
+    assert zenodo["license"] == pyproject["license"]
+
+
+def test_codemeta_cites_the_concept_doi() -> None:
+    """A version DOI would pin indexers to one release forever."""
+    codemeta = json.loads(CODEMETA.read_text(encoding="utf-8"))
+    assert codemeta["identifier"].endswith("10.5281/zenodo.20121495")

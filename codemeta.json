@@ -1,0 +1,72 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "https://doi.org/10.5281/zenodo.20121495",
+  "name": "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design",
+  "description": "bindsight is an open-source Python package that produces ranked de novo protein binder candidates directly from bulk or single-cell RNA-seq counts, using an opinionated pipeline that joins differential expression analysis, the human surfaceome (SURFY + SURFACE-Bind), AlphaFoldDB structures, deep-learning binder design (RFdiffusion + ProteinMPNN, BindCraft, or BoltzGen), and affinity validation (Boltz-2, Chai-1r, or AF2-IG), with end-to-end PROV-O / RO-Crate provenance.",
+  "version": "0.2.1",
+  "softwareVersion": "0.2.1",
+  "datePublished": "2026-08-09",
+  "license": "https://spdx.org/licenses/AGPL-3.0-or-later",
+  "codeRepository": "https://github.com/mikhaeelatefrizk/bindsight",
+  "issueTracker": "https://github.com/mikhaeelatefrizk/bindsight/issues",
+  "url": "https://mikhaeelatefrizk.github.io/bindsight/",
+  "readme": "https://github.com/mikhaeelatefrizk/bindsight/blob/main/README.md",
+  "programmingLanguage": "Python",
+  "runtimePlatform": "Python 3.11+",
+  "operatingSystem": ["Linux", "macOS", "Windows"],
+  "applicationCategory": "Computational biology",
+  "developmentStatus": "active",
+  "isAccessibleForFree": true,
+  "keywords": [
+    "protein-design",
+    "bioinformatics",
+    "RNA-seq",
+    "de-novo-binder-design",
+    "AlphaFold",
+    "RFdiffusion",
+    "ProteinMPNN",
+    "Boltz",
+    "BindCraft",
+    "reproducibility",
+    "PROV-O",
+    "RO-Crate",
+    "target-discovery",
+    "cancer-immunotherapy",
+    "surfaceome",
+    "TCGA",
+    "differential-expression",
+    "DESeq2"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Mikhaeel",
+      "familyName": "Atef Rizk Wahba",
+      "email": "mikhaeelatefrizk@proton.me",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Independent researcher"
+      },
+      "@id": "https://orcid.org/0009-0006-1069-9558"
+    }
+  ],
+  "maintainer": {
+    "@id": "https://orcid.org/0009-0006-1069-9558"
+  },
+  "softwareRequirements": [
+    "pydeseq2",
+    "pandas",
+    "numpy",
+    "scipy",
+    "pyarrow",
+    "biopython",
+    "pydantic",
+    "streamlit"
+  ],
+  "downloadUrl": "https://github.com/mikhaeelatefrizk/bindsight/releases/latest",
+  "referencePublication": {
+    "@type": "ScholarlyArticle",
+    "name": "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design"
+  }
+}

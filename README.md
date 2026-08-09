@@ -12,14 +12,15 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
 [![Workflow: Snakemake](https://img.shields.io/badge/workflow-Snakemake-brightgreen.svg)](https://snakemake.github.io/)
 
-## 👉 Try it live
+## 👉 See it / try it
 
-**Primary** (Hugging Face Space, 16 GB CPU): **[huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)**
-**Mirror** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/)
+**The evidence, no waiting:** **[Real results](https://mikhaeelatefrizk.github.io/bindsight/results/)** — ERBB2 rediscovered at rank 4 from real TCGA-BRCA RNA-seq, the six-cohort validation, and 20 de novo ERBB2 binders rendered in 3-D against their target. Static, always current with `main`, nothing to wake up.
 
-Zero install — runs in your browser. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those locally via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
+**Run it in your browser** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/) — tracks `main`. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
 
-> Both hosts are free-tier and sleep after a quiet spell (the Hugging Face Space after about 48 h, Streamlit Cloud after about a week); a GitHub Actions cron pings both URLs every 6 hours so the next visitor lands on a warm container. If you hit either link after a long quiet stretch, give the wake-up screen 30–60 s and reload once.
+> ⚠️ The [Hugging Face Space mirror](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) is **serving a build from May 2026** and has not been rebuilt since. Its own page still carries pre-v0.2.0 wording — including an MIT licence label that no longer applies and a superseded DOI. Use the links above until it is rebuilt; `.github/workflows/sync-hf-space.yml` fixes and re-syncs it automatically once an `HF_TOKEN` secret is present.
+
+> Free-tier hosts sleep after a quiet spell; a GitHub Actions cron pings them every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
 > 🚀 **v0.2.1** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
@@ -42,7 +43,7 @@ Anyone visiting either URL above gets:
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
-The Hugging Face Space is the primary mirror (16 GB CPU). The Streamlit Cloud deploy at `bindsight.streamlit.app` is the same app on smaller free-tier infrastructure (1 GB CPU). Both hosts sleep after a quiet spell (the Space after about 48 h, Streamlit Cloud after about a week); a 6-hourly GitHub Actions ping keeps them warm, but the very first visit after a long quiet period can still take ~30–120 s to wake.
+`bindsight.streamlit.app` (Streamlit Cloud, 1 GB CPU) tracks `main` and is the deploy to use. The Hugging Face Space is a mirror on larger free hardware (16 GB CPU), but it is currently serving a May 2026 build — see the warning above. Free-tier hosts sleep after a quiet spell; a 6-hourly GitHub Actions ping keeps them warm, but the first visit after a long quiet period can still take ~30–120 s to wake.
 
 ### 2. Local web app (one command)
 
@@ -198,11 +199,27 @@ See [ARCHITECTURE.md § Phased Roadmap](ARCHITECTURE.md#11-phased-roadmap) for d
 
 ## Install
 
-`bindsight` is not yet on PyPI. Install from source (Windows / macOS / Linux,
-Python 3.11+):
+`bindsight` is not on PyPI yet. Every release ships a built wheel, an sdist and a
+`SHA256SUMS` file as [release assets](https://github.com/mikhaeelatefrizk/bindsight/releases/latest),
+so you can install a pinned, verifiable build without cloning (Windows / macOS /
+Linux, Python 3.11+):
 
 ```bash
-git clone <repo-url> bindsight
+# a specific release, straight from the attached wheel
+pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/v0.2.1/bindsight-0.2.1-py3-none-any.whl
+
+# or resolve the extras from the tagged source
+pip install "bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@v0.2.1"
+```
+
+Verify a downloaded artifact against the published checksums with
+`sha256sum -c SHA256SUMS`.
+
+For development, install from a checkout so tests and the example configs are
+present:
+
+```bash
+git clone https://github.com/mikhaeelatefrizk/bindsight.git
 cd bindsight
 python -m venv .venv
 

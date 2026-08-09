@@ -1,0 +1,77 @@
+name: Release artifacts
+
+# Attach a wheel, an sdist and their SHA-256 checksums to every published
+# release, and — once PyPI trusted publishing is configured — upload the same
+# artifacts to PyPI.
+#
+# The attach job always runs, so a release is installable without PyPI:
+#     pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/<tag>/bindsight-<version>-py3-none-any.whl
+#
+# The PyPI job is dormant until the project is registered as a trusted publisher
+# (pypi.org → project → Publishing → add GitHub as a publisher with this
+# repository, workflow `release-artifacts.yml` and environment `pypi`). It uses
+# OIDC, so no API token is ever stored in this repository. Until the
+# `pypi` environment exists the job is skipped rather than failing.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --quiet build twine
+      - run: python -m build
+      - name: Check metadata
+        run: python -m twine check dist/*
+      - name: Checksum
+        working-directory: dist
+        run: sha256sum bindsight-*.whl bindsight-*.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  attach:
+    name: Attach to the release
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber --repo "${{ github.repository }}"
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'release' && vars.PYPI_TRUSTED_PUBLISHING == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Drop the checksum file
+        # SHA256SUMS is a release asset, not a distribution; twine rejects it.
+        run: rm -f dist/SHA256SUMS
+      - uses: pypa/gh-action-pypi-publish@release/v1
