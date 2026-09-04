@@ -1,20 +1,23 @@
 # Security & provenance
 
-`bindsight` v0.1.0 onwards uses **cryptographic commit signing** as part of
-its provenance guarantees.
+`bindsight` backs its results with per-run provenance manifests, content
+hashes and archived releases. This page describes what those guarantees
+actually are.
 
-## Verified commits
+## Commit signing
 
-Every commit and tag from this point forward is signed with an SSH signing
-key registered to the author's GitHub account. GitHub renders a green
-**"Verified"** badge next to every signed commit; you can verify any commit
-yourself:
+**Commits in this repository are not currently signed.** An earlier version
+of this page claimed that every commit and tag was signed with an SSH
+signing key; that was not accurate, and the claim has been removed rather
+than left standing. Of the commits in the published history, none carry a
+verifiable author signature. Do not treat the absence of a "Verified" badge
+as evidence of tampering, and do not treat its presence on the handful of
+merge commits GitHub signed with its own web-flow key as author attestation.
 
-```bash
-git log --show-signature -1 <commit-sha>
-```
+Signing may be adopted in a future release. If it is, this section will say
+so on the release that introduces it, not before.
 
-This complements the other provenance layers in `bindsight`:
+## What the provenance guarantees actually are
 
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
@@ -24,8 +27,9 @@ This complements the other provenance layers in `bindsight`:
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
-  cryptographically links the author identity to the GitHub commits, the
-  Zenodo DOI, and the JOSS paper.
+  identifies the author across the Zenodo record and the repository
+  metadata. ORCID is an identifier registry, not a cryptographic
+  attestation, and it does not sign or verify commits.
 
 ## Reporting a vulnerability
 
@@ -38,8 +42,13 @@ email the author at `mikhaeelatefrizk@proton.me` with the subject
 
 - Default pipeline components are MIT / Apache / BSD / CC-BY only — see
   [LICENSING.md](LICENSING.md) for the full per-dependency inventory.
-- All Python dependencies are pinned with minimum versions in
-  [pyproject.toml](pyproject.toml). Container image digests will be pinned
-  for reproducible runs in a future release.
-- `bindsight verify-licenses` prints the per-component license inventory
-  on demand.
+- Python dependencies carry minimum versions, and the scientific stack
+  carries deliberate upper bounds, in [pyproject.toml](pyproject.toml).
+  These are floors and ceilings, not exact pins: two installs on different
+  days can resolve to different patch versions.
+- The container base image **is** pinned by digest, not by tag, in the
+  [Dockerfile](Dockerfile).
+- `bindsight verify-licenses` prints a static, hand-maintained inventory of
+  per-component licenses. Despite the name it performs no live check
+  against upstream `LICENSE` files, so verify upstream yourself before
+  relying on it for a legal decision.

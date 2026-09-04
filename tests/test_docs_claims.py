@@ -71,7 +71,10 @@ PROSE_SUFFIXES = frozenset({".md", ".tex", ".bib", ".cff"})
 NAMED_PROSE = ("README.md", "SECURITY.md", "CITATION.cff", ".huggingface/README.md")
 PROSE_TREES = ("docs", "paper", "benchmarks")
 
-BIB_FILES = ("paper/paper.bib", "paper/biorxiv/references.bib")
+# One bibliography serves both manuscripts; manuscript.tex reaches it via
+# \addbibresource{../paper.bib}. The former paper/biorxiv/references.bib
+# duplicated 15 of its 18 keys and drifted independently.
+BIB_FILES = ("paper/paper.bib",)
 MANUSCRIPT_TEX = "paper/biorxiv/manuscript.tex"
 
 # Documents that state, or used to state, a priority claim in prose.
@@ -143,7 +146,6 @@ def test_prose_inventory_resolves_the_public_documents() -> None:
         "paper/paper.md",
         "paper/paper.bib",
         MANUSCRIPT_TEX,
-        "paper/biorxiv/references.bib",
         "benchmarks/designer_benchmark/RESULTS.md",
     ):
         assert expected in PROSE_IDS, f"not collected: {expected}"
@@ -183,9 +185,16 @@ def test_bibliography_replaces_the_dead_boltz2_doi(rel: str) -> None:
 
 
 @pytest.mark.parametrize("rel", BIB_FILES)
-def test_khakzad_entry_is_dated_2026(rel: str) -> None:
-    entry = _bib_entry(_read(rel), "Khakzad2025")
+def test_surfacebind_entry_is_balbi_2026(rel: str) -> None:
+    """The SURFACE-Bind paper is Balbi et al. 2026, not Khakzad et al. 2025.
+
+    Khakzad is a co-author, not the first author, and the article is dated
+    2026. Pin both so the citation cannot drift back.
+    """
+    entry = _bib_entry(_read(rel), "Balbi2026")
     assert re.search(r"year\s*=\s*\{?\s*2026\s*\}?", entry), entry
+    assert "Balbi" in entry, entry
+    assert "Khakzad2025" not in _read(rel), "stale Khakzad2025 key still present"
 
 
 # --- LEGAL: the licence of bindsight itself -----------------------------------

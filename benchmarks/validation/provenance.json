@@ -6,7 +6,7 @@
   "sources": {
     "rna_seq": "NIH/GDC TCGA STAR-Counts (GENCODE v36), open access",
     "subtypes": "cBioPortal PAM50 (Parker et al. 2009)",
-    "known_antigens": "C:\\Users\\mikha\\AppData\\Local\\Temp\\claude\\C--Users-mikha\\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\\scratchpad\\bindsight-fix\\benchmarks\\known.tsv"
+    "known_antigens": "benchmarks/known.tsv"
   },
   "cohorts": [
     {

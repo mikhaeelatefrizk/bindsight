@@ -38,6 +38,24 @@ LOG = logging.getLogger(__name__)
 DEFAULT_KS: tuple[int, ...] = (5, 10, 20)
 
 
+def portable_path(path: Path | str) -> str:
+    """Render *path* for a published artifact.
+
+    Absolute paths from the machine that produced a run are not reproducible
+    and leak the operating environment, so record a repo-relative POSIX path
+    where we can and fall back to the bare filename where we cannot.
+    """
+    resolved = Path(path).resolve()
+    here = Path(__file__).resolve()
+    for parent in [here.parent, *here.parents]:
+        if (parent / "pyproject.toml").exists():
+            try:
+                return resolved.relative_to(parent).as_posix()
+            except ValueError:
+                break
+    return resolved.name
+
+
 @dataclass(frozen=True)
 class KnownAntigen:
     """One held-out known antigen we expect a rediscovery run to surface."""
@@ -317,7 +335,9 @@ def render_benchmark_html(
         return f"<table><thead>{antigen_headers}</thead><tbody>{rows}</tbody></table>"
 
     for s in scores:
-        detail_blocks += f"<h3>{e(s.run_name)}</h3><div class='sub'>{e(s.run_dir)}</div>"
+        detail_blocks += (
+            f"<h3>{e(s.run_name)}</h3><div class='sub'>{e(portable_path(s.run_dir))}</div>"
+        )
         if s.recall_basis == "on_indication":
             detail_blocks += (
                 f"<div class='scope'>Scored against the {e(str(s.tumor_type))} known "

@@ -1,7 +1,10 @@
 # Manuscripts and submission instructions
 
-This directory contains two ready-to-submit academic manuscripts about
-`bindsight` v0.1.0:
+This directory contains two academic manuscripts about `bindsight`. They were
+drafted for v0.1.0 and have not been rewritten for the current release, so
+treat the prose here as submission *mechanics* rather than an up-to-date
+description of the software; the README and CHANGELOG are authoritative for
+what bindsight currently does.
 
 ```
 paper/
@@ -9,14 +12,14 @@ paper/
 ├── paper.bib          ← BibTeX bibliography (for JOSS)
 └── biorxiv/
     ├── manuscript.tex ← Full bioRxiv preprint (LaTeX)
-    ├── manuscript.pdf ← Compiled output — STALE, see the warning below
-    └── references.bib ← BibTeX bibliography (same content + a few extras)
+    (bibliography: ../paper.bib, shared with the JOSS paper via \addbibresource)
 ```
 
-> ⚠️ **`manuscript.pdf` is out of date and must not be deposited as-is.** It was
-> compiled before the v0.2.1 corrections and still carries the wrong licence
-> ("MIT"), the superseded Zenodo version DOI, and the pre-correction Boltz-2
-> reference. Recompile from `manuscript.tex` (Step 1 below) before any upload.
+> ℹ️ **No compiled PDF is committed.** One used to be, but it predated the
+> v0.2.1 corrections and carried the wrong licence ("MIT"), a superseded Zenodo
+> version DOI and the pre-correction Boltz-2 reference — a deposit hazard sitting
+> in the tree. It has been removed. Compile a fresh one from `manuscript.tex`
+> (Step 1 below) at submission time, and do not commit the output.
 
 Both cite the software by its Zenodo **concept DOI** `10.5281/zenodo.20121495`,
 which always resolves to the latest archived version — the right thing to cite
@@ -52,7 +55,7 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** `v0.1.0`
+   - **Version:** the current tagged release (`v0.2.2` at time of writing)
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
    - **Software archive:** `https://doi.org/10.5281/zenodo.20121495`
 4. Submit. The JOSS editor assigns a handling editor and at least two
@@ -68,7 +71,7 @@ JOSS submission criteria (already met):
 - ✅ Repository on GitHub with version-controlled history
 - ✅ Tagged release
 - ✅ Documentation (README + `docs/`)
-- ✅ Tests with CI (175 tests, 8 platform/Python jobs)
+- ✅ Tests with CI (639 tests; 6 platform/Python jobs — 3 OS × Python 3.11/3.12 — plus lint, build and docker)
 - ✅ Statement of need in `paper.md`
 
 ---
@@ -102,7 +105,9 @@ directory as a zip. Overleaf detects the project, compiles it, and
 gives you a downloadable PDF in 30 seconds.
 
 **Option C — Online compiler.** TeXfiddle (https://texfiddle.com) or any
-LaTeX online compiler. Upload `manuscript.tex` and `references.bib`,
+LaTeX online compiler. Upload `manuscript.tex` and a copy of `../paper.bib`
+(rename it `paper.bib` and change the `\addbibresource` path to match, or keep
+the directory layout),
 compile.
 
 ### Step 2 — Upload to bioRxiv
@@ -145,7 +150,13 @@ peer-reviewed journal — bioRxiv linking is automatic.
 | Genome Biology | Methods section | Major rewrite (longer) |
 | Nature Communications | Possible, ambitious; would need v0.2 validation results | Major rewrite + experimental validation |
 
-For v0.1.0, **JOSS + bioRxiv** is the right combination.
+**JOSS + bioRxiv** remains the right combination.
+
+> **Submission history.** A JOSS submission was opened on 2026-06-07
+> (openjournals/joss-reviews#10660) and closed the same day at pre-review,
+> labelled `rejected`, with no editor assigned. Any resubmission should treat
+> that as the starting point rather than assuming a clean slate, and should
+> begin by rewriting `paper.md`, which still describes v0.1.0.
 
 ---
 
@@ -175,20 +186,25 @@ For v0.1.0, **JOSS + bioRxiv** is the right combination.
 
 To stay honest:
 
-- **No GPU half results.** The v0.1.0 release ships the GPU stages as
-  templated Colab notebooks following canonical upstream patterns
-  (ColabDesign, dl_binder_design); the author has not personally smoke-
-  tested them on a real GPU. The papers describe the design and explicitly
-  flag this in the Discussion as the limitation that v0.2 will close.
+- **GPU half: partially executed.** This bullet described v0.1.0, when the
+  GPU stages were templated notebooks that had never been run. That is no
+  longer accurate. The `rfdiff_mpnn` + `boltz2` path has since been executed
+  end-to-end on a free Kaggle P100 and produced the 20 committed ERBB2
+  binders. The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG) remain
+  mock-tested only and have still never been run on real hardware. The
+  manuscripts in this directory were written before that run and understate
+  what has been executed.
 - **Rediscovery validation: done (discovery half).** A companion report
   (`paper/validation/manuscript.md`, artifacts in `benchmarks/validation/`)
   runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
   is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified). EGFR
   and CEA are not surfaced, which the report presents as an internal
   consistency check on the over-expression rule (it excludes them by
-  construction) rather than as evidence of ranking discrimination. The three-way
-  *designer* benchmark is GPU-only; a runnable, CPU-tested harness + protocol
-  ship in `benchmarks/designer_benchmark/`, pending a GPU run.
+  construction) rather than as evidence of ranking discrimination. The
+  single-arm *designer* benchmark has since been run: `benchmarks/designer_
+  benchmark/` carries 20 real Boltz-2 complexes with per-design metrics. The
+  full three-way comparison is still pending, because BindCraft and BoltzGen
+  need 24–32 GB GPUs and so require paid backends.
 - **No claims of experimental validation.** Wet-lab work is out of scope
   and would require a separate paper with real biochemistry data.
 

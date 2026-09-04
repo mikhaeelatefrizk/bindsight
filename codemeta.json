@@ -64,9 +64,5 @@
     "pydantic",
     "streamlit"
   ],
-  "downloadUrl": "https://github.com/mikhaeelatefrizk/bindsight/releases/latest",
-  "referencePublication": {
-    "@type": "ScholarlyArticle",
-    "name": "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design"
-  }
+  "downloadUrl": "https://github.com/mikhaeelatefrizk/bindsight/releases/latest"
 }

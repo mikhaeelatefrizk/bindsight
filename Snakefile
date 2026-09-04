@@ -26,9 +26,10 @@ RUN_NAME = config.get("name", OUT.name)
 # The conda envs are kept lean — one per stage — so users only install what
 # they actually need.
 ENV_DISCOVER = "envs/discover.yaml"
-ENV_DESIGN   = "envs/design.yaml"     # v0.1
-ENV_VALIDATE = "envs/validate.yaml"   # v0.1
-ENV_REPORT   = "envs/report.yaml"     # v0.1
+# Only the discover rules declare a `conda:` directive. The design, validate and
+# report rules run in the invoking environment, so there are no per-stage env
+# files for them; envs/design.yaml, envs/validate.yaml and envs/report.yaml were
+# v0.1 leftovers that no rule referenced and have been removed.
 
 # ---------------------------------------------------------------------------
 # Top-level target

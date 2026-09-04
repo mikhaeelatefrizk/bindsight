@@ -22,7 +22,7 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 > Free-tier hosts sleep after a quiet spell; a GitHub Actions cron pings them every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.2.1** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
+> 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
 > ⚠️ **The committed binder figures predate a protocol fix shipped in this same release.** That run invoked ProteinMPNN without `--pdb_path_chains`, so it redesigned the HER2 target chain as well as the binder: the designs were optimised against a partly-invented target surface and then scored against the native one. The measurements are real and reproduce exactly from the committed artifacts, but the protocol was mis-set, and a corrected re-run will supersede them. Treat ipTM 0.84 / 50 % success@0.65 as provisional. Details in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md).
 
@@ -149,7 +149,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 
 For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-comparison-vs-existing-tools).
 
-## What works today (v0.2.1)
+## What works today (v0.2.2)
 
 | Capability | Status | How to try |
 |---|---|---|
@@ -188,7 +188,8 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 
 ## Status & roadmap
 
-- ✅ **v0.2.1** (current) — the v0.2.0 feature set with a release of correctness and honesty fixes (see the [CHANGELOG](CHANGELOG.md)), notably the ProteinMPNN target-chain fix that supersedes the protocol behind the committed binder benchmark.
+- ✅ **v0.2.2** (current) — a distribution and metadata release on top of v0.2.1: every release ships a wheel, an sdist and a `SHA256SUMS` file so a pinned build installs without PyPI, and the stale Hugging Face mirror pointers are corrected. No code behaviour changes.
+- ✅ **v0.2.1** — the v0.2.0 feature set with a release of correctness and honesty fixes (see the [CHANGELOG](CHANGELOG.md)), notably the ProteinMPNN target-chain fix that supersedes the protocol behind the committed binder benchmark.
 - ✅ **v0.2.0** — everything in v0.1.0 (discovery on real TCGA data; full design half — RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG — on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI) **plus** the first real de novo binders, the free Kaggle split-environment backend, the negative-result taxonomy, SURFACE-Bind targetable-site lookup, opt-in discovery-quality filters (AlphaFold-pLDDT disorder gate, UniProt extracellular-domain/topology restriction, GTEx normal-tissue safety), binder developability scoring, an ESM-2 pre-GPU embedding visualizer, and surfaced discovery caveats (mRNA ≠ surface protein, bulk-purity confounding).
 - ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal). Antigens with no measured bulk over-expression (EGFR/CEA) do not appear in the shortlist — an internal consistency check that the over-expression rule is applied as documented, not a measurement of ranking discrimination, since that rule excludes them from candidacy by construction. Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
 - ✅ **De novo binder design demonstrated end-to-end** — the design half (RFdiffusion → ProteinMPNN → Boltz-2) run on a **free Kaggle Tesla P100** produced **20 real binders** against the ERBB2 extracellular **domain IV** (the clinically validated trastuzumab epitope): mean **ipTM 0.59**, best **0.84**, **50 %** of designs pass the ipTM ≥ 0.65 success bar (mean PAE-interaction 13.7 Å) — at **$0**, no local GPU. **These figures predate the ProteinMPNN target-chain fix in v0.2.1** (the run redesigned the target chain as well as the binder) and will be superseded by a corrected re-run; the numbers themselves are real and reproduce exactly. The real Boltz-2-predicted **complexes** (CIF) + FASTAs + per-design metrics are in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md); reproduce on a free GPU via [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md).
@@ -286,7 +287,7 @@ bindsight/                 # Python package
 ├── config.py             # Pydantic run-configuration models
 └── cli.py                # Click entrypoint
 
-envs/                     # Conda environment files (one per stage)
+envs/                     # Conda environment file for the discovery half + pinned constraints
 examples/                 # Example pipeline configs (TCGA-LUAD, etc.)
 benchmarks/               # Held-out known-antigen eval set + validation & designer-benchmark harnesses
 paper/                    # JOSS + bioRxiv manuscripts and the validation write-up
@@ -316,7 +317,7 @@ pyproject.toml            # Python packaging
 
 `bindsight` is an opinionated wrapper. Real intellectual credit belongs to the upstream tool authors. See [LICENSING.md](LICENSING.md) for the full inventory; the work this builds on most directly:
 
-- [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) (Khakzad et al., PNAS 2025) — the targetable-sites catalog that makes the bridge tractable
+- [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) (Balbi et al., PNAS 2026) — the targetable-sites catalog that makes the bridge tractable
 - [pydeseq2](https://github.com/owkin/PyDESeq2) (Muzellec et al., Bioinformatics 2023) — Python DESeq2 implementation
 - [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) (Watson et al., Nature 2023) — backbone generation
 - [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) (Dauparas et al., Science 2022) — sequence design
@@ -331,7 +332,7 @@ If you use `bindsight` in your work, please cite it via the Zenodo **concept DOI
 is what you want when citing "the software". Cite a version DOI instead only when you
 need to pin the exact release you ran.
 
-> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.2.1). Zenodo. https://doi.org/10.5281/zenodo.20121495
+> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de novo protein binder design* (v0.2.2). Zenodo. https://doi.org/10.5281/zenodo.20121495
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121495.svg)](https://doi.org/10.5281/zenodo.20121495)
 
@@ -343,7 +344,7 @@ BibTeX:
   title        = {bindsight: a reproducible bridge from RNA-seq to de novo protein binder design},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v0.2.1},
+  version      = {v0.2.2},
   doi          = {10.5281/zenodo.20121495},
   url          = {https://doi.org/10.5281/zenodo.20121495},
   orcid        = {https://orcid.org/0009-0006-1069-9558}

@@ -122,3 +122,6 @@ paper/**/*.synctex.gz
 # Designer-benchmark scratch (the --out run dir + transient submit spec dirs)
 benchmarks/designer_benchmark/run/
 _bindsight_spec_*/
+
+# Compiled manuscripts are built at submission time, never committed
+paper/biorxiv/*.pdf

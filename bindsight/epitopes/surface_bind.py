@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """SURFACE-Bind targetable-site lookup.
 
-SURFACE-Bind (Khakzad et al., PNAS 2025; https://github.com/hamedkhakzad/SURFACE-Bind,
+SURFACE-Bind (Balbi et al., PNAS 2026; https://github.com/hamedkhakzad/SURFACE-Bind,
 BSD-3) ships pre-computed targetable interfaces for ~2,800 human surface
 proteins, with binder seeds for each. bindsight treats it as the canonical
 keystone for v0.1: given a UniProt ID, look up sites + seeds and skip the
@@ -126,7 +126,7 @@ class SurfaceBindClient:
             commit_file = alt if alt.is_file() else commit_file
         commit = commit_file.read_text(encoding="utf-8").strip() if commit_file.is_file() else None
         return {
-            "source": "SURFACE-Bind (Khakzad et al., PNAS 2025)",
+            "source": "SURFACE-Bind (Balbi et al., PNAS 2026)",
             "url": "https://github.com/hamedkhakzad/SURFACE-Bind",
             "license": "BSD-3-Clause",
             "commit_sha": commit,

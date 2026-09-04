@@ -82,7 +82,7 @@ else has shipped.
 ### 2. The keystone (SURFACE-Bind) just dropped
 
 The [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) catalog
-([PNAS 2025](https://www.pnas.org/doi/10.1073/pnas.2506269123)) ships
+([PNAS 2026](https://www.pnas.org/doi/10.1073/pnas.2506269123)) ships
 pre-computed targetable interfaces + binder seeds for ~2,800 surface proteins
 under a BSD-3 license. Before this, "find a druggable site on an arbitrary
 surface protein" was its own project. Now it's a UniProt-keyed lookup. This

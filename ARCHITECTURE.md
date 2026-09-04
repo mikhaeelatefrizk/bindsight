@@ -30,7 +30,7 @@ counts.tsv + design.tsv ─┐
         ▼                │
    DEGs.parquet          │
         │                │
-   target.discover ──────┼── Open Targets, HPA, GTEx (REST/GraphQL)
+   target.discover ──────┼── Open Targets, GTEx (REST/GraphQL)
         ▼                │
    candidates.parquet ───┼── SURFACE-Bind (UniProt join, vendored at pinned commit)
         ▼                │
@@ -85,14 +85,29 @@ bindsight/
 
 ### 3.1 Module contracts
 
-Every module exports:
+This section previously described a uniform contract — a typed input model,
+a typed output model, a `run(input, params, manifest) -> output` function
+and a per-module `version` string — that every module was said to export.
+That contract is aspirational, not implemented, and the description has
+been corrected rather than left as a specification readers would test
+against.
 
-- **A typed input model** (Pydantic v2) — what it consumes from the previous stage.
-- **A typed output model** (Pydantic v2) — what it produces, and the on-disk format.
-- **A `run(input, params, manifest) -> output` function** — pure, idempotent given the same inputs and params.
-- **A `version` string** — semver, bumped when output schema or default behavior changes.
+What is actually true today:
 
-This keeps modules swappable. If someone wants to plug a different DEG backend (e.g., pyComBat-Seq), they implement `deg.run` and the pipeline doesn't care.
+- **Pydantic v2 models are used widely** for configuration and for
+  structured stage outputs, but not as a mandatory paired input/output
+  model on every module.
+- **A module-level `run()` exists in three places only** —
+  `pipelines/discover.py`, `pipelines/full_run.py` and `cli.py` — plus a
+  `run()` method on the pydeseq2 runner class. Stages are otherwise called
+  through ordinary functions with stage-specific signatures.
+- **No module defines a `version` string.** Versioning is at the package
+  level, in `pyproject.toml`.
+
+Swapping a stage therefore means matching that stage's own signature and
+its call site in the pipeline, not implementing a shared interface. Making
+the uniform contract real is a plausible refactor, but it has not happened
+yet and nothing in the codebase depends on it.
 
 ### 3.2 Inter-module artifact format
 
@@ -132,7 +147,7 @@ This keeps modules swappable. If someone wants to plug a different DEG backend (
 class GPURunner(Protocol):
     def submit(self, spec: DesignSpec) -> JobHandle: ...
     def poll(self, handle: JobHandle) -> JobStatus: ...
-    def fetch(self, handle: JobHandle) -> Path: ...   # returns local path to results.tar.gz
+    def fetch(self, handle: JobHandle) -> Path: ...  # returns local path to results.tar.gz
     def estimate_cost(self, spec: DesignSpec) -> CostEstimate: ...
 ```
 
@@ -244,7 +259,8 @@ bindsight run <cfg>  ≡  snakemake (full DAG)
 |---|---|---|---|---|
 | DE analysis | [pydeseq2](https://github.com/owkin/PyDESeq2) v0.5.4 | MIT | No | scverse-maintained. Not bit-equivalent to R DESeq2 — documented |
 | Target evidence | [Open Targets Platform](https://platform-docs.opentargets.org/) GraphQL | CC0 / Apache | No | Rate-limited but generous |
-| Tissue baselines | [HPA](https://www.proteinatlas.org/), [GTEx](https://gtexportal.org/) | CC-BY / open | No | Specificity filtering |
+| Tissue baselines | [GTEx](https://gtexportal.org/) | open | No | Specificity filtering |
+| Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY-SA 3.0 | No | **No client implemented.** Listed as intended, not shipped |
 | Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | 2,886 surface proteins |
 | Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | 2,800+ proteins, sites + seeds |
 | Structures | AlphaFoldDB + [RCSB API](https://data.rcsb.org/) | CC-BY 4.0 | No | mmCIF by UniProt |

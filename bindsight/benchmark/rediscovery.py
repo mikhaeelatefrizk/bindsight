@@ -42,7 +42,12 @@ from typing import Any
 import pandas as pd
 
 from bindsight import __version__
-from bindsight.benchmark.core import KnownAntigen, render_benchmark_html, score_run
+from bindsight.benchmark.core import (
+    KnownAntigen,
+    portable_path,
+    render_benchmark_html,
+    score_run,
+)
 from bindsight.config import (
     DEGParams,
     DesignParams,
@@ -685,23 +690,29 @@ def _write_artifacts(
         for r in results
     ]
     recall = _aggregate_recall(results)
+    # ``results`` keeps absolute run directories because ``_render_figures``
+    # below still reads each run's parquet off disk. The published summary must
+    # not carry them: they are machine-specific and leak the environment that
+    # produced the run, so serialise a copy with portable paths instead.
+    published_results = [{**r, "run_dir": portable_path(r["run_dir"])} for r in results]
     summary = {
         "schema": "bindsight-validation/2",
         "generated_utc": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         "bindsight_version": __version__,
         "cbioportal_study": study_id,
-        "known_set": str(known_path),
+        "known_set": portable_path(known_path),
         "ks": list(KS),
         "overexpression_rule": f"FDR<0.05 and log2fc>={OVEREXPRESSION_LOG2FC}",
         "recall_at_k": recall,
         "exclusion_consistency_check": _exclusion_consistency_check(results),
-        "cohorts": results,
+        "cohorts": published_results,
         "data_limited": DATA_LIMITED,
     }
 
     (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "report.html").write_text(
-        render_benchmark_html(scores, ks=KS, known_source=str(known_path)), encoding="utf-8"
+        render_benchmark_html(scores, ks=KS, known_source=portable_path(known_path)),
+        encoding="utf-8",
     )
     (out_dir / "RESULTS.md").write_text(_render_results_md(summary), encoding="utf-8")
     _write_provenance(out_dir, summary)

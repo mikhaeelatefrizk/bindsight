@@ -78,7 +78,7 @@ tracking differential-expression effect size.
 Three structural conditions for `bindsight` to exist as a one-person open-
 source project all became true in late 2025 and not before:
 
-1. The **`SURFACE-Bind`** catalogue [@Khakzad2025] published pre-computed
+1. The **`SURFACE-Bind`** catalogue [@Balbi2026] published pre-computed
    targetable interfaces and binder seeds for ~2,800 human cell-surface
    proteins. Before this, identifying a druggable epitope on an arbitrary
    surface antigen was itself a multi-month research effort.
@@ -121,7 +121,7 @@ The intended user audiences:
 Open Targets Platform [@Ochoa2023] for druggability and safety annotation,
 the `SURFY` surfaceome list [@BauschFluck2018] for surface-protein
 filtering, and the `AlphaFoldDB` [@Varadi2024] REST API for structure
-retrieval. (Targetable-site prediction via `SURFACE-Bind` [@Khakzad2025] is a
+retrieval. (Targetable-site prediction via `SURFACE-Bind` [@Balbi2026] is a
 planned enhancement; the design step currently targets the whole surface.)
 Outputs are written as Apache Parquet with a single
 PROV-O JSON-LD `run_manifest.jsonld` enumerating every stage's tool,

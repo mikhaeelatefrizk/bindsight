@@ -10,7 +10,7 @@ Patients contributing to both arms are counted per cohort below; the DE design i
 
 - Generated: `2026-08-08T23:07:27+00:00` · bindsight `0.1.0`
 - PAM50 subtypes: cBioPortal study `brca_tcga_pan_can_atlas_2018`
-- Known-antigen set: `C:\Users\mikha\AppData\Local\Temp\claude\C--Users-mikha\74e65fb0-36e6-4d39-8c78-0b82e55dbc4c\scratchpad\bindsight-fix\benchmarks\known.tsv`
+- Known-antigen set: `benchmarks/known.tsv`
 
 ## Headline
 
