@@ -673,7 +673,7 @@ def benchmark(
 def ui(port: int, no_browser: bool) -> None:
     """Launch the bindsight web interface in your browser.
 
-    Same app that's deployed on the Hugging Face Space and Streamlit Cloud —
+    Same app that's deployed on the Hugging Face Space —
     multi-page, with the real-results explorer, the demo, 'run on my data', and
     'browse a run' panels. Local-first; telemetry is disabled explicitly below.
     """
@@ -761,7 +761,6 @@ def verify_licenses(config: Path | None) -> None:
         ("SURFY", "CC BY", True, "surfaceome filter"),
         ("SURFACE-Bind", "BSD-3", True, "targetable sites"),
         ("AlphaFoldDB", "CC BY 4.0", True, "structures"),
-        ("RCSB / PDBe", "CC0 / Open", True, "structures"),
         ("RFdiffusion", "BSD-3", True, "default backbone designer"),
         ("ProteinMPNN", "MIT", True, "sequence design"),
         ("Boltz-2", "MIT (code+weights)", True, "default validator"),
@@ -817,7 +816,6 @@ def verify_licenses(config: Path | None) -> None:
             "SURFY",
             "SURFACE-Bind",
             "AlphaFoldDB",
-            "RCSB / PDBe",
         ]
         selected = [by_name[n] for n in core + designer_components + validator_components]
 

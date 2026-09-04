@@ -56,7 +56,7 @@ surfaceome filter → druggability → structural pre-flight); the GPU half
 affinity validation) runs end-to-end on free Google Colab notebooks, paid Modal
 serverless GPU, or local NVIDIA Docker.
 
-A **public web demo** at <https://bindsight.streamlit.app> lets anyone run
+A **public web demo**, a Hugging Face Space at <https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight>, lets anyone run
 the full discovery pipeline in their browser without installing anything. A
 guided demo over a **real TCGA breast-carcinoma cohort** (tumor vs. adjacent
 normal, auto-downloaded from NIH/GDC) shows the pipeline discovering
@@ -76,9 +76,9 @@ tracking differential-expression effect size.
 # Statement of need
 
 Three structural conditions for `bindsight` to exist as a one-person open-
-source project all became true in late 2025 and not before:
+source project all became true across 2025–2026 and not before:
 
-1. The **`SURFACE-Bind`** catalogue [@Balbi2026] published pre-computed
+1. The **`SURFACE-Bind`** catalogue [@Balbi2026] (2026) published pre-computed
    targetable interfaces and binder seeds for ~2,800 human cell-surface
    proteins. Before this, identifying a druggable epitope on an arbitrary
    surface antigen was itself a multi-month research effort.
@@ -121,8 +121,10 @@ The intended user audiences:
 Open Targets Platform [@Ochoa2023] for druggability and safety annotation,
 the `SURFY` surfaceome list [@BauschFluck2018] for surface-protein
 filtering, and the `AlphaFoldDB` [@Varadi2024] REST API for structure
-retrieval. (Targetable-site prediction via `SURFACE-Bind` [@Balbi2026] is a
-planned enhancement; the design step currently targets the whole surface.)
+retrieval. Targetable-site lookup against `SURFACE-Bind` [@Balbi2026] shipped in
+v0.2.0 (`bindsight/epitopes/surface_bind.py`); it reads a vendored catalogue and
+focuses the design step on the mapped site, falling back to the whole surface
+when the catalogue has no entry for a target.
 Outputs are written as Apache Parquet with a single
 PROV-O JSON-LD `run_manifest.jsonld` enumerating every stage's tool,
 version, license, container digest, parameters, and SHA-256 of all input
@@ -137,21 +139,21 @@ backend the user selects: serverless `Modal`, a local NVIDIA GPU (native or
 Docker), `Kaggle`, or a self-contained `Colab` notebook patterned on the
 canonical upstream notebooks (`ColabDesign`, `dl_binder_design` [@Bennett2023]).
 
-A multi-page web interface, deployed to Streamlit Community Cloud at
-<https://bindsight.streamlit.app>, exposes the same pipeline through a
-zero-install browser UI with five views: a Home page, a one-click Demo, a
-"Run on my data" file-upload form, a "Browse a run" inspector, and an About
-page.
+A multi-page web interface, deployed as a Hugging Face Space at
+<https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight>, exposes the same pipeline through a
+zero-install browser UI with seven views: a Home page, a "Real results" page
+backed by the committed benchmarks, a one-click Demo, a "Run on my data"
+file-upload form, a "Browse a run" inspector, a Glossary, and an About page.
 
 # Quality assurance
 
-The package ships **200+ unit and integration tests** that run in a few
+The package ships **635 unit and integration tests** that run in a few
 minutes and cover: the Pydantic v2 manifest schema, every API client
 (Open Targets, AlphaFoldDB), the SURFY filter, the discovery pipeline end-
 to-end with mocked GPU runners, the rank module, the RO-Crate exporter, and
 the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
 runs the suite on Linux, macOS, and Windows for both Python 3.11 and 3.12;
-the v0.1.0 release is green across all six platforms.
+the v0.2.2 release is green across all six platforms.
 
 # Acknowledgements
 

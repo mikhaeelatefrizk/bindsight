@@ -63,7 +63,6 @@ ERR_TINT = "#ffebee"
 GITHUB_URL = "https://github.com/mikhaeelatefrizk/bindsight"
 DOCS_URL = "https://mikhaeelatefrizk.github.io/bindsight/"
 HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
-STREAMLIT_URL = "https://bindsight.streamlit.app/"
 # The concept DOI, which always resolves to the latest release; a version DOI
 # would pin readers to whichever release happened to be current when this was
 # written.

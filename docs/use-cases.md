@@ -124,7 +124,8 @@ to run alongside, both for sanity checks and for collaborator handoffs.
 - Plugin interface lets you wrap your proprietary designer / validator
   without forking. Internal models stay private; only the wrappers are added.
 - Container-pinned reproducibility means a partner running the same Docker
-  image gets byte-identical outputs.
+  image gets identical outputs apart from the `generated_utc` timestamp in the
+  manifest.
 - RO-Crate exports satisfy increasingly common funder reproducibility
   requirements.
 

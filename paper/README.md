@@ -71,7 +71,7 @@ JOSS submission criteria (already met):
 - ✅ Repository on GitHub with version-controlled history
 - ✅ Tagged release
 - ✅ Documentation (README + `docs/`)
-- ✅ Tests with CI (639 tests; 6 platform/Python jobs — 3 OS × Python 3.11/3.12 — plus lint, build and docker)
+- ✅ Tests with CI (635 tests; 6 platform/Python jobs — 3 OS × Python 3.11/3.12 — plus lint, build and docker)
 - ✅ Statement of need in `paper.md`
 
 ---

@@ -58,11 +58,6 @@ def get_designer(name: str) -> Any:
     return _load("bindsight.designers", name)()
 
 
-def get_validator(name: str) -> Any:
-    """Instantiate a validator plugin by name."""
-    return _load("bindsight.validators", name)()
-
-
 def get_runner(name: str, **kwargs: Any) -> Any:
     """Instantiate a runner backend by name.
 

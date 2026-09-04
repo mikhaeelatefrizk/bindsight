@@ -18,8 +18,8 @@ numbers on screen can never drift from the numbers in ``benchmarks/``.
 Everything here is read-only, network-free, and degrades to ``None`` rather
 than raising: ``benchmarks/`` is not packaged into the wheel
 (``pyproject.toml`` ships only the ``bindsight`` package), so an installed-from
--PyPI user has no such tree. The Hugging Face Space and the Streamlit Cloud
-mirror both deploy the full repository and therefore get the real thing.
+-PyPI user has no such tree. The Hugging Face Space deploys the
+full repository and therefore gets the real thing.
 
 Only the standard library is imported at module scope, so this stays importable
 without pandas or Streamlit.

@@ -53,8 +53,9 @@ primary-tumor and up to 40 solid-tissue-normal samples
 ([`bindsight/io/gdc.py`](../../bindsight/io/gdc.py); full GDC file UUIDs,
 barcodes, and SHA-256 in `provenance.json`). For breast cancer, bulk
 TCGA-BRCA averages the HER2 signal across all five PAM50 intrinsic subtypes and
-buries ERBB2; we therefore stratify by pulling PAM50 calls for 981 patients from
-cBioPortal (study `brca_tcga_pan_can_atlas_2018`, attribute `SUBTYPE`) and build
+buries ERBB2; we therefore stratify by pulling PAM50 calls from
+cBioPortal (study `brca_tcga_pan_can_atlas_2018`, attribute `SUBTYPE`; the number
+of patients returned is not recorded in the run provenance) and build
 the tumor arm from the **HER2-enriched** patients only
 ([`bindsight/io/cbioportal.py`](../../bindsight/io/cbioportal.py)).
 
@@ -89,8 +90,8 @@ All numbers below are produced by the runs (see
 | NECTIN4 | BLCA | 50 / 19 | 1.59 | 3.9e-03 | — | · |
 | FOLH1 (PSMA) | PRAD | 50 / 40 | 1.32 | 3.4e-04 | — | · |
 | EGFR | LUAD | 50 / 40 | 0.42 | 0.13 (ns) | — | · |
-| CEACAM5 (CEA) | COAD | 50 / 40 | −0.31 | 0.19 (ns) | — | · |
-| MSLN | PAAD | 50 / 4 | 2.31 | 0.13 (ns) | — | · |
+| CEACAM5 (CEA) | COAD | 49 / 40 | −0.28 | 0.22 (ns) | — | · |
+| MSLN | PAAD | 50 / 4 | 2.31 | 0.14 (ns) | — | · |
 
 **Sensitivity.** Of the antigens genuinely over-expressed in their cohort,
 **ERBB2 is rediscovered at rank 4 of 27 candidates** (top-5) in HER2-enriched
@@ -104,7 +105,7 @@ over-expressed at the bulk level stay out of the top-20. EGFR drives lung
 adenocarcinoma through mutation and amplification, not bulk mRNA
 over-expression (log2fc 0.42, n.s.); CEA (CEACAM5) is abundantly expressed in
 *normal* colon epithelium too, so its tumor-vs-normal fold-change is ≈ 0
-(log2fc −0.31, n.s., baseMean ≈ 1.7×10⁵ in both arms). This figure must not be
+(log2fc −0.28, padj 0.22, n.s.). This figure must not be
 read as a measurement of ranking discrimination: the discovery rule requires
 FDR < 0.05 and log2fc ≥ 1.0, so an antigen failing it is excluded from
 candidacy **by construction**. What 2/2 shows is that the documented rule was
@@ -129,8 +130,12 @@ behaviour expected of a differential-expression method.
 
 bindsight's discovery half functions correctly end-to-end on real patient data:
 it ranks a bona-fide over-expressed surface antigen near the top of an
-unsupervised shortlist, and it is specific — it does not surface clinically
-famous antigens that are not transcriptionally over-expressed. The PAM50
+unsupervised shortlist, and clinically famous antigens that are not
+transcriptionally over-expressed do not appear. That second observation is an
+**internal consistency check on the over-expression rule**, not a measurement of
+specificity: the rule excludes those antigens from candidacy by construction, so
+their absence confirms the documented rule was applied end-to-end rather than
+demonstrating discrimination. The PAM50
 stratification result underscores that *the right contrast matters as much as
 the method*: the same pipeline that buries ERBB2 in bulk BRCA recovers it at
 rank 4 once the HER2-enriched subtype is isolated.

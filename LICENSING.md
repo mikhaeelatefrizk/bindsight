@@ -32,8 +32,8 @@ The default `bindsight` configuration uses **only** components with permissive l
 | [SURFY](https://wlab.ethz.ch/surfaceome/) gene list | CC BY | ✅ Yes (with attribution) |
 | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3-Clause | ✅ Yes |
 | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) structures | CC BY 4.0 | ✅ Yes (with attribution) |
-| [RCSB PDB](https://www.rcsb.org/) | Public domain (CC0) | ✅ Yes |
-| [PDBe API](https://www.ebi.ac.uk/pdbe/api/doc/) | Open | ✅ Yes |
+| [RCSB PDB](https://www.rcsb.org/) | Public domain (CC0) | ✅ Yes (used only by `benchmarks/build_eval_set.py`; **no structure client in `bindsight/structures/`** — planned) |
+| [PDBe API](https://www.ebi.ac.uk/pdbe/api/doc/) | Open | ✅ Yes (**not integrated**; listed for reference only) |
 | [recount3](https://rna.recount.bio/) | Open (TCGA terms apply) | ✅ Yes for open subset |
 | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) (code) | BSD-3-Clause | ✅ Yes |
 | [RFdiffusion weights](https://github.com/RosettaCommons/RFdiffusion#download-the-models) | Per Baker Lab announcement, open for research and commercial | ✅ Yes (verify the LICENSE in your weights mirror) |
@@ -59,8 +59,8 @@ These are **not** enabled by default. They require explicit opt-in via a CLI fla
 |---|---|---|---|
 | [AlphaFold2 weights](https://github.com/google-deepmind/alphafold) (DeepMind) | CC BY 4.0 (data); model weights restricted to non-commercial | ⚠️ Restricted | Use Boltz-2 / Chai-1r / BoltzGen instead, or obtain AF2 weights via DeepMind's commercial path |
 | AF2-IG validator (via [dl_binder_design](https://github.com/nrbennet/dl_binder_design)) | Inherits AF2 weights restriction | ⚠️ Restricted | Same as above |
-| [DESeq2](https://bioconductor.org/packages/DESeq2/) | LGPL-3 | ✅ Yes (LGPL allows commercial use of LGPL libraries from non-LGPL apps) | Default `pydeseq2` (MIT) is recommended to avoid the question entirely |
-| [edgeR](https://bioconductor.org/packages/edgeR/) | GPL-2 | ⚠️ GPL — calling from non-GPL code is a runtime dependency, generally OK, but distribution of bundled binaries triggers GPL | Default to `pydeseq2`; do not vendor edgeR |
+| [DESeq2](https://bioconductor.org/packages/DESeq2/) | LGPL-3 | ✅ Yes (LGPL allows commercial use of LGPL libraries from non-LGPL apps) | **Not integrated; listed for reference only.** There is no R bridge — `pydeseq2` (MIT) is the only DEG engine |
+| [edgeR](https://bioconductor.org/packages/edgeR/) | GPL-2 | ⚠️ GPL — calling from non-GPL code is a runtime dependency, generally OK, but distribution of bundled binaries triggers GPL | **Not integrated; listed for reference only.** Not selectable from any config; do not vendor edgeR |
 | [PyMOL OSS](https://github.com/schrodinger/pymol-open-source) | Custom (research-friendly, commercial restrictions) | ⚠️ Check terms | Use `py3Dmol` / NGL instead (both MIT/BSD) |
 | [ColabFold MSA server](https://colabfold.com/) | Free service operated by Steinegger lab | ⚠️ Not for commercial scale | Provide BYO MMseqs2 path for commercial users |
 | [TCGA controlled-access subsets](https://gdc.cancer.gov/) | NIH dbGaP, requires DAC approval | ⚠️ Requires approval | Default examples use only the open subset |

@@ -1,4 +1,4 @@
-"""Streamlit Cloud entry point — deploys this repo as a public web app.
+"""Streamlit entry point — lets a hosted Streamlit runtime serve this repo as a web app.
 
 Streamlit Cloud (https://share.streamlit.io) auto-discovers ``streamlit_app.py``
 at the repo root. Pointing it at this file is enough; everything else is in the

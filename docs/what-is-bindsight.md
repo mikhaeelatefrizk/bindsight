@@ -172,11 +172,14 @@ Adds:
 A [companion report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md)
 runs the discovery half on six real indication-matched TCGA cohorts. It
 rediscovers **ERBB2 at rank 4** in HER2-enriched breast cancer (using PAM50
-subtype stratification — versus rank 25 in the unsplit BRCA cohort, where the
-HER2 signal is averaged away) and is **specific**: antigens that are not
-transcriptionally over-expressed at the bulk level (EGFR, which is
-mutation-driven; CEA, co-expressed in normal colon) are correctly not surfaced.
-Reproducible artifacts are in `benchmarks/validation/`. The three-way *designer*
+subtype stratification — versus a much lower rank in the unsplit BRCA cohort,
+where the HER2 signal is averaged away; that unsplit run is not committed, so no
+rank is quoted). Antigens that are not transcriptionally over-expressed at the
+bulk level (EGFR, which is mutation-driven; CEA, co-expressed in normal colon)
+do not appear in the shortlist. That absence is an **internal consistency check
+on the over-expression rule** — the rule (FDR < 0.05, log2fc ≥ 1) excludes them
+from candidacy by construction — not a measurement of specificity or of ranking
+discrimination. Reproducible artifacts are in `benchmarks/validation/`. The three-way *designer*
 benchmark is GPU-only; a runnable, CPU-tested harness + protocol ship in
 `benchmarks/designer_benchmark/`.
 
@@ -197,7 +200,6 @@ plus the populated designer benchmark.
 | **Method developer** building a new designer or validator | A held-out evaluation harness (rediscovery of known antigens) to benchmark against a fixed upstream pipeline |
 | **Pharma early discovery team** | A free open-source comparator they can layer their proprietary designers into via the plugin interface |
 | **Educator** teaching computational biology | A working end-to-end example that touches DEG, structural biology, deep learning, and software engineering — in one repo |
-| **PI hiring** for a bioinformatics + ML role | A CV artifact that demonstrates real cross-domain competence |
 
 ---
 
@@ -256,9 +258,9 @@ We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](http
   J Transl Med 2026](https://link.springer.com/article/10.1186/s12967-026-07784-0)).
   Reviewers want to see the bridge built.
 
-All four conditions — permissive validators, the SURFACE-Bind catalog, free
-GPU, and acknowledged demand — held simultaneously starting in late 2025.
-That's the window.
+All five conditions — permissive validators, the SURFACE-Bind catalog, free
+GPU, open cancer omics, and acknowledged demand — held simultaneously starting
+in late 2025. That's the window.
 
 ---
 
@@ -269,12 +271,15 @@ Anyone with a GPU can run the existing tools. The work `bindsight` does is the
 
 1. **Empirical defense of the defaults.** The discovery half is validated by
    rediscovery on six real TCGA cohorts (`benchmarks/validation/`): it surfaces
-   ERBB2 at rank 4 in HER2-enriched breast and is specific against antigens that
-   aren't transcriptionally over-expressed. See the
+   ERBB2 at rank 4 in HER2-enriched breast, and antigens that aren't
+   transcriptionally over-expressed stay out of the shortlist — an internal
+   consistency check on the over-expression rule, not a specificity
+   measurement, since that rule excludes them by construction. See the
    [validation report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md).
 2. **Container-pinned, seed-pinned, weights-pinned reproducibility.** Two runs
-   of the same config on the same data should produce byte-identical outputs
-   modulo logged stochastic seeds.
+   of the same config on the same data should produce identical outputs apart
+   from the `generated_utc` timestamp in the manifest, modulo logged stochastic
+   seeds.
 3. **Negative-result curation.** A `failure_taxonomy.parquet` per run — every
    target that *didn't* make it, with a reason.
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running.

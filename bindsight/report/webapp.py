@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """bindsight web app — multi-page Streamlit interface.
 
-Anyone can run this locally (``bindsight ui``) or hit the Streamlit Cloud
+Anyone can run this locally (``bindsight ui``) or hit the Hugging Face Space
 deployment to use the tool entirely in a browser.
 
 Pages:
@@ -15,7 +15,7 @@ Pages:
 - **Browse a run** — open a run directory, inspect tables, view the report
 - **About** — links to docs, source, citation
 
-The app is intentionally one file so Streamlit Cloud can deploy from a single
+The app is intentionally one file so a hosted Streamlit runtime can deploy from a single
 import path. Styling and brand constants come from
 :mod:`bindsight.report.theme`; the published numbers come from
 :mod:`bindsight.report.showcase`, so nothing on screen is hand-typed.
@@ -280,7 +280,7 @@ def _demo_config(out_dir: Path) -> RunConfig:
         raise FileNotFoundError(
             f"The bundled demo configuration was not found at {cfg_path}. The Demo "
             "page needs the full source checkout — it ships with the hosted "
-            "Hugging Face Space and Streamlit Cloud deployments, but a plain "
+            "hosted Hugging Face Space deployment, but a plain "
             "'pip install bindsight' does not include it. Run `bindsight demo` "
             "from a repository clone, or use the hosted demo."
         )

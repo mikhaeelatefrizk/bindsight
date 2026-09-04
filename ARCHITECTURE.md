@@ -1,6 +1,6 @@
 # Architecture
 
-> Architectural source of truth for `bindsight`. Read this before changing module contracts. Last reviewed: 2026-05-09.
+> Architectural source of truth for `bindsight`. Read this before changing module contracts. Last reviewed: 2026-09-04.
 
 ---
 
@@ -25,8 +25,7 @@ The combination means a CPU-only laptop user can drive a real binder-design pipe
 
 counts.tsv + design.tsv ─┐
         │                │
-   pydeseq2 (R bridge to │
-   DESeq2/edgeR optional)│
+   pydeseq2              │
         ▼                │
    DEGs.parquet          │
         │                │
@@ -34,7 +33,7 @@ counts.tsv + design.tsv ─┐
         ▼                │
    candidates.parquet ───┼── SURFACE-Bind (UniProt join, vendored at pinned commit)
         ▼                │
-   epitopes.parquet ─────┼── AlphaFoldDB (mmCIF pull) + RCSB/PDBe
+   epitopes.parquet ─────┼── AlphaFoldDB (mmCIF pull)
         ▼                │
    design.spec.yaml ─────┼─────────► Colab / Modal / Kaggle / local-Docker
                          │             ├── BindCraft (paid, ≥32GB GPU)
@@ -62,10 +61,10 @@ counts.tsv + design.tsv ─┐
 ```
 bindsight/
 ├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
-├── deg/             # pydeseq2 wrapper (+ optional R bridge)
+├── deg/             # pydeseq2 wrapper
 ├── targets/         # Open Targets GraphQL client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
-├── structures/      # AlphaFoldDB + RCSB/PDBe fetch; pLDDT (disorder) + UniProt topology
+├── structures/      # AlphaFoldDB fetch (RCSB/PDBe planned); pLDDT (disorder) + UniProt topology
 ├── epitopes/        # SURFACE-Bind site lookup; fpocket fallback (planned)
 ├── design/          # Designer plugin interface (RFdiffusion+MPNN, BindCraft, BoltzGen);
 │                    #   developability scoring + ESM-2 embeddings
@@ -126,10 +125,10 @@ yet and nothing in the codebase depends on it.
 
 ### 4.1 What runs locally (CPU)
 
-- DEG analysis (pydeseq2; or R bridge for DESeq2/edgeR)
+- DEG analysis (pydeseq2)
 - Database queries (Open Targets) + the bundled ENSG→UniProt fallback
 - SURFACE-Bind site lookup
-- AlphaFoldDB / RCSB structure fetching
+- AlphaFoldDB structure fetching
 - Multi-objective ranking
 - self-contained HTML + Streamlit reports
 - Provenance emission
@@ -263,7 +262,7 @@ bindsight run <cfg>  ≡  snakemake (full DAG)
 | Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY-SA 3.0 | No | **No client implemented.** Listed as intended, not shipped |
 | Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | 2,886 surface proteins |
 | Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | 2,800+ proteins, sites + seeds |
-| Structures | AlphaFoldDB + [RCSB API](https://data.rcsb.org/) | CC-BY 4.0 | No | mmCIF by UniProt |
+| Structures | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) | CC-BY 4.0 | No | mmCIF by UniProt. RCSB/PDBe clients are planned, **not implemented** |
 | Epitope fallback (planned) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | When SURFACE-Bind has no entry |
 | Designer (default) | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) + [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | BSD-3 / MIT | T4 OK (~16GB) | Free-Colab-friendly baseline |
 | Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32GB) | Higher reported success rate |
@@ -311,12 +310,12 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **GPU offload latency** — Colab sessions die. Mitigation: per-trajectory checkpointing, idempotent rerun keys.
 3. **Model output instability across versions** — pin commit SHA + weights hash + CUDA in containers; document that exact reproducibility requires the same digest.
 4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: the `--cheap` profile, **shipped**: RFdiffusion+ProteinMPNN, `n_trajectories=10`, costed against a T4, and an ESM-2 pre-screen that keeps the 5 most representative designs per target before validation (`bindsight/design/prescreen.py`, applied inside `runners/job_exec.run_job` between design and validation — the only point where dropping a design saves GPU). On the demo config against Modal this takes the `--dry-run` estimate from ~$27.89 (A100) to ~$4.26 (T4). The pre-screen is off unless `params.design.prescreen_top_k` is set, degrades to validating everything if the optional `embed` extra is absent, and records what it screened out.
-5. **SURFACE-Bind coverage gaps** — 2,886 ≠ all surfaceome. Mitigation: graceful drop with `no_surfacebind_entry` tag; a planned fpocket fallback.
+5. **SURFACE-Bind coverage gaps** — ~2,800 ≠ all surfaceome (2,886 is the SURFY list, a different inventory). Mitigation: graceful drop with `no_surfacebind_entry` tag; a planned fpocket fallback.
 6. **Designer choice will age.** Mitigation: plugin interface; ship RFdiff+MPNN default, BindCraft and BoltzGen as flags; benchmark all three in the paper.
 7. **Disease specificity is hard.** "Up in cancer, low in vital tissue" predictably finds known antigens. *This is a feature for v0.1* (rediscovery validation). Real novelty in v1.0 layers scRNA-seq + co-expression + immunopeptidomics.
 8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + Zenodo + GitHub stars is a real moat for academic users.
-9. **PyDESeq2 ≠ DESeq2 numerically.** Documented. Optional R-bridge for users who need exact DESeq2.
-10. **R-strong dev learning Python+Snakemake.** Mitigation: write DEG step in R first via Snakemake's R rule support, rewrite to pydeseq2 once the rest works.
+9. **PyDESeq2 ≠ DESeq2 numerically.** Documented in `bindsight/deg/pydeseq2_runner.py`. There is no R bridge: users who need exact DESeq2/edgeR numbers must run those tools themselves and feed the resulting DEG table in.
+10. **R-strong dev learning Python+Snakemake.** The DEG step is pure Python (pydeseq2); Snakemake's R rule support is unused.
 
 ---
 
@@ -354,15 +353,15 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [x] `--dry-run` GPU cost estimator
 - [x] Held-out evaluation set + `bindsight benchmark`
 - [x] `v0.1.0`, Zenodo DOI
-- [ ] Published Docker image with pinned digests
-- [ ] mkdocs-material documentation site
+- [x] Published Docker image with pinned digests (`.github/workflows/docker.yml`)
+- [x] mkdocs-material documentation site (`.github/workflows/docs.yml`)
 
 ### Phase 4 — Validation paper (in progress)
 - [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); EGFR/CEA not surfaced — a consistency check on the over-expression rule, which excludes them by construction, not a discrimination measurement. Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
 - [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.84, 50% success@0.65; real folded Boltz-2 complexes committed), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **Pre-v0.2.1 protocol** — ProteinMPNN ran without `--pdb_path_chains` and redesigned the target chain, so these figures are provisional pending a corrected re-run. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
 - [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission
-- [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free P100); preprint DOI pending
+- [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free P100); no preprint deposited yet
 
 ### Phase 5 — Coverage and community (post-preprint, ongoing)
 - v0.3: ESMFold fallback; fpocket fallback; scRNA-seq input via scanpy markers; BoltzGen as primary; live async Modal/Colab submission

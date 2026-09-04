@@ -1,17 +1,16 @@
 name: Keep demo warm
 
-# Both bindsight live demos run on free-tier hosts that sleep after inactivity:
-#   - Hugging Face Spaces (free CPU basic): sleeps after ~48 h of no traffic
-#   - Streamlit Community Cloud:           sleeps after ~7 d of no traffic
-# Once asleep, the next visitor sees a wake-up screen and waits 60-120 s for
-# the container to rebuild — a bad first impression for cold-outreach traffic.
+# The bindsight live demo runs on a free-tier Hugging Face Space that sleeps
+# after ~48 h of no traffic. Once asleep, the next visitor sees a wake-up
+# screen and waits 60-120 s for the container to rebuild — a bad first
+# impression for first-time visitors.
 #
-# This workflow pings both URLs every 6 h, but more importantly it CHECKS
-# the actual run-time stage of each demo via the platform's status API,
-# rather than relying on a 200 from the sleep page (which is what naïve
-# curl-based pingers do, including this workflow's own previous iteration).
+# This workflow pings the Space every 6 h, but more importantly it CHECKS
+# the actual run-time stage via the platform's status API, rather than
+# relying on a 200 from the sleep page (which is what naïve curl-based
+# pingers do, including this workflow's own previous iteration).
 #
-# If a demo is found in a non-running stage, the workflow attempts a
+# If the Space is found in a non-running stage, the workflow attempts a
 # wake-up GET with a long timeout, then re-checks.  Persistent failure
 # surfaces as an annotation in the Actions tab.
 
@@ -36,7 +35,7 @@ concurrency:
 
 jobs:
   hf-space:
-    name: HF Space (primary)
+    name: HF Space
     runs-on: ubuntu-latest
     # Keepalive + monitor: a transient curl/network/API blip must never fail
     # the run and email. A genuine outage still surfaces as a ::warning::/
@@ -105,59 +104,3 @@ jobs:
           fi
           echo "::notice title=HF demo healthy::stage=RUNNING, health=200"
 
-  streamlit-cloud:
-    name: Streamlit Cloud (mirror)
-    runs-on: ubuntu-latest
-    # See note on hf-space: best-effort, never fail the run / email.
-    continue-on-error: true
-    timeout-minutes: 10
-    # Streamlit Cloud doesn't publish a stable public stage API, and its
-    # wake-up flow requires an interactive button click that curl cannot
-    # easily replicate.  The cron still keeps an already-awake app warm
-    # (which is what matters most cases), but if we find it asleep we
-    # surface that as a warning rather than failing the job — a human
-    # needs to click the wake-up button once.
-    steps:
-      - name: Probe Streamlit health
-        env:
-          APP_URL: https://bindsight.streamlit.app
-        run: |
-          set -euo pipefail
-
-          # When the app is awake, /_stcore/health returns HTTP 200.
-          # When asleep, Streamlit Cloud 303-redirects to a login/wake
-          # handshake; that's our "asleep" signal.
-          code=$(curl -sS --max-time 60 -o /dev/null -w "%{http_code}" \
-                      -A 'bindsight-keep-warm/2' \
-                      "${APP_URL}/_stcore/health" || echo "000")
-          echo "/_stcore/health -> ${code}"
-
-          if [ "${code}" = "200" ]; then
-            echo "::notice title=Streamlit demo warm::health=200"
-            exit 0
-          fi
-
-          # Asleep / unreachable.  Hit the root URL with redirects
-          # followed to give Streamlit Cloud a chance to wake; this
-          # doesn't always work without browser-side JS, but it's the
-          # best we can do from a stateless GET.
-          echo "Health probe returned ${code}; attempting wake visit..."
-          curl -sSL --max-time 240 --max-redirs 100 --retry 2 --retry-delay 30 \
-               -A 'Mozilla/5.0 (bindsight-keep-warm/2)' \
-               -o /dev/null -w "wake-visit HTTP %{http_code} in %{time_total}s\n" \
-               "${APP_URL}/" || true
-
-          # Re-probe.
-          code=$(curl -sS --max-time 60 -o /dev/null -w "%{http_code}" \
-                      -A 'bindsight-keep-warm/2' \
-                      "${APP_URL}/_stcore/health" || echo "000")
-          if [ "${code}" = "200" ]; then
-            echo "::notice title=Streamlit demo recovered::health=200 after wake"
-            exit 0
-          fi
-
-          # Streamlit Cloud's wake-up is interactive; a stateless cron
-          # cannot always wake a fully-asleep app.  Warn but don't fail
-          # the job — the HF Space is the primary mirror and that
-          # branch fails loudly above if it's broken.
-          echo "::warning title=Streamlit mirror asleep::health=${code} after wake attempt; the HF Space mirror is the primary demo. If this state persists, click the wake-up button once at ${APP_URL}/ and the cron will keep it warm thereafter."

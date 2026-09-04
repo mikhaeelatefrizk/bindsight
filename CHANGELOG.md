@@ -8,6 +8,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Removed
+
+- The Streamlit Community Cloud mirror (`bindsight.streamlit.app`) is no longer a
+  supported deployment; the Hugging Face Space is the single hosted demo. The
+  keep-warm workflow, README, JOSS and bioRxiv drafts and the docs site metadata now
+  point only at the Space. The Streamlit code itself (`bindsight ui`, `streamlit_app.py`)
+  is unchanged.
+- Dead code that no caller reached: `bindsight.plugins.get_validator` and
+  `AlphaFoldDBClient.fetch_many`.
+- `paper/validation/DEFENSE_NOTES.md`, the README biography paragraph and the
+  "sister projects" links to repositories that no longer exist.
+
+### Changed
+
+- Documentation no longer claims an optional R bridge to DESeq2/edgeR, RCSB/PDBe
+  structure clients, single-cell input, a nightly test schedule, GPG-signed tags,
+  PyPI publishing or a Zenodo deposit workflow — none of which exist in the code.
+  `bindsight verify-licenses` drops the RCSB/PDBe row for the same reason.
+- CONTRIBUTING describes the test markers, the release steps and the code of conduct
+  as they actually are; `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1) is added.
+- The validation write-up quotes only numbers present in the committed benchmark
+  artifacts and states that the absence of EGFR/CEA from the shortlist is a
+  consistency check on the over-expression rule, not a specificity measurement.
+- Package classifiers: Development Status 4 (Beta); Python 3.13 is not tested and is
+  no longer listed.
+
 ## [0.2.2] - 2026-08-09
 
 A distribution and metadata release. No code behaviour changes; the archived v0.2.1

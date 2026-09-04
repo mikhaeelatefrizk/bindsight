@@ -9,12 +9,10 @@ results/
 !tests/fixtures/**/*.parquet
 !tests/fixtures/**/*.tar.gz
 
-# Vendored data dependencies (downloaded at install time, not committed)
+# Vendored data dependencies and local caches (not committed)
 data/surface_bind/
-data/alphafolddb_cache/
-data/recount3_cache/
+!data/surface_bind/README.md
 data/gdc_cache/
-data/colabfold_msa_cache/
 data/target_structures/
 
 # Generated reports
@@ -99,8 +97,6 @@ secrets/
 # OS
 desktop.ini
 
-# Private outreach campaign data — must NEVER be pushed to public repo
-outreach/
 
 
 # mkdocs build output

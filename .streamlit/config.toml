@@ -2,7 +2,7 @@
 #
 # Read automatically by `streamlit run` when the working directory is the repo
 # root — which covers `bindsight ui` run from a clone, the Hugging Face Space
-# (primary deployment), and the Streamlit Community Cloud mirror.
+# (the hosted deployment), and any other Streamlit host.
 #
 # Why this file exists:
 #

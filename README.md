@@ -5,7 +5,6 @@
 Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraft), [BinderFlow](https://doi.org/10.1371/journal.pcbi.1013747), [`dl_binder_design`](https://github.com/nrbennet/dl_binder_design), Seqera's [nf-proteindesign](https://github.com/seqeralabs/nf-proteindesign) — all start from a target you have already chosen. Expression- and surfaceome-based target-discovery work (pan-cancer surfaceome screens, [pVACtools](https://pvactools.readthedocs.io/) for neoantigens) stops at a ranked list of genes or peptides. bindsight is, as far as we are aware, the first open-source tool that runs **both halves end-to-end** and carries a machine-readable audit trail *across the join* — from a designed binder back through the epitope, the structure, the surfaceome call, and the differential-expression contrast to the individual patient samples. The individual steps are the community's; the join, its defaults, and its provenance are what bindsight contributes.
 
 [![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20HF%20Space-bindsight-yellow.svg)](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight)
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bindsight.streamlit.app/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20121495.svg)](https://doi.org/10.5281/zenodo.20121495)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -16,11 +15,9 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 **The evidence, no waiting:** **[Real results](https://mikhaeelatefrizk.github.io/bindsight/results/)** — ERBB2 rediscovered at rank 4 from real TCGA-BRCA RNA-seq, the six-cohort validation, and 20 de novo ERBB2 binders rendered in 3-D against their target. Static, always current with `main`, nothing to wake up.
 
-**Run it in your browser** (Streamlit Community Cloud, 1 GB CPU): [bindsight.streamlit.app](https://bindsight.streamlit.app/) — tracks `main`. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.)
+**Run it in your browser** (Hugging Face Space, 16 GB CPU): [huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) — tracks `main`. Click the **Demo** tab and watch the **discovery half** surface antibody-tractable cell-surface antigens from a **real TCGA breast-cancer cohort** (NIH/GDC), with full provenance. (Binder *design* and *validation* are GPU-only — you run those via Modal / Docker / Kaggle / Colab, so they don't execute in the browser.) `.github/workflows/sync-hf-space.yml` republishes the Space's landing page and factory-rebuilds it on every release (requires the `HF_TOKEN` secret; skipped otherwise).
 
-**Mirror** (Hugging Face Space, 16 GB CPU): [huggingface.co/spaces/Mikhaeelatefrizk/bindsight](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) — the same app on larger free hardware. `.github/workflows/sync-hf-space.yml` republishes its landing page and factory-rebuilds it on every release, so it tracks `main` too.
-
-> Free-tier hosts sleep after a quiet spell; a GitHub Actions cron pings them every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
+> The free-tier Space sleeps after a quiet spell; a GitHub Actions cron pings it every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
 > 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
 
@@ -34,16 +31,16 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 ## Three ways to try it
 
-### 1. Web app — [Hugging Face Space](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) (zero install) · [Streamlit mirror](https://bindsight.streamlit.app/)
+### 1. Web app — [Hugging Face Space](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) (zero install)
 
-Anyone visiting either URL above gets:
+Anyone visiting the Space gets:
 - A **Home** page with what bindsight is and the headline results
 - A **Real results** page — the committed benchmarks, including the 20 real ERBB2 binders rendered in 3-D against their target from the actual Boltz-2 predicted complexes (no run required, nothing to wait for)
 - A **Demo** button that runs the discovery half live and renders a report
 - A **Run on my data** page (upload counts.tsv + design.tsv → get results)
 - A **Browse a run** page to inspect any output directory
 
-`bindsight.streamlit.app` (Streamlit Cloud, 1 GB CPU) redeploys from `main` on every push; the Hugging Face Space (16 GB CPU) is factory-rebuilt from `main` on every release by `sync-hf-space.yml`. Free-tier hosts sleep after a quiet spell; a 6-hourly GitHub Actions ping keeps them warm, but the first visit after a long quiet period can still take ~30–120 s to wake.
+The Hugging Face Space (16 GB CPU) is factory-rebuilt from `main` on every release by `sync-hf-space.yml` (requires the `HF_TOKEN` secret; skipped otherwise). The free tier sleeps after a quiet spell; a 6-hourly GitHub Actions ping keeps it warm, but the first visit after a long quiet period can still take ~30–120 s to wake.
 
 ### 2. Local web app (one command)
 
@@ -105,12 +102,12 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 ## What it does
 
 ```
-  RNA-seq counts (bulk or sc)                       Designed protein binders
+  bulk RNA-seq counts                               Designed protein binders
               │                                              ▲
               │                                              │
               ▼                                              │
    Differential expression  ──►  Surface-exposed  ──►  De novo backbone
-   (pydeseq2 or DESeq2)         (SURFY)              (RFdiffusion / BindCraft / BoltzGen)
+   (pydeseq2)                   (SURFY)              (RFdiffusion / BindCraft / BoltzGen)
                                      │                       │
                                      ▼                       ▼
                               Targetable sites          Sequence design
@@ -153,7 +150,7 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 
 | Capability | Status | How to try |
 |---|---|---|
-| **Web UI** — multi-page Streamlit app (Home / Demo / Run on my data / Browse / About) | ✅ ready | `bindsight ui`  *or*  Streamlit Cloud |
+| **Web UI** — multi-page Streamlit app (Home / Real results / Demo / Run on my data / Browse a run / Glossary / About) | ✅ ready | `bindsight ui`  *or*  the Hugging Face Space |
 | **`bindsight demo`** — full discovery on shipped example + paper-style report | ✅ ready | `bindsight demo` |
 | **`bindsight discover`** — your own RNA-seq cohort → ranked targets | ✅ ready | `bindsight discover my.yaml --out runs/x` |
 | **`bindsight rank`** — multi-objective composite scoring of validated binders | ✅ ready | `bindsight rank runs/x` |
@@ -191,7 +188,7 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 - ✅ **v0.2.2** (current) — a distribution and metadata release on top of v0.2.1: every release ships a wheel, an sdist and a `SHA256SUMS` file so a pinned build installs without PyPI, and the stale Hugging Face mirror pointers are corrected. No code behaviour changes.
 - ✅ **v0.2.1** — the v0.2.0 feature set with a release of correctness and honesty fixes (see the [CHANGELOG](CHANGELOG.md)), notably the ProteinMPNN target-chain fix that supersedes the protocol behind the committed binder benchmark.
 - ✅ **v0.2.0** — everything in v0.1.0 (discovery on real TCGA data; full design half — RFdiffusion + ProteinMPNN + Boltz-2, plus BindCraft / BoltzGen / Chai-1r / AF2-IG — on Modal / local Docker / Kaggle / Colab; rank + report + export; benchmark + held-out eval set; CLI **and** Snakemake front-ends; web UI) **plus** the first real de novo binders, the free Kaggle split-environment backend, the negative-result taxonomy, SURFACE-Bind targetable-site lookup, opt-in discovery-quality filters (AlphaFold-pLDDT disorder gate, UniProt extracellular-domain/topology restriction, GTEx normal-tissue safety), binder developability scoring, an ESM-2 pre-GPU embedding visualizer, and surfaced discovery caveats (mRNA ≠ surface protein, bulk-purity confounding).
-- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus rank 25 in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal). Antigens with no measured bulk over-expression (EGFR/CEA) do not appear in the shortlist — an internal consistency check that the over-expression rule is applied as documented, not a measurement of ranking discrimination, since that rule excludes them from candidacy by construction. Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
+- ✅ **Rediscovery validation** — the discovery half, run on six real indication-matched TCGA cohorts, resurfaces **ERBB2 at rank 4** in HER2-enriched breast cancer (via PAM50 subtype stratification — versus a much lower rank in the unsplit BRCA cohort, where averaging across subtypes dilutes the HER2 signal; that unsplit run is not committed, so no rank is quoted). Antigens with no measured bulk over-expression (EGFR/CEA) do not appear in the shortlist — an internal consistency check that the over-expression rule is applied as documented, not a measurement of ranking discrimination, since that rule excludes them from candidacy by construction. Reproducible artifacts in [`benchmarks/validation/`](benchmarks/validation/RESULTS.md); write-up in [`paper/validation/`](paper/validation/manuscript.md).
 - ✅ **De novo binder design demonstrated end-to-end** — the design half (RFdiffusion → ProteinMPNN → Boltz-2) run on a **free Kaggle Tesla P100** produced **20 real binders** against the ERBB2 extracellular **domain IV** (the clinically validated trastuzumab epitope): mean **ipTM 0.59**, best **0.84**, **50 %** of designs pass the ipTM ≥ 0.65 success bar (mean PAE-interaction 13.7 Å) — at **$0**, no local GPU. **These figures predate the ProteinMPNN target-chain fix in v0.2.1** (the run redesigned the target chain as well as the binder) and will be superseded by a corrected re-run; the numbers themselves are real and reproduce exactly. The real Boltz-2-predicted **complexes** (CIF) + FASTAs + per-design metrics are in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md); reproduce on a free GPU via [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md).
 - ⏳ **v0.3.0** — single-cell RNA-seq input, async (non-blocking) Modal job submission, and extending the [designer benchmark](benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md) from the committed `rfdiff_mpnn` arm to the full three-way comparison (BindCraft / BoltzGen need ≥24–32 GB GPUs, so those arms run on paid backends).
 - ⏳ **v1.0.0** — JOSS submission; multi-modal tumor-selectivity scoring (single-cell + co-expression + immunopeptidomics) to extend discovery beyond bulk differential expression.
@@ -271,10 +268,10 @@ bindsight export runs/luad_v01 --format ro-crate --out runs/luad_v01.crate.zip
 ```
 bindsight/                 # Python package
 ├── io/                   # Parquet, FASTA, PDB, mmCIF, manifest readers
-├── deg/                  # pydeseq2 wrapper (+ optional R bridge)
+├── deg/                  # pydeseq2 wrapper
 ├── targets/              # Open Targets client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/           # SURFY filter + SURFACE-Bind client
-├── structures/           # AlphaFoldDB + RCSB/PDBe fetch; pLDDT + UniProt topology
+├── structures/           # AlphaFoldDB fetch (RCSB/PDBe planned); pLDDT + UniProt topology
 ├── epitopes/             # SURFACE-Bind site lookup; fpocket fallback (planned)
 ├── design/               # Designer plugin interface; developability + ESM-2 embeddings
 ├── runners/              # Colab / Modal / Kaggle / local-Docker adapters
@@ -294,7 +291,7 @@ paper/                    # JOSS + bioRxiv manuscripts and the validation write-
 data/                     # Local cache for auto-downloaded TCGA cohorts (gitignored)
 tests/                    # Pytest smoke + integration tests + fixtures
 docs/                     # mkdocs-material site source
-.github/workflows/        # CI + Zenodo deposit on tag
+.github/workflows/        # CI, docs, docker, release artifacts, HF sync
 
 ARCHITECTURE.md           # Architectural source of truth
 LICENSING.md              # Per-dependency license inventory
@@ -355,24 +352,15 @@ GitHub also exposes a "Cite this repository" button on the right sidebar of the 
 
 ## About the author
 
-`bindsight` is built and maintained by **Mikhaeel Atef Rizk Wahba** — PharmD graduate of the German University in Cairo (GUC), currently finishing the Egyptian post-PharmD applied-pharmacy term (Imtiyaz). Earlier in 2026 he had a research rotation at the German International University in Berlin (GIU Berlin) where he picked up R / RStudio.
+`bindsight` is built and maintained by **Mikhaeel Atef Rizk Wahba**, independent researcher.
 
 - ORCID: [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
 - GitHub: [@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk)
 - Email: `mikhaeelatefrizk@proton.me`
-- Languages: Arabic (native), English (full professional), German (professional working ≈ B2), French, Russian
 
-### Sister projects on GitHub
+### Related project
 
-`bindsight` sits at the deep end of an ongoing bioinformatics portfolio:
-
-- **[bioinformatics-portfolio](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio)** — an end-to-end bioinformatics portfolio with three subprojects, each fully reproducible from raw data to figures:
-  - [`01-rnaseq-fox-domestication`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/01-rnaseq-fox-domestication) — RNA-seq differential expression on GEO GSE76517, replicating the Kukekova et al. *PNAS* 2018 silver-fox domestication study
-  - [`02-tcga-survival-kidney-cancer`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/02-tcga-survival-kidney-cancer) — TCGA-KIRC clinical survival analysis identifying EPAS1 / HIF-2α as a prognostic biomarker (target of FDA-approved belzutifan)
-  - [`03-scrnaseq-pbmc-seurat`](https://github.com/mikhaeelatefrizk/bioinformatics-portfolio/tree/main/03-scrnaseq-pbmc-seurat) — Seurat v5 single-cell RNA-seq workflow on the 10x PBMC 3k dataset, recovering 8 immune populations
-- **[affect-labeling-review](https://github.com/mikhaeelatefrizk/affect-labeling-review)** — a pre-registered systematic review + meta-analysis of affect labeling (Lieberman et al. 2007 paradigm). Real random-effects meta-analysis (k=9), PRISMA 2020, RoB 2 / ROBINS-I, ~14,000-word manuscript, open data + open code, `.zenodo.json` for citable archival
-- **[awesome-protein-design-software](https://github.com/mikhaeelatefrizk/awesome-protein-design-software)** — curated list of protein-design / structure-prediction software (RFdiffusion, ProteinMPNN, Boltz, AlphaFold, ESMFold, etc.)
-- **[Awesome-Bioinformatics](https://github.com/mikhaeelatefrizk/Awesome-Bioinformatics)** — curated list of bioinformatics libraries and tools
+- **[affect-labeling-review](https://github.com/mikhaeelatefrizk/affect-labeling-review)** — a systematic review and random-effects meta-analysis of affect labeling (Lieberman et al. 2007 paradigm): PRISMA 2020, RoB 2 / ROBINS-I, *k* = 8 psychophysiological effect sizes from six studies, ~10,500-word manuscript, open data and code, archived on Zenodo (v1.1.0).
 
 ## License
 

@@ -91,15 +91,3 @@ class AlphaFoldDBClient:
 
         cached.write_bytes(payload)
         return cached
-
-    def fetch_many(
-        self,
-        uniprot_ids: list[str],
-        *,
-        force: bool = False,
-    ) -> dict[str, Path | None]:
-        """Bulk-fetch; returns ``{uniprot_id: path-or-None}``."""
-        results: dict[str, Path | None] = {}
-        for uid in uniprot_ids:
-            results[uid] = self.fetch(uid, force=force)
-        return results

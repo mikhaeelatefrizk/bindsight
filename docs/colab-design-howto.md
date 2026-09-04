@@ -51,8 +51,7 @@ interfaces — residues 244–267 (subdomain II) or 575–613 (subdomain IV).
 
 Use the [ColabDesign / dl_binder_design notebook](https://colab.research.google.com/github/sokrypton/ColabDesign/blob/main/rf/examples/diffusion.ipynb)
 as your starting point. It runs RFdiffusion + ProteinMPNN end-to-end and is
-maintained by the community (the same group that develops AlphaFold's
-upstream MSA pipeline).
+maintained by the Ovchinnikov lab (ColabFold/ColabDesign).
 
 Alternative: the [BindCraft Colab](https://colab.research.google.com/github/martinpacesa/BindCraft/blob/main/notebooks/BindCraft.ipynb)
 which is one-shot but needs A100 (≥32 GB). Use this if you have Colab Pro+.
@@ -64,11 +63,11 @@ which is one-shot but needs A100 (≥32 GB). Use this if you have Colab Pro+.
 In the ColabDesign diffusion notebook:
 
 1. **Upload your target structure.** Drag your target's mmCIF (its path is in the `structure_path` column of
-   `runs/demo/epitopes/epitopes.parquet`) into the Colab file browser. Note its filename (e.g. `AF-P04626-F1-model_v4.cif`).
+   `runs/demo/epitopes/epitopes.parquet`) into the Colab file browser. Note its filename (e.g. `AF-P04626-F1-model_v6.cif`).
 
 2. **Set the inputs cell:**
    ```python
-   pdb = "AF-P04626-F1-model_v4.cif"        # target structure
+   pdb = "AF-P04626-F1-model_v6.cif"        # target structure
    target_chain = "A"
    binder_length = 80                        # 50–150 typical
    hotspot_residues = "A244,A245,A246,A247"  # hotspots from step 1
@@ -142,6 +141,8 @@ Open them in PyMOL, NGL, or ChimeraX.
 ---
 
 ## Cost expectations
+
+Vendor pricing below is as of 2026-09; check current pricing before budgeting.
 
 | Tier | GPU | Designs you can run | Approx wall time | Cost |
 |---|---|---|---|---|

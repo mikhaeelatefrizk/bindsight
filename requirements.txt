@@ -1,5 +1,5 @@
-# Streamlit Cloud deploy requirements (for share.streamlit.io).
-# Mirrors `pip install -e ".[discover,report]"` so the cloud deployment has
+# Web-app deploy requirements for hosted Streamlit runtimes.
+# Mirrors `pip install -e ".[discover,report]"` so the hosted deployment has
 # everything the web demo needs. Local installs should prefer the editable
 # install via pyproject.toml.
 #

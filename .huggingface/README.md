@@ -28,9 +28,7 @@ tags:
 
 This Space hosts the bindsight web app. The canonical source repo and the
 full documentation live at
-<https://github.com/mikhaeelatefrizk/bindsight>; a Streamlit Community
-Cloud deployment of the same app lives at
-<https://bindsight.streamlit.app/>.
+<https://github.com/mikhaeelatefrizk/bindsight>.
 
 > Free-tier Spaces sleep after about 48 h of no traffic. A GitHub Actions
 > cron in the source repo pings this URL every 6 h *and* checks the
@@ -48,7 +46,8 @@ GitHub `main` branch at build time (see `requirements.txt` and
 Both the deployed code and this page follow `main` automatically:
 `sync-hf-space.yml` in the source repo uploads `.huggingface/README.md`
 over this file and issues a **factory** rebuild on every published
-release. A plain restart would reuse the cached image and keep serving
+release (requires the `HF_TOKEN` secret; the workflow skips silently
+otherwise). A plain restart would reuse the cached image and keep serving
 whatever bindsight revision the last build resolved, so only a factory
 reboot picks up new code. Do not edit this page on the Space — the next
 release overwrites it; edit `.huggingface/README.md` in the repo instead.

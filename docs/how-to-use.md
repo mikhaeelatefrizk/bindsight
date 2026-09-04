@@ -244,8 +244,9 @@ Scores how well the run rediscovers the literature-validated known antigens in
 ## Reproducibility
 
 1. Commit the config YAML and the `run_manifest.jsonld`.
-2. A collaborator runs the same config (pin the Docker image for byte-identical
-   environments).
+2. A collaborator runs the same config (pin the Docker image so the environments
+   match). Outputs are identical apart from the `generated_utc` timestamp in the
+   manifest.
 3. Compare manifests — SHA-256s of every artifact match.
 
 ---
