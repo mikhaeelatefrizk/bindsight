@@ -19,7 +19,7 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 > The free-tier Space sleeps after a quiet spell; a GitHub Actions cron pings it every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed on Streamlit Cloud.
+> 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — bindsight's first real de novo binders (20 ERBB2 designs, best ipTM 0.84, 50% success@0.65, with the real Boltz-2-predicted complexes) ship in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed as a Hugging Face Space.
 
 > ⚠️ **The committed binder figures predate a protocol fix shipped in this same release.** That run invoked ProteinMPNN without `--pdb_path_chains`, so it redesigned the HER2 target chain as well as the binder: the designs were optimised against a partly-invented target surface and then scored against the native one. The measurements are real and reproduce exactly from the committed artifacts, but the protocol was mis-set, and a corrected re-run will supersede them. Treat ipTM 0.84 / 50 % success@0.65 as provisional. Details in [`benchmarks/designer_benchmark/RESULTS.md`](benchmarks/designer_benchmark/RESULTS.md).
 
@@ -360,7 +360,7 @@ GitHub also exposes a "Cite this repository" button on the right sidebar of the 
 
 ### Related project
 
-- **[affect-labeling-review](https://github.com/mikhaeelatefrizk/affect-labeling-review)** — a systematic review and random-effects meta-analysis of affect labeling (Lieberman et al. 2007 paradigm): PRISMA 2020, RoB 2 / ROBINS-I, *k* = 8 psychophysiological effect sizes from six studies, ~10,500-word manuscript, open data and code, archived on Zenodo (v1.1.0).
+- **[affect-labeling-review](https://github.com/mikhaeelatefrizk/affect-labeling-review)** — a systematic review and random-effects meta-analysis of affect labeling (Lieberman et al. 2007 paradigm): PRISMA 2020, RoB 2 / ROBINS-I, *k* = 8 psychophysiological effect sizes from six studies, ~10,500-word manuscript, open data and code, archived on Zenodo (v1.1.1).
 
 ## License
 

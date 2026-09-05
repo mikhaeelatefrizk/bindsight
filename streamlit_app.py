@@ -1,17 +1,12 @@
-"""Streamlit entry point — lets a hosted Streamlit runtime serve this repo as a web app.
+"""Streamlit entry point for the bindsight web app.
 
-Streamlit Cloud (https://share.streamlit.io) auto-discovers ``streamlit_app.py``
-at the repo root. Pointing it at this file is enough; everything else is in the
-``bindsight`` package.
+Any Streamlit runtime can serve this repository by running this file; it
+only imports and calls :func:`bindsight.report.webapp.main`. The hosted
+instance is the Hugging Face Space at
+https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight, which builds from
+``main`` on every release.
 
-To deploy:
-
-1. Push this repo to GitHub.
-2. Go to https://share.streamlit.io → New app → pick this repo + main branch.
-3. Streamlit Cloud installs from ``requirements.txt`` and runs this file.
-4. Public URL: ``https://<app-name>.streamlit.app``
-
-To run locally instead:
+To run locally:
 
     pip install -e ".[report]"
     bindsight ui          # or: streamlit run streamlit_app.py

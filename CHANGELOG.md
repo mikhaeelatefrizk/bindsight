@@ -14,7 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   supported deployment; the Hugging Face Space is the single hosted demo. The
   keep-warm workflow, README, JOSS and bioRxiv drafts and the docs site metadata now
   point only at the Space. The Streamlit code itself (`bindsight ui`, `streamlit_app.py`)
-  is unchanged.
+  is unchanged; the ``streamlit_app.py`` docstring no longer carries a Streamlit Cloud
+  deployment recipe.
 - Dead code that no caller reached: `bindsight.plugins.get_validator` and
   `AlphaFoldDBClient.fetch_many`.
 - `paper/validation/DEFENSE_NOTES.md`, the README biography paragraph and the

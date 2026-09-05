@@ -716,8 +716,7 @@ def ui(port: int, no_browser: bool) -> None:
     console.print(
         Panel(
             f"[green]Launching bindsight UI at http://localhost:{port}[/green]\n\n"
-            "Stop with Ctrl-C.\n"
-            "Auto-deploy a public version: https://share.streamlit.io",
+            "Stop with Ctrl-C.",
             title="bindsight ui",
             border_style="green",
         )
