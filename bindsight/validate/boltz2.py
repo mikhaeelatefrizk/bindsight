@@ -6,7 +6,9 @@ Wraps `Boltz-2 <https://github.com/jwohlwend/boltz>`_ (MIT for both code and
 weights). Boltz-2 takes a target+binder spec and produces:
 
 - ``ipTM``, ``pAE_interaction`` from the structure prediction
-- ``affinity_pred_value`` (continuous, higher = stronger predicted binder)
+- ``affinity_pred_value`` (continuous, log(IC50)-like: **lower = stronger**
+  predicted binder; the ranker inverts it). Ligand-only, so it stays ``None``
+  for the protein binders bindsight designs.
 - ``affinity_probability_binary`` (probability the design is a binder vs decoy)
 
 This module's responsibility is the *parsing + composition* layer:

@@ -103,6 +103,41 @@ def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
 
 
 # ---------------------------------------------------------------------------
+# Identity + target sequence (shared by every designer and validator)
+# ---------------------------------------------------------------------------
+def _binder_id_prefix(spec: dict[str, Any]) -> str:
+    """Per-target namespace for binder ids.
+
+    RFdiffusion writes every trajectory under a fixed ``binder_*`` prefix, so
+    without a target namespace two different targets both produce
+    ``binder_0_seq0``. That collides in ``validated.parquet`` and, worse, makes
+    each target's ``validate/<binder_id>/`` overwrite the previous target's on
+    disk. ``binder_id`` is the key the provenance chain is walked by, so it has
+    to be unique across the whole run.
+    """
+    raw = str(spec.get("target_uniprot") or "").strip()
+    safe = "".join(ch if (ch.isalnum() or ch in "-_") else "_" for ch in raw)
+    return safe or "target"
+
+
+def _target_sequence_for_design(spec: dict[str, Any], work: Path, chain: str) -> str:
+    """The target sequence the designer actually saw: the kept ranges only.
+
+    ``design_ranges`` carries the extracellular region discovery annotated from
+    UniProt topology, and the designer is given only that. Validating against the
+    full-length chain instead would score the binder against a surface it was
+    never designed for, so every validator must use this same sequence.
+    """
+    target_pdb = work / "target.pdb"
+    ranges = _target_ranges(spec, target_pdb, chain)
+    return "".join(
+        aa
+        for resi, aa in tools.chain_residues_from_pdb(target_pdb, chain)
+        if any(lo <= resi <= hi for lo, hi in ranges)
+    )
+
+
+# ---------------------------------------------------------------------------
 # Designers
 # ---------------------------------------------------------------------------
 def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> list[Design]:
@@ -112,12 +147,9 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
     residues = [int(r) for r in spec.get("epitope_residues", [])]
     ranges = _target_ranges(spec, target_pdb, chain)
     # The sequence RFdiffusion is given — the kept segments only, which is what
-    # the output backbone's target chain will carry.
-    target_seq = "".join(
-        aa
-        for resi, aa in tools.chain_residues_from_pdb(target_pdb, chain)
-        if any(lo <= resi <= hi for lo, hi in ranges)
-    )
+    # the output backbone's target chain will carry, and what the validator
+    # must later score against.
+    target_seq = _target_sequence_for_design(spec, work, chain)
 
     rfdiff_out = work / "rfdiff_out"
     rfdiff_out.mkdir(parents=True, exist_ok=True)
@@ -162,7 +194,7 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
             continue
         seqs = tools.mpnn_design_sequences(fasta)
         for i, seq in enumerate(seqs):
-            binder_id = f"{backbone.stem}_seq{i}"
+            binder_id = f"{_binder_id_prefix(spec)}_{backbone.stem}_seq{i}"
             pdb_copy = design_dir / f"{binder_id}.pdb"
             pdb_copy.write_bytes(backbone.read_bytes())
             (design_dir / f"{binder_id}.fasta").write_text(f">{binder_id}\n{seq}\n")
@@ -184,7 +216,7 @@ def _design_boltzgen(spec: dict[str, Any], work: Path, tools_root: Path) -> list
             hotspot=tools.build_hotspot_str(chain, residues),
         )
     )
-    return _collect_designs_from_dir(out, work, prefix="boltzgen")
+    return _collect_designs_from_dir(out, work, prefix="boltzgen", spec=spec)
 
 
 def _design_bindcraft(spec: dict[str, Any], work: Path, tools_root: Path) -> list[Design]:
@@ -221,7 +253,7 @@ def _design_bindcraft(spec: dict[str, Any], work: Path, tools_root: Path) -> lis
         ),
         cwd=bindcraft,
     )
-    return _collect_designs_from_dir(out, work, prefix="bindcraft")
+    return _collect_designs_from_dir(out, work, prefix="bindcraft", spec=spec)
 
 
 _DESIGNERS = {
@@ -237,7 +269,7 @@ _DESIGNERS = {
 def _validate_boltz2(
     spec: dict[str, Any], designs: list[Design], work: Path
 ) -> list[dict[str, Any]]:
-    target_seq = tools.chain_sequence_from_pdb(work / "target.pdb", spec.get("epitope_chain", "A"))
+    target_seq = _target_sequence_for_design(spec, work, spec.get("epitope_chain", "A"))
     boltz_root = work / "boltz_out"
     validate_root = work / "validate"
     metrics: list[dict[str, Any]] = []
@@ -319,7 +351,7 @@ def _boltz_pae_interaction(out_dir: Path, *, target_len: int, binder_len: int) -
 def _validate_chai1r(
     spec: dict[str, Any], designs: list[Design], work: Path
 ) -> list[dict[str, Any]]:
-    target_seq = tools.chain_sequence_from_pdb(work / "target.pdb", spec.get("epitope_chain", "A"))
+    target_seq = _target_sequence_for_design(spec, work, spec.get("epitope_chain", "A"))
     chai_root = work / "chai_out"
     metrics: list[dict[str, Any]] = []
     for d in designs:
@@ -454,13 +486,48 @@ def _chain_span(pdb_path: Path, chain: str) -> tuple[int, int]:
     return (min(nums), max(nums)) if nums else (1, 9999)
 
 
-def _collect_designs_from_dir(out: Path, work: Path, *, prefix: str) -> list[Design]:
-    """Collect (pdb + sequence) designs a one-shot designer wrote to ``out``."""
+def load_existing_designs(work: Path) -> list[Design]:
+    """Reconstruct designs from a staged ``<work>/design/`` directory.
+
+    Validation-only jobs ship the designs a previous run produced rather than
+    generating new ones, so a user can point a different validator at the same
+    binders instead of paying to redesign them. Each design is a ``<id>.fasta``
+    with its ``<id>.pdb`` backbone alongside; a FASTA with no backbone is
+    skipped and named, because a validator that needs the structure would
+    otherwise fail obscurely.
+    """
+    design_dir = work / "design"
+    designs: list[Design] = []
+    if not design_dir.is_dir():
+        return designs
+    for fasta in sorted(design_dir.glob("*.fasta")):
+        binder_id = fasta.stem
+        seq = "".join(ln.strip() for ln in fasta.read_text().splitlines() if not ln.startswith(">"))
+        pdb = design_dir / f"{binder_id}.pdb"
+        if not seq:
+            LOG.warning("skipping %s: no sequence", fasta.name)
+            continue
+        if not pdb.exists():
+            LOG.warning("skipping %s: no backbone PDB alongside it", fasta.name)
+            continue
+        designs.append(Design(binder_id=binder_id, sequence=seq, pdb_path=pdb))
+    LOG.info("loaded %d existing design(s) from %s", len(designs), design_dir)
+    return designs
+
+
+def _collect_designs_from_dir(
+    out: Path, work: Path, *, prefix: str, spec: dict[str, Any] | None = None
+) -> list[Design]:
+    """Collect (pdb + sequence) designs a one-shot designer wrote to ``out``.
+
+    ``spec`` supplies the per-target namespace; see :func:`_binder_id_prefix`.
+    """
     design_dir = work / "design"
     design_dir.mkdir(parents=True, exist_ok=True)
+    target = _binder_id_prefix(spec or {})
     designs: list[Design] = []
     for i, pdb in enumerate(sorted(out.rglob("*.pdb"))):
-        binder_id = f"{prefix}_{i}"
+        binder_id = f"{target}_{prefix}_{i}"
         seq = tools.chain_sequence_from_pdb(pdb, _last_chain(pdb))
         pdb_copy = design_dir / f"{binder_id}.pdb"
         pdb_copy.write_bytes(pdb.read_bytes())
@@ -548,21 +615,40 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
 
     designer = str(spec.get("extra_params", {}).get("designer") or "rfdiff_mpnn")
     validator = str(spec.get("extra_params", {}).get("validator") or "boltz2")
-    if designer not in _DESIGNERS:
+    mode = str(spec.get("extra_params", {}).get("mode") or "design_and_validate")
+    if mode not in {"design_and_validate", "validate_only"}:
+        raise ValueError(f"unknown mode: {mode}")
+    if mode == "design_and_validate" and designer not in _DESIGNERS:
         raise ValueError(f"unknown designer: {designer}")
     if validator not in _VALIDATORS:
         raise ValueError(f"unknown validator: {validator}")
 
     LOG.info(
-        "job: designer=%s validator=%s target=%s", designer, validator, spec.get("target_uniprot")
+        "job: mode=%s designer=%s validator=%s target=%s",
+        mode,
+        designer if mode == "design_and_validate" else "-",
+        validator,
+        spec.get("target_uniprot"),
     )
-    designs = _DESIGNERS[designer](spec, work_dir, tools_root)
-    LOG.info("designer produced %d designs", len(designs))
+    prescreen_note: str | None = None
+    if mode == "validate_only":
+        # Re-validating binders that already exist: no designer runs, so the
+        # pre-screen is skipped too (it exists to cut GPU spend before
+        # validation, and here the caller has explicitly chosen what to validate).
+        designs = load_existing_designs(work_dir)
+        if not designs:
+            raise ValueError(
+                f"validate_only: no staged designs under {work_dir / 'design'}; "
+                "run `bindsight design` first, or ship the design directory with the spec"
+            )
+    else:
+        designs = _DESIGNERS[designer](spec, work_dir, tools_root)
+        LOG.info("designer produced %d designs", len(designs))
 
-    # ESM-2 pre-screen, between design and validation — the only point where
-    # dropping a design actually saves GPU time. Off unless prescreen_top_k is
-    # set, and it keeps everything if the optional `embed` extra is absent.
-    designs, prescreen_note = _apply_prescreen(spec, designs)
+        # ESM-2 pre-screen, between design and validation — the only point where
+        # dropping a design actually saves GPU time. Off unless prescreen_top_k is
+        # set, and it keeps everything if the optional `embed` extra is absent.
+        designs, prescreen_note = _apply_prescreen(spec, designs)
 
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
     if prescreen_note:
@@ -603,6 +689,27 @@ def materialise_target(spec: dict[str, Any], spec_dir: Path, work_dir: Path) -> 
         dst.write_bytes(src.read_bytes())
 
 
+def materialise_designs(spec_dir: Path, work_dir: Path) -> int:
+    """Copy a ``design/`` directory shipped next to the spec into ``work_dir``.
+
+    Validation-only jobs carry the binders to validate alongside the spec, the
+    same way ``materialise_target`` carries the receptor. Returns how many
+    design files were staged.
+    """
+    src = Path(spec_dir) / "design"
+    if not src.is_dir():
+        return 0
+    dst = Path(work_dir) / "design"
+    dst.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for f in sorted(src.iterdir()):
+        if f.is_file():
+            (dst / f.name).write_bytes(f.read_bytes())
+            n += 1
+    LOG.info("staged %d design file(s) from %s", n, src)
+    return n
+
+
 def _cif_to_pdb(cif_path: Path, pdb_path: Path) -> None:
     """Convert an mmCIF (e.g. AlphaFoldDB) to PDB; RFdiffusion needs PDB input."""
     from Bio.PDB import PDBIO, MMCIFParser  # lazy: biopython only on the GPU side
@@ -625,6 +732,7 @@ def main(argv: list[str] | None = None) -> int:
     spec = json.loads(spec_path.read_text())
     work_dir = out_tar.parent / (out_tar.stem.replace(".tar", "") + "_work")
     materialise_target(spec, spec_path.parent, work_dir)
+    materialise_designs(spec_path.parent, work_dir)
     run_job(spec, work_dir, tarball=out_tar)
     return 0
 

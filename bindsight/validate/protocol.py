@@ -24,10 +24,35 @@ class ValidationResult(BaseModel):
     binder_id: str
     target_uniprot: str
     iptm: float | None = Field(None, ge=0.0, le=1.0)
+    ptm: float | None = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Predicted TM-score for the complex — a structure-confidence metric, NOT an "
+            "affinity. Kept in its own field so it can never be mistaken for one."
+        ),
+    )
+    plddt_binder: float | None = Field(
+        None,
+        ge=0.0,
+        le=100.0,
+        description=(
+            "Mean pLDDT over the binder chain (0-100 scale) — a structure-confidence "
+            "metric, NOT an affinity."
+        ),
+    )
     pae_interaction: float | None = Field(None, ge=0.0)
     rmsd_to_designed: float | None = Field(None, ge=0.0)
     affinity_pred_value: float | None = Field(
-        None, description="Predicted affinity (e.g. -log10(KD/M)) for ranking."
+        None,
+        description=(
+            "Predicted binding affinity from a validator that actually predicts one. "
+            "LOWER IS STRONGER: Boltz-2 reports a log(IC50)-like value, so -8.0 is a "
+            "tighter binder than -6.0, and the ranker inverts it accordingly. Validators "
+            "that do not predict affinity MUST leave this None rather than substituting a "
+            "confidence metric — see ptm and plddt_binder."
+        ),
     )
     affinity_probability_binary: float | None = Field(
         None,

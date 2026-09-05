@@ -420,8 +420,12 @@ def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) 
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=iptm,
+        ptm=ptm,
         pae_interaction=None,
-        affinity_pred_value=ptm,
+        # Chai-1 predicts no affinity. pTM is a structure-confidence score and
+        # belongs in ``ptm``; writing it here would make the ranker weight
+        # confidence a second time as though it were an orthogonal signal.
+        affinity_pred_value=None,
         validator_name="chai1r",
         validator_version="0.6",
         notes=f"parsed chai scores={'yes' if npz else 'no'}",
@@ -445,8 +449,11 @@ def parse_af2ig_output(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=None,
+        plddt_binder=plddt,
         pae_interaction=pae_interaction,
-        affinity_pred_value=plddt,
+        # AF2 initial-guess predicts no affinity. ``plddt_binder`` is a 0-100
+        # confidence score, not a binding constant.
+        affinity_pred_value=None,
         validator_name="af2_ig",
         validator_version="1.0",
         notes="AF2 initial-guess (non-commercial weights)",

@@ -125,6 +125,13 @@ class TargetDiscoveryParams(BaseModel):
         ]
     )
     vital_tissue_max_tpm: float = Field(5.0, ge=0.0)
+    # A safety gate that cannot measure a gene has not cleared it. When GTEx has
+    # no median-TPM entry for a candidate, treat that as unassessed and withhold
+    # it from design carry-forward rather than passing it silently. This matches
+    # the contract documented on ``GTExTissueExpression.assess``: only a measured
+    # ``safe`` verdict may be presented as having cleared the gate. Set False to
+    # accept unmeasured candidates, which is a deliberate loosening.
+    gtex_require_measured: bool = True
 
     # Structure-confidence (disorder) filter — AlphaFold pLDDT (0-100). pLDDT is
     # always computed and surfaced (mean_plddt column); this only gates carry-
@@ -140,6 +147,15 @@ class TargetDiscoveryParams(BaseModel):
     # Gate: drop candidates with no annotated extracellular domain (only meaningful
     # when use_uniprot_topology is True). Off by default.
     require_extracellular_domain: bool = False
+
+    # Cap on how many significant DEGs are carried into target enrichment,
+    # ranked by the combined score pi = log2fc x -log10(padj). This is the most
+    # consequential filter in discovery: a gene outside the cut never becomes a
+    # candidate at all, no matter how surface-exposed or tractable it is. It is
+    # a declared parameter rather than a module constant precisely so it lands
+    # in the run manifest and can be reported as a gate, not disappear into the
+    # ranking.
+    enrich_top_k: int = Field(300, ge=1)
 
     # Open Targets enrichment
     use_open_targets: bool = True
@@ -215,8 +231,13 @@ class ValidateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     validator: Literal["boltz2", "chai1r", "af2_ig"] = "boltz2"
+    # Quality bars applied to validated binders. ``apply_thresholds`` is False by
+    # default so existing runs keep every row and the columns stay descriptive;
+    # set it True to have ``bindsight validate`` mark rows that fail. Either way
+    # the pass/fail is recorded per row rather than silently dropping designs.
     iptm_threshold: float = Field(0.65, ge=0.0, le=1.0)
     pae_interaction_threshold: float = Field(8.0, ge=0.0)
+    apply_thresholds: bool = False
 
 
 class RankWeights(BaseModel):

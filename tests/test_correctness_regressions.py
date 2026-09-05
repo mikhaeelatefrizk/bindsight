@@ -1,0 +1,383 @@
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Regression tests for defects that produced plausible-but-wrong output.
+
+Every test here pins a bug that the suite could not previously detect, because
+the affected code was asserted only for shape or ordering and never against a
+known-correct value. Each one fails against the pre-fix code.
+
+The defects, in the order they appear below:
+
+1. ``affinity_pred_value`` is a log(IC50)-like quantity where lower is stronger,
+   and the ranker normalised it without inverting, so it preferred the weakest
+   designs.
+2. The composite score had no numeric assertion anywhere, so (1) was invisible.
+3. Two validators wrote a structure-confidence metric into the affinity field,
+   which the ranker then weighted as if it were an orthogonal signal.
+4. Every target produced the same binder ids, so validation output collided on
+   disk and ``validated.parquet`` carried duplicate keys.
+5. Validators scored binders against the full-length receptor rather than the
+   trimmed region the designer actually saw.
+6. The design cache key was computed and never consulted, so an identical rerun
+   paid for the GPU again.
+7. Epitope pLDDT was read from an unresolved run-relative path, so it was
+   ``None`` for every row of a normal run.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import pytest
+
+from bindsight.rank import rank_validated
+from bindsight.runners import job_exec, tools
+
+
+# ---------------------------------------------------------------------------
+# 1 + 2. The ranking math, asserted numerically
+# ---------------------------------------------------------------------------
+class TestAffinityDirection:
+    """A stronger predicted binder must score higher, not lower."""
+
+    @staticmethod
+    def _frame() -> pd.DataFrame:
+        # Only the affinity column varies, so the composite isolates it.
+        return pd.DataFrame(
+            [
+                {"binder_id": "strong", "target_uniprot": "P1", "affinity_pred_value": -8.0},
+                {"binder_id": "middle", "target_uniprot": "P1", "affinity_pred_value": -6.0},
+                {"binder_id": "weak", "target_uniprot": "P1", "affinity_pred_value": -4.0},
+            ]
+        )
+
+    def test_lower_affinity_value_scores_higher(self) -> None:
+        ranked = rank_validated(self._frame()).set_index("binder_id")
+        # Min-max over (-8, -4), inverted: -8 is the tightest binder -> 1.0.
+        assert ranked.loc["strong", "score_affinity"] == pytest.approx(1.0)
+        assert ranked.loc["middle", "score_affinity"] == pytest.approx(0.5)
+        assert ranked.loc["weak", "score_affinity"] == pytest.approx(0.0)
+
+    def test_strongest_binder_ranks_first(self) -> None:
+        ranked = rank_validated(self._frame())
+        assert list(ranked["binder_id"]) == ["strong", "middle", "weak"]
+        assert ranked.iloc[0]["rank"] == 1
+
+    def test_composite_is_the_documented_weighted_mean(self) -> None:
+        """Hand-computed composite, so a silent change of direction or weight fails here."""
+        df = pd.DataFrame(
+            [
+                {
+                    "binder_id": "a",
+                    "target_uniprot": "P1",
+                    "iptm": 0.9,
+                    "affinity_pred_value": -9.0,
+                },
+                {
+                    "binder_id": "b",
+                    "target_uniprot": "P1",
+                    "iptm": 0.7,
+                    "affinity_pred_value": -7.0,
+                },
+                {
+                    "binder_id": "c",
+                    "target_uniprot": "P1",
+                    "iptm": 0.5,
+                    "affinity_pred_value": -5.0,
+                },
+            ]
+        )
+        ranked = rank_validated(df).set_index("binder_id")
+        # structure = min-max(iptm); affinity = inverted min-max(affinity_pred_value).
+        # Both components present, so the composite is their equally-weighted mean
+        # (iptm 0.30, affinity 0.30) renormalised over the present weights.
+        for binder, structure, affinity, composite in (
+            ("a", 1.0, 1.0, 1.0),
+            ("b", 0.5, 0.5, 0.5),
+            ("c", 0.0, 0.0, 0.0),
+        ):
+            assert ranked.loc[binder, "score_structure"] == pytest.approx(structure)
+            assert ranked.loc[binder, "score_affinity"] == pytest.approx(affinity)
+            assert ranked.loc[binder, "score"] == pytest.approx(composite)
+
+    def test_specificity_penalty_is_applied_to_evidence(self) -> None:
+        """The evidence component divides by vital-tissue safety events, as documented."""
+        validated = pd.DataFrame(
+            [
+                {"binder_id": "clean", "target_uniprot": "P1"},
+                {"binder_id": "risky", "target_uniprot": "P2"},
+            ]
+        )
+        candidates = pd.DataFrame(
+            [
+                {"uniprot_id": "P1", "log2fc": 4.0, "n_safety_events": 0},
+                {"uniprot_id": "P2", "log2fc": 4.0, "n_safety_events": 3},
+            ]
+        )
+        ranked = rank_validated(validated, candidates).set_index("binder_id")
+        # Equal log2fc, so min-max gives both 0.5; the penalty is what separates them.
+        assert ranked.loc["clean", "score_evidence"] == pytest.approx(0.5)
+        assert ranked.loc["risky", "score_evidence"] == pytest.approx(0.5 / 4.0)
+
+
+# ---------------------------------------------------------------------------
+# 3. Confidence metrics are not affinities
+# ---------------------------------------------------------------------------
+class TestConfidenceIsNotAffinity:
+    """A validator that predicts no affinity must leave the affinity field empty."""
+
+    def test_chai_ptm_does_not_become_an_affinity(self, tmp_path: Path) -> None:
+        np = pytest.importorskip("numpy")
+        out = tmp_path / "chai"
+        out.mkdir()
+        np.savez(out / "scores.model_idx_0.npz", iptm=np.array(0.72), ptm=np.array(0.81))
+        result = tools.parse_chai_output(out, binder_id="b0", target_uniprot="P04626")
+        assert result.affinity_pred_value is None
+        assert result.ptm == pytest.approx(0.81)
+        assert result.iptm == pytest.approx(0.72)
+
+    def test_af2ig_plddt_does_not_become_an_affinity(self, tmp_path: Path) -> None:
+        sc = tmp_path / "af2_scores.sc"
+        sc.write_text("pae_interaction plddt_binder\n6.5 88.0\n")
+        result = tools.parse_af2ig_output(sc, binder_id="b0", target_uniprot="P04626")
+        assert result.affinity_pred_value is None
+        assert result.plddt_binder == pytest.approx(88.0)
+        assert result.pae_interaction == pytest.approx(6.5)
+
+    def test_a_confidence_metric_cannot_be_ranked_as_affinity(self) -> None:
+        """With no affinity anywhere, the affinity component must be absent, not invented."""
+        df = pd.DataFrame(
+            [
+                {"binder_id": "a", "target_uniprot": "P1", "iptm": 0.8, "ptm": 0.9},
+                {"binder_id": "b", "target_uniprot": "P1", "iptm": 0.4, "ptm": 0.5},
+            ]
+        )
+        ranked = rank_validated(df)
+        assert ranked["score_affinity"].isna().all()
+        # pTM still counts, but as structure confidence.
+        assert ranked.set_index("binder_id").loc["a", "score_structure"] == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# 4. Binder identity is unique across targets
+# ---------------------------------------------------------------------------
+class TestBinderIdentity:
+    """``binder_id`` is the key the provenance chain is walked by."""
+
+    def test_prefix_is_derived_from_the_target(self) -> None:
+        assert job_exec._binder_id_prefix({"target_uniprot": "P04626"}) == "P04626"
+        assert job_exec._binder_id_prefix({"target_uniprot": ""}) == "target"
+        assert job_exec._binder_id_prefix({}) == "target"
+        # Anything that would break a path or a column name is neutralised.
+        assert "/" not in job_exec._binder_id_prefix({"target_uniprot": "P0/46 26"})
+
+    def test_two_targets_do_not_produce_colliding_ids(self, tmp_path: Path) -> None:
+        """The same designer output under two targets must yield distinct ids."""
+        ids: list[str] = []
+        for uniprot in ("P04626", "P00533"):
+            work = tmp_path / uniprot
+            out = work / "designer_out"
+            out.mkdir(parents=True)
+            # Both targets produce an identically-named backbone, which is exactly
+            # what RFdiffusion's fixed output prefix does.
+            (out / "binder_0.pdb").write_text(
+                "ATOM      1  CA  ALA A   1      0.000   0.000   0.000  1.00  0.00           C\n"
+            )
+            designs = job_exec._collect_designs_from_dir(
+                out, work, prefix="boltzgen", spec={"target_uniprot": uniprot}
+            )
+            ids += [d.binder_id for d in designs]
+        assert len(ids) == 2
+        assert len(set(ids)) == 2, f"binder ids collided across targets: {ids}"
+        assert all(uid.startswith(("P04626_", "P00533_")) for uid in ids)
+
+
+# ---------------------------------------------------------------------------
+# 5. Validators score the region the designer saw
+# ---------------------------------------------------------------------------
+def _write_pdb(path: Path, *, chain: str = "A", first: int = 1, n: int = 10) -> Path:
+    """A CA-only chain of ``n`` alanines numbered from ``first``."""
+    lines = []
+    for i in range(n):
+        resi = first + i
+        lines.append(
+            f"ATOM  {i + 1:>5}  CA  ALA {chain}{resi:>4}      "
+            f"{0.0:>8.3f}{0.0:>8.3f}{0.0:>8.3f}  1.00  0.00           C"
+        )
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+class TestValidationUsesTheDesignRegion:
+    """A binder designed against a trimmed domain must not be scored against the whole receptor."""
+
+    def test_sequence_is_restricted_to_the_design_ranges(self, tmp_path: Path) -> None:
+        work = tmp_path / "work"
+        work.mkdir()
+        _write_pdb(work / "target.pdb", first=1, n=10)
+        spec: dict[str, Any] = {"epitope_chain": "A", "design_ranges": [[3, 6]]}
+        seq = job_exec._target_sequence_for_design(spec, work, "A")
+        assert len(seq) == 4, "validation must see only residues 3-6, not the full chain"
+        assert len(tools.chain_sequence_from_pdb(work / "target.pdb", "A")) == 10
+
+    def test_absent_ranges_fall_back_to_the_whole_chain(self, tmp_path: Path) -> None:
+        work = tmp_path / "work"
+        work.mkdir()
+        _write_pdb(work / "target.pdb", first=1, n=10)
+        seq = job_exec._target_sequence_for_design({"epitope_chain": "A"}, work, "A")
+        assert len(seq) == 10
+
+    def test_boltz_yaml_carries_the_trimmed_target(self, tmp_path: Path) -> None:
+        """End-to-end through the spec the validator actually submits."""
+        work = tmp_path / "work"
+        work.mkdir()
+        _write_pdb(work / "target.pdb", first=1, n=12)
+        spec = {"epitope_chain": "A", "design_ranges": [[2, 5]]}
+        target_seq = job_exec._target_sequence_for_design(spec, work, "A")
+        yaml_spec = tools.build_boltz_yaml(
+            target_id="T",
+            target_sequence=target_seq,
+            binder_id="b0",
+            binder_sequence="AAAA",
+            predict_affinity=False,
+        )
+        target_chain = yaml_spec["sequences"][0]["protein"]
+        assert len(target_chain["sequence"]) == 4
+
+
+# ---------------------------------------------------------------------------
+# 6. Idempotency: an identical rerun must not resubmit
+# ---------------------------------------------------------------------------
+class _CountingRunner:
+    """Minimal GPURunner double that records how many jobs were submitted."""
+
+    name = "counting"
+
+    def __init__(self, archive: Path) -> None:
+        self.archive = archive
+        self.submits = 0
+
+    def estimate_cost(self, spec_size: int) -> Any:  # pragma: no cover - unused here
+        raise NotImplementedError
+
+    def submit(self, spec_path: Path, *, results_dir: Path) -> Any:
+        self.submits += 1
+        results_dir.mkdir(parents=True, exist_ok=True)
+        return {"id": "job"}
+
+    def poll(self, handle: Any) -> Any:  # pragma: no cover - fetch is synchronous here
+        raise NotImplementedError
+
+    def fetch(self, handle: Any) -> Path:
+        return self.archive
+
+
+class TestDesignCacheIsConsulted:
+    """ARCHITECTURE 4.4 promises reruns skip completed work; it must actually happen."""
+
+    @staticmethod
+    def _spec(structure: Path) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        return DesignSpec(
+            target_uniprot="P04626",
+            target_structure_path=str(structure),
+            epitope_chain="A",
+            epitope_residues=[1, 2, 3],
+            design_ranges=[(1, 10)],
+            n_trajectories=2,
+            seed=0,
+            extra_params={"designer": "rfdiff_mpnn"},
+        )
+
+    def test_second_identical_submit_is_a_cache_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import tarfile
+
+        from bindsight.design._common import make_cache_key, submit_via_runner
+
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+
+        work = tmp_path / "payload"
+        work.mkdir()
+        (work / "metrics.jsonl").write_text(json.dumps({"binder_id": "b0", "iptm": 0.7}) + "\n")
+        archive = tmp_path / "results.tar.gz"
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(work / "metrics.jsonl", arcname="metrics.jsonl")
+
+        spec = self._spec(structure)
+        key = make_cache_key(spec)
+        runner = _CountingRunner(archive)
+
+        first = submit_via_runner(
+            spec,
+            runner,
+            designer_name="rfdiff_mpnn",
+            designer_version="0.1.0",
+            designer_commit_sha=None,
+            cache_key=key,
+        )
+        assert runner.submits == 1
+        assert first.cache_status == "miss"
+
+        second = submit_via_runner(
+            spec,
+            runner,
+            designer_name="rfdiff_mpnn",
+            designer_version="0.1.0",
+            designer_commit_sha=None,
+            cache_key=key,
+        )
+        assert runner.submits == 1, "an identical rerun resubmitted instead of reusing the result"
+        assert second.cache_status == "hit"
+
+    def test_key_changes_when_the_target_structure_changes(self, tmp_path: Path) -> None:
+        """A new AlphaFold model for the same accession is different work."""
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        before = make_cache_key(self._spec(structure))
+        _write_pdb(structure, n=11)
+        after = make_cache_key(self._spec(structure))
+        assert before != after
+
+
+# ---------------------------------------------------------------------------
+# 7. Epitope pLDDT resolves the stored run-relative path
+# ---------------------------------------------------------------------------
+def test_epitope_plddt_resolves_a_run_relative_path(tmp_path: Path, fixtures_dir: Path) -> None:
+    """``adopt_structure`` stores run-relative paths; the epitope column must resolve them."""
+    from bindsight.config import TargetDiscoveryParams
+    from bindsight.pipelines.discover import _build_epitopes
+
+    cif = fixtures_dir / "plddt" / "AF-TEST1-F1-model_v6.cif"
+    if not cif.exists():  # pragma: no cover - fixture is committed
+        pytest.skip("pLDDT fixture not present")
+
+    run_root = tmp_path / "run"
+    (run_root / "structures").mkdir(parents=True)
+    stored = "structures/AF-TEST1-F1-model_v6.cif"
+    (run_root / stored).write_bytes(cif.read_bytes())
+
+    top = pd.DataFrame(
+        [
+            {
+                "gene_id": "ENSG1",
+                "symbol": "TEST1",
+                "uniprot_id": "TEST1",
+                "alphafold_structure_path": stored,
+            }
+        ]
+    )
+    epitopes = _build_epitopes(
+        top, None, TargetDiscoveryParams(), topology_map={}, run_root=run_root
+    )
+    assert len(epitopes) == 1
+    assert epitopes.iloc[0]["mean_epitope_plddt"] is not None, (
+        "mean_epitope_plddt was None: the run-relative structure path was not resolved"
+    )

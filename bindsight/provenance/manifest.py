@@ -89,6 +89,7 @@ PROV_CONTEXT: dict[str, Any] = {
     # rather than expanded key by key.
     "params": {"@id": "bindsight:params", "@type": "@json"},
     "cache_key": "bindsight:cacheKey",
+    "cache_status": "bindsight:cacheStatus",
     "notes": "schema:description",
     "error": "bindsight:error",
     # ---- tool / container image (prov:SoftwareAgent) ----
@@ -294,6 +295,14 @@ class StageRecord(BaseModel):
     cache_key: str | None = Field(
         None,
         description="SHA-256 over (input shas + tool + container + params) for idempotent reruns.",
+    )
+    cache_status: Literal["hit", "miss"] | None = Field(
+        None,
+        description=(
+            "Whether the stage reused a cached result ('hit') or computed a new one "
+            "('miss'). None when the stage has no cache. A reader can tell reused work "
+            "from repeated work without rerunning anything."
+        ),
     )
     notes: str | None = None
     error: str | None = Field(None, description="Stack trace or error string if status='failed'.")

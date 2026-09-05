@@ -5,9 +5,15 @@
 Combines four orthogonal signals into a composite ``score``:
 
 1. **Upstream evidence** — DE log2FC × specificity penalty (vital-tissue baseline).
-2. **Structure quality** — iPTM, pAE_interaction, RMSD-to-designed.
-3. **Affinity** — Boltz-2 ``affinity_pred_value`` and ``affinity_probability_binary``.
+2. **Structure quality** — iPTM, pTM, binder pLDDT, pAE_interaction, RMSD-to-designed.
+3. **Affinity** — ``affinity_pred_value`` and ``affinity_probability_binary``.
 4. **Sequence quality** — ProteinMPNN sequence recovery vs. backbone (when available).
+
+``affinity_pred_value`` is a log(IC50)-like quantity where **lower is stronger**,
+so it is inverted before normalisation. Only a validator that genuinely predicts
+affinity may populate it; structure-confidence metrics belong to component 2. Boltz-2
+affinity prediction is ligand-only, so for protein binders this component is usually
+absent and the composite is renormalised over the components that are present.
 
 Each signal is min-max normalised to [0, 1] across the run, then combined with
 user-configurable weights from :class:`bindsight.config.RankWeights`. The output
@@ -94,9 +100,7 @@ def rank_validated(
                 df = df.drop(columns=["uniprot_id"], errors="ignore")
 
     # Component scores (each in [0, 1]; NaN if metric missing for the row).
-    df["score_evidence"] = (
-        _minmax(df["log2fc"]) if "log2fc" in df.columns else pd.Series([float("nan")] * len(df))
-    )
+    df["score_evidence"] = _evidence_score(df)
     df["score_structure"] = _structure_score(df)
     df["score_affinity"] = _affinity_score(df)
     df["score_sequence"] = (
@@ -145,11 +149,43 @@ def _developability_score(sequence: object) -> float:
     return d.developability_score if d is not None else float("nan")
 
 
+def _evidence_score(df: pd.DataFrame) -> pd.Series:
+    """Normalised log2FC scaled by a vital-tissue specificity penalty.
+
+    ``n_safety_events`` counts the normal tissues where the target is expressed
+    above the configured safety ceiling (see ``bindsight.targets.gtex``). Each
+    event divides the evidence score down, so a strongly over-expressed target
+    that is also present in vital tissue cannot outrank a comparably
+    over-expressed one that is tumour-restricted. A target with no recorded
+    events is unpenalised.
+
+    Returns NaN where ``log2fc`` is absent, matching the other components: a
+    missing metric is excluded from the composite rather than scored as zero.
+    """
+    if "log2fc" not in df.columns:
+        return pd.Series([float("nan")] * len(df), index=df.index)
+    score = _minmax(df["log2fc"])
+    if "n_safety_events" in df.columns:
+        events = pd.to_numeric(df["n_safety_events"], errors="coerce").fillna(0.0).clip(lower=0.0)
+        score = score * (1.0 / (1.0 + events))
+    return score
+
+
 def _structure_score(df: pd.DataFrame) -> pd.Series:
-    """Combined iPTM + (1 - normalised pAE) + (1 - normalised RMSD)."""
+    """Mean of the available structure-confidence signals, all oriented so higher is better.
+
+    Carries iPTM, pTM and binder pLDDT (confidence, higher better) alongside
+    inverted pAE-interaction and RMSD (error, lower better). pTM and pLDDT live
+    here rather than in the affinity component because they measure how confident
+    the predictor is in the fold, not how tightly the binder binds.
+    """
     parts: list[pd.Series] = []
     if "iptm" in df.columns:
         parts.append(_minmax(df["iptm"]))
+    if "ptm" in df.columns:
+        parts.append(_minmax(df["ptm"]))
+    if "plddt_binder" in df.columns:
+        parts.append(_minmax(df["plddt_binder"]))
     if "pae_interaction" in df.columns:
         parts.append(_minmax(df["pae_interaction"], invert=True))
     if "rmsd_to_designed" in df.columns:
@@ -161,10 +197,16 @@ def _structure_score(df: pd.DataFrame) -> pd.Series:
 
 
 def _affinity_score(df: pd.DataFrame) -> pd.Series:
-    """Combined affinity_pred_value (higher = better) + binary binder probability."""
+    """Combined predicted affinity + binary binder probability, higher = better.
+
+    ``affinity_pred_value`` is a log(IC50)-like quantity: **lower is a stronger
+    binder** (-8.0 beats -6.0), so it is inverted on the way in. Getting this
+    backwards silently promotes the weakest designs, which is why it is asserted
+    numerically in ``tests/test_rank.py`` rather than only by ordering.
+    """
     parts: list[pd.Series] = []
     if "affinity_pred_value" in df.columns:
-        parts.append(_minmax(df["affinity_pred_value"]))
+        parts.append(_minmax(df["affinity_pred_value"], invert=True))
     if "affinity_probability_binary" in df.columns:
         # Already in [0, 1]
         parts.append(df["affinity_probability_binary"].astype(float))

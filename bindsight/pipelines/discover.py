@@ -65,10 +65,9 @@ LOG = logging.getLogger(__name__)
 # on a real cohort (hundreds) is wasted work; this keeps discovery fast.
 _STRUCTURE_FETCH_CAP = 25
 
-# Cap on how many up-regulated significant DEGs are carried into target
-# enrichment (Open Targets / UniProt mapping). A real cohort yields thousands of
-# significant genes; antibody targets need tumor over-expression, so we enrich
-# the most up-regulated and bound the (per-gene) Open Targets calls.
+# The enrichment cap now lives in TargetDiscoveryParams.enrich_top_k so it is
+# recorded in the run manifest and can be reported as an explicit gate. This
+# constant is retained only as the documented default and for older callers.
 _ENRICH_TOP_K = 300
 
 #: Sentinel for a gene with no UniProt mapping (see _do_discover).
@@ -415,7 +414,7 @@ def _do_discover(
     # fold-change — so a highly-significant, abundant antigen with a moderate
     # ratio (e.g. PSMA) is not crowded out by noisy high-fold-change genes.
     sig["pi_score"] = _pi_score(sig)
-    sig = sig.sort_values("pi_score", ascending=False).head(_ENRICH_TOP_K)
+    sig = sig.sort_values("pi_score", ascending=False).head(p.enrich_top_k)
     enriched_gene_ids = {str(g) for g in sig["gene_id"]}
     LOG.info(
         "DEGs: %d total, %d significant; enriching top %d by combined score (π)",
@@ -652,13 +651,27 @@ def _do_discover(
     # from design carry-forward. Off by default — requires the GTEx download.
     if p.use_gtex_safety and not candidates.empty:
         gtex = gtex_client or GTExTissueExpression()
+        # assess() separates a *measured* pass from an absent measurement. Using
+        # max_expression() directly conflated the two: a gene GTEx has no entry
+        # for returned None, which compared False against the ceiling and so was
+        # published as having cleared a safety gate that never ran on it.
+        verdicts = {
+            str(g): gtex.assess(str(g), p.vital_tissues, p.vital_tissue_max_tpm)
+            for g in candidates["gene_id"]
+            if g is not None
+        }
         candidates["max_vital_tissue_tpm"] = candidates["gene_id"].map(
-            lambda g: gtex.max_expression(str(g), p.vital_tissues) if g is not None else None
+            lambda g: verdicts[str(g)].max_tpm if g is not None and str(g) in verdicts else None
         )
-        tissue_unsafe = candidates["max_vital_tissue_tpm"].notna() & (
-            candidates["max_vital_tissue_tpm"] > p.vital_tissue_max_tpm
+        candidates["gtex_safety_status"] = candidates["gene_id"].map(
+            lambda g: (
+                verdicts[str(g)].status if g is not None and str(g) in verdicts else "unassessed"
+            )
         )
+        tissue_unsafe = candidates["gtex_safety_status"] == "unsafe"
+        tissue_unassessed = candidates["gtex_safety_status"] == "unassessed"
         candidates["high_normal_tissue_expression"] = tissue_unsafe
+        candidates["normal_tissue_unassessed"] = tissue_unassessed & p.gtex_require_measured
         if bool(tissue_unsafe.any()):
             candidates.loc[tissue_unsafe, "has_alphafold_structure"] = False
             LOG.info(
@@ -666,6 +679,16 @@ def _do_discover(
                 "-> high_normal_tissue_expression",
                 int(tissue_unsafe.sum()),
                 p.vital_tissue_max_tpm,
+            )
+        if bool(tissue_unassessed.any()):
+            if p.gtex_require_measured:
+                candidates.loc[tissue_unassessed, "has_alphafold_structure"] = False
+            LOG.info(
+                "GTEx tissue-safety: %d candidate(s) have no GTEx entry -> %s",
+                int(tissue_unassessed.sum()),
+                "normal_tissue_unassessed (withheld)"
+                if p.gtex_require_measured
+                else "unassessed (accepted; gtex_require_measured is False)",
             )
 
     # 7. Rank by the combined DE score π = log2fc × −log10(padj) (Xiao et al.
@@ -699,7 +722,11 @@ def _do_discover(
     # data is vendored; otherwise design against the whole surface, recorded
     # honestly in ``epitope_status``.
     epitopes = _build_epitopes(
-        candidates[candidates["rank_in_top_n"]], surface_bind_client, p, topology_map=topo_map
+        candidates[candidates["rank_in_top_n"]],
+        surface_bind_client,
+        p,
+        topology_map=topo_map,
+        run_root=run_root,
     )
 
     # 9. Negative-result taxonomy: one disposition per DEG gene, explaining why it
@@ -737,6 +764,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "fails_tractability",
     "fails_safety",
     "high_normal_tissue_expression",
+    "normal_tissue_unassessed",
     "no_extracellular_domain",
     "structure_not_queried",
     "no_alphafold_model",
@@ -820,6 +848,7 @@ def _build_taxonomy(
     low_conf_gids: set[str] = set()
     no_ecd_gids: set[str] = set()
     tissue_unsafe_gids: set[str] = set()
+    tissue_unassessed_gids: set[str] = set()
     if not candidates.empty:
         cand_gids = {str(g) for g in candidates["gene_id"]}
         struct_gids = {
@@ -842,6 +871,10 @@ def _build_taxonomy(
             tissue_unsafe_gids = {
                 str(g)
                 for g in candidates.loc[candidates["high_normal_tissue_expression"], "gene_id"]
+            }
+        if "normal_tissue_unassessed" in candidates.columns:
+            tissue_unassessed_gids = {
+                str(g) for g in candidates.loc[candidates["normal_tissue_unassessed"], "gene_id"]
             }
     site_gids: set[str] = set()
     if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
@@ -872,6 +905,8 @@ def _build_taxonomy(
             # structure, or out of top-N.
             if gid in tissue_unsafe_gids:
                 disp = "high_normal_tissue_expression"
+            elif gid in tissue_unassessed_gids:
+                disp = "normal_tissue_unassessed"
             elif gid in no_ecd_gids:
                 disp = "no_extracellular_domain"
             elif gid in low_conf_gids:
@@ -948,6 +983,8 @@ def _empty_candidates_frame() -> pd.DataFrame:
             "has_alphafold_structure",
             "mean_plddt",
             "low_confidence_structure",
+            "gtex_safety_status",
+            "normal_tissue_unassessed",
             "rank",
             "rank_in_top_n",
         ]
@@ -984,6 +1021,7 @@ def _build_epitopes(
     p: TargetDiscoveryParams,
     *,
     topology_map: dict[str, Topology] | None = None,
+    run_root: Path | None = None,
 ) -> pd.DataFrame:
     """Build the epitopes table for the top-N candidates.
 
@@ -1016,6 +1054,17 @@ def _build_epitopes(
     helix and cytoplasmic tail too.
     """
     tmap = topology_map or {}
+
+    def _epitope_plddt(stored: Any, residues: list[int]) -> float | None:
+        """Mean pLDDT over a region, resolving the run-relative path first.
+
+        ``adopt_structure`` stores structure paths relative to the run root, so
+        handing the raw value to ``region_plddt`` silently yields ``None`` for
+        every row. The sibling ``mean_plddt`` column resolves it; this must too.
+        """
+        resolved = resolve_run_path(run_root, stored) if run_root is not None else stored
+        return region_plddt(resolved, residues) if resolved else None
+
     rows: list[dict[str, Any]] = []
     for _, row in top.iterrows():
         uni = row["uniprot_id"]
@@ -1052,7 +1101,7 @@ def _build_epitopes(
                         "score": s.score,
                         "seed_pdb_path": s.seed_pdb_path,
                         "epitope_status": "surface_bind_site",
-                        "mean_epitope_plddt": region_plddt(
+                        "mean_epitope_plddt": _epitope_plddt(
                             row["alphafold_structure_path"], list(s.residues)
                         ),
                         "fraction_extracellular": (
@@ -1073,7 +1122,7 @@ def _build_epitopes(
                     "score": None,
                     "seed_pdb_path": None,
                     "epitope_status": status,
-                    "mean_epitope_plddt": region_plddt(row["alphafold_structure_path"], []),
+                    "mean_epitope_plddt": _epitope_plddt(row["alphafold_structure_path"], []),
                     "fraction_extracellular": None,
                 }
             )

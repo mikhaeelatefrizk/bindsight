@@ -307,8 +307,23 @@ def design(
     default="boltz2",
     show_default=True,
 )
-def validate(run_dir: Path, backend: str, validator: str) -> None:
-    """Validate designed binders by predicting structure and binding affinity."""
+@click.option(
+    "--revalidate",
+    is_flag=True,
+    help=(
+        "Actually run --validator against the existing designs on --backend, instead of "
+        "materialising the metrics the design step already produced. Use this to score the "
+        "same binders with a second validator without redesigning them."
+    ),
+)
+def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> None:
+    """Validate designed binders by predicting structure and binding affinity.
+
+    By default this materialises the metrics the design job already produced,
+    because the headless backends run design and validation together. Pass
+    ``--revalidate`` to dispatch ``--validator`` against the existing designs;
+    that is the path that makes cross-validator agreement possible.
+    """
     from bindsight.cost import estimate
 
     if validator == "af2_ig":
@@ -332,6 +347,33 @@ def validate(run_dir: Path, backend: str, validator: str) -> None:
     else:
         cost = estimate(backend=backend, stage="validate", plugin=validator, n_units=n_designs)
         _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
+
+    if revalidate:
+        if backend == "colab":
+            console.print(
+                Panel(
+                    "[yellow]--revalidate needs a headless backend[/yellow] "
+                    "(modal / local_docker / kaggle / mock).\n"
+                    "The colab runner cannot be launched from the CLI, so there is nothing "
+                    "to dispatch to.",
+                    title="validate: backend not dispatchable",
+                    border_style="yellow",
+                )
+            )
+            sys.exit(2)
+        done = _launch_revalidate(run_dir, backend=backend, validator=validator)
+        if done == 0:
+            console.print(
+                Panel(
+                    "[yellow]Nothing to revalidate.[/yellow] No per-target design tarballs "
+                    f"under {run_dir / 'design' / '_targets'} — run "
+                    "[bold]bindsight design[/bold] first.",
+                    title="validate: nothing to do",
+                    border_style="yellow",
+                )
+            )
+            sys.exit(2)
+        console.print(f"[green]Revalidated {done} target(s) with {validator}.[/green]")
 
     # The design step (headless backends) runs design + validation together via
     # the executor, writing per-design metrics into the design tarballs. Here we
@@ -1051,6 +1093,144 @@ def _structure_pdb_b64(structure_path: Path) -> str | None:
     return base64.b64encode(structure_path.read_bytes()).decode()
 
 
+def _mark_thresholds(df: Any, run_dir: Path) -> Any:
+    """Annotate each validated design against the configured quality bars.
+
+    ``iptm_threshold`` and ``pae_interaction_threshold`` were declared in the
+    config, shipped in the example YAMLs, and read by nothing — so a user who
+    tightened either was silently ignored. They are now applied, but only as
+    annotation: every design stays in the table and carries ``passes_thresholds``
+    plus a human-readable ``threshold_reason``. Nothing is dropped, because a
+    design vanishing without a recorded reason is exactly the kind of invisible
+    filter that makes a pipeline untrustworthy. Filtering is the reader's call.
+
+    A metric the validator did not produce cannot fail a bar it was never
+    measured against: such a row is marked ``unassessed`` rather than passed.
+    """
+    import pandas as pd
+
+    from bindsight.config import RunConfig, ValidateParams
+
+    params = ValidateParams()
+    cfg_path = run_dir / "config.yaml"
+    if cfg_path.exists():
+        try:
+            params = RunConfig.from_yaml(cfg_path).params.validate_
+        except Exception as e:  # a malformed config must not lose the metrics
+            LOG_CLI.warning("could not read %s (%s); using default thresholds", cfg_path, e)
+
+    if df.empty:
+        df["passes_thresholds"] = pd.Series(dtype="object")
+        df["threshold_reason"] = pd.Series(dtype="object")
+        return df
+
+    iptm = pd.to_numeric(df.get("iptm"), errors="coerce")
+    pae = pd.to_numeric(df.get("pae_interaction"), errors="coerce")
+
+    verdicts: list[str | None] = []
+    reasons: list[str] = []
+    for i, p_ in zip(iptm, pae, strict=False):
+        failed: list[str] = []
+        unmeasured: list[str] = []
+        if pd.isna(i):
+            unmeasured.append("iptm")
+        elif i < params.iptm_threshold:
+            failed.append(f"iptm {i:.3f} < {params.iptm_threshold:.2f}")
+        if pd.isna(p_):
+            unmeasured.append("pae_interaction")
+        elif p_ > params.pae_interaction_threshold:
+            failed.append(f"pae_interaction {p_:.1f} > {params.pae_interaction_threshold:.1f}")
+        if failed:
+            verdicts.append("fail")
+            reasons.append("; ".join(failed))
+        elif unmeasured:
+            verdicts.append("unassessed")
+            reasons.append("not measured: " + ", ".join(unmeasured))
+        else:
+            verdicts.append("pass")
+            reasons.append(
+                f"iptm >= {params.iptm_threshold:.2f} and "
+                f"pae_interaction <= {params.pae_interaction_threshold:.1f}"
+            )
+    df["passes_thresholds"] = verdicts
+    df["threshold_reason"] = reasons
+    return df
+
+
+def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
+    """Run ``validator`` against the binders a previous design step produced.
+
+    The designs travel to the GPU alongside the spec and no designer runs, so
+    choosing a different validator costs one validation pass rather than a full
+    redesign. This is what makes cross-validator agreement (Boltz-2 against
+    Chai-1r or AF2 initial-guess on the *same* binders) reachable at all.
+
+    Returns the number of targets revalidated.
+    """
+    import shutil
+    import tarfile
+    import tempfile
+
+    from bindsight.design._common import make_cache_key, submit_via_runner
+    from bindsight.design.protocol import DesignSpec
+    from bindsight.plugins import get_runner
+
+    targets = _top_targets(run_dir)
+    if not targets:
+        return 0
+    design_dir = run_dir / "design"
+    targets_dir = design_dir / "_targets"
+    runner = get_runner(backend, designer="rfdiff_mpnn", n_units_per_target=1)
+
+    metrics_lines: list[str] = []
+    done = 0
+    for t in targets:
+        tar_path = targets_dir / f"{t['uniprot']}.tar.gz"
+        if not tar_path.exists():
+            LOG_CLI.warning("no design tarball for %s; skipping", t["uniprot"])
+            continue
+        with tempfile.TemporaryDirectory() as tmp:
+            staged = Path(tmp) / "design"
+            staged.mkdir(parents=True, exist_ok=True)
+            with tarfile.open(tar_path, "r:gz") as tf:
+                for m in tf.getmembers():
+                    if m.isfile() and m.name.startswith("design/"):
+                        src = tf.extractfile(m)
+                        if src is not None:
+                            (staged / Path(m.name).name).write_bytes(src.read())
+            if not any(staged.glob("*.fasta")):
+                LOG_CLI.warning("no designs inside %s; skipping", tar_path)
+                continue
+            spec = DesignSpec(
+                target_uniprot=t["uniprot"],
+                target_structure_path=str(t["structure_path"]),
+                epitope_chain=t["chain"],
+                epitope_residues=t["residues"],
+                design_ranges=t["design_ranges"],
+                n_trajectories=1,
+                seed=0,
+                extra_params={"mode": "validate_only", "validator": validator},
+            )
+            result = submit_via_runner(
+                spec,
+                runner,
+                designer_name=f"revalidate:{validator}",
+                designer_version="1",
+                designer_commit_sha=None,
+                cache_key=make_cache_key(spec, extra=("validate_only", validator)),
+                payload_dir=staged,
+            )
+        shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")
+        mpath = Path(result.metrics_jsonl_path)
+        if mpath.exists():
+            metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]
+        done += 1
+
+    if metrics_lines:
+        (design_dir / "metrics.jsonl").write_text("\n".join(metrics_lines) + "\n")
+    return done
+
+
 def _launch_design(
     run_dir: Path,
     *,
@@ -1157,6 +1337,7 @@ def _finalize_validate(run_dir: Path) -> int:
         "validator_version",
     ]
     df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
+    df = _mark_thresholds(df, run_dir)
     df.to_parquet(validate_dir / "validated.parquet", index=False)
     return len(df)
 

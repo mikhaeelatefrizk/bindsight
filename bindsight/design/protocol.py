@@ -11,7 +11,7 @@ itself only owns the spec shape and result schema.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -56,6 +56,14 @@ class DesignResult(BaseModel):
     designer_commit_sha: str | None = None
     weights_sha256: str | None = None
     cache_key: str = Field(..., description="Used to deduplicate identical jobs across runs.")
+    cache_status: Literal["hit", "miss"] = Field(
+        "miss",
+        description=(
+            "Whether this result was reused from a previous run with the same cache_key "
+            "('hit') or newly computed ('miss'). Recorded so a manifest shows which units "
+            "actually consumed GPU time."
+        ),
+    )
 
 
 @runtime_checkable
