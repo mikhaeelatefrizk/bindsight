@@ -62,13 +62,6 @@ def cache_dir(subdir: str | None = None) -> Path:
     return p
 
 
-def ensure_dir(path: Path | str) -> Path:
-    """``mkdir -p``-style; returns the resolved Path."""
-    p = Path(path)
-    p.mkdir(parents=True, exist_ok=True)
-    return p
-
-
 def run_dir(out: Path | str) -> Path:
     """Initialize a run directory, creating the standard subdirectories."""
     root = Path(out)

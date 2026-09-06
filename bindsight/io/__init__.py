@@ -6,7 +6,6 @@ from bindsight.io.paths import (
     adopt_structure,
     cache_dir,
     cache_root,
-    ensure_dir,
     resolve_run_path,
     run_dir,
 )
@@ -15,7 +14,6 @@ __all__ = [
     "adopt_structure",
     "cache_dir",
     "cache_root",
-    "ensure_dir",
     "resolve_run_path",
     "run_dir",
 ]

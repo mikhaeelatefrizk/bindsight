@@ -27,7 +27,7 @@ PAGE_ICON = "🧬"
 #: Literal["centered", "wide"], so a plain str fails strict type checking.
 PAGE_LAYOUT: Literal["centered", "wide"] = "wide"
 #: Back-compat alias.
-LAYOUT = PAGE_LAYOUT
+
 
 TAGLINE = (
     "RNA-seq counts → ranked de novo protein binder candidates, "

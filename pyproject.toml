@@ -53,7 +53,6 @@ classifiers = [
 dependencies = [
     "click>=8.1",
     "pydantic>=2.6",
-    "pydantic-settings>=2.2",
     "pyyaml>=6.0",
     "requests>=2.32",
     "rich>=13.7",          # CLI output formatting
@@ -74,19 +73,15 @@ discover = [
     "numpy>=1.26,<3",
     "scipy>=1.11,<2",      # arrives via pydeseq2; its numerics move DEG results
     "biopython>=1.83,<2",
-    "gql[requests]>=3.5",  # Open Targets GraphQL
     "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [
     "streamlit>=1.60,<2",  # web UI: `bindsight ui` + `bindsight report --format streamlit`; floor for st.iframe + width=, cap major against breaking removals
     "py3Dmol>=2.0",
     "matplotlib>=3.8,<4",  # renders the volcano plot embedded in every report
-    "seaborn>=0.13",
-    "jupyter>=1.0",
 ]
 runners = [
     "modal>=0.64",
-    "google-api-python-client>=2.0",  # Colab/Drive
     "kaggle>=1.6",
 ]
 workflow = [
@@ -254,7 +249,6 @@ markers = [
 branch = true
 source = ["bindsight"]
 omit = [
-    "bindsight/_version.py",
     "*/tests/*",
 ]
 

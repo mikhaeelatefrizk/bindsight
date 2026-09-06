@@ -274,13 +274,13 @@ def _demo_config(out_dir: Path) -> RunConfig:
     cfg_path = _find_repo_root() / "examples" / "demo" / "config.yaml"
     if not cfg_path.is_file():
         # A bare ``pip install bindsight`` does not ship examples/; the Demo page
-        # only works from a source checkout (which both hosted deployments use).
+        # only works from a source checkout, which the hosted Space uses.
         # Raise a legible message rather than letting ``from_yaml`` surface a
         # bare FileNotFoundError as a traceback on the page.
         raise FileNotFoundError(
             f"The bundled demo configuration was not found at {cfg_path}. The Demo "
             "page needs the full source checkout — it ships with the hosted "
-            "hosted Hugging Face Space deployment, but a plain "
+            "Hugging Face Space deployment, but a plain "
             "'pip install bindsight' does not include it. Run `bindsight demo` "
             "from a repository clone, or use the hosted demo."
         )
