@@ -80,6 +80,13 @@ class StudyConfig:
     seed: int = 0
     n_decoys: int = 1000
     n_permutations: int = 10_000
+    # Cutoffs at which recall is reported. A single cutoff is not interpretable
+    # across cohorts whose shortlists differ in size, and the shortlist here is
+    # roughly 285 rather than the ~40 it was before the surfaceome pre-filter —
+    # so "within the top 20" silently became a far harder question. Reporting a
+    # range, alongside each antigen's normalised rank, is what lets a reader see
+    # that rather than infer it.
+    recall_at_k: tuple[int, ...] = (5, 10, 20, 50, 100)
 
 
 @dataclass
@@ -421,11 +428,26 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
         if not eligible:
             cascade[name] = {"numerator": 0, "denominator": 0, "note": "no eligible pairs"}
             continue
-        hits = sum(1 for p in eligible if _is_hit(p))
+        at_k: dict[str, Any] = {}
+        for k in config.recall_at_k:
+            hits = sum(1 for p in eligible if _is_hit(p, k=k))
+            at_k[f"recall@{k}"] = {
+                "wilson": S.wilson_interval(hits, len(eligible)).as_dict(),
+                "clopper_pearson": S.clopper_pearson_interval(hits, len(eligible)).as_dict(),
+            }
+        # The headline cutoff, kept so a single number can still be quoted — but
+        # only ever beside the shortlist sizes it was computed against.
+        headline_k = 20 if 20 in config.recall_at_k else config.recall_at_k[-1]
+        headline = at_k[f"recall@{headline_k}"]
         cascade[name] = {
-            "wilson": S.wilson_interval(hits, len(eligible)).as_dict(),
-            "clopper_pearson": S.clopper_pearson_interval(hits, len(eligible)).as_dict(),
+            "at_k": at_k,
+            "headline_k": headline_k,
+            "wilson": headline["wilson"],
+            "clopper_pearson": headline["clopper_pearson"],
             "removed_from_previous_step": len(subset) - len(eligible),
+            "median_shortlist_size": _median(
+                [p["shortlist_size"] for p in eligible if p.get("shortlist_size")]
+            ),
         }
 
     # The de-duplicated panel is what the interval is honestly computed over,
@@ -435,9 +457,12 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     dedup_eligible = [p for p in dedup if p["outcome_class"] != O.INFRASTRUCTURE]
 
     clusters: dict[str, Sequence[bool]] = {}
+    headline_k = 20 if 20 in config.recall_at_k else config.recall_at_k[-1]
     for p in in_tiers:
         if p["outcome_class"] != O.INFRASTRUCTURE:
-            cast("list[bool]", clusters.setdefault(p["uniprot"], [])).append(_is_hit(p))
+            cast("list[bool]", clusters.setdefault(p["uniprot"], [])).append(
+                _is_hit(p, k=headline_k)
+            )
 
     summary: dict[str, Any] = {
         "schema": "bindsight-rediscovery/3",
@@ -465,7 +490,8 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     }
 
     if dedup_eligible:
-        hits = sum(1 for p in dedup_eligible if _is_hit(p))
+        headline_k = 20 if 20 in config.recall_at_k else config.recall_at_k[-1]
+        hits = sum(1 for p in dedup_eligible if _is_hit(p, k=headline_k))
         summary["primary_interval"] = {
             "description": (
                 "One cohort per antigen, so the trials are independent. This is the "
@@ -495,9 +521,26 @@ def _pair_key(pair: dict[str, Any]) -> str:
 
 
 def _is_hit(pair: dict[str, Any], *, k: int = 20) -> bool:
-    """Whether the antigen reached the shortlist inside the reported cutoff."""
+    """Whether the antigen reached the shortlist inside the given cutoff.
+
+    ``k`` is an absolute rank, so it is only comparable across cohorts whose
+    shortlists are of similar size. The shortlist sizes are published alongside
+    every rate for exactly that reason, and each pair also carries its
+    normalised rank.
+    """
     rank = pair.get("rank")
     return isinstance(rank, int) and rank <= k
+
+
+def _median(values: list[int]) -> int | None:
+    """Median as an integer, or None for an empty list."""
+    if not values:
+        return None
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) // 2
 
 
 def _class_counts(pairs: list[dict[str, Any]]) -> dict[str, int]:

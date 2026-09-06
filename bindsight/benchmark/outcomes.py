@@ -84,7 +84,13 @@ _GATE_DISPOSITIONS = frozenset(
 #: Human-readable explanation of each gate, so a results table can say what
 #: actually happened rather than emitting a bare enum.
 GATE_EXPLANATIONS: dict[str, str] = {
-    "not_significant": "did not clear the FDR threshold",
+    "not_significant": (
+        "did not clear the significance rule, which requires BOTH an adjusted "
+        "p-value below the FDR threshold AND an absolute log2 fold change at or "
+        "above the floor — naming only the FDR would misattribute an antigen that "
+        "is statistically solid but modestly changed, such as ERBB2 in the "
+        "unstratified breast cohort at log2fc 0.92"
+    ),
     "down_regulated": "measured as down-regulated in tumour",
     "below_enrichment_cutoff": (
         "outside the top-K enrichment cut, so it never became a candidate at all "

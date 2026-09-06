@@ -14,97 +14,469 @@
     "TCGA-BLCA": {
       "n_genes_tested": 16875,
       "n_eligible_surfaceome": 2104,
-      "n_candidates": 22,
+      "n_candidates": 289,
       "n_significant": 4418
+    },
+    "TCGA-BRCA": {
+      "n_genes_tested": 17851,
+      "n_eligible_surfaceome": 2284,
+      "n_candidates": 287,
+      "n_significant": 4369
+    },
+    "TCGA-COAD": {
+      "n_genes_tested": 16787,
+      "n_eligible_surfaceome": 2098,
+      "n_candidates": 287,
+      "n_significant": 5006
     },
     "TCGA-ESCA": {
       "n_genes_tested": 17592,
       "n_eligible_surfaceome": 2229,
-      "n_candidates": 43,
+      "n_candidates": 291,
       "n_significant": 3445
+    },
+    "TCGA-HNSC": {
+      "n_genes_tested": 17362,
+      "n_eligible_surfaceome": 2174,
+      "n_candidates": 283,
+      "n_significant": 3959
     },
     "TCGA-KICH": {
       "n_genes_tested": 16932,
       "n_eligible_surfaceome": 2119,
-      "n_candidates": 40,
+      "n_candidates": 278,
       "n_significant": 5948
+    },
+    "TCGA-KIRC": {
+      "n_genes_tested": 17348,
+      "n_eligible_surfaceome": 2209,
+      "n_candidates": 289,
+      "n_significant": 5121
     },
     "TCGA-KIRP": {
       "n_genes_tested": 17173,
       "n_eligible_surfaceome": 2170,
-      "n_candidates": 56,
+      "n_candidates": 282,
       "n_significant": 4586
+    },
+    "TCGA-LIHC": {
+      "n_genes_tested": 16766,
+      "n_eligible_surfaceome": 2057,
+      "n_candidates": 284,
+      "n_significant": 3650
+    },
+    "TCGA-LUAD": {
+      "n_genes_tested": 17578,
+      "n_eligible_surfaceome": 2241,
+      "n_candidates": 291,
+      "n_significant": 4426
+    },
+    "TCGA-LUSC": {
+      "n_genes_tested": 17741,
+      "n_eligible_surfaceome": 2250,
+      "n_candidates": 285,
+      "n_significant": 6407
+    },
+    "TCGA-PRAD": {
+      "n_genes_tested": 17361,
+      "n_eligible_surfaceome": 2207,
+      "n_candidates": 279,
+      "n_significant": 2381
+    },
+    "TCGA-STAD": {
+      "n_genes_tested": 17806,
+      "n_eligible_surfaceome": 2273,
+      "n_candidates": 292,
+      "n_significant": 3508
+    },
+    "TCGA-THCA": {
+      "n_genes_tested": 17066,
+      "n_eligible_surfaceome": 2140,
+      "n_candidates": 289,
+      "n_significant": 3151
     },
     "TCGA-UCEC": {
       "n_genes_tested": 17059,
       "n_eligible_surfaceome": 2140,
-      "n_candidates": 22,
+      "n_candidates": 291,
       "n_significant": 5776
     }
   },
   "recall_cascade": {
     "all": {
+      "at_k": {
+        "recall@5": {
+          "wilson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.18431813525127078,
+            "numerator": 0,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.19506432296909318,
+            "numerator": 0,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@10": {
+          "wilson": {
+            "point": 0.058823529411764705,
+            "low": 0.010460400973136497,
+            "high": 0.2698203066015142,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.058823529411764705,
+            "low": 0.0014881743912666357,
+            "high": 0.2868893966672206,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@20": {
+          "wilson": {
+            "point": 0.058823529411764705,
+            "low": 0.010460400973136497,
+            "high": 0.2698203066015142,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.058823529411764705,
+            "low": 0.0014881743912666357,
+            "high": 0.2868893966672206,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@50": {
+          "wilson": {
+            "point": 0.11764705882352941,
+            "low": 0.032879773733354656,
+            "high": 0.343363506164676,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.11764705882352941,
+            "low": 0.0145793168403025,
+            "high": 0.36440916210125024,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@100": {
+          "wilson": {
+            "point": 0.11764705882352941,
+            "low": 0.032879773733354656,
+            "high": 0.343363506164676,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.11764705882352941,
+            "low": 0.0145793168403025,
+            "high": 0.36440916210125024,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        }
+      },
+      "headline_k": 20,
       "wilson": {
-        "point": 0.2,
-        "low": 0.03622410859085168,
-        "high": 0.6244653705167631,
+        "point": 0.058823529411764705,
+        "low": 0.010460400973136497,
+        "high": 0.2698203066015142,
         "numerator": 1,
-        "denominator": 5,
+        "denominator": 17,
         "method": "wilson",
         "confidence": 0.95
       },
       "clopper_pearson": {
-        "point": 0.2,
-        "low": 0.005050763379468061,
-        "high": 0.7164179361180893,
+        "point": 0.058823529411764705,
+        "low": 0.0014881743912666357,
+        "high": 0.2868893966672206,
         "numerator": 1,
-        "denominator": 5,
+        "denominator": 17,
         "method": "clopper-pearson",
         "confidence": 0.95
       },
-      "removed_from_previous_step": 0
+      "removed_from_previous_step": 0,
+      "median_shortlist_size": 291
     },
     "reachable": {
+      "at_k": {
+        "recall@5": {
+          "wilson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.18431813525127078,
+            "numerator": 0,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.19506432296909318,
+            "numerator": 0,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@10": {
+          "wilson": {
+            "point": 0.058823529411764705,
+            "low": 0.010460400973136497,
+            "high": 0.2698203066015142,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.058823529411764705,
+            "low": 0.0014881743912666357,
+            "high": 0.2868893966672206,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@20": {
+          "wilson": {
+            "point": 0.058823529411764705,
+            "low": 0.010460400973136497,
+            "high": 0.2698203066015142,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.058823529411764705,
+            "low": 0.0014881743912666357,
+            "high": 0.2868893966672206,
+            "numerator": 1,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@50": {
+          "wilson": {
+            "point": 0.11764705882352941,
+            "low": 0.032879773733354656,
+            "high": 0.343363506164676,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.11764705882352941,
+            "low": 0.0145793168403025,
+            "high": 0.36440916210125024,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@100": {
+          "wilson": {
+            "point": 0.11764705882352941,
+            "low": 0.032879773733354656,
+            "high": 0.343363506164676,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.11764705882352941,
+            "low": 0.0145793168403025,
+            "high": 0.36440916210125024,
+            "numerator": 2,
+            "denominator": 17,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        }
+      },
+      "headline_k": 20,
       "wilson": {
-        "point": 0.2,
-        "low": 0.03622410859085168,
-        "high": 0.6244653705167631,
+        "point": 0.058823529411764705,
+        "low": 0.010460400973136497,
+        "high": 0.2698203066015142,
         "numerator": 1,
-        "denominator": 5,
+        "denominator": 17,
         "method": "wilson",
         "confidence": 0.95
       },
       "clopper_pearson": {
-        "point": 0.2,
-        "low": 0.005050763379468061,
-        "high": 0.7164179361180893,
+        "point": 0.058823529411764705,
+        "low": 0.0014881743912666357,
+        "high": 0.2868893966672206,
         "numerator": 1,
-        "denominator": 5,
+        "denominator": 17,
         "method": "clopper-pearson",
         "confidence": 0.95
       },
-      "removed_from_previous_step": 0
+      "removed_from_previous_step": 0,
+      "median_shortlist_size": 291
     },
     "gate_passed": {
+      "at_k": {
+        "recall@5": {
+          "wilson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.6576197728563925,
+            "numerator": 0,
+            "denominator": 2,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.0,
+            "low": 0.0,
+            "high": 0.841886116991581,
+            "numerator": 0,
+            "denominator": 2,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@10": {
+          "wilson": {
+            "point": 0.5,
+            "low": 0.0945312056223091,
+            "high": 0.9054687943776909,
+            "numerator": 1,
+            "denominator": 2,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.5,
+            "low": 0.01257911709342506,
+            "high": 0.9874208829065749,
+            "numerator": 1,
+            "denominator": 2,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@20": {
+          "wilson": {
+            "point": 0.5,
+            "low": 0.0945312056223091,
+            "high": 0.9054687943776909,
+            "numerator": 1,
+            "denominator": 2,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 0.5,
+            "low": 0.01257911709342506,
+            "high": 0.9874208829065749,
+            "numerator": 1,
+            "denominator": 2,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@50": {
+          "wilson": {
+            "point": 1.0,
+            "low": 0.34238022714360744,
+            "high": 1.0,
+            "numerator": 2,
+            "denominator": 2,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 1.0,
+            "low": 0.15811388300841903,
+            "high": 1.0,
+            "numerator": 2,
+            "denominator": 2,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        },
+        "recall@100": {
+          "wilson": {
+            "point": 1.0,
+            "low": 0.34238022714360744,
+            "high": 1.0,
+            "numerator": 2,
+            "denominator": 2,
+            "method": "wilson",
+            "confidence": 0.95
+          },
+          "clopper_pearson": {
+            "point": 1.0,
+            "low": 0.15811388300841903,
+            "high": 1.0,
+            "numerator": 2,
+            "denominator": 2,
+            "method": "clopper-pearson",
+            "confidence": 0.95
+          }
+        }
+      },
+      "headline_k": 20,
       "wilson": {
-        "point": 1.0,
-        "low": 0.2065493141129836,
-        "high": 0.9999999999999999,
+        "point": 0.5,
+        "low": 0.0945312056223091,
+        "high": 0.9054687943776909,
         "numerator": 1,
-        "denominator": 1,
+        "denominator": 2,
         "method": "wilson",
         "confidence": 0.95
       },
       "clopper_pearson": {
-        "point": 1.0,
-        "low": 0.025000000000000022,
-        "high": 1.0,
+        "point": 0.5,
+        "low": 0.01257911709342506,
+        "high": 0.9874208829065749,
         "numerator": 1,
-        "denominator": 1,
+        "denominator": 2,
         "method": "clopper-pearson",
         "confidence": 0.95
       },
-      "removed_from_previous_step": 0
+      "removed_from_previous_step": 0,
+      "median_shortlist_size": 280
     }
   },
   "infrastructure_failures": {
@@ -114,8 +486,8 @@
   },
   "outcome_class_counts": {
     "not_reachable": 0,
-    "gated_out": 4,
-    "ranked": 1,
+    "gated_out": 15,
+    "ranked": 2,
     "infrastructure": 0
   },
   "pairs": [
@@ -135,9 +507,9 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 22,
+      "shortlist_size": 289,
       "normalised_rank": null,
-      "reason": "did not clear the FDR threshold",
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
       "counterfactual_rank": 259,
       "n_eligible": 2104,
@@ -152,6 +524,142 @@
       "lfc_se": 0.6846304015407969,
       "significant": false,
       "p_uniform_rank": 0.30760095011876487
+    },
+    {
+      "project": "TCGA-BRCA",
+      "symbol": "ERBB2",
+      "uniprot": "P04626",
+      "ensembl": "ENSG00000141736",
+      "agent": "trastuzumab, pertuzumab, T-DXd",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "The unstratified BRCA cohort is the honest contrast. HER2-positive disease is roughly a fifth of breast cancer, so averaging across the whole project dilutes the signal; that dilution is the finding, not a flaw to be engineered away by selecting HER2-enriched tumours.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 287,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 263,
+      "n_eligible": 2284,
+      "n_up_regulated": 894,
+      "normalised_counterfactual_rank": 0.11514886164623468,
+      "log2fc": 0.9225134639850281,
+      "direction": "up",
+      "combined_score": 9.45473048436782,
+      "tested": true,
+      "padj": 5.6379244013328025e-11,
+      "base_mean": 31487.893647350767,
+      "lfc_se": 0.13782879522707078,
+      "significant": false,
+      "p_uniform_rank": 0.2941834451901566
+    },
+    {
+      "project": "TCGA-BRCA",
+      "symbol": "TACSTD2",
+      "uniprot": "P09758",
+      "ensembl": "ENSG00000184292",
+      "agent": "sacituzumab govitecan, datopotamab deruxtecan",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "TROP2. Approved in metastatic triple-negative and HR-positive breast cancer. Broadly expressed across epithelia, so normal breast expression is not negligible.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 287,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 754,
+      "n_eligible": 2284,
+      "n_up_regulated": 894,
+      "normalised_counterfactual_rank": 0.330122591943958,
+      "log2fc": 0.16245596334058304,
+      "direction": "up",
+      "combined_score": 0.0714763737184418,
+      "tested": true,
+      "padj": 0.363099927224224,
+      "base_mean": 20008.618245635684,
+      "lfc_se": 0.16345001524109457,
+      "significant": false,
+      "p_uniform_rank": 0.843400447427293
+    },
+    {
+      "project": "TCGA-COAD",
+      "symbol": "EGFR",
+      "uniprot": "P00533",
+      "ensembl": "ENSG00000146648",
+      "agent": "cetuximab, panitumumab",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Third EGFR indication, enabling a within-antigen comparison across four cancers.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "down_regulated",
+      "rank": null,
+      "shortlist_size": 287,
+      "normalised_rank": null,
+      "reason": "measured as down-regulated in tumour",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 1547,
+      "n_eligible": 2098,
+      "n_up_regulated": 684,
+      "normalised_counterfactual_rank": 0.7373689227836034,
+      "log2fc": -1.0428259675708613,
+      "direction": "down",
+      "combined_score": -14.037016155915827,
+      "tested": true,
+      "padj": 3.462941303898014e-14,
+      "base_mean": 3335.6046771936567,
+      "lfc_se": 0.1340629435863144,
+      "significant": true,
+      "p_uniform_rank": null
+    },
+    {
+      "project": "TCGA-COAD",
+      "symbol": "CEACAM5",
+      "uniprot": "P06731",
+      "ensembl": "ENSG00000105388",
+      "agent": "tusamitamab ravtansine, labetuzumab govitecan (phase 2/3)",
+      "tier": "late_clinical",
+      "usable": "scored",
+      "note": "CEA is abundantly expressed in normal colonic epithelium, and the published run measured log2fc -0.28 (not significant). Together with FOLH1 and CLDN18 this makes three pre-registered lineage-antigen nulls, which is what turns an anecdote into a measured statement about the blind spot.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 287,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 972,
+      "n_eligible": 2098,
+      "n_up_regulated": 684,
+      "normalised_counterfactual_rank": 0.4632983794089609,
+      "log2fc": -0.4788369485982845,
+      "direction": "down",
+      "combined_score": -0.6441052154686836,
+      "tested": true,
+      "padj": 0.04517049145449272,
+      "base_mean": 157973.58738436026,
+      "lfc_se": 0.2244656320584218,
+      "significant": false,
+      "p_uniform_rank": null
     },
     {
       "project": "TCGA-ESCA",
@@ -169,9 +677,9 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 43,
+      "shortlist_size": 291,
       "normalised_rank": null,
-      "reason": "did not clear the FDR threshold",
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
       "counterfactual_rank": 1362,
       "n_eligible": 2229,
@@ -185,6 +693,69 @@
       "base_mean": 60669.698326623984,
       "lfc_se": 0.6707107167936947,
       "significant": false,
+      "p_uniform_rank": null
+    },
+    {
+      "project": "TCGA-HNSC",
+      "symbol": "EGFR",
+      "uniprot": "P00533",
+      "ensembl": "ENSG00000146648",
+      "agent": "cetuximab",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "The EGFR indication where a positive expectation is most defensible: EGFR is genuinely over-expressed in head and neck squamous carcinoma.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "fails_safety",
+      "rank": null,
+      "shortlist_size": 283,
+      "normalised_rank": null,
+      "reason": "too many vital-tissue safety events",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 278,
+      "n_eligible": 2174,
+      "n_up_regulated": 1073,
+      "normalised_counterfactual_rank": 0.12787488500459981,
+      "log2fc": 1.027746990910692,
+      "direction": "up",
+      "combined_score": 6.721656294698857,
+      "tested": true,
+      "padj": 2.882797798655644e-07,
+      "base_mean": 28294.88333055405,
+      "lfc_se": 0.18982142767512783,
+      "significant": true,
+      "p_uniform_rank": 0.2590866728797763
+    },
+    {
+      "project": "TCGA-KIRC",
+      "symbol": "CA9",
+      "uniprot": "Q16790",
+      "ensembl": "ENSG00000107159",
+      "agent": "[89Zr]Zr-girentuximab (imaging, under FDA review)",
+      "tier": "clinical_stage",
+      "usable": "scored",
+      "note": "Carbonic anhydrase IX is the defining clear-cell RCC surface antigen and is genuinely, strongly over-expressed. Two honesty notes: the girentuximab ADJUVANT phase 3 (ARISER) FAILED its primary endpoint, so the live asset is the diagnostic imaging agent, not a therapeutic; and CA9 is ABSENT from the SURFY reference, so bindsight cannot surface it at any expression level. It is scored as an instrument-coverage failure, which is exactly what it is.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": false
+      },
+      "outcome_class": "not_reachable",
+      "disposition": "not_surfaceome",
+      "rank": null,
+      "shortlist_size": 289,
+      "normalised_rank": null,
+      "reason": "absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference",
+      "counts_in_denominator": false,
+      "counterfactual_rank": null,
+      "tested": true,
+      "log2fc": 9.577900559877728,
+      "padj": 0.0,
+      "base_mean": 6866.628835436495,
+      "lfc_se": 0.24649445756739938,
+      "significant": true,
       "p_uniform_rank": null
     },
     {
@@ -203,9 +774,9 @@
       "outcome_class": "ranked",
       "disposition": "surfaced",
       "rank": 7,
-      "shortlist_size": 56,
-      "normalised_rank": 0.125,
-      "reason": "reached the candidate shortlist at rank 7 of 56 (carried through to design)",
+      "shortlist_size": 282,
+      "normalised_rank": 0.024822695035460994,
+      "reason": "reached the candidate shortlist at rank 7 of 282 (carried through to design)",
       "counts_in_denominator": true,
       "counterfactual_rank": 7,
       "n_eligible": 2170,
@@ -220,6 +791,375 @@
       "lfc_se": 0.14347652709960476,
       "significant": true,
       "p_uniform_rank": 0.00760043431053203
+    },
+    {
+      "project": "TCGA-LIHC",
+      "symbol": "GPC3",
+      "uniprot": "P51654",
+      "ensembl": "ENSG00000147257",
+      "agent": "GPC3 CAR-T and bispecifics (phase 1/2)",
+      "tier": "clinical_stage",
+      "usable": "scored",
+      "note": "Glypican-3 is oncofetal and near-absent in adult liver, making it the panel's strongest a-priori positive outside ERBB2. No approved GPC3 agent exists, so it is labelled clinical-stage and excluded from the approved-only primary denominator.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "ranked",
+      "disposition": "surfaced",
+      "rank": 6,
+      "shortlist_size": 284,
+      "normalised_rank": 0.02112676056338028,
+      "reason": "reached the candidate shortlist at rank 6 of 284 (carried through to design)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 6,
+      "n_eligible": 2057,
+      "n_up_regulated": 805,
+      "normalised_counterfactual_rank": 0.002916869227029655,
+      "log2fc": 3.971787916228998,
+      "direction": "up",
+      "combined_score": 127.44587034065589,
+      "tested": true,
+      "padj": 8.169897475024826e-33,
+      "base_mean": 10334.412761182692,
+      "lfc_se": 0.3245254502031655,
+      "significant": true,
+      "p_uniform_rank": 0.007453416149068323
+    },
+    {
+      "project": "TCGA-LUAD",
+      "symbol": "MET",
+      "uniprot": "P08581",
+      "ensembl": "ENSG00000105976",
+      "agent": "telisotuzumab vedotin",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Approved May 2025 for c-Met-overexpressing non-squamous NSCLC with a companion diagnostic, which is what qualifies MET as a validated surface antigen rather than only a kinase target.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 291,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 429,
+      "n_eligible": 2241,
+      "n_up_regulated": 912,
+      "normalised_counterfactual_rank": 0.19143239625167335,
+      "log2fc": 0.6697951474537985,
+      "direction": "up",
+      "combined_score": 2.131461579025978,
+      "tested": true,
+      "padj": 0.0006572658762335234,
+      "base_mean": 8040.168818660753,
+      "lfc_se": 0.18714981044645,
+      "significant": false,
+      "p_uniform_rank": 0.47039473684210525
+    },
+    {
+      "project": "TCGA-LUAD",
+      "symbol": "TACSTD2",
+      "uniprot": "P09758",
+      "ensembl": "ENSG00000184292",
+      "agent": "datopotamab deruxtecan",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "TROP2 in lung adenocarcinoma. Second indication for TROP2 in the panel.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 291,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 757,
+      "n_eligible": 2241,
+      "n_up_regulated": 912,
+      "normalised_counterfactual_rank": 0.33779562695225346,
+      "log2fc": 0.1518466860973169,
+      "direction": "up",
+      "combined_score": 0.06810232579560326,
+      "tested": true,
+      "padj": 0.3560459188864282,
+      "base_mean": 10569.343130577092,
+      "lfc_se": 0.14647810650501467,
+      "significant": false,
+      "p_uniform_rank": 0.8300438596491229
+    },
+    {
+      "project": "TCGA-LUAD",
+      "symbol": "ERBB2",
+      "uniprot": "P04626",
+      "ensembl": "ENSG00000141736",
+      "agent": "T-DXd (tumour-agnostic, HER2 IHC3+)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Third ERBB2 indication. HER2 in lung adenocarcinoma is usually mutation-driven rather than over-expressed, so a null here is the expected result and is recorded as such in advance.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 291,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 508,
+      "n_eligible": 2241,
+      "n_up_regulated": 912,
+      "normalised_counterfactual_rank": 0.22668451584114235,
+      "log2fc": 0.4139673395365135,
+      "direction": "up",
+      "combined_score": 1.1885502725986707,
+      "tested": true,
+      "padj": 0.001345485801018854,
+      "base_mean": 8201.647772548975,
+      "lfc_se": 0.12259399162450546,
+      "significant": false,
+      "p_uniform_rank": 0.5570175438596491
+    },
+    {
+      "project": "TCGA-LUAD",
+      "symbol": "EGFR",
+      "uniprot": "P00533",
+      "ensembl": "ENSG00000146648",
+      "agent": "cetuximab, necitumumab",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "EGFR drives lung adenocarcinoma through mutation and amplification, not bulk mRNA over-expression. The published run measured log2fc 0.42 (not significant), so a null is the a-priori expectation and is a statement about the biology, not about the ranker.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 291,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 844,
+      "n_eligible": 2241,
+      "n_up_regulated": 912,
+      "normalised_counterfactual_rank": 0.37661758143685853,
+      "log2fc": 0.060930795506104495,
+      "direction": "up",
+      "combined_score": 0.007444270653096269,
+      "tested": true,
+      "padj": 0.7547865762511343,
+      "base_mean": 7676.174562267564,
+      "lfc_se": 0.16231981415707714,
+      "significant": false,
+      "p_uniform_rank": 0.9254385964912281
+    },
+    {
+      "project": "TCGA-LUSC",
+      "symbol": "EGFR",
+      "uniprot": "P00533",
+      "ensembl": "ENSG00000146648",
+      "agent": "necitumumab",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Necitumumab remains FDA-approved for squamous NSCLC but was rejected by NICE and has had minimal uptake, so this is an approved agent that is not a current standard of care. EGFR is more genuinely over-expressed in squamous than in adenocarcinoma.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "below_enrichment_cutoff",
+      "rank": null,
+      "shortlist_size": 285,
+      "normalised_rank": null,
+      "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 385,
+      "n_eligible": 2250,
+      "n_up_regulated": 831,
+      "normalised_counterfactual_rank": 0.1711111111111111,
+      "log2fc": 1.0652833169920313,
+      "direction": "up",
+      "combined_score": 6.22595160491666,
+      "tested": true,
+      "padj": 1.4308391436511785e-06,
+      "base_mean": 21297.00119964326,
+      "lfc_se": 0.21529047776112364,
+      "significant": true,
+      "p_uniform_rank": 0.46329723225030084
+    },
+    {
+      "project": "TCGA-PRAD",
+      "symbol": "FOLH1",
+      "uniprot": "Q04609",
+      "ensembl": "ENSG00000086205",
+      "agent": "[177Lu]Lu-PSMA-617 (Pluvicto)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "PSMA is highly expressed in prostate cancer but is also abundant in normal prostate, so the tumour-vs-adjacent-normal fold change is modest. A designed test of the lineage-antigen blind spot, not a hoped-for hit.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "ranked",
+      "disposition": "not_top_n",
+      "rank": 22,
+      "shortlist_size": 279,
+      "normalised_rank": 0.07885304659498207,
+      "reason": "reached the candidate shortlist at rank 22 of 279 (ranked below the design carry-forward cutoff)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 24,
+      "n_eligible": 2207,
+      "n_up_regulated": 888,
+      "normalised_counterfactual_rank": 0.010874490258269144,
+      "log2fc": 2.2145832366755562,
+      "direction": "up",
+      "combined_score": 32.39709648764778,
+      "tested": true,
+      "padj": 2.3497346514465685e-15,
+      "base_mean": 23319.696450202166,
+      "lfc_se": 0.2687558749178037,
+      "significant": true,
+      "p_uniform_rank": 0.02702702702702703
+    },
+    {
+      "project": "TCGA-PRAD",
+      "symbol": "STEAP1",
+      "uniprot": "Q9UHE8",
+      "ensembl": "ENSG00000164647",
+      "agent": "xaluritamig (phase 3)",
+      "tier": "late_clinical",
+      "usable": "scored",
+      "note": "STEAP1 is prostate-restricted and a strong a-priori positive. Like CA9 it is ABSENT from the SURFY reference, so it is unreachable by construction and scored as an instrument-coverage failure.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": false
+      },
+      "outcome_class": "not_reachable",
+      "disposition": "not_surfaceome",
+      "rank": null,
+      "shortlist_size": 279,
+      "normalised_rank": null,
+      "reason": "absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference",
+      "counts_in_denominator": false,
+      "counterfactual_rank": null,
+      "tested": true,
+      "log2fc": 1.1379958617181842,
+      "padj": 1.1253561196903014e-06,
+      "base_mean": 6988.3956403008715,
+      "lfc_se": 0.22178245853555262,
+      "significant": true,
+      "p_uniform_rank": null
+    },
+    {
+      "project": "TCGA-STAD",
+      "symbol": "CLDN18",
+      "uniprot": "P56856",
+      "ensembl": "ENSG00000066405",
+      "agent": "zolbetuximab (Vyloy)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Claudin-18.2, approved October 2024 for CLDN18.2-positive gastric and GEJ adenocarcinoma. Stated up front: gene-level RNA-seq cannot separate the CLDN18.2 isoform from CLDN18.1, and normal gastric mucosa expresses CLDN18.2 highly, so a near-zero bulk fold change is the honest expectation. This pair is a designed test of the isoform blind spot.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 292,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 1109,
+      "n_eligible": 2273,
+      "n_up_regulated": 1070,
+      "normalised_counterfactual_rank": 0.48790145182578093,
+      "log2fc": -0.06461068317906445,
+      "direction": "down",
+      "combined_score": -0.0019959375313233006,
+      "tested": true,
+      "padj": 0.9313399722930903,
+      "base_mean": 36803.02689053195,
+      "lfc_se": 0.5395355027770776,
+      "significant": false,
+      "p_uniform_rank": null
+    },
+    {
+      "project": "TCGA-STAD",
+      "symbol": "ERBB2",
+      "uniprot": "P04626",
+      "ensembl": "ENSG00000141736",
+      "agent": "trastuzumab, T-DXd",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Second, independent, non-breast test of ERBB2. This is what makes an ERBB2 result generalisable rather than a HER2 demonstration.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 292,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 633,
+      "n_eligible": 2273,
+      "n_up_regulated": 1070,
+      "normalised_counterfactual_rank": 0.2784865816102068,
+      "log2fc": 0.4360368337602313,
+      "direction": "up",
+      "combined_score": 0.3562423972978404,
+      "tested": true,
+      "padj": 0.15240503062502436,
+      "base_mean": 20225.387445084645,
+      "lfc_se": 0.2607293569430565,
+      "significant": false,
+      "p_uniform_rank": 0.591588785046729
+    },
+    {
+      "project": "TCGA-STAD",
+      "symbol": "FGFR2",
+      "uniprot": "P21802",
+      "ensembl": "ENSG00000066468",
+      "agent": "bemarituzumab (phase 3)",
+      "tier": "late_clinical",
+      "usable": "scored",
+      "note": "FORTITUDE-101 met its interim overall-survival endpoint in FGFR2b-overexpressing first-line gastric cancer, but the benefit attenuated with longer follow-up. Reported as equivocal late-stage rather than validated.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 292,
+      "normalised_rank": null,
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 1367,
+      "n_eligible": 2273,
+      "n_up_regulated": 1070,
+      "normalised_counterfactual_rank": 0.6014078310602727,
+      "log2fc": -0.33400124229888856,
+      "direction": "down",
+      "combined_score": -0.18530292183681832,
+      "tested": true,
+      "padj": 0.2787423109961229,
+      "base_mean": 3509.6054637796738,
+      "lfc_se": 0.2572834786580349,
+      "significant": false,
+      "p_uniform_rank": null
     },
     {
       "project": "TCGA-UCEC",
@@ -237,9 +1177,9 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 22,
+      "shortlist_size": 291,
       "normalised_rank": null,
-      "reason": "did not clear the FDR threshold",
+      "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
       "counterfactual_rank": 545,
       "n_eligible": 2140,
@@ -271,7 +1211,7 @@
       "outcome_class": "gated_out",
       "disposition": "below_enrichment_cutoff",
       "rank": null,
-      "shortlist_size": 22,
+      "shortlist_size": 291,
       "normalised_rank": null,
       "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
       "counts_in_denominator": true,
@@ -295,43 +1235,32 @@
     "wilson": {
       "point": 0.0,
       "low": 0.0,
-      "high": 0.6576197728563925,
+      "high": 0.3244075652372696,
       "numerator": 0,
-      "denominator": 2,
+      "denominator": 8,
       "method": "wilson",
       "confidence": 0.95
     },
     "clopper_pearson": {
       "point": 0.0,
       "low": 0.0,
-      "high": 0.841886116991581,
+      "high": 0.36941664755281917,
       "numerator": 0,
-      "denominator": 2,
+      "denominator": 8,
       "method": "clopper-pearson",
       "confidence": 0.95
     },
-    "n_distinct_antigens": 2
+    "n_distinct_antigens": 8
   },
   "cluster_bootstrap": {
-    "point": 0.2,
+    "point": 0.058823529411764705,
     "low": 0.0,
-    "high": 0.6,
+    "high": 0.2,
     "numerator": 1,
-    "denominator": 5,
-    "method": "cluster-bootstrap(n_clusters=5, B=10000)",
+    "denominator": 17,
+    "method": "cluster-bootstrap(n_clusters=8, B=10000)",
     "confidence": 0.95
   },
-  "cohorts_not_yet_run": [
-    "TCGA-BRCA",
-    "TCGA-COAD",
-    "TCGA-HNSC",
-    "TCGA-KIRC",
-    "TCGA-LIHC",
-    "TCGA-LUAD",
-    "TCGA-LUSC",
-    "TCGA-PRAD",
-    "TCGA-STAD",
-    "TCGA-THCA"
-  ],
+  "cohorts_not_yet_run": [],
   "surfaceome_size": 2886
 }

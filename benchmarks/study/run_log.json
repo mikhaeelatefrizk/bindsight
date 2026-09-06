@@ -1,0 +1,152 @@
+[
+  {
+    "project": "TCGA-BLCA",
+    "status": "ok",
+    "n_tumor": 19,
+    "n_normal": 19,
+    "fetch_seconds": 1.9,
+    "run_seconds": 1683.7,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\blca",
+    "total_seconds": 1685.6
+  },
+  {
+    "project": "TCGA-BRCA",
+    "status": "ok",
+    "n_tumor": 113,
+    "n_normal": 113,
+    "fetch_seconds": 1241.7,
+    "run_seconds": 3723.5,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\brca",
+    "total_seconds": 4965.2
+  },
+  {
+    "project": "TCGA-COAD",
+    "status": "ok",
+    "n_tumor": 41,
+    "n_normal": 41,
+    "fetch_seconds": 626.5,
+    "run_seconds": 2390.1,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\coad",
+    "total_seconds": 3016.7
+  },
+  {
+    "project": "TCGA-ESCA",
+    "status": "ok",
+    "n_tumor": 13,
+    "n_normal": 13,
+    "fetch_seconds": 0.3,
+    "run_seconds": 1604.6,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\esca",
+    "total_seconds": 1604.9
+  },
+  {
+    "project": "TCGA-HNSC",
+    "status": "ok",
+    "n_tumor": 43,
+    "n_normal": 43,
+    "fetch_seconds": 636.7,
+    "run_seconds": 1560.6,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\hnsc",
+    "total_seconds": 2197.3
+  },
+  {
+    "project": "TCGA-KICH",
+    "status": "ok",
+    "n_tumor": 25,
+    "n_normal": 25,
+    "fetch_seconds": 0.0,
+    "run_seconds": 411.4,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\kich",
+    "total_seconds": 411.4
+  },
+  {
+    "project": "TCGA-KIRC",
+    "status": "ok",
+    "n_tumor": 72,
+    "n_normal": 72,
+    "fetch_seconds": 1048.8,
+    "run_seconds": 296.8,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\kirc",
+    "total_seconds": 1345.5
+  },
+  {
+    "project": "TCGA-KIRP",
+    "status": "ok",
+    "n_tumor": 32,
+    "n_normal": 32,
+    "fetch_seconds": 0.0,
+    "run_seconds": 263.2,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\kirp",
+    "total_seconds": 263.2
+  },
+  {
+    "project": "TCGA-LIHC",
+    "status": "ok",
+    "n_tumor": 50,
+    "n_normal": 50,
+    "fetch_seconds": 530.2,
+    "run_seconds": 229.8,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\lihc",
+    "total_seconds": 760.0
+  },
+  {
+    "project": "TCGA-LUAD",
+    "status": "ok",
+    "n_tumor": 58,
+    "n_normal": 58,
+    "fetch_seconds": 625.8,
+    "run_seconds": 1249.3,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\luad",
+    "total_seconds": 1875.1
+  },
+  {
+    "project": "TCGA-LUSC",
+    "status": "ok",
+    "n_tumor": 51,
+    "n_normal": 51,
+    "fetch_seconds": 465.5,
+    "run_seconds": 150.8,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\lusc",
+    "total_seconds": 616.3
+  },
+  {
+    "project": "TCGA-PRAD",
+    "status": "ok",
+    "n_tumor": 52,
+    "n_normal": 52,
+    "fetch_seconds": 1262.3,
+    "run_seconds": 2516.1,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\prad",
+    "total_seconds": 3778.4
+  },
+  {
+    "project": "TCGA-STAD",
+    "status": "ok",
+    "n_tumor": 33,
+    "n_normal": 33,
+    "fetch_seconds": 420.2,
+    "run_seconds": 6479.1,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\stad",
+    "total_seconds": 6899.3
+  },
+  {
+    "project": "TCGA-THCA",
+    "status": "ok",
+    "n_tumor": 59,
+    "n_normal": 59,
+    "fetch_seconds": 1748.2,
+    "run_seconds": 4121.5,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\thca",
+    "total_seconds": 5869.7
+  },
+  {
+    "project": "TCGA-UCEC",
+    "status": "ok",
+    "n_tumor": 23,
+    "n_normal": 23,
+    "fetch_seconds": 0.0,
+    "run_seconds": 1271.7,
+    "run_dir": "C:\\Users\\mikha\\Desktop\\bindsight\\runs\\study\\ucec",
+    "total_seconds": 1271.7
+  }
+]

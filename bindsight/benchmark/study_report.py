@@ -134,6 +134,41 @@ def render_markdown(summary: dict[str, Any]) -> str:
             lines.append(f"| `{name}` | {questions[name]} | {_interval(block.get('wilson'))} |")
         lines.append("")
 
+        # One cutoff cannot be compared across studies whose shortlists differ in
+        # size. The shortlist here is roughly 285 candidates; before the surfaceome
+        # pre-filter it was roughly 40, so "within the top 20" quietly became a far
+        # harder question. Publishing the range and the shortlist size is what lets
+        # a reader see that instead of having to infer it.
+        cutoffs = sorted(
+            {int(k.removeprefix("recall@")) for b in cascade.values() for k in b.get("at_k", {})}
+        )
+        if cutoffs:
+            lines += [
+                "### Recall across cutoffs",
+                "",
+                "An absolute cutoff is only comparable between cohorts whose "
+                "shortlists are of similar size, so the median shortlist is printed "
+                "beside each row.",
+                "",
+                "| Denominator | Median shortlist | " + " | ".join(f"@{k}" for k in cutoffs) + " |",
+                "|---|--:|" + "--:|" * len(cutoffs),
+            ]
+            for name in ("all", "reachable", "gate_passed"):
+                block = cascade.get(name, {})
+                at_k = block.get("at_k", {})
+                if not at_k:
+                    continue
+                cells = []
+                for k in cutoffs:
+                    w = at_k.get(f"recall@{k}", {}).get("wilson")
+                    cells.append(f"{w['numerator']}/{w['denominator']}" if w else "—")
+                lines.append(
+                    f"| `{name}` | {block.get('median_shortlist_size', '—')} | "
+                    + " | ".join(cells)
+                    + " |"
+                )
+            lines.append("")
+
     primary = summary.get("primary_interval")
     if primary:
         lines += [
