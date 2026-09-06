@@ -60,7 +60,7 @@ counts.tsv + design.tsv ─┐
 
 ```
 bindsight/
-├── io/              # Parquet, FASTA, PDB, mmCIF, manifest readers
+├── io/              # GDC + cBioPortal cohort clients; run-directory path helpers
 ├── deg/             # pydeseq2 wrapper
 ├── targets/         # Open Targets GraphQL client + ENSG→UniProt fallback + GTEx safety
 ├── surfaceome/      # SURFY filter + SURFACE-Bind client
@@ -160,13 +160,24 @@ Implementations:
 
 ### 4.4 Idempotency
 
-Every GPU work unit (one trajectory) has a deterministic cache key:
+Every GPU work unit has a deterministic cache key:
 
 ```
-sha256(target_uniprot ‖ epitope_residues ‖ designer_commit_sha ‖ designer_params ‖ seed)
+sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
+       ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed ‖ designer_commits)
 ```
 
-Reruns skip completed work. The manifest records hits and misses.
+Reruns skip completed work, and `cache_status` records the hit or miss on both
+the `DesignResult` and the manifest's `StageRecord`, so a reader can tell reused
+work from repeated work without re-running anything.
+
+The target structure's *content* is in the key, not just its accession: a new
+AlphaFold model for the same protein is different work, and keying on the
+accession alone would silently reuse a result computed against the superseded
+structure.
+
+This was previously specified here and not implemented — the key was computed
+and then used only as a directory name, so every rerun resubmitted.
 
 ---
 
@@ -239,10 +250,18 @@ rule export_crate:
     script: "scripts/export_crate.py"
 ```
 
-The Click CLI and the Snakefile are two equivalent front-ends over the same
-``bindsight.*`` pipeline functions — the CLI calls them directly, and each
-Snakemake rule's ``scripts/`` wrapper calls the same functions — so you get
-identical artifacts whichever you use:
+The Click CLI and the Snakefile are two front-ends over the same
+``bindsight.*`` pipeline functions: the CLI calls them directly, and each
+Snakemake rule's ``scripts/`` wrapper calls the same functions.
+
+They are **not** interchangeable in every respect, and this document previously
+claimed they produced identical artifacts. They do not: the two front-ends
+differ in what they write outside the core stage outputs. Treat the CLI as the
+reference and the Snakemake path as a DAG-driven equivalent for the stages it
+covers.
+
+The rule sketch below is illustrative of the DAG's shape. It is not the real
+Snakefile — read `Snakefile` for that.
 
 ```bash
 bindsight discover   ≡  snakemake --until discover

@@ -158,13 +158,31 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 | **`bindsight report --format streamlit`** — interactive dashboard for one run | ✅ ready | `bindsight report runs/x --format streamlit` |
 | **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
-| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 (and BindCraft / BoltzGen / Chai-1r / AF2-IG) run end-to-end on a GPU backend | ✅ ready | `bindsight design runs/x --backend modal` (or `local_docker` / `kaggle` / `colab`) |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ verified | `bindsight design runs/x --backend kaggle` |
+| **`bindsight design`** — BindCraft / BoltzGen / Chai-1r / AF2-IG designers and validators | ⚠️ implemented, not yet executed | see [runner and plugin status](#runner-and-plugin-status) |
 | **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
-| **`bindsight validate`** — materialise structure/affinity metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
+| **`bindsight validate`** — materialise the design job's metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
+| **`bindsight validate --revalidate`** — run a *different* validator against binders that already exist, without redesigning | ✅ ready | `bindsight validate runs/x --validator chai1r --revalidate --backend kaggle` |
 | **`bindsight benchmark`** — score rediscovery of the held-out known antigens (recall@k) | ✅ ready | `bindsight benchmark runs/x --known-antigens benchmarks/known.tsv` |
 | **Snakemake front-end** — same pipeline as the CLI, end-to-end | ✅ ready | `snakemake --configfile my.yaml --cores 4` (`pip install -e ".[workflow]"`) |
 | **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
 | **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
+
+### Runner and plugin status
+
+Not every backend and plugin carries the same weight of evidence, and presenting
+them as peers would be misleading. What each one actually is:
+
+| | Status | Why |
+|---|---|---|
+| **Kaggle** | The verified free path | Headless via the Kaggle API, so a reader can re-run the exact job on their own free quota. Pinned to a T4: Kaggle's own docs warn its default P100 cannot run current PyTorch. |
+| **local_docker** | For your own GPU | Native and containerised modes; the native mode is what CPU tests exercise. |
+| **Modal** | Prepared, not executed | The paid escape hatch for what free hardware cannot reach. Its image is built to carry the whole design stack, but running it costs money and it has not been run end to end. |
+| **Colab** | Interactive on-ramp only | Google's API does not permit launching a free-tier notebook from a CLI, so this path needs a human with a browser tab open. That is a demo, not a reproducibility path. |
+| **RFdiffusion, ProteinMPNN, Boltz-2** | Verified on free hardware | The committed benchmark run. |
+| **AF2 initial-guess** | Buildable free | PyRosetta is credential-free for non-commercial use since 2024. Non-commercial weights. |
+| **BindCraft, BoltzGen** | Reduced-target only on free hardware | Both fit a 16 GB card against a small domain, not a full receptor. BoltzGen's integration was rewritten after its command was found not to exist upstream. |
+| **Chai-1r** | Needs Ampere or newer | It requires bfloat16, which no free-tier GPU has. Verifying it means renting roughly an hour of a modern card. |
 
 > **Note on GPU stages.** The design/validation models require CUDA, so they
 > run on the GPU backend you choose (Modal / local Docker / Kaggle, or a
