@@ -214,6 +214,7 @@ class PyDESeq2Runner:
             "n_significant": n_sig,
             "fdr_threshold": self.params.fdr_threshold,
             "log2fc_threshold": self.params.log2fc_threshold,
+            "n_cpus": self.params.n_cpus,
         }
 
     # ------------------------------------------------------------------ #
@@ -233,7 +234,9 @@ class PyDESeq2Runner:
             metadata=design,
             design=self.params.design_formula,
             refit_cooks=True,
-            inference=DefaultInference(),
+            # n_cpus=None lets pydeseq2 use every core, which is correct on a
+            # server and hostile on a laptop running a multi-hour cohort sweep.
+            inference=DefaultInference(n_cpus=self.params.n_cpus),
             quiet=True,
         )
         dds.deseq2()

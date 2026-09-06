@@ -133,6 +133,51 @@ def _list_cohort_files(
     return hits[:n]
 
 
+def matched_pair_cases(project: str, *, limit: int = 500) -> list[str]:
+    """Case barcodes with BOTH a primary tumour and a solid-tissue normal.
+
+    A paired differential-expression design removes between-patient variance,
+    which is the largest free power gain available to this study: in most TCGA
+    projects nearly every normal has a tumour from the same patient, so pairing
+    costs no data at all. It only works if both arms are drawn from the same
+    patients, which is what this selects.
+
+    The normal arm is the scarce one — a project with 113 normals and a thousand
+    tumours is limited by the normals — so normals are listed first and tumours
+    are then restricted to those patients.
+
+    Args:
+        project: GDC project id, for example ``"TCGA-BRCA"``.
+        limit: upper bound on files requested per arm.
+
+    Returns:
+        Sorted case submitter ids present in both arms. Sorted so a cohort is
+        reproducible rather than dependent on GDC's response ordering.
+    """
+
+    def _barcodes(condition: str, cases: list[str] | None = None) -> set[str]:
+        hits = _list_cohort_files(project, condition, limit, cases=cases)
+        return {
+            barcode
+            for hit in hits
+            if (barcode := (hit.get("cases", [{}])[0]).get("submitter_id", ""))
+        }
+
+    normals = _barcodes("normal")
+    if not normals:
+        LOG.warning("%s: no solid-tissue-normal files; no paired contrast is possible", project)
+        return []
+    tumours = _barcodes("tumor", cases=sorted(normals))
+    matched = sorted(normals & tumours)
+    LOG.info(
+        "%s: %d normal case(s), %d of which also have a primary tumour",
+        project,
+        len(normals),
+        len(matched),
+    )
+    return matched
+
+
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=16))
 def _download_counts(file_id: str, gene_types: tuple[str, ...]) -> dict[str, int]:
     """Download one STAR-Counts file; return {ensembl_gene_id: unstranded_count}.

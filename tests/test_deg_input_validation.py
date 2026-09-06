@@ -180,7 +180,12 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
 
     monkeypatch.setattr(pydeseq2.dds, "DeseqDataSet", _FakeDeseqDataSet)
     monkeypatch.setattr(pydeseq2.ds, "DeseqStats", _RecordingDeseqStats)
-    monkeypatch.setattr(pydeseq2.default_inference, "DefaultInference", lambda: object())
+
+    def _recording_inference(**kwargs: Any) -> object:
+        captured["n_cpus"] = kwargs.get("n_cpus")
+        return object()
+
+    monkeypatch.setattr(pydeseq2.default_inference, "DefaultInference", _recording_inference)
 
     params = DEGParams(
         design_formula="~ condition",
@@ -189,6 +194,7 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
         log2fc_threshold=0.5,
         min_replicates=2,
         min_count=0,
+        n_cpus=2,  # a laptop cap, which must reach pydeseq2 the same way alpha does
     )
     counts = _write_counts(
         tmp_path / "counts.tsv",
@@ -203,6 +209,9 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
     PyDESeq2Runner(params).run(counts, design, tmp_path / "deg" / "results.parquet")
 
     assert captured["alpha"] == pytest.approx(0.01)
+    # A worker cap that never reaches pydeseq2 would let a multi-hour cohort sweep
+    # peg every core on the machine it is meant to run on.
+    assert captured["n_cpus"] == 2
     assert captured["contrast"] == ["condition", "tumor", "normal"]
 
 

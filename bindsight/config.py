@@ -99,6 +99,11 @@ class DEGParams(BaseModel):
     # When True, only genes with at least this many counts in at least
     # ``min_replicates`` samples are retained (low-count filter).
     min_count: int = Field(10, ge=0)
+    # Worker processes pydeseq2 may use. None means "every core", which is the
+    # right default on a server and the wrong one on the laptop this pipeline is
+    # meant to run on: a multi-hour job that pegs every core makes the machine
+    # unusable. Set this to leave headroom.
+    n_cpus: int | None = Field(None, ge=1)
 
 
 class TargetDiscoveryParams(BaseModel):
