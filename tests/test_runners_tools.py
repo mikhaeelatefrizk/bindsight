@@ -12,6 +12,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from bindsight.runners import tools
 
 
@@ -104,10 +106,16 @@ def test_build_chai_boltzgen_bindcraft_af2ig_cmds() -> None:
         "fold",
     ]
     bg = tools.build_boltzgen_cmd(
-        target_pdb=Path("/w/t.pdb"), out_dir=Path("/w/o"), num_designs=4, hotspot="[A1]"
+        design_spec=Path("/w/design_spec.yaml"), out_dir=Path("/w/o"), num_designs=4
     )
-    assert bg[:2] == ["boltzgen", "design"]
+    # Upstream has no `boltzgen design` subcommand and no --target/--out_dir/--hotspots
+    # flags; the real entry point takes a design-spec YAML positionally.
+    assert bg[:2] == ["boltzgen", "run"]
+    assert bg[2].endswith("design_spec.yaml")
+    assert "--output" in bg
     assert "--num_designs" in bg
+    assert "--target" not in bg
+    assert "--hotspots" not in bg
     bc = tools.build_bindcraft_cmd(
         bindcraft_dir=Path("/opt/BindCraft"),
         settings_json=Path("/w/s.json"),
@@ -119,6 +127,61 @@ def test_build_chai_boltzgen_bindcraft_af2ig_cmds() -> None:
         dl_binder_design_dir=Path("/opt/dl"), silent_or_pdb=Path("/w/b.pdb"), out_dir=Path("/w/o")
     )
     assert af2[1].replace("\\", "/").endswith("af2_initial_guess/predict.py")  # OS-agnostic
+
+
+def test_boltzgen_cmd_rejects_unknown_protocol_and_kernel_setting() -> None:
+    """The two arguments that silently break a free-tier run must be validated."""
+    with pytest.raises(ValueError, match="protocol"):
+        tools.build_boltzgen_cmd(
+            design_spec=Path("/w/s.yaml"), out_dir=Path("/w/o"), num_designs=1, protocol="nope"
+        )
+    with pytest.raises(ValueError, match="use_kernels"):
+        tools.build_boltzgen_cmd(
+            design_spec=Path("/w/s.yaml"), out_dir=Path("/w/o"), num_designs=1, use_kernels="yes"
+        )
+
+
+def test_boltzgen_spec_expresses_the_binding_site_inside_the_yaml() -> None:
+    """Hotspots are part of the design spec, not a command-line flag."""
+    spec = tools.build_boltzgen_spec(
+        target_file="target.pdb",
+        target_chain="A",
+        binding_indices=[7, 3, 3],
+        binder_length_min=50,
+        binder_length_max=90,
+    )
+    binder, target = spec["entities"]
+    assert binder["protein"]["sequence"] == "50..90"
+    # File references are resolved relative to the YAML, so a bare name is correct.
+    assert target["file"]["path"] == "target.pdb"
+    assert target["file"]["binding_types"][0]["chain"]["binding"] == "3,7"
+
+
+def test_boltzgen_spec_omits_binding_types_when_no_epitope_is_known() -> None:
+    spec = tools.build_boltzgen_spec(
+        target_file="t.pdb",
+        target_chain="A",
+        binding_indices=[],
+        binder_length_min=50,
+        binder_length_max=90,
+    )
+    assert "binding_types" not in spec["entities"][1]["file"]
+
+
+def test_label_indices_convert_author_numbering(tmp_path: Path) -> None:
+    """BoltzGen counts residues from 1 along the chain, not by author number."""
+    pdb = tmp_path / "t.pdb"
+    lines = []
+    for i, resi in enumerate((511, 512, 513, 514)):
+        lines.append(
+            f"ATOM  {i + 1:>5}  CA  ALA A{resi:>4}      "
+            f"{0.0:>8.3f}{0.0:>8.3f}{0.0:>8.3f}  1.00  0.00           C"
+        )
+    pdb.write_text(chr(10).join(lines) + chr(10))
+    # 511 is the first residue present, so it is index 1 in BoltzGen's convention.
+    assert tools.label_indices_for_residues(pdb, "A", [511, 513]) == [1, 3]
+    # A residue that is not modelled is dropped rather than guessed.
+    assert tools.label_indices_for_residues(pdb, "A", [999]) == []
 
 
 # ---------------------------------------------------------------------------

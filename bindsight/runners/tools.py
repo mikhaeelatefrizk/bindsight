@@ -22,6 +22,7 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from bindsight.validate.boltz2 import build_boltz_yaml, parse_boltz_output
 from bindsight.validate.protocol import ValidationResult
@@ -245,22 +246,153 @@ def build_bindcraft_cmd(
     ]
 
 
+#: BoltzGen protocols, from the upstream README. ``protein-anything`` is the one
+#: that designs proteins against protein targets, which is what bindsight does.
+BOLTZGEN_PROTOCOLS = (
+    "protein-anything",
+    "peptide-anything",
+    "protein-small_molecule",
+    "nanobody-anything",
+    "antibody-anything",
+)
+
+
+def build_boltzgen_spec(
+    *,
+    target_file: str,
+    target_chain: str,
+    binding_indices: list[int],
+    binder_length_min: int,
+    binder_length_max: int,
+    binder_chain: str = "B",
+) -> dict[str, Any]:
+    """Build a BoltzGen design-specification mapping.
+
+    BoltzGen is driven by a design-spec YAML listing ``entities``: the protein to
+    design (given as a length range, which BoltzGen samples) and the target,
+    pulled from a structure file with an optional binding-site restriction.
+
+    Args:
+        target_file: Structure filename **relative to the YAML's own directory** —
+            BoltzGen resolves file references relative to the spec, not the cwd.
+        target_chain: Chain in that file to use as the target.
+        binding_indices: Residues the binder should bind, as **1-based ordinals
+            within the chain as it appears in the file** (BoltzGen's canonical
+            ``label_seq_id`` convention), not author numbering. Empty means bind
+            anywhere, which is BoltzGen's documented default.
+        binder_length_min: Shortest binder to sample.
+        binder_length_max: Longest binder to sample.
+        binder_chain: Chain id for the designed protein.
+
+    Returns:
+        A mapping ready to serialise as the design-spec YAML.
+    """
+    target: dict[str, Any] = {
+        "path": target_file,
+        "include": [{"chain": {"id": target_chain}}],
+    }
+    if binding_indices:
+        target["binding_types"] = [
+            {
+                "chain": {
+                    "id": target_chain,
+                    "binding": ",".join(str(i) for i in sorted(set(binding_indices))),
+                }
+            }
+        ]
+    return {
+        "entities": [
+            {
+                "protein": {
+                    "id": binder_chain,
+                    "sequence": f"{int(binder_length_min)}..{int(binder_length_max)}",
+                }
+            },
+            {"file": target},
+        ]
+    }
+
+
 def build_boltzgen_cmd(
-    *, target_pdb: Path, out_dir: Path, num_designs: int, hotspot: str
+    *,
+    design_spec: Path,
+    out_dir: Path,
+    num_designs: int,
+    protocol: str = "protein-anything",
+    use_kernels: str = "auto",
+    budget: int | None = None,
+    devices: int | None = None,
+    diffusion_batch_size: int | None = None,
 ) -> list[str]:
-    """BoltzGen ``boltzgen design`` argv (universal generative binder design)."""
-    return [
+    """BoltzGen ``boltzgen run`` argv.
+
+    The previous form of this function built ``boltzgen design --target ...
+    --out_dir ... --hotspots ...``. Upstream has no ``design`` subcommand and
+    none of those flags, so that command could never have executed; this is the
+    real interface (``boltzgen run <spec.yaml> --output <dir>``), taken from the
+    README at the pinned commit.
+
+    ``use_kernels`` matters on free hardware: BoltzGen's Triton kernels need
+    compute capability 8.0 or newer, and its ``auto`` default enables them on
+    exactly that test. A T4 is 7.5 and a P100 is 6.0, so both need ``"false"``.
+
+    Args:
+        design_spec: Path to the design-specification YAML.
+        out_dir: Output directory for pipeline results.
+        num_designs: Total designs to generate before filtering.
+        protocol: One of :data:`BOLTZGEN_PROTOCOLS`.
+        use_kernels: ``"auto"``, ``"true"`` or ``"false"``.
+        budget: Size of the final diversity-optimised set. Defaults to
+            ``num_designs`` so a small run keeps everything it generated.
+        devices: Number of devices; ``None`` lets BoltzGen use all available.
+        diffusion_batch_size: Diffusion samples per trunk run. Small runs want 1,
+            since a large batch shares one sampled binder length across the batch.
+
+    Returns:
+        The argv list.
+
+    Raises:
+        ValueError: On an unknown protocol or an invalid ``use_kernels`` value.
+    """
+    if protocol not in BOLTZGEN_PROTOCOLS:
+        raise ValueError(f"unknown boltzgen protocol {protocol!r}; one of {BOLTZGEN_PROTOCOLS}")
+    if use_kernels not in {"auto", "true", "false"}:
+        raise ValueError(f"use_kernels must be auto/true/false, got {use_kernels!r}")
+    cmd = [
         "boltzgen",
-        "design",
-        "--target",
-        str(target_pdb),
-        "--out_dir",
+        "run",
+        str(design_spec),
+        "--output",
         str(out_dir),
+        "--protocol",
+        protocol,
         "--num_designs",
-        str(num_designs),
-        "--hotspots",
-        hotspot,
+        str(int(num_designs)),
+        "--use_kernels",
+        use_kernels,
+        "--budget",
+        str(int(budget if budget is not None else num_designs)),
     ]
+    if devices is not None:
+        cmd += ["--devices", str(int(devices))]
+    if diffusion_batch_size is not None:
+        cmd += ["--diffusion_batch_size", str(int(diffusion_batch_size))]
+    return cmd
+
+
+def label_indices_for_residues(pdb_path: Path, chain: str, residues: list[int]) -> list[int]:
+    """Map author residue numbers to 1-based ordinals within the chain.
+
+    BoltzGen indexes residues by their canonical position in the chain, starting
+    at 1, and its README is explicit that author numbering is *not* what it
+    reads. bindsight carries epitope residues in author numbering (UniProt
+    positions, preserved through the trimmed target), so they must be converted
+    or the binding site silently lands on the wrong residues.
+
+    Residues absent from the structure are dropped rather than guessed.
+    """
+    order = {resi: i + 1 for i, (resi, _aa) in enumerate(chain_residues_from_pdb(pdb_path, chain))}
+    return [order[r] for r in residues if r in order]
 
 
 def build_af2ig_cmd(*, dl_binder_design_dir: Path, silent_or_pdb: Path, out_dir: Path) -> list[str]:
@@ -478,6 +610,7 @@ __all__ = [
     "build_boltz_cmd",
     "build_boltz_yaml",
     "build_boltzgen_cmd",
+    "build_boltzgen_spec",
     "build_chai_cmd",
     "build_contig_str",
     "build_hotspot_str",
@@ -486,6 +619,7 @@ __all__ = [
     "build_rfdiff_cmd",
     "chain_residues_from_pdb",
     "chain_sequence_from_pdb",
+    "label_indices_for_residues",
     "mpnn_design_sequences",
     "parse_af2ig_output",
     "parse_boltz_output",

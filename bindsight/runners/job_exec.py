@@ -203,17 +203,65 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
 
 
 def _design_boltzgen(spec: dict[str, Any], work: Path, tools_root: Path) -> list[Design]:
+    """Run BoltzGen against the target and collect its ranked designs.
+
+    BoltzGen is driven by a design-specification YAML rather than command-line
+    hotspot flags, and it resolves file references relative to that YAML, so the
+    spec and the target structure are written into one directory together.
+    """
+    import yaml
+
     _git_clone(tools.BOLTZGEN_REPO, tools.BOLTZGEN_COMMIT, tools_root / "boltzgen")
     out = work / "boltzgen_out"
     out.mkdir(parents=True, exist_ok=True)
     chain = spec.get("epitope_chain", "A")
     residues = [int(r) for r in spec.get("epitope_residues", [])]
+
+    spec_dir = work / "boltzgen_spec"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    target = _target_structure_for_design(spec, work, chain)
+    staged_target = spec_dir / "target.pdb"
+    staged_target.write_bytes(target.read_bytes())
+
+    # BoltzGen indexes residues by their canonical 1-based position in the chain,
+    # not by author numbering. Converting is the difference between binding the
+    # intended epitope and binding an arbitrary stretch of the receptor.
+    binding = tools.label_indices_for_residues(staged_target, chain, residues)
+    if residues and not binding:
+        LOG.warning(
+            "none of the %d epitope residue(s) are present in the target chain; "
+            "BoltzGen will design against the whole surface",
+            len(residues),
+        )
+
+    extra = spec.get("extra_params", {}) or {}
+    design_spec = spec_dir / "design_spec.yaml"
+    design_spec.write_text(
+        yaml.safe_dump(
+            tools.build_boltzgen_spec(
+                target_file=staged_target.name,
+                target_chain=chain,
+                binding_indices=binding,
+                binder_length_min=int(spec.get("binder_length_min", 50)),
+                binder_length_max=int(spec.get("binder_length_max", 100)),
+            ),
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    n = int(spec.get("n_trajectories", 5))
     _run(
         tools.build_boltzgen_cmd(
-            target_pdb=_target_structure_for_design(spec, work, chain),
+            design_spec=design_spec,
             out_dir=out,
-            num_designs=int(spec.get("n_trajectories", 5)),
-            hotspot=tools.build_hotspot_str(chain, residues),
+            num_designs=n,
+            protocol=str(extra.get("boltzgen_protocol", "protein-anything")),
+            # Triton kernels need compute capability 8.0 or newer. Every free-tier
+            # GPU is older, and BoltzGen's "auto" default would try to enable them.
+            use_kernels=str(extra.get("boltzgen_use_kernels", "auto")),
+            budget=n,
+            diffusion_batch_size=1 if n < 10 else None,
         )
     )
     return _collect_designs_from_dir(out, work, prefix="boltzgen", spec=spec)
@@ -526,14 +574,51 @@ def _collect_designs_from_dir(
     design_dir.mkdir(parents=True, exist_ok=True)
     target = _binder_id_prefix(spec or {})
     designs: list[Design] = []
-    for i, pdb in enumerate(sorted(out.rglob("*.pdb"))):
+    for i, structure in enumerate(_designer_output_structures(out)):
         binder_id = f"{target}_{prefix}_{i}"
-        seq = tools.chain_sequence_from_pdb(pdb, _last_chain(pdb))
         pdb_copy = design_dir / f"{binder_id}.pdb"
-        pdb_copy.write_bytes(pdb.read_bytes())
+        if structure.suffix.lower() in {".cif", ".mmcif"}:
+            # BoltzGen writes mmCIF; the rest of the pipeline expects PDB, so
+            # normalise here rather than at every downstream reader.
+            try:
+                _cif_to_pdb(structure, pdb_copy)
+            except Exception as e:
+                LOG.warning("could not convert %s to PDB: %s", structure, e)
+                continue
+        else:
+            pdb_copy.write_bytes(structure.read_bytes())
+        seq = tools.chain_sequence_from_pdb(pdb_copy, _last_chain(pdb_copy))
+        if not seq:
+            LOG.warning("no chain sequence recovered from %s; skipping", structure)
+            pdb_copy.unlink(missing_ok=True)
+            continue
         (design_dir / f"{binder_id}.fasta").write_text(f">{binder_id}\n{seq}\n")
         designs.append(Design(binder_id=binder_id, sequence=seq, pdb_path=pdb_copy))
     return designs
+
+
+def _designer_output_structures(out: Path) -> list[Path]:
+    """Structures a one-shot designer produced, most-refined stage first.
+
+    BoltzGen lays its output out in stages and only the last one is filtered
+    and ranked, so globbing the whole output root would mix ranked final
+    designs with unfiltered intermediates. The preference order below follows
+    the upstream pipeline; anything unrecognised falls back to a plain
+    recursive search so a different designer still collects.
+    """
+    preferred = (
+        "final_ranked_designs",
+        "intermediate_designs_inverse_folded/refold_design_cif",
+        "intermediate_designs_inverse_folded",
+        "intermediate_designs",
+    )
+    for rel in preferred:
+        sub = out / Path(rel)
+        if sub.is_dir():
+            found = sorted(p for p in sub.rglob("*") if p.suffix.lower() in {".cif", ".pdb"})
+            if found:
+                return found
+    return sorted(p for p in out.rglob("*") if p.suffix.lower() in {".cif", ".pdb"})
 
 
 def _last_chain(pdb_path: Path) -> str:
