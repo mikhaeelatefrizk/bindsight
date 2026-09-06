@@ -39,8 +39,8 @@ hide:
 
 <div class="bs-stats" markdown="0">
   <div class="bs-stat">
-    <div class="v">rank 4</div>
-    <div class="k">ERBB2 rediscovered</div>
+    <div class="v">rank 1</div>
+    <div class="k">CA9 surfaced</div>
     <div class="d">from real TCGA-BRCA RNA-seq, HER2-enriched subtype</div>
   </div>
   <div class="bs-stat">

@@ -1,6 +1,19 @@
 # SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Rediscovery validation: do real TCGA cohorts resurface known antigens?
+"""SUPERSEDED by :mod:`bindsight.benchmark.study`.
+
+This is the original six-cohort rediscovery harness. Its published result
+-- ERBB2 at rank 4, recall@5 of 33% -- is withdrawn: the breast cohort was
+stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes that
+classifier is built on, so the tumour arm was selected partly by expression of
+the gene then reported as discovered. The denominator was also chosen after
+seeing which antigens proved over-expressed.
+
+Retained so the earlier analysis stays reproducible and the correction is
+auditable. New work belongs in ``bindsight.benchmark.study``, which runs whole
+unstratified cohorts against a pre-registered panel.
+
+Rediscovery validation: do real TCGA cohorts resurface known antigens?
 
 This module runs the discovery half of bindsight on real TCGA cohorts (one per
 known antigen, in its indication) as tumor-vs-adjacent-normal contrasts, and
@@ -573,7 +586,7 @@ def run_validation(
     cohorts: list[Cohort] | None = None,
     study_id: str = CBIOPORTAL_STUDY,
 ) -> dict[str, Any]:
-    """Run every cohort, score it, and write all benchmarks/validation artifacts.
+    """Run every cohort, score it, and write the legacy validation artifacts.
 
     Writes ``RESULTS.md``, ``results.json``, ``report.html``, ``provenance.json``
     and ``figures/*.png`` under ``out_dir``. Returns the summary dict.

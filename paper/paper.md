@@ -63,15 +63,31 @@ normal, auto-downloaded from NIH/GDC) shows the pipeline discovering
 antibody-tractable cell-surface antigens over-expressed in tumor, with full
 provenance; established targets such as ERBB2 (HER2) appear among the
 candidates when their expression signal is present in the sampled cohort.
-A companion rediscovery validation (`benchmarks/validation/`,
-`paper/validation/manuscript.md`) runs the discovery half on six real
-indication-matched TCGA cohorts: it resurfaces ERBB2 at rank 4 in
-HER2-enriched breast cancer (using PAM50 subtype stratification). Antigens
-not transcriptionally over-expressed at the bulk level (e.g. EGFR, CEA) are
-not surfaced; because the over-expression rule excludes them from candidacy by
-construction, this is an internal consistency check on the documented rule
-rather than a measurement of ranking discrimination, and it shows sensitivity
-tracking differential-expression effect size.
+A companion rediscovery study (`benchmarks/study/`,
+`paper/validation/manuscript.md`) runs the discovery half on **fifteen whole,
+unstratified TCGA projects** as patient-paired tumour-versus-normal contrasts,
+scored against a pre-registered panel of 22 antigen-cohort pairs covering 13
+distinct antigens. Nothing in a cohort's definition refers to the antigen being
+sought. Under the pre-registered primary denominator, recall at rank 20 is 1 of
+17 (95% CI 0.01–0.27); across every regulatory tier it is 3 of 22. Five antigens
+reach the shortlist, led by CA9 at rank 1 of 291 in clear-cell renal carcinoma
+and GPC3 at 9 of 289 in hepatocellular carcinoma.
+
+The study's more useful output is diagnostic rather than a rate. Thirteen of the
+seventeen approved-tier pairs fail the significance rule: their targeting agents
+are licensed, so the antigens are real, but they are not significantly
+over-expressed in an unstratified bulk contrast. That delineates the scope of
+bulk differential expression as a discovery signal, and motivates the
+multi-modal specificity scoring planned for v1.0. The study also found two
+defects in the pipeline itself — an enrichment cut applied before the surfaceome
+filter, and a surfaceome reference missing CA9, the largest effect in the panel —
+both since corrected, with CA9 moving from unreachable to first place.
+
+An earlier six-cohort version of this analysis reported ERBB2 at rank 4 and
+recall@5 of 33%. Both figures are withdrawn: the breast cohort had been
+stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes that
+classifier is built on, so the tumour arm was selected partly by expression of
+the gene then reported as discovered.
 
 # Statement of need
 

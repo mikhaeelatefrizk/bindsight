@@ -376,7 +376,16 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [x] mkdocs-material documentation site (`.github/workflows/docs.yml`)
 
 ### Phase 4 — Validation paper (in progress)
-- [x] Rediscovery experiment: six real indication-matched TCGA cohorts → known antigens. ERBB2 rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified); EGFR/CEA not surfaced — a consistency check on the over-expression rule, which excludes them by construction, not a discrimination measurement. Report + reproducible artifacts in `benchmarks/validation/` and `paper/validation/manuscript.md`
+- [x] Rediscovery study: fifteen whole, unstratified TCGA projects run as
+  patient-paired contrasts against a pre-registered panel of 22 antigen-cohort
+  pairs. Recall at rank 20 is 1/17 on approved-agent antigens (95% CI
+  0.01-0.27); CA9 surfaces at rank 1 of 291 in clear-cell kidney. Four outcome
+  classes are reported separately rather than as one rate, and that separation
+  found two pipeline defects, both since fixed. Artifacts in
+  `benchmarks/study/`, write-up in `paper/validation/manuscript.md`. Supersedes
+  a six-cohort version whose ERBB2-at-rank-4 headline is withdrawn: its breast
+  cohort was stratified by a PAM50 call, and ERBB2 is one of the PAM50 genes.
+
 - [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.84, 50% success@0.65; real folded Boltz-2 complexes committed), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **Pre-v0.2.1 protocol** — ProteinMPNN ran without `--pdb_path_chains` and redesigned the target chain, so these figures are provisional pending a corrected re-run. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
 - [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission

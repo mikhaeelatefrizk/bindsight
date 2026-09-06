@@ -1,198 +1,335 @@
-# Rediscovery validation of *bindsight*: expression-based discovery of cell-surface antigens from real TCGA cohorts
+# Rediscovery study of *bindsight*: expression-based discovery of cell-surface antigens across fifteen TCGA cohorts
 
 **Mikhaeel Atef Rizk Wahba**
 Corresponding author: mikhaeelatefrizk@proton.me · ORCID 0009-0006-1069-9558
 
-*Companion validation report to the bindsight software-methods paper. Generated
-artifacts and the one-command reproduction live in
-[`benchmarks/validation/`](../../benchmarks/validation/); the harness is
-[`bindsight/benchmark/rediscovery.py`](../../bindsight/benchmark/rediscovery.py).*
+*Companion report to the bindsight software-methods paper. Generated artifacts
+and the one-command reproduction live in
+[`benchmarks/study/`](../../benchmarks/study/); the harness is
+[`bindsight/benchmark/study.py`](../../bindsight/benchmark/study.py), the panel
+is [`bindsight/benchmark/panel.py`](../../bindsight/benchmark/panel.py).*
+
+> **This report supersedes an earlier six-cohort version, and reverses its
+> headline.** That version reported ERBB2 rediscovered at rank 4 and recall@5 of
+> 33%. Both figures are withdrawn. The breast cohort had been stratified by PAM50
+> subtype, and ERBB2 is one of the fifty genes the PAM50 centroid classifier is
+> built on, so the tumour arm was selected partly by high expression of the gene
+> then reported as discovered. The denominator of three was also chosen after
+> seeing which antigens turned out to be over-expressed. Section 5 states what
+> changed and why. The numbers below are much weaker and they are the honest ones.
 
 ---
 
 ## Abstract
 
-`bindsight` turns tumor RNA-seq into a ranked shortlist of antibody-tractable,
-cell-surface antigens. Here we test the discovery half on **real TCGA patient
-cohorts** by asking a simple, falsifiable question: does it resurface
-clinically-validated surface antigens from a blinded tumor-vs-adjacent-normal
-contrast? Using GDC STAR-Counts and cBioPortal PAM50 calls, we run six
-indication-matched cohorts and score the rank of each known antigen in the
-candidate shortlist. The pipeline rediscovers **ERBB2 (HER2) at rank 4** in
-HER2-enriched breast cancer — a result that depends on PAM50 subtype
-stratification. Antigens that are *not* transcriptionally over-expressed at the
-bulk level (EGFR, CEA) are left out even though they are famous drug targets —
-an internal consistency check on the over-expression rule, which excludes them
-from candidacy by construction, rather than a measurement of how well the
-ranking discriminates. Sensitivity tracks
-differential-expression effect size, the expected behaviour of a DE-based
-method. We report every number transparently, including the misses, and use
-them to delineate the scope of bulk-DE discovery and motivate the multi-modal
-specificity scoring planned for v1.0.
+`bindsight` turns tumour RNA-seq into a ranked shortlist of antibody-tractable
+cell-surface antigens. We test the discovery half on real TCGA patient cohorts by
+asking whether it resurfaces clinically validated surface antigens without being
+told where to look. Fifteen whole, unstratified TCGA projects are run as paired
+tumour-versus-normal contrasts, blocking on the patient, and scored against a
+pre-registered panel of 22 antigen-cohort pairs covering 13 distinct antigens.
+Nothing in the cohort definition refers to the antigen under test.
+
+Under the pre-registered primary denominator — antigens whose targeting agent is
+approved — recall at rank 20 is 1 of 17 (95% CI 0.01–0.27), and 2 of 17 at rank
+50. Across every regulatory tier it is 3 of 22 at rank 20. Five antigens reach
+the candidate shortlist: CA9 at rank 1 of 291 in clear-cell renal carcinoma,
+GPC3 at 9 of 289 in hepatocellular carcinoma, MET at 10 of 287 in papillary renal
+carcinoma, FOLH1 at 34 of 285 in prostate adenocarcinoma, and STEAP1 at 158 of
+285 in the same cohort.
+
+Two findings matter more than the rate. Thirteen of the seventeen approved-tier
+pairs fail the significance rule outright: their agents are licensed, so the
+antigens are real, but they are not significantly over-expressed in an
+unstratified bulk contrast. This is a limit of bulk differential expression as a
+discovery signal, not of the ranking. Separately, CA9 measures a log2 fold change
+of 9.58 — the largest effect in the panel — and was invisible to the pipeline
+because its accession was absent from the surfaceome reference. That is an
+instrument-coverage failure rather than a ranking failure, and extending the
+reference moved it from unreachable to first place.
+
+We report every pair, every denominator and every set size, and separate four
+distinct reasons an antigen can fail to appear rather than merging them into one
+rate.
 
 ## 1. Introduction
 
-The bindsight software paper describes *what the tool is and does*. This
-companion report supplies the empirical question that paper deferred: **does the
-discovery half actually work on real patient data?** We evaluate it as a
-rediscovery benchmark — run the pipeline on tumor cohorts whose validated
-surface antigens are known a priori, and measure whether those antigens surface
-near the top of the unsupervised candidate ranking.
+The bindsight software paper describes what the tool is and does. This companion
+report supplies the empirical question that paper defers: does the discovery half
+work on real patient data?
 
-The held-out known-antigen set ([`benchmarks/known.tsv`](../../benchmarks/known.tsv))
-is curated from canonical public databases (UniProt, Ensembl, RCSB PDB, ChEMBL,
-ClinicalTrials.gov) with full provenance; it contains nine clinically-pursued
-cell-surface antigens. We evaluate each in its indication cohort where a matched
-normal exists in TCGA.
+We evaluate it as a rediscovery benchmark. Run the pipeline on tumour cohorts
+whose validated surface antigens are known in advance, and measure where those
+antigens land in the candidate ranking. The design question that determines
+whether such a benchmark means anything is what defines the cohort. If cohort
+membership depends, however indirectly, on expression of the antigen being
+sought, the benchmark measures its own construction.
 
 ## 2. Methods
 
-**Cohorts.** For each antigen we assemble a tumor-vs-adjacent-normal cohort from
-the NIH/GDC GDC Data Portal (STAR-Counts, GENCODE v36, unstranded), capped at 50
-primary-tumor and up to 40 solid-tissue-normal samples
-([`bindsight/io/gdc.py`](../../bindsight/io/gdc.py); full GDC file UUIDs,
-barcodes, and SHA-256 in `provenance.json`). For breast cancer, bulk
-TCGA-BRCA averages the HER2 signal across all five PAM50 intrinsic subtypes and
-buries ERBB2; we therefore stratify by pulling PAM50 calls from
-cBioPortal (study `brca_tcga_pan_can_atlas_2018`, attribute `SUBTYPE`; the number
-of patients returned is not recorded in the run provenance) and build
-the tumor arm from the **HER2-enriched** patients only
-([`bindsight/io/cbioportal.py`](../../bindsight/io/cbioportal.py)).
+### 2.1 Cohort definition, and what may not define it
 
-**Discovery.** Each cohort runs through the unmodified discovery half: PyDESeq2
-differential expression (`~ condition`, tumor vs normal; FDR < 0.05,
-|log2fc| ≥ 1) → enrichment of the most confidently up-regulated genes via Open
-Targets → the canonical ~2,886-protein SURFY surfaceome filter → AlphaFoldDB
-structure retrieval. Candidates are ranked by the combined differential-
-expression score π = log2fc × −log10(padj) (the "pi-value" of Xiao et al. 2014),
-which rewards genes that are both strongly and confidently up-regulated.
+Every cohort is a **whole, unstratified TCGA project**: all primary tumour
+samples against all solid-tissue normals, with no subtype, receptor-status or
+histology selection.
 
-**Scoring.** Each antigen is matched to a candidate by UniProt accession and its
-1-based rank recorded ([`bindsight/benchmark/core.py`](../../bindsight/benchmark/core.py)).
-To keep the evaluation honest and ungameable, antigens are grouped by their
-**measured** differential expression under a single pre-stated rule
-(FDR < 0.05 and log2fc ≥ 1), *not* by any hoped-for label: an expression-based
-method can only be expected to surface antigens that are actually over-expressed,
-and we report that precondition explicitly. recall@k is computed over the
-over-expressed group; specificity over the not-over-expressed group.
+Stratification is governed by one rule, stated in advance and applied identically
+to every cohort. A stratifying variable is admissible only if **both** hold:
+
+1. it is computable without the run's own counts matrix, and
+2. it is not a measurement of the antigen under test on any analyte.
+
+These are different properties and conflating them is what produced the earlier
+error. PAM50 and every other mRNA-cluster subtype fails the first. Clinical HER2
+immunohistochemistry passes the first — it is a protein assay, so it is not
+circular — but fails the second, because it still selects for the antigen being
+sought. An arm stratified on HER2 status may therefore appear only as a labelled
+sensitivity analysis answering "can the pipeline find HER2 in a HER2-enriched
+population", and may never contribute a recall number. No such arm is reported
+here.
+
+### 2.2 Paired design
+
+Cohorts are assembled from patients contributing **both** a primary tumour and a
+solid-tissue normal, and the contrast blocks on the patient
+(`~ case_barcode + condition`). In most TCGA projects nearly every normal has a
+matching tumour — 113 of 113 in breast, 72 of 72 in clear-cell kidney — so
+pairing costs almost no data and removes between-patient variance. It is the
+largest power gain available at no cost in samples.
+
+Differential expression uses PyDESeq2 with FDR < 0.05 and |log2fc| ≥ 1. A median
+of 17,348 genes is tested per cohort.
+
+### 2.3 The panel
+
+The panel comprises 22 antigen-cohort pairs across 15 TCGA projects and 13
+distinct antigens
+([`bindsight/benchmark/panel.py`](../../bindsight/benchmark/panel.py)). ERBB2
+appears in four indications and EGFR in four, which permits within-antigen
+comparison across cancers rather than a single-antigen demonstration. Two
+projects with ample normals but no validated surface antigen, thyroid and
+chromophobe kidney, are run for null calibration and shortlist audit.
+
+Every solid-tissue-normal count was verified against the GDC files API, and every
+Ensembl gene identifier was resolved from the UniProt cross-reference for its
+accession rather than recalled.
+
+Each pair carries the regulatory standing of its targeting agent: approved, late
+clinical, or clinical stage. The primary denominator is pre-registered on
+approved agents alone; wider tiers are reported as labelled sensitivity analyses.
+Three pairs are pre-registered as expected nulls because the antigen is abundant
+in the matched normal tissue: FOLH1 in prostate, CEACAM5 in colon and CLDN18 in
+stomach. Recording that expectation in advance is what prevents a miss being
+explained away afterwards.
+
+Pairs excluded from every denominator, and published for transparency: MSLN in
+pancreatic adenocarcinoma, which has only four solid-tissue normals; and FOLR1,
+CLDN6, CD33 and IL3RA, whose indications have none.
+
+### 2.4 Scoring: four outcomes, never merged
+
+An antigen can fail to appear for four distinct reasons, and reporting them as
+one rate tells a reader nothing about which part of the system to fix.
+
+- **Not reachable.** Decidable before the run from static references: the
+  accession is absent from the surfaceome list, or no accession resolves. This is
+  an instrument-coverage failure and is excluded from every rate.
+- **Gated out.** Measured, then excluded by a named filter. Every gate is named,
+  including the enrichment cut.
+- **Ranked.** Entered the candidate shortlist. The rank is reported with the size
+  of that shortlist, because one without the other is not interpretable.
+- **Infrastructure.** A lookup errored or never ran. This is not a scientific
+  negative; any pair here invalidates itself and must be re-run. The count is
+  zero in what follows.
+
+Reachability is computed from the surfaceome reference **before** any pipeline
+output is consulted, because the pipeline's own disposition cascade cannot
+express it reliably: a surfaceome-absent antigen that also misses the enrichment
+cut is recorded there as excluded by the cut.
+
+### 2.5 Counterfactual rank
+
+For every pair, we report where the antigen **would** have ranked with all gates
+removed: its position by the combined score among the eligible surfaceome, a
+median of 2,174 tested genes per cohort. A low counterfactual rank beside no
+shortlist rank means a gate excluded an antigen the ranking would have placed
+well; a high one means the ranking itself placed it low. Ranking is over the
+whole eligible set with no sign restriction, so the value stays defined for the
+lineage antigens it exists to adjudicate.
+
+### 2.6 Denominators and intervals
+
+Three nested denominators are pre-registered, each with its own numerator and
+interval, and never merged: all scored pairs; pairs the instrument could reach;
+and pairs that entered the shortlist, which alone measures the ranking.
+
+Recall is reported at five cutoffs rather than one, alongside the median
+shortlist size. An absolute cutoff is only comparable between shortlists of
+similar size, and the shortlist here is roughly 295 candidates.
+
+Intervals are Wilson score with Clopper-Pearson as a conservative cross-check.
+Because one antigen appears in several cohorts, the primary interval is computed
+over a de-duplicated panel of one cohort per antigen, chosen by sample count and
+never by outcome; a cluster bootstrap over antigens is reported alongside.
 
 ## 3. Results
 
-All numbers below are produced by the runs (see
-[`benchmarks/validation/RESULTS.md`](../../benchmarks/validation/RESULTS.md) and
-`results.json`); none are hand-set.
+### 3.1 Headline
 
-**Table 1 — per-antigen rediscovery, grouped by measured over-expression.**
+Approved-tier agents, the pre-registered primary denominator:
 
-| antigen | cohort | tumor/normal | log2fc | padj | rank | ≤5 |
-|---|---|---|--:|--:|--:|:--:|
-| **ERBB2** | BRCA HER2-enriched | 50 / 40 | **4.36** | 1.7e-59 | **4** | ✓ |
-| NECTIN4 | BLCA | 50 / 19 | 1.59 | 3.9e-03 | — | · |
-| FOLH1 (PSMA) | PRAD | 50 / 40 | 1.32 | 3.4e-04 | — | · |
-| EGFR | LUAD | 50 / 40 | 0.42 | 0.13 (ns) | — | · |
-| CEACAM5 (CEA) | COAD | 49 / 40 | −0.28 | 0.22 (ns) | — | · |
-| MSLN | PAAD | 50 / 4 | 2.31 | 0.14 (ns) | — | · |
+| Cutoff | Surfaced | 95% CI |
+|---|--:|---|
+| recall@5 | 0/17 | 0.000–0.184 |
+| recall@10 | 1/17 | 0.010–0.270 |
+| recall@20 | 1/17 | 0.010–0.270 |
+| recall@50 | 2/17 | 0.033–0.343 |
 
-**Sensitivity.** Of the antigens genuinely over-expressed in their cohort,
-**ERBB2 is rediscovered at rank 4 of 27 candidates** (top-5) in HER2-enriched
-breast cancer (Figure 1). This depends on the PAM50 stratification: in bulk
-TCGA-BRCA, ERBB2's signal is diluted across subtypes. recall@5 = recall@10 =
-recall@20 = 33% (1/3): ERBB2 is found; NECTIN4 (log2fc 1.59) and FOLH1
-(log2fc 1.32) are only modestly over-expressed and fall below the shortlist.
+Across every regulatory tier, as a labelled sensitivity analysis: 1/22 at rank 5,
+3/22 at rank 10 and 20, and 4/22 at rank 50. Over the de-duplicated panel of
+eight independent approved-tier antigens, recall at rank 20 is 0/8 (95% CI
+0.000–0.324).
 
-**Internal consistency (reported as "2/2").** Both antigens that are not
-over-expressed at the bulk level stay out of the top-20. EGFR drives lung
-adenocarcinoma through mutation and amplification, not bulk mRNA
-over-expression (log2fc 0.42, n.s.); CEA (CEACAM5) is abundantly expressed in
-*normal* colon epithelium too, so its tumor-vs-normal fold-change is ≈ 0
-(log2fc −0.28, padj 0.22, n.s.). This figure must not be
-read as a measurement of ranking discrimination: the discovery rule requires
-FDR < 0.05 and log2fc ≥ 1.0, so an antigen failing it is excluded from
-candidacy **by construction**. What 2/2 shows is that the documented rule was
-applied end-to-end and that clinical fame does not enter the scoring anywhere —
-not that the ranking was tested against famous-but-not-over-expressed
-competitors it could have surfaced. Measuring discrimination would require
-antigens that *pass* the over-expression gate and should still rank low.
+The interval, not the point estimate, is the finding at this panel size.
 
-**Sensitivity tracks effect size.** Across the panel, whether an antigen is
-surfaced is governed by its differential-expression magnitude (Figure 2): the
-strong over-expressor (ERBB2, log2fc > 4) is rank 4; modest ones (log2fc 1.3–1.6)
-fall below the shortlist; non-over-expressed ones are absent. This is exactly the
-behaviour expected of a differential-expression method.
+### 3.2 Antigens that surfaced
 
-**Figure 1.** Volcano of the HER2-enriched BRCA contrast with ERBB2 highlighted
-([`figures/volcano_brca_her2.png`](../../benchmarks/validation/figures/volcano_brca_her2.png)).
-**Figure 2.** recall@k and per-antigen rank
-([`figures/recall_at_k.png`](../../benchmarks/validation/figures/recall_at_k.png),
-[`figures/antigen_rank.png`](../../benchmarks/validation/figures/antigen_rank.png)).
+| Antigen | Cohort | Rank | Eligible surfaceome | log2FC |
+|---|---|--:|--:|--:|
+| CA9 | Clear-cell renal | 1 of 291 | 1 of 2,210 | 9.58 |
+| GPC3 | Hepatocellular | 9 of 289 | 6 of 2,057 | 3.97 |
+| MET | Papillary renal | 10 of 287 | 7 of 2,170 | 2.34 |
+| FOLH1 | Prostate | 34 of 285 | 24 of 2,208 | 2.21 |
+| STEAP1 | Prostate | 158 of 285 | 151 of 2,208 | 1.14 |
+
+All five come from whole unstratified cohorts with no selection on the antigen.
+The three strongest are oncofetal or driver antigens with large effects, which is
+what a differential-expression method should find.
+
+### 3.3 Why the others did not surface
+
+Of the 15 gated-out pairs: 13 failed the significance rule, 3 fell outside the
+enrichment cut, and one was measured as down-regulated. No pair was lost to
+infrastructure.
+
+Four cases are individually informative:
+
+- **ERBB2 in whole breast** measures log2fc 0.92 at an adjusted p of 5.6 × 10⁻¹¹.
+  The evidence is overwhelming and the fold change falls 0.08 below the floor.
+  HER2-positive disease is a minority of the cohort, so averaging dilutes it.
+  This is precisely the dilution the earlier study removed by stratifying, and
+  removing it was what made that result circular.
+- **NECTIN4 in bladder** measures log2fc 1.52 at an adjusted p of 0.0526, missing
+  the threshold by 0.0026 with only 19 matched pairs available.
+- **FOLR1 in endometrial** is significant at log2fc 1.51 and still excluded,
+  ranking 379th of 2,140 when the enrichment cut takes 300.
+- **CA9 in clear-cell renal** was, under the original surfaceome reference,
+  unreachable at any expression level. See §3.4.
+
+### 3.4 Two defects the study found in the pipeline
+
+**The enrichment cut preceded the surfaceome filter.** Discovery took the top 300
+significant genes by combined score and only then filtered to surface proteins,
+so surface antigens competed against the entire genome for those slots. In
+bladder cancer 4,418 genes were significant, 300 reached enrichment, and 24 were
+surface proteins. The ordering was forced rather than careless: the filter needs
+UniProt accessions, which only existed after enrichment. Vendoring an
+Ensembl-to-accession map removed that dependency. Filtering first costs nothing —
+the number of enrichment calls is unchanged — and raised the shortlist from
+roughly 40 candidates to roughly 295.
+
+**The surfaceome reference was incomplete.** CA9 and STEAP1 are absent from the
+SURFY list, verified against both the vendored file and the upstream one. Neither
+could be surfaced at any expression level, and CA9 carries the largest effect in
+the panel. Extending the reference with UniProt's curated cell-membrane
+annotations added 1,915 accessions, taking it from 2,886 to 4,801, and moved CA9
+from unreachable to rank 1 and STEAP1 to rank 158. The extension is additive and
+every entry records its source, so a SURFY-only run reproduces exactly.
+
+Both were found because the four-outcome scheme separates an antigen the
+instrument cannot see from one the ranking placed low. A single recall number
+would have shown neither.
 
 ## 4. Discussion
 
-bindsight's discovery half functions correctly end-to-end on real patient data:
-it ranks a bona-fide over-expressed surface antigen near the top of an
-unsupervised shortlist, and clinically famous antigens that are not
-transcriptionally over-expressed do not appear. That second observation is an
-**internal consistency check on the over-expression rule**, not a measurement of
-specificity: the rule excludes those antigens from candidacy by construction, so
-their absence confirms the documented rule was applied end-to-end rather than
-demonstrating discrimination. The PAM50
-stratification result underscores that *the right contrast matters as much as
-the method*: the same pipeline that buries ERBB2 in bulk BRCA recovers it at
-rank 4 once the HER2-enriched subtype is isolated.
+**Most clinically validated surface antigens are not significantly
+over-expressed in unstratified bulk tumour-versus-normal contrasts.** Thirteen of
+seventeen approved-tier pairs fail the significance rule. Their agents are
+licensed, so the antigens are real and the targeting works; the signal simply is
+not present in this measurement. Mechanisms differ. ERBB2 in breast and lung is
+diluted by intra-cohort heterogeneity. FOLH1, CEACAM5 and CLDN18 are abundant in
+the matched normal tissue, so tumour-versus-normal fold change is small by
+construction. EGFR in lung adenocarcinoma is driven by mutation and
+amplification rather than transcript abundance.
 
-The misses are informative, not failures of implementation. Many clinical
-surface antigens are lineage or oncofetal markers (CEA, PSMA) co-expressed in
-the normal tissue-of-origin, or are activated by mutation/amplification (EGFR);
-bulk tumor-vs-adjacent-normal DE — by construction — cannot distinguish these.
-This delineates the scope of expression-based discovery and is precisely why the
-v1.0 roadmap layers **single-cell deconvolution, co-expression, and
-immunopeptidomics** on top of bulk DE to score tumor-selectivity directly.
+This is a statement about the scope of bulk differential expression as a
+discovery signal, not about the ranker. It is also the honest version of what
+the earlier stratified analysis concealed: subtype selection removed the
+dilution, and did so by using the answer.
 
-**Data limitations.** CLDN6 (ovarian) and CD33 / IL3RA (AML) are excluded
-because TCGA-OV and TCGA-LAML ship zero matched solid-tissue normals;
-substituting an external normal (e.g. GTEx) would confound the contrast with a
-cross-study batch effect, so we document them rather than report a manufactured
-number. MSLN/PAAD is reported but underpowered (4 matched normals).
+**What the method does find** is antigens with large, tumour-restricted effects:
+CA9, GPC3 and MET, all in the top ten of their shortlists. That is a real and
+useful capability, narrower than the earlier report implied.
 
-**Designer benchmark.** The complementary three-way comparison of binder
-designers (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen on a shared target
-set) is GPU-only; a runnable, CPU-tested harness and protocol ship in
-[`benchmarks/designer_benchmark/`](../../benchmarks/designer_benchmark/). Its
-`rfdiff_mpnn` arm is populated with a real run — 20 binders against the ERBB2
-trastuzumab epitope on a free Kaggle P100 (best ipTM 0.84, 50 % pass ipTM ≥ 0.65,
-with the real Boltz-2-predicted complexes, see
-[`RESULTS.md`](../../benchmarks/designer_benchmark/RESULTS.md)); the BindCraft
-and BoltzGen arms need ≥24–32 GB GPUs and run on paid backends.
+**Limitations.** The panel is small, and every interval is correspondingly wide;
+at eight independent approved-tier antigens the primary interval spans zero to
+0.32. The fold-change floor of 1.0 is a shipped default rather than a tuned
+parameter, and it excludes ERBB2 in breast at an adjusted p of 5.6 × 10⁻¹¹; we
+report this rather than lower the floor, because changing a threshold after
+seeing which antigens it excludes is the practice that made the earlier study
+untrustworthy. mRNA abundance is not surface-protein abundance. Bulk expression
+cannot distinguish tumour-cell-intrinsic signal from infiltrating stroma.
+Antigens whose indication has no TCGA solid-tissue normal cannot be tested at all
+without a cross-study batch confound.
 
-## 5. Data and code availability
+**Planned work.** Extending discovery beyond bulk differential expression —
+single-cell input, co-expression and immunopeptidomics — addresses the dominant
+failure mode identified here directly.
 
-RNA-seq: NIH/GDC TCGA STAR-Counts (open access). Subtypes: cBioPortal. Known
-antigens: [`benchmarks/known.tsv`](../../benchmarks/known.tsv). Harness:
-[`bindsight/benchmark/rediscovery.py`](../../bindsight/benchmark/rediscovery.py);
-driver `python benchmarks/run_validation.py`. All generated artifacts (RESULTS,
-results.json, report.html, provenance.json, figures) are under
-[`benchmarks/validation/`](../../benchmarks/validation/).
+## 5. What changed from the previous version
+
+| | Previous | This report |
+|---|---|---|
+| Cohorts | 6, breast stratified by PAM50 | 15, all unstratified |
+| Contrast | Unpaired | Paired on patient |
+| Panel | 9 antigens, 6 evaluated | 13 antigens, 22 pairs |
+| Denominator | Chosen after seeing the data | Pre-registered, three nested |
+| Headline | ERBB2 rank 4; recall@5 33% | 1/17 at rank 20 (CI 0.01–0.27) |
+| Failure reporting | One rate | Four separated outcomes |
+| Interval | None | Wilson, Clopper-Pearson, cluster bootstrap |
+| Shortlist size | Not reported | Reported beside every rank |
+
+The previous headline is withdrawn. It arose from two errors that compound: a
+cohort defined by a classifier keyed on the antigen sought, and a denominator
+restricted, after the fact, to the antigens that turned out to be over-expressed.
+
+## 6. Data and code availability
+
+All artifacts are committed. `benchmarks/study/results.json` carries every pair,
+denominator, interval and set size; `benchmarks/study/RESULTS.md` is generated
+from it and never hand-edited. Per-cohort GDC file UUIDs, case barcodes and
+SHA-256 checksums are written into each run directory.
+
+Reproduce with:
+
+```bash
+pip install -e ".[discover,report]"
+python benchmarks/run_study.py --list
+python benchmarks/run_study.py --all --cpus 2
+```
+
+`--score-only` re-derives every number above from the run directories already on
+disk without repeating any differential expression, so the scoring rules can be
+changed and re-argued at no compute cost.
 
 ## References
 
-1. Parker JS, *et al.* Supervised risk predictor of breast cancer based on
-   intrinsic subtypes (PAM50). *J Clin Oncol* 2009. doi:10.1200/JCO.2008.18.1370
-2. Love MI, Huber W, Anders S. Moderated estimation of fold change and
-   dispersion for RNA-seq data with DESeq2. *Genome Biol* 2014.
-   doi:10.1186/s13059-014-0550-8
-3. Cerami E, *et al.* The cBioPortal for Cancer Genomics. *Cancer Discov* 2012.
-   doi:10.1158/2159-8290.CD-12-0095
-4. Gao J, *et al.* Integrative analysis of complex cancer genomics via the
-   cBioPortal. *Sci Signal* 2013. doi:10.1126/scisignal.2004088
-5. Bausch-Fluck D, *et al.* The in silico human surfaceome (SURFY). *PNAS* 2018.
-   doi:10.1073/pnas.1808790115
-6. Xiao Y, *et al.* A novel significance score for gene selection and ranking
-   (the π-value). *Bioinformatics* 2014. doi:10.1093/bioinformatics/btr671
-7. Ochoa D, *et al.* Open Targets Platform. *Nucleic Acids Res* 2023.
-   doi:10.1093/nar/gkac1046
-8. Cho HS, *et al.* Structure of the extracellular region of HER2 alone and in
-   complex with trastuzumab. *Nature* 2003. doi:10.1038/nature01392
-
----
-
-*Licensing: this manuscript, its figures, and the generated result artifacts are released under [CC BY 4.0](../LICENSE) — reuse freely with attribution. The bindsight software is licensed under [AGPL-3.0-or-later](../../LICENSE).*
+1. Bausch-Fluck D. *et al.* The in silico human surfaceome. *PNAS* 115:E10988 (2018).
+2. Muzellec B. *et al.* PyDESeq2: a python package for bulk RNA-seq differential expression analysis. *Bioinformatics* 39:btad547 (2023).
+3. Love M.I., Huber W., Anders S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology* 15:550 (2014).
+4. Xiao Y. *et al.* A novel significance score for gene selection and ranking. *Bioinformatics* 30:801 (2014).
+5. Wilson E.B. Probable inference, the law of succession, and statistical inference. *JASA* 22:209 (1927).
+6. Clopper C.J., Pearson E.S. The use of confidence or fiducial limits illustrated in the case of the binomial. *Biometrika* 26:404 (1934).
+7. Benjamini Y., Hochberg Y. Controlling the false discovery rate. *JRSS B* 57:289 (1995).
+8. Parker J.S. *et al.* Supervised risk predictor of breast cancer based on intrinsic subtypes. *J Clin Oncol* 27:1160 (2009).
+9. The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2025. *Nucleic Acids Research* 53:D609 (2025).

@@ -171,15 +171,13 @@ Adds:
 
 A [companion report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md)
 runs the discovery half on six real indication-matched TCGA cohorts. It
-rediscovers **ERBB2 at rank 4** in HER2-enriched breast cancer (using PAM50
-subtype stratification — versus a much lower rank in the unsplit BRCA cohort,
-where the HER2 signal is averaged away; that unsplit run is not committed, so no
-rank is quoted). Antigens that are not transcriptionally over-expressed at the
-bulk level (EGFR, which is mutation-driven; CEA, co-expressed in normal colon)
-do not appear in the shortlist. That absence is an **internal consistency check
-on the over-expression rule** — the rule (FDR < 0.05, log2fc ≥ 1) excludes them
-from candidacy by construction — not a measurement of specificity or of ranking
-discrimination. Reproducible artifacts are in `benchmarks/validation/`. The three-way *designer*
+surfaces **CA9 at rank 1 of 291** in clear-cell kidney, alongside GPC3, MET,
+FOLH1 and STEAP1. Cohorts are whole, unstratified TCGA projects, so nothing in a
+cohort's definition refers to the antigen being sought. Recall at rank 20 is 1 of
+17 on approved-agent antigens (95% CI 0.01–0.27). Most validated antigens are
+simply not significantly over-expressed in an unstratified bulk contrast, which
+is a limit of the signal rather than of the ranking, and the study says so.
+Reproducible artifacts are in `benchmarks/study/`.
 benchmark is GPU-only; a runnable, CPU-tested harness + protocol ship in
 `benchmarks/designer_benchmark/`.
 
@@ -270,8 +268,8 @@ Anyone with a GPU can run the existing tools. The work `bindsight` does is the
 *opinionated, validated, reproducible join*. Specifically:
 
 1. **Empirical defense of the defaults.** The discovery half is validated by
-   rediscovery on six real TCGA cohorts (`benchmarks/validation/`): it surfaces
-   ERBB2 at rank 4 in HER2-enriched breast, and antigens that aren't
+   rediscovery on fifteen real TCGA cohorts (`benchmarks/study/`): it surfaces
+   CA9 at rank 1 of 291 in clear-cell kidney, and antigens that aren't
    transcriptionally over-expressed stay out of the shortlist — an internal
    consistency check on the over-expression rule, not a specificity
    measurement, since that rule excludes them by construction. See the

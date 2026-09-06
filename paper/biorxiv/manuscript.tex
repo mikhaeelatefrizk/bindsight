@@ -287,7 +287,9 @@ example, is an antibody-drug-conjugate target in clinical development). This
 is real discovery on real data rather than a scripted result: established
 breast-cancer surface antigens such as ERBB2 (HER2) are recovered as
 differentially expressed when the sampled cohort carries their signal, but on
-a small random cohort they need not rank in the top-$k$ by fold-change ---
+a small random cohort they need not rank in the top-$k$ by fold-change --- in
+the full unstratified TCGA-BRCA cohort ERBB2 falls just below the fold-change
+floor despite an adjusted $p$ of $5.6\times10^{-11}$ ---
 EGFR, for instance, is frequently \emph{lower} in bulk tumor than in normal
 breast epithelium. The pipeline simultaneously writes a self-contained HTML
 report (volcano plot, ranked candidate table, PROV-O manifest) and a PROV-O
@@ -349,24 +351,50 @@ that will be addressed promptly. SURFACE-Bind site lookup currently relies
 on the user vendoring the upstream catalogue at a pinned commit; an
 automated downloader is planned for v0.2.
 
-\paragraph{Rediscovery validation.} A companion validation report
+\paragraph{Rediscovery study.} A companion report
 (\texttt{paper/validation/manuscript.md}, with reproducible artifacts under
-\texttt{benchmarks/validation/}) tests the discovery half on six real
-indication-matched TCGA tumor-vs-adjacent-normal cohorts. Scoring the rank of
-each known antigen in the unsupervised candidate shortlist, the pipeline
-rediscovers \textbf{ERBB2 (HER2) at rank~4} in HER2-enriched breast cancer
-(log2fc~4.36, $p_{\mathrm{adj}}\!=\!1.7\times10^{-59}$) --- a result that depends
-on stratifying TCGA-BRCA by its PAM50 subtype, which otherwise averages the HER2
-signal away. Antigens that are not transcriptionally over-expressed at the bulk
-level --- EGFR (mutation/amplification-driven) and CEA (co-expressed in normal
-colon) --- do not appear in the top-20. That outcome is an \textit{internal
-consistency check} rather than a measurement of ranking discrimination: the
-over-expression rule (FDR $<$ 0.05, log2fc $\geq$ 1.0) excludes such antigens
-from candidacy by construction, so their absence confirms the documented rule
-was applied and shows that sensitivity tracks differential-expression effect
-size, as expected for a DE-based method. Antigens without matched TCGA normals
-(CLDN6, CD33/CD123) are documented as data limitations rather than reported with
-a manufactured number. A complementary, CPU-tested three-way \textit{designer
+\texttt{benchmarks/study/}) tests the discovery half on \textbf{fifteen whole,
+unstratified TCGA projects}, run as patient-paired tumor-vs-normal contrasts
+($\sim$ \texttt{case\_barcode + condition}) and scored against a pre-registered
+panel of 22 antigen-cohort pairs covering 13 distinct antigens. No cohort's
+definition refers to the antigen being sought.
+
+Under the pre-registered primary denominator (antigens whose targeting agent is
+approved), recall at rank~20 is \textbf{1 of 17} (95\% CI 0.01--0.27), and 2 of
+17 at rank~50; across every regulatory tier it is 3 of 22. Five antigens reach
+the candidate shortlist: CA9 at rank~1 of 291 in clear-cell renal carcinoma
+(log2fc~9.58), GPC3 at 9 of 289 in hepatocellular carcinoma, MET at 10 of 287 in
+papillary renal carcinoma, FOLH1 at 34 of 285 in prostate adenocarcinoma, and
+STEAP1 at 158 of 285. Every rank is reported beside the size of the shortlist it
+sits in, and every rate beside its numerator, denominator and interval.
+
+The study's more useful output is diagnostic. Rather than one recall figure, it
+separates four reasons an antigen can fail to appear --- absent from the
+surfaceome reference, excluded by a named filter, ranked low, or invalidated by a
+failed lookup --- and reports for each non-surfaced pair the \textit{counterfactual
+rank} it would have achieved with every gate removed. Thirteen of the seventeen
+approved-tier pairs fail the significance rule outright: their agents are
+licensed, so the antigens are real, but they are not significantly over-expressed
+in an unstratified bulk contrast. ERBB2 in whole breast measures log2fc~0.92 at
+$p_{\mathrm{adj}}\!=\!5.6\times10^{-11}$, statistically overwhelming and 0.08
+below the fold-change floor, because HER2-positive disease is a minority of the
+cohort. This delineates the scope of bulk differential expression as a discovery
+signal and motivates the multi-modal specificity scoring planned for v1.0.
+
+The same separation exposed two defects in the pipeline, both since corrected:
+the enrichment cut was applied before the surfaceome filter, so surface antigens
+competed against the whole genome for its slots; and the surfaceome reference
+omitted CA9 and STEAP1, making the largest effect in the panel unreachable at any
+expression level. Extending the reference moved CA9 from invisible to rank~1.
+
+\textit{This supersedes an earlier six-cohort analysis that reported ERBB2 at
+rank~4 and recall@5 of 33\%. Both figures are withdrawn: that breast cohort was
+stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes the PAM50
+centroid classifier is built on, so the tumor arm was selected partly by
+expression of the gene then reported as discovered; the denominator of three was
+also chosen after seeing which antigens proved over-expressed.} Antigens without
+matched TCGA normals (CLDN6, CD33/CD123, FOLR1 in ovary) remain documented as
+data limitations rather than reported with a manufactured number. A complementary, CPU-tested three-way \textit{designer
 benchmark} (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable
 harness and protocol in \texttt{benchmarks/designer\_benchmark/}, to be populated
 from a GPU run.

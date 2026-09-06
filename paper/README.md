@@ -195,7 +195,7 @@ To stay honest:
   manuscripts in this directory were written before that run and understate
   what has been executed.
 - **Rediscovery validation: done (discovery half).** A companion report
-  (`paper/validation/manuscript.md`, artifacts in `benchmarks/validation/`)
+  (`paper/validation/manuscript.md`, artifacts in `benchmarks/study/`)
   runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
   is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified). EGFR
   and CEA are not surfaced, which the report presents as an internal
