@@ -494,3 +494,61 @@ class TestSurfaceomePrefilter:
             surfaceome_gene_ids=frozenset(),
         )
         assert taxonomy.iloc[0]["disposition"] == "below_enrichment_cutoff"
+
+
+# ---------------------------------------------------------------------------
+# 10. Differential expression is reused when its inputs are unchanged
+# ---------------------------------------------------------------------------
+class TestDegCache:
+    """The most expensive stage must not re-run for an identical computation.
+
+    Measured on a real cohort of 32 matched pairs, this stage alone exceeds ten
+    minutes. Re-running it because something downstream changed spends that time
+    to arrive at exactly the same table.
+    """
+
+    @staticmethod
+    def _inputs(counts_sha: str, design_sha: str) -> list[Any]:
+        from bindsight.provenance.manifest import InputRef
+
+        # The schema requires a real 64-character digest, so the short labels are
+        # expanded rather than weakening the model to suit the test.
+        def _digest(label: str) -> str:
+            return (label * 64)[:64]
+
+        return [
+            InputRef(role="counts", path="c.tsv", sha256=_digest(counts_sha), bytes=1),
+            InputRef(role="design", path="d.tsv", sha256=_digest(design_sha), bytes=1),
+        ]
+
+    def test_identical_inputs_and_params_give_the_same_key(self) -> None:
+        from bindsight.pipelines.discover import _deg_cache_key
+
+        params = {"design_formula": "~ condition", "fdr_threshold": 0.05}
+        a = _deg_cache_key(self._inputs("aa", "bb"), params)
+        b = _deg_cache_key(self._inputs("aa", "bb"), dict(params))
+        assert a == b
+
+    def test_changed_counts_change_the_key(self) -> None:
+        """Keying on the path rather than the content would reuse a stale table."""
+        from bindsight.pipelines.discover import _deg_cache_key
+
+        params = {"design_formula": "~ condition"}
+        assert _deg_cache_key(self._inputs("aa", "bb"), params) != _deg_cache_key(
+            self._inputs("cc", "bb"), params
+        )
+
+    def test_changed_parameters_change_the_key(self) -> None:
+        """A run recorded under one configuration must not be reported under another."""
+        from bindsight.pipelines.discover import _deg_cache_key
+
+        inputs = self._inputs("aa", "bb")
+        unpaired = _deg_cache_key(inputs, {"design_formula": "~ condition"})
+        paired = _deg_cache_key(inputs, {"design_formula": "~ case_barcode + condition"})
+        assert unpaired != paired
+
+    def test_input_order_does_not_change_the_key(self) -> None:
+        from bindsight.pipelines.discover import _deg_cache_key
+
+        inputs = self._inputs("aa", "bb")
+        assert _deg_cache_key(inputs, {}) == _deg_cache_key(list(reversed(inputs)), {})

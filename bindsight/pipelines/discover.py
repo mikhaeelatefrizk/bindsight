@@ -29,6 +29,7 @@ gene, we tag the row ``no_open_targets`` and keep going. The downstream
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -220,6 +221,25 @@ def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
 # ---------------------------------------------------------------------------
 # Stage: DEG
 # ---------------------------------------------------------------------------
+def _deg_cache_key(inputs: list[InputRef], params: dict[str, Any]) -> str:
+    """Identify a differential-expression computation by its inputs and parameters.
+
+    Covers the *content* of the counts and design tables, not their paths, so a
+    moved or re-downloaded but identical cohort still hits. Any parameter change
+    misses, including the worker count, because a run recorded under one
+    configuration should not be reported under another.
+    """
+    import hashlib
+
+    material = "|".join(
+        [
+            *(f"{i.role}:{i.sha256}" for i in sorted(inputs, key=lambda x: x.role)),
+            json.dumps(params, sort_keys=True, default=str),
+        ]
+    )
+    return hashlib.sha256(material.encode()).hexdigest()
+
+
 def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
     counts_p = Path(config.inputs.counts)
     design_p = Path(config.inputs.design)
@@ -261,9 +281,42 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
         )
         return stage
 
+    # Differential expression is by far the most expensive stage — minutes to hours
+    # on a real cohort — and it depends only on the counts, the design and the DEG
+    # parameters. Re-running it because something downstream changed wastes that
+    # time for an identical answer. The key covers the content of both inputs and
+    # every parameter, so a cache hit is only ever the same computation.
+    cache_key = _deg_cache_key(inputs, config.params.deg.model_dump())
+    key_path = out_path.with_suffix(".cache_key")
+    if (
+        out_path.exists()
+        and out_path.stat().st_size > 0
+        and key_path.exists()
+        and key_path.read_text(encoding="utf-8").strip() == cache_key
+    ):
+        LOG.info("DEG cache hit (%s); reusing %s", cache_key[:8], out_path)
+        stage.cache_key = cache_key
+        stage.cache_status = "hit"
+        stage.notes = "reused an existing DEG table with identical inputs and parameters"
+        stage.mark_completed(
+            outputs=[
+                OutputRef(
+                    role="deg_table",
+                    path=str(out_path),
+                    sha256=sha256_file(out_path),
+                    bytes=out_path.stat().st_size,
+                    media_type="application/x-parquet",
+                )
+            ]
+        )
+        return stage
+
+    stage.cache_key = cache_key
+    stage.cache_status = "miss"
     try:
         runner = PyDESeq2Runner(config.params.deg)
         metrics = runner.run(counts_p, design_p, out_path)
+        key_path.write_text(cache_key, encoding="utf-8")
         stage.notes = (
             f"n_samples={metrics['n_samples']}, "
             f"n_genes_tested={metrics['n_genes_tested']}, "
