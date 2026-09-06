@@ -286,22 +286,29 @@ def score_cohort(
         else pd.DataFrame()
     )
 
-    # The eligible surfaceome: tested genes whose accession is in the reference.
-    # This is the set a counterfactual rank is taken within, and its size is what
-    # makes that rank mean anything.
-    gene_to_uniprot: dict[str, str] = {}
-    if not candidates.empty and {"gene_id", "uniprot_id"} <= set(candidates.columns):
-        gene_to_uniprot = {
-            str(g): str(u)
-            for g, u in zip(candidates["gene_id"], candidates["uniprot_id"], strict=False)
-            if isinstance(u, str) and u
-        }
+    # The eligible surfaceome: every TESTED gene whose accession is in the
+    # reference. This is the set a counterfactual rank is taken within, and its
+    # size is what makes that rank mean anything.
+    #
+    # It must come from the vendored gene map, not from the run's own candidates
+    # table. The candidates table holds only the genes that survived the
+    # enrichment cut, so ranking within it would be ranking within the pipeline's
+    # own output — and the counterfactual rank exists precisely to say where an
+    # antigen would have landed had that cut not been applied.
+    from bindsight.surfaceome.surfy import load_surfy_gene_map
+
+    gene_to_uniprot = {
+        gene: accession
+        for gene, accession in load_surfy_gene_map().items()
+        if accession in surfaceome
+    }
     entries = entries if entries is not None else [c for c in P.PANEL if c.project == project]
-    # Panel antigens must be resolvable even when the pipeline dropped them, so
-    # their known accessions are added to the map.
+    # Panel antigens must be resolvable even if the vendored map missed them.
     for entry in entries:
-        gene_to_uniprot.setdefault(entry.ensembl, entry.uniprot)
-    eligible_gene_ids = {g for g, u in gene_to_uniprot.items() if u in surfaceome}
+        if entry.uniprot in surfaceome:
+            gene_to_uniprot.setdefault(entry.ensembl, entry.uniprot)
+    tested_genes = set(deg["gene_id"].astype(str))
+    eligible_gene_ids = tested_genes & set(gene_to_uniprot)
 
     shortlist_size = len(candidates) if not candidates.empty else 0
     rank_by_gene: dict[str, int] = {}

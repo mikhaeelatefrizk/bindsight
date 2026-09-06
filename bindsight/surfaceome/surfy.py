@@ -116,6 +116,40 @@ def load_vendored_surfy() -> frozenset[str] | None:
     return accessions or None
 
 
+def load_surfy_gene_map() -> dict[str, str]:
+    """Ensembl gene id -> UniProt accession, for the surfaceome.
+
+    A differential-expression table is keyed by gene id and the surfaceome
+    reference is a list of accessions, so without this mapping "the eligible
+    surfaceome" can only be approximated by whichever genes a run happened to
+    resolve — its enriched subset. A rank taken within that subset is a rank
+    within the pipeline's own output rather than within the set it should be
+    judged against, which defeats the purpose of a counterfactual rank.
+
+    Vendored, so no run needs the network. Regenerate with
+    ``scripts/build_surfy_gene_map.py``.
+
+    Returns:
+        The mapping, or an empty dict if the file is not packaged.
+    """
+    text = _read_packaged("surfy_v1.ensembl.tsv")
+    if not text:
+        LOG.warning(
+            "surfy_v1.ensembl.tsv is not packaged; the eligible surfaceome cannot be "
+            "resolved and any rank taken within it would be misleading"
+        )
+        return {}
+    mapping: dict[str, str] = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        gene, _, accession = line.partition("	")
+        if gene and accession:
+            mapping[gene] = accession
+    return mapping
+
+
 def load_surfy(*, allow_offline_fallback: bool = True) -> frozenset[str]:
     """Return the set of UniProt accessions classified as surface by SURFY.
 

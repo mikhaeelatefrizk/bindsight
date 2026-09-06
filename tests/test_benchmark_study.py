@@ -112,29 +112,39 @@ class TestScoreCohort:
         assert pair["log2fc"] == pytest.approx(5.0)
 
     def test_a_gated_antigen_carries_its_counterfactual_rank(self, tmp_path: Path) -> None:
-        """The number that separates 'a gate killed it' from 'the ranker buried it'."""
+        """The number that separates 'a gate killed it' from 'the ranker buried it'.
+
+        Real surfaceome gene ids, because eligibility is decided by the vendored
+        map rather than by whatever the run happened to resolve.
+        """
+        from bindsight.surfaceome.surfy import load_surfy
+
+        surfaceome = load_surfy(allow_offline_fallback=False)
+        erbb2, trop2 = "ENSG00000141736", "ENSG00000184292"
         run = _write_run(
             tmp_path / "run",
             deg_rows=[
-                {"gene_id": "ENSG1", "log2fc": 4.0, "padj": 1e-40, "significant": True},
-                {"gene_id": "ENSG2", "log2fc": 1.2, "padj": 0.02, "significant": True},
-                {"gene_id": "ENSG3", "log2fc": 0.9, "padj": 0.30, "significant": False},
+                {"gene_id": erbb2, "log2fc": 4.0, "padj": 1e-40, "significant": True},
+                {"gene_id": trop2, "log2fc": 1.2, "padj": 0.02, "significant": True},
+                {"gene_id": "ENSG00000000005", "log2fc": 0.9, "padj": 0.30, "significant": False},
             ],
-            candidate_rows=[{"gene_id": "ENSG1", "uniprot_id": "P04626", "rank": 1}],
-            taxonomy_rows=[{"gene_id": "ENSG2", "disposition": "below_enrichment_cutoff"}],
+            # Only ERBB2 survived the enrichment cut into the shortlist.
+            candidate_rows=[{"gene_id": erbb2, "uniprot_id": "P04626", "rank": 1}],
+            taxonomy_rows=[{"gene_id": trop2, "disposition": "below_enrichment_cutoff"}],
         )
         result = ST.score_cohort(
             "TCGA-TEST",
             run,
-            surfaceome=SURFACEOME,
-            entries=[_entry("TROP2", "P09758", "ENSG2")],
+            surfaceome=surfaceome,
+            entries=[_entry("TACSTD2", "P09758", trop2)],
         )
         pair = result.pairs[0]
         assert pair["outcome_class"] == O.GATED_OUT
         assert pair["rank"] is None
-        # It would have ranked second of the eligible surfaceome, so a gate
-        # excluded it rather than the ranker burying it.
+        # Second of the eligible surfaceome, so a gate excluded it rather than
+        # the ranker burying it — which is exactly what this number is for.
         assert pair["counterfactual_rank"] == 2
+        assert pair["n_eligible"] == 2
         assert pair["direction"] == "up"
 
     def test_an_untested_antigen_is_not_a_miss(self, tmp_path: Path) -> None:
@@ -312,3 +322,64 @@ class TestPairedDesign:
         results = runner._run_pydeseq2(counts, design)
         assert len(results) == n_genes
         assert "log2FoldChange" in results.columns
+
+
+class TestEligibleSurfaceome:
+    """The set a counterfactual rank is taken within decides what it means."""
+
+    def test_the_vendored_gene_map_covers_the_panel(self) -> None:
+        from bindsight.surfaceome.surfy import load_surfy, load_surfy_gene_map
+
+        gene_map = load_surfy_gene_map()
+        assert len(gene_map) > 2000, "the surfaceome gene map looks unpopulated"
+        surfaceome = load_surfy(allow_offline_fallback=False)
+        for entry in P.PANEL:
+            if entry.uniprot not in surfaceome:
+                continue  # CA9 and STEAP1 are genuinely absent upstream
+            assert gene_map.get(entry.ensembl) == entry.uniprot, entry.symbol
+
+    def test_eligibility_is_not_taken_from_the_run_output(self, tmp_path: Path) -> None:
+        """Ranking within the candidates table would rank within the pipeline's own output.
+
+        The candidates table holds only genes that survived the enrichment cut, so
+        a counterfactual rank computed there could never show that the cut was
+        what excluded an antigen — which is the one thing it exists to show.
+        """
+        from bindsight.surfaceome.surfy import load_surfy
+
+        surfaceome = load_surfy(allow_offline_fallback=False)
+        # Many surfaceome genes tested, but only one tiny candidate shortlist.
+        deg_rows = [
+            {"gene_id": g, "log2fc": 0.1, "padj": 0.5, "significant": False}
+            for g in list(_surfaceome_gene_ids())[:500]
+        ]
+        deg_rows.append(
+            {
+                "gene_id": "ENSG00000141736",
+                "log2fc": 3.0,
+                "padj": 1e-10,
+                "significant": True,
+            }
+        )
+        run = _write_run(
+            tmp_path / "run",
+            deg_rows=deg_rows,
+            candidate_rows=[{"gene_id": "ENSG00000000001", "uniprot_id": "P00001", "rank": 1}],
+        )
+        result = ST.score_cohort(
+            "TCGA-TEST",
+            run,
+            surfaceome=surfaceome,
+            entries=[_entry("ERBB2", "P04626", "ENSG00000141736")],
+        )
+        # The eligible set is far larger than the one-row candidates table.
+        assert result.set_sizes["n_eligible_surfaceome"] > 100
+        assert result.set_sizes["n_candidates"] == 1
+        assert result.pairs[0]["counterfactual_rank"] == 1
+
+
+def _surfaceome_gene_ids() -> list[str]:
+    from bindsight.surfaceome.surfy import load_surfy, load_surfy_gene_map
+
+    surfaceome = load_surfy(allow_offline_fallback=False)
+    return [g for g, a in load_surfy_gene_map().items() if a in surfaceome]

@@ -1,0 +1,134 @@
+{
+  "schema": "bindsight-rediscovery/3",
+  "design": {
+    "cohorts": "whole unstratified TCGA project, all primary tumour vs all normal",
+    "contrast": "~ case_barcode + condition (paired on patient)",
+    "admissible_stratifier_rule": "A stratifying variable is admissible only if BOTH hold: (a) it is computable without the run's own counts matrix, and (b) it is not a measurement of the antigen under test on any analyte. PAM50 and every other mRNA-cluster subtype fails (a). Clinical HER2 IHC/FISH passes (a) but fails (b), so it may appear only as a labelled sensitivity analysis and never in a recall denominator. Receptor status for a different receptor, histology and stage pass both.",
+    "unreachable_note": "CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome reference bindsight filters on \u2014 verified against the vendored list and against the upstream file, so this is a genuine reference gap rather than a build error. Neither can enter the candidate table at any expression level. They are reported as instrument-coverage failures, never as ranking misses, and they name their own fix: extend the surfaceome reference.",
+    "tiers_in_primary_denominator": [
+      "approved"
+    ],
+    "seed": 0
+  },
+  "set_sizes_by_cohort": {
+    "TCGA-ESCA": {
+      "n_genes_tested": 17592,
+      "n_eligible_surfaceome": 2229,
+      "n_candidates": 43,
+      "n_significant": 3445
+    }
+  },
+  "recall_cascade": {
+    "all": {
+      "wilson": {
+        "point": 0.0,
+        "low": 5.551115123125783e-17,
+        "high": 0.7934506858870163,
+        "numerator": 0,
+        "denominator": 1,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "clopper_pearson": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.975,
+        "numerator": 0,
+        "denominator": 1,
+        "method": "clopper-pearson",
+        "confidence": 0.95
+      },
+      "removed_from_previous_step": 0
+    },
+    "reachable": {
+      "wilson": {
+        "point": 0.0,
+        "low": 5.551115123125783e-17,
+        "high": 0.7934506858870163,
+        "numerator": 0,
+        "denominator": 1,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "clopper_pearson": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.975,
+        "numerator": 0,
+        "denominator": 1,
+        "method": "clopper-pearson",
+        "confidence": 0.95
+      },
+      "removed_from_previous_step": 0
+    },
+    "gate_passed": {
+      "numerator": 0,
+      "denominator": 0,
+      "note": "no eligible pairs"
+    }
+  },
+  "infrastructure_failures": {
+    "n": 0,
+    "pairs": [],
+    "note": "A lookup that errored or never ran is not a negative result. This count must be zero in anything published; any pair here invalidates itself and must be re-run."
+  },
+  "outcome_class_counts": {
+    "not_reachable": 0,
+    "gated_out": 1,
+    "ranked": 0,
+    "infrastructure": 0
+  },
+  "pairs": [
+    {
+      "project": "TCGA-ESCA",
+      "symbol": "CLDN18",
+      "uniprot": "P56856",
+      "ensembl": "ENSG00000066405",
+      "agent": "zolbetuximab (Vyloy)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Zolbetuximab's label covers gastro-oesophageal junction adenocarcinoma, which TCGA-ESCA contains. Only 13 normals, just above the power floor, so its per-cohort power must be published alongside the result. ESCA mixes squamous and adenocarcinoma and CLDN18.2 biology is adenocarcinoma-specific, so the histology split is a pre-registered stratum.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 43,
+      "normalised_rank": null,
+      "reason": "did not clear the FDR threshold",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 1362,
+      "n_eligible": 2229,
+      "n_up_regulated": 1111,
+      "normalised_counterfactual_rank": 0.6110363391655451,
+      "log2fc": -0.39036878015350873,
+      "direction": "down",
+      "combined_score": -0.06221140743236062,
+      "tested": true,
+      "padj": 0.6928420935911612,
+      "base_mean": 60669.698326623984,
+      "lfc_se": 0.6707107167936947,
+      "significant": false,
+      "p_uniform_rank": null
+    }
+  ],
+  "cohorts_not_yet_run": [
+    "TCGA-BLCA",
+    "TCGA-BRCA",
+    "TCGA-COAD",
+    "TCGA-HNSC",
+    "TCGA-KICH",
+    "TCGA-KIRC",
+    "TCGA-KIRP",
+    "TCGA-LIHC",
+    "TCGA-LUAD",
+    "TCGA-LUSC",
+    "TCGA-PRAD",
+    "TCGA-STAD",
+    "TCGA-THCA",
+    "TCGA-UCEC"
+  ],
+  "surfaceome_size": 2886
+}

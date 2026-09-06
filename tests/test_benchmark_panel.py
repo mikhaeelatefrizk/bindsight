@@ -10,8 +10,6 @@ non-circular.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from bindsight.benchmark import panel as P
@@ -19,9 +17,15 @@ from bindsight.benchmark import panel as P
 
 @pytest.fixture(scope="module")
 def surfaceome() -> frozenset[str]:
-    """The surfaceome accessions bindsight actually filters on."""
-    path = Path("bindsight/surfaceome/data/surfy_v1.uniprot.txt")
-    return frozenset(path.read_text().split())
+    """The surfaceome accessions bindsight actually filters on.
+
+    Loaded through the package's own loader rather than by splitting the file on
+    whitespace: the vendored list carries a comment header, and a naive split
+    turns its prose into fake accessions.
+    """
+    from bindsight.surfaceome.surfy import load_surfy
+
+    return load_surfy(allow_offline_fallback=False)
 
 
 class TestPanelComposition:
