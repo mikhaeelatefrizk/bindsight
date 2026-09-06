@@ -71,10 +71,14 @@ def test_glossary_covers_core_terms() -> None:
 def test_page_reports_the_published_numbers() -> None:
     """The public page states the same results the tests pin elsewhere."""
     text = GENERATED.read_text(encoding="utf-8")
-    assert "rank 4" in text
-    assert "ERBB2" in text
+    # The best-ranked antigen, always printed with the list it was ranked within.
+    assert "CA9" in text
+    assert "rank **1 of 291**" in text
+    # The designer benchmark's committed figures.
     assert "0.84" in text
     assert "50%" in text
+    # The retracted circular claim must not reappear on the public page.
+    assert "rank 4" not in text
 
 
 def test_referenced_figures_exist() -> None:

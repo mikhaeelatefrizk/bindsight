@@ -76,99 +76,139 @@ def _fmt(value: object, spec: str = "") -> str:
     return str(value)
 
 
-def _validation_section(v: showcase.ValidationShowcase) -> list[str]:
-    """Render the rediscovery-validation section."""
-    lines = [
+def _study_section(st: showcase.StudyShowcase) -> list[str]:
+    """Render the rediscovery-study section.
+
+    Every rate is printed with its numerator, denominator and interval, and every
+    rank with the size of the list it sits in. The previous version of this page
+    quoted "ERBB2 rediscovered at rank 4" and "recall@5 = 33%" without either.
+    """
+    lines: list[str] = [
         "## Does it rediscover antigens we already trust?",
         "",
-        "Six real TCGA cohorts were run through the discovery half as",
-        "tumor-vs-adjacent-normal contrasts, then scored by where each",
-        "clinically-validated antigen landed in the candidate shortlist.",
+        f"**{st.n_scored} antigen-cohort pairs across {st.n_projects} real TCGA projects.** "
+        "Each cohort is a whole, unstratified project — every primary tumour against "
+        "every solid-tissue normal — with the contrast paired on the patient. Nothing "
+        "selects for the antigen being sought.",
         "",
-        '!!! note "How these are grouped"',
-        "    Antigens are grouped by their **measured** differential expression",
-        "    (FDR&nbsp;<&nbsp;0.05 and log2fc&nbsp;≥&nbsp;1.0), not by clinical fame.",
-        "    An expression-based method can only surface what is actually",
-        "    over-expressed, and the benchmark reports that precondition openly.",
+        "The earlier version of this study did select for it: it chose breast tumours "
+        "by a subtype classifier built on fifty genes, one of them ERBB2, and then "
+        "reported discovering ERBB2. The numbers below are far weaker, and they are "
+        "the honest ones.",
         "",
     ]
 
-    top = v.headline
+    top = st.headline
     if top is not None:
-        exp = top["expected"]
-        spec = v.exclusion_check or {}
-        stats = [
-            (f"rank {exp['rank']}", f"{exp['symbol']} rediscovered", top["cohort"]["label"]),
-            ("log2fc " + f"{exp['log2fc']:.2f}", "fold-change", f"padj {exp['padj']:.1e}"),
-        ]
-        for k in ("recall@5", "recall@20"):
-            if k in v.recall_at_k:
-                stats.append((f"{v.recall_at_k[k] * 100:.0f}%", k, "over over-expressed antigens"))
-        if spec.get("n"):
-            # Antigens that fail the over-expression rule are excluded from
-            # candidacy by that same rule, so this can only ever come out clean.
-            # It is an internal consistency check, not a measure of ranking
-            # discrimination, and must not be labelled "specificity".
-            stats.append(
-                (
-                    f"{spec.get('consistent')}/{spec['n']}",
-                    "consistency check",
-                    "not-over-expressed antigens excluded by construction",
-                )
-            )
-        lines += ['<div class="bs-stats">']
         lines += [
-            f'<div class="bs-stat"><div class="v">{val}</div>'
-            f'<div class="k">{key}</div><div class="d">{detail}</div></div>'
-            for val, key, detail in stats
+            f"The best-ranked antigen is **{top['symbol']}** in "
+            f"{str(top['project']).removeprefix('TCGA-')}, at rank **{top['rank']} of "
+            f"{top['shortlist_size']}** candidates, with a log2 fold change of "
+            f"{top['log2fc']:.2f}.",
+            "",
         ]
-        lines += ["</div>", ""]
 
-    lines += [
-        "| antigen | cohort | over-expressed | log2fc | padj | rank |",
-        "|---|---|:--:|--:|--:|--:|",
-    ]
-    for row in v.rows():
-        over = "✓" if row["over_expressed"] else "·"
-        lines.append(
-            f"| **{row['antigen']}** | {row['cohort']} "
-            f"| {over} | {_fmt(row['log2fc'], '.2f')} | {_fmt(row['padj'], '.1e')} "
-            f"| {_fmt(row['rank'])} |"
-        )
-    lines += ["", "`rank` is the antigen's position in that cohort's shortlist; — = not surfaced."]
-    lines.append("")
-
-    notes = [r for r in v.rows() if r["note"]]
-    if notes:
-        lines += ['??? note "Why each cohort behaves the way it does"', ""]
-        for r in notes:
-            lines.append(f"    - **{r['antigen']}** ({r['project']}) — {r['note']}")
+    block = st.recall_cascade.get("all") or {}
+    at_k = block.get("at_k") or {}
+    if at_k:
+        lines += [
+            "### Recall, approved agents only",
+            "",
+            "An absolute cutoff is only comparable between shortlists of similar size, "
+            f"so the median shortlist here is **{block.get('median_shortlist_size', '—')}** "
+            f"candidates drawn from a surfaceome of {st.surfaceome_size:,} accessions.",
+            "",
+            "| Cutoff | Surfaced | 95% CI |",
+            "|---|--:|---|",
+        ]
+        for cutoff, entry in at_k.items():
+            w = entry.get("wilson") or {}
+            lines.append(
+                f"| {cutoff} | {w.get('numerator')}/{w.get('denominator')} | "
+                f"{w.get('low', 0):.3f}–{w.get('high', 0):.3f} |"
+            )
         lines.append("")
 
-    if v.data_limited:
-        lines += ['??? info "Antigens excluded for data reasons"', ""]
-        for d in v.data_limited:
-            lines.append(f"    - **{d.get('symbol')}** ({d.get('project')}) — {d.get('reason')}")
+    sensitivity = (st.tier_sensitivity or {}).get("at_k") or {}
+    if sensitivity:
+        lines += [
+            "### Sensitivity to the regulatory tier",
+            "",
+            "The headline counts only antigens whose targeting agent is approved. That "
+            "excludes CA9 and GPC3, whose evidence is strong and whose agents are not "
+            "yet licensed. Widening the panel is reported separately rather than folded "
+            "in, because choosing a denominator after seeing the data is what made the "
+            "earlier study untrustworthy.",
+            "",
+            "| Cutoff | Every scored pair |",
+            "|---|--:|",
+        ]
+        for cutoff, w in sensitivity.items():
+            lines.append(f"| {cutoff} | {w.get('numerator')}/{w.get('denominator')} |")
         lines.append("")
 
-    for key, caption in (
-        ("antigen_rank", "Where each known antigen ranked in its cohort."),
-        ("recall_at_k", "Recall at k over the over-expressed antigens."),
+    counts = st.outcome_counts or {}
+    if counts:
+        lines += [
+            "### Four outcomes, never merged",
+            "",
+            "An antigen the surfaceome reference does not contain, one a stated filter "
+            "excluded, one the ranking placed low, and one whose lookup failed are four "
+            "different findings about four different parts of the system.",
+            "",
+            "| Outcome | Pairs |",
+            "|---|--:|",
+            f"| Reached the shortlist | {counts.get('ranked', 0)} |",
+            f"| Excluded by a stated filter | {counts.get('gated_out', 0)} |",
+            f"| Outside the instrument's reach | {counts.get('not_reachable', 0)} |",
+            f"| Invalid, must be re-run | {counts.get('infrastructure', 0)} |",
+            "",
+        ]
+
+    rows = st.rows()
+    if rows:
+        lines += [
+            "### Every pair",
+            "",
+            "| Antigen | Cohort | log2FC | padj | Rank | Counterfactual rank | Why |",
+            "|---|---|--:|--:|--:|--:|---|",
+        ]
+        for r in rows:
+            rank = f"{r['rank']} of {r['shortlist']}" if r["rank"] is not None else "—"
+            cf = (
+                f"{r['counterfactual_rank']} of {r['eligible']}"
+                if r["counterfactual_rank"] is not None
+                else "—"
+            )
+            log2fc = f"{r['log2fc']:.2f}" if r["log2fc"] is not None else "—"
+            padj = f"{r['padj']:.2e}" if r["padj"] is not None else "—"
+            lines.append(
+                f"| **{r['antigen']}** | {r['cohort']} | {log2fc} | {padj} | {rank} | "
+                f"{cf} | {r['why']} |"
+            )
+        lines.append("")
+
+    if st.design.get("unreachable_note"):
+        lines += [
+            "### Antigens the instrument could not see",
+            "",
+            st.design["unreachable_note"],
+            "",
+        ]
+
+    for name, caption in (
+        (
+            "surfaced_ranks",
+            "Where each surfaced antigen ranked, drawn against the shortlist it was ranked within.",
+        ),
+        (
+            "outcome_classes",
+            "The four outcomes, reported separately. Collapsing them into one recall "
+            "number is what made the previous page misleading.",
+        ),
     ):
-        if key in v.figures:
-            lines += [f"![{caption}](assets/figures/{key}.png)", f"*{caption}*", ""]
-
-    volcanoes = sorted(k for k in v.figures if k.startswith("volcano_"))
-    if volcanoes:
-        lines += ["### Differential expression by cohort", ""]
-        for key in volcanoes:
-            label = key.replace("volcano_", "").replace("_", " ").upper()
-            lines += [
-                f'??? abstract "{label}"',
-                "",
-                f"    ![Volcano plot for {label}](assets/figures/{key}.png)",
-                "",
-            ]
+        if name in st.figures:
+            lines += [f"![{caption}](assets/figures/{name}.png)", "", f"*{caption}*", ""]
     return lines
 
 
@@ -239,7 +279,7 @@ def showcase_hf() -> str:
     return theme.HF_SPACE_URL
 
 
-def _copy_figures(v: showcase.ValidationShowcase | None) -> int:
+def _copy_figures(v: showcase.StudyShowcase | None) -> int:
     """Copy benchmark figures into the docs tree.
 
     MkDocs can only serve files beneath ``docs_dir``, and ``benchmarks/`` sits
@@ -247,7 +287,7 @@ def _copy_figures(v: showcase.ValidationShowcase | None) -> int:
     inside the Pages runner.
 
     Args:
-        v: Loaded validation results, or ``None``.
+        v: Loaded study results, or ``None``.
 
     Returns:
         Number of figures copied.
@@ -262,7 +302,7 @@ def _copy_figures(v: showcase.ValidationShowcase | None) -> int:
 
 def build() -> str:
     """Render the full results page as Markdown."""
-    validation = showcase.load_validation()
+    study = showcase.load_study()
     designer = showcase.load_designer_benchmark()
 
     lines = [
@@ -284,8 +324,8 @@ def build() -> str:
         "",
     ]
 
-    if validation is not None:
-        lines += _validation_section(validation)
+    if study is not None:
+        lines += _study_section(study)
     if designer is not None:
         lines += _designer_section(designer)
 
@@ -294,12 +334,12 @@ def build() -> str:
         "",
         "```bash",
         'pip install -e ".[discover,report]"',
-        "python benchmarks/run_validation.py            # rediscovery",
+        "python benchmarks/run_study.py --all --cpus 2  # rediscovery study",
         "python benchmarks/designer_benchmark/score_run.py   # designer benchmark",
         "```",
         "",
         "Full write-ups, including the caveats, live in",
-        "[`benchmarks/validation/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/validation/RESULTS.md)",
+        "[`benchmarks/study/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/study/RESULTS.md)",
         "and",
         "[`benchmarks/designer_benchmark/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/designer_benchmark/RESULTS.md).",
         "",
@@ -309,12 +349,12 @@ def build() -> str:
 
 def main() -> int:
     """Write docs/results.md and copy the figures it references."""
-    validation = showcase.load_validation()
-    if validation is None and showcase.load_designer_benchmark() is None:
+    study = showcase.load_study()
+    if study is None and showcase.load_designer_benchmark() is None:
         print("benchmarks/ not found — nothing to build", file=sys.stderr)
         return 1
 
-    n = _copy_figures(validation)
+    n = _copy_figures(study)
     OUT_MD.write_text(build(), encoding="utf-8")
     OUT_GLOSSARY.write_text(build_glossary(), encoding="utf-8")
     print(

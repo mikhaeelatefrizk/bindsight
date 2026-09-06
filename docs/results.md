@@ -16,80 +16,85 @@ illustrative, recomputed on the fly, or hand-typed.
 
 ## Does it rediscover antigens we already trust?
 
-Six real TCGA cohorts were run through the discovery half as
-tumor-vs-adjacent-normal contrasts, then scored by where each
-clinically-validated antigen landed in the candidate shortlist.
+**22 antigen-cohort pairs across 15 real TCGA projects.** Each cohort is a whole, unstratified project — every primary tumour against every solid-tissue normal — with the contrast paired on the patient. Nothing selects for the antigen being sought.
 
-!!! note "How these are grouped"
-    Antigens are grouped by their **measured** differential expression
-    (FDR&nbsp;<&nbsp;0.05 and log2fc&nbsp;≥&nbsp;1.0), not by clinical fame.
-    An expression-based method can only surface what is actually
-    over-expressed, and the benchmark reports that precondition openly.
+The earlier version of this study did select for it: it chose breast tumours by a subtype classifier built on fifty genes, one of them ERBB2, and then reported discovering ERBB2. The numbers below are far weaker, and they are the honest ones.
 
-<div class="bs-stats">
-<div class="bs-stat"><div class="v">rank 4</div><div class="k">ERBB2 rediscovered</div><div class="d">BRCA HER2-enriched</div></div>
-<div class="bs-stat"><div class="v">log2fc 4.36</div><div class="k">fold-change</div><div class="d">padj 1.7e-59</div></div>
-<div class="bs-stat"><div class="v">33%</div><div class="k">recall@5</div><div class="d">over over-expressed antigens</div></div>
-<div class="bs-stat"><div class="v">33%</div><div class="k">recall@20</div><div class="d">over over-expressed antigens</div></div>
-<div class="bs-stat"><div class="v">2/2</div><div class="k">consistency check</div><div class="d">not-over-expressed antigens excluded by construction</div></div>
-</div>
+The best-ranked antigen is **CA9** in KIRC, at rank **1 of 291** candidates, with a log2 fold change of 9.58.
 
-| antigen | cohort | over-expressed | log2fc | padj | rank |
-|---|---|:--:|--:|--:|--:|
-| **ERBB2** | BRCA HER2-enriched | ✓ | 4.36 | 1.7e-59 | 4 |
-| **CEACAM5** | COAD | · | -0.28 | 2.2e-01 | — |
-| **NECTIN4** | BLCA | ✓ | 1.59 | 3.9e-03 | — |
-| **EGFR** | LUAD (EGFR negative control) | · | 0.42 | 1.3e-01 | — |
-| **MSLN** | PAAD (MSLN, limited) | · | 2.31 | 1.4e-01 | — |
-| **FOLH1** | PRAD (FOLH1, limited) | ✓ | 1.32 | 3.4e-04 | — |
+### Recall, approved agents only
 
-`rank` is the antigen's position in that cohort's shortlist; — = not surfaced.
+An absolute cutoff is only comparable between shortlists of similar size, so the median shortlist here is **295** candidates drawn from a surfaceome of 4,801 accessions.
 
-??? note "Why each cohort behaves the way it does"
+| Cutoff | Surfaced | 95% CI |
+|---|--:|---|
+| recall@5 | 0/17 | 0.000–0.184 |
+| recall@10 | 1/17 | 0.010–0.270 |
+| recall@20 | 1/17 | 0.010–0.270 |
+| recall@50 | 2/17 | 0.033–0.343 |
+| recall@100 | 2/17 | 0.033–0.343 |
 
-    - **ERBB2** (TCGA-BRCA) — PAM50 HER2-enriched tumors are ERBB2-amplified, so ERBB2 mRNA is high.
-    - **CEACAM5** (TCGA-COAD) — CEA (target of tusamitamab ravtansine / labetuzumab govitecan) is a classic colorectal marker, but it is also abundantly expressed in normal colon epithelium, so the bulk tumor-vs-adjacent-normal fold-change is ~0.
-    - **NECTIN4** (TCGA-BLCA) — Nectin-4 (target of enfortumab vedotin, Padcev) is elevated in urothelial carcinoma, but only modestly at the bulk-mRNA level (log2fc ~1.6), below the discovery shortlist.
-    - **EGFR** (TCGA-LUAD) — EGFR drives LUAD via mutation/amplification, not bulk mRNA over-expression, so a specificity-respecting pipeline should NOT surface it on expression alone.
-    - **MSLN** (TCGA-PAAD) — Mesothelin is over-expressed in PDAC, but TCGA-PAAD ships only 4 matched normals, so the contrast is underpowered (reported for transparency).
-    - **FOLH1** (TCGA-PRAD) — PSMA (FOLH1) is highly expressed but also abundant in normal prostate, so the tumor-vs-normal fold-change is modest (reported for transparency).
+### Sensitivity to the regulatory tier
 
-??? info "Antigens excluded for data reasons"
+The headline counts only antigens whose targeting agent is approved. That excludes CA9 and GPC3, whose evidence is strong and whose agents are not yet licensed. Widening the panel is reported separately rather than folded in, because choosing a denominator after seeing the data is what made the earlier study untrustworthy.
 
-    - **CLDN6** (TCGA-OV) — TCGA-OV ships 0 solid-tissue-normal RNA-seq samples; a clean tumor-vs-normal contrast is impossible without an external (GTEx) normal, which would introduce a cross-study batch confound.
-    - **CD33 / IL3RA (CD123)** (TCGA-LAML) — TCGA-LAML ships 0 solid-tissue-normal samples; an AML-vs-normal contrast needs a normal haematopoietic reference (e.g. GTEx whole blood / normal bone marrow), again a cross-study batch confound.
+| Cutoff | Every scored pair |
+|---|--:|
+| recall@5 | 1/22 |
+| recall@10 | 3/22 |
+| recall@20 | 3/22 |
+| recall@50 | 4/22 |
+| recall@100 | 4/22 |
 
-![Where each known antigen ranked in its cohort.](assets/figures/antigen_rank.png)
-*Where each known antigen ranked in its cohort.*
+### Four outcomes, never merged
 
-![Recall at k over the over-expressed antigens.](assets/figures/recall_at_k.png)
-*Recall at k over the over-expressed antigens.*
+An antigen the surfaceome reference does not contain, one a stated filter excluded, one the ranking placed low, and one whose lookup failed are four different findings about four different parts of the system.
 
-### Differential expression by cohort
+| Outcome | Pairs |
+|---|--:|
+| Reached the shortlist | 2 |
+| Excluded by a stated filter | 15 |
+| Outside the instrument's reach | 0 |
+| Invalid, must be re-run | 0 |
 
-??? abstract "BLCA"
+### Every pair
 
-    ![Volcano plot for BLCA](assets/figures/volcano_blca.png)
+| Antigen | Cohort | log2FC | padj | Rank | Counterfactual rank | Why |
+|---|---|--:|--:|--:|--:|---|
+| **CA9** | KIRC | 9.58 | 0.00e+00 | 1 of 291 | 1 of 2210 | reached the candidate shortlist at rank 1 of 291 (carried through to design) |
+| **GPC3** | LIHC | 3.97 | 8.17e-33 | 9 of 289 | 6 of 2057 | reached the candidate shortlist at rank 9 of 289 (carried through to design) |
+| **MET** | KIRP | 2.34 | 8.39e-58 | 10 of 287 | 7 of 2170 | reached the candidate shortlist at rank 10 of 287 (carried through to design) |
+| **FOLH1** | PRAD | 2.21 | 2.35e-15 | 34 of 285 | 24 of 2208 | reached the candidate shortlist at rank 34 of 285 (past the structure-fetch cap; no lookup was attempted) |
+| **STEAP1** | PRAD | 1.14 | 1.13e-06 | 158 of 285 | 151 of 2208 | reached the candidate shortlist at rank 158 of 285 (past the structure-fetch cap; no lookup was attempted) |
+| **CEACAM5** | COAD | -0.48 | 4.52e-02 | — | 972 of 2098 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **CLDN18** | ESCA | -0.39 | 6.93e-01 | — | 1362 of 2229 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **CLDN18** | STAD | -0.06 | 9.31e-01 | — | 1109 of 2273 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **EGFR** | COAD | -1.04 | 3.46e-14 | — | 1547 of 2098 | measured as down-regulated in tumour |
+| **EGFR** | HNSC | 1.03 | 2.88e-07 | — | 278 of 2174 | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
+| **EGFR** | LUAD | 0.06 | 7.55e-01 | — | 844 of 2241 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **EGFR** | LUSC | 1.07 | 1.43e-06 | — | 385 of 2250 | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
+| **ERBB2** | BRCA | 0.92 | 5.64e-11 | — | 263 of 2284 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **ERBB2** | LUAD | 0.41 | 1.35e-03 | — | 508 of 2241 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **ERBB2** | STAD | 0.44 | 1.52e-01 | — | 633 of 2273 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **ERBB2** | UCEC | 0.48 | 3.17e-02 | — | 545 of 2140 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **FGFR2** | STAD | -0.33 | 2.79e-01 | — | 1367 of 2273 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **FOLR1** | UCEC | 1.51 | 2.21e-02 | — | 379 of 2140 | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
+| **MET** | LUAD | 0.67 | 6.57e-04 | — | 429 of 2241 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **NECTIN4** | BLCA | 1.52 | 5.26e-02 | — | 259 of 2104 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **TACSTD2** | BRCA | 0.16 | 3.63e-01 | — | 754 of 2284 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| **TACSTD2** | LUAD | 0.15 | 3.56e-01 | — | 757 of 2241 | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 
-??? abstract "BRCA HER2"
+### Antigens the instrument could not see
 
-    ![Volcano plot for BRCA HER2](assets/figures/volcano_brca_her2.png)
+CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome list — verified against both the vendored file and the upstream one, so a genuine reference gap rather than a build error. Under SURFY alone neither could enter the candidate table at any expression level, and CA9 measures a log2 fold change of 9.58 in clear-cell kidney, the largest effect anywhere in this panel. That is an instrument-coverage failure, not a ranking failure, and the fix was a better instrument: the extended reference adds UniProt's curated cell-membrane annotations, 1,915 further accessions, and makes both reachable. Runs with `use_extended_surfaceome=False` reproduce the SURFY-only behaviour, under which these two are still reported as unreachable rather than as misses.
 
-??? abstract "COAD"
+![Where each surfaced antigen ranked, drawn against the shortlist it was ranked within.](assets/figures/surfaced_ranks.png)
 
-    ![Volcano plot for COAD](assets/figures/volcano_coad.png)
+*Where each surfaced antigen ranked, drawn against the shortlist it was ranked within.*
 
-??? abstract "LUAD"
+![The four outcomes, reported separately. Collapsing them into one recall number is what made the previous page misleading.](assets/figures/outcome_classes.png)
 
-    ![Volcano plot for LUAD](assets/figures/volcano_luad.png)
-
-??? abstract "PAAD"
-
-    ![Volcano plot for PAAD](assets/figures/volcano_paad.png)
-
-??? abstract "PRAD"
-
-    ![Volcano plot for PRAD](assets/figures/volcano_prad.png)
+*The four outcomes, reported separately. Collapsing them into one recall number is what made the previous page misleading.*
 
 ## The binders it actually designed
 
@@ -144,11 +149,11 @@ alongside its metrics. Rotate them in 3-D on the
 
 ```bash
 pip install -e ".[discover,report]"
-python benchmarks/run_validation.py            # rediscovery
+python benchmarks/run_study.py --all --cpus 2  # rediscovery study
 python benchmarks/designer_benchmark/score_run.py   # designer benchmark
 ```
 
 Full write-ups, including the caveats, live in
-[`benchmarks/validation/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/validation/RESULTS.md)
+[`benchmarks/study/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/study/RESULTS.md)
 and
 [`benchmarks/designer_benchmark/RESULTS.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/designer_benchmark/RESULTS.md).

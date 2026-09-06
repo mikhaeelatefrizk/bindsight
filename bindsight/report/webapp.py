@@ -531,10 +531,10 @@ def _page_results() -> None:
         "is illustrative, recomputed on the fly, or hand-typed."
     )
 
-    validation = showcase.load_validation()
+    study = showcase.load_study()
     designer = showcase.load_designer_benchmark()
 
-    if validation is None and designer is None:
+    if study is None and designer is None:
         st.warning(
             "The `benchmarks/` tree isn't available in this install — it ships with "
             "the repository, not the wheel."
@@ -545,91 +545,144 @@ def _page_results() -> None:
         return
 
     # -- Rediscovery ------------------------------------------------------
-    if validation is not None:
+    if study is not None:
         st.markdown("## Does it rediscover antigens we already trust?")
         st.markdown(
-            "Six real TCGA cohorts were run through the discovery half as "
-            "tumor-vs-adjacent-normal contrasts, then scored by where each "
-            "clinically-validated antigen landed in the shortlist. **Antigens are "
-            "grouped by their *measured* differential expression, not by clinical "
-            "fame** — an expression-based method can only surface what is actually "
-            "over-expressed, and the benchmark reports that precondition openly."
+            f"**{study.n_scored} antigen-cohort pairs across {study.n_projects} real TCGA "
+            "projects.** Each cohort is a *whole, unstratified* project — every primary "
+            "tumour against every solid-tissue normal — with the contrast paired on the "
+            "patient. Nothing selects for the antigen being sought."
+        )
+        st.markdown(
+            "That matters because the earlier version of this study did select for it: "
+            "it picked breast tumours by a subtype classifier built on fifty genes, one "
+            "of which is ERBB2, and then reported discovering ERBB2. The headline below "
+            "is far weaker than that one, and it is the honest number."
         )
 
-        top = validation.headline
+        top = study.headline
         cols = st.columns(4)
         if top is not None:
-            exp = top["expected"]
-            cols[0].metric(f"{exp['symbol']} rank", exp["rank"], help=top["cohort"]["label"])
-            cols[1].metric("log2 fold-change", f"{exp['log2fc']:.2f}")
-        for i, k in enumerate(("recall@5", "recall@20")):
-            if k in validation.recall_at_k:
-                cols[2 + i].metric(k, f"{validation.recall_at_k[k] * 100:.0f}%")
-
-        check = validation.exclusion_check or {}
-        if check.get("n"):
-            st.info(
-                f"**Consistency check: {check.get('consistent')}/{check['n']}.** Antigens that "
-                f"are *not* over-expressed at the bulk level are absent from the top "
-                f"{check.get('k', 20)}. They fail the same over-expression rule that admits a "
-                "gene to the shortlist, so this cannot come out any other way — it confirms the "
-                "filter and the shortlist agree, and says nothing about ranking discrimination.",
-                icon="ℹ️",
+            cols[0].metric(
+                f"{top['symbol']} rank",
+                f"{top['rank']} of {top['shortlist_size']}",
+                help=str(top.get("agent", "")),
             )
+            cols[1].metric("log2 fold-change", f"{top['log2fc']:.2f}")
+        primary = (study.recall_cascade.get("all") or {}).get("at_k") or {}
+        for i, k in enumerate(("recall@20", "recall@50")):
+            w = (primary.get(k) or {}).get("wilson")
+            if w:
+                cols[2 + i].metric(
+                    k,
+                    f"{w['numerator']}/{w['denominator']}",
+                    help=f"95% CI {w['low']:.2f}–{w['high']:.2f}; approved agents only",
+                )
 
-        table = pd.DataFrame(validation.rows()).rename(columns={"over_expressed": "over-expressed"})
-        # `project` only repeats what the cohort label already says.
-        table = table.drop(columns=["project"])
-        # Coerce to real numeric dtypes: a column mixing floats with None stays
-        # object-typed and Streamlit prints the literal string "None".
-        for col in ("log2fc", "padj"):
-            table[col] = pd.to_numeric(table[col], errors="coerce")
-        # Rank is text so a missing rank reads as an em dash rather than a greyed
-        # "None" -- "not surfaced" is a real reportable outcome, not absent data.
-        # pd.isna, not `is None`: building the frame turns a mixed int/None
-        # column into float64, so the missing ranks arrive here as NaN.
-        table["rank"] = ["—" if pd.isna(r) else str(int(r)) for r in table["rank"]]
+        st.info(
+            "**A rank is only meaningful beside the size of the list it sits in.** The "
+            f"shortlist here is around {study.recall_cascade.get('all', {}).get('median_shortlist_size', '—')} "
+            "candidates, drawn from a surfaceome of "
+            f"{study.surfaceome_size:,} accessions. Every rate below carries its "
+            "numerator, denominator and interval, so you can disagree with the "
+            "denominator and recompute.",
+            icon="ℹ️",
+        )
+
+        counts = study.outcome_counts or {}
+        if counts:
+            st.markdown(
+                "**Four outcomes, never merged into one rate.** An antigen the "
+                "surfaceome reference does not contain, one a stated filter excluded, "
+                "one the ranking placed low, and one whose lookup failed are four "
+                "different findings about four different parts of the system."
+            )
+            oc = st.columns(4)
+            labels = (
+                ("ranked", "reached the shortlist"),
+                ("gated_out", "excluded by a filter"),
+                ("not_reachable", "outside the instrument"),
+                ("infrastructure", "invalid, must re-run"),
+            )
+            for col, (key, label) in zip(oc, labels, strict=False):
+                col.metric(label, counts.get(key, 0))
+
+        table = pd.DataFrame(study.rows())
+        for numeric_col in ("log2fc", "padj"):
+            table[numeric_col] = pd.to_numeric(table[numeric_col], errors="coerce")
+        # Rank and shortlist read as one cell: a rank alone is not interpretable.
+        table["rank"] = [
+            "—" if pd.isna(r) else f"{int(r)} of {int(sh)}"
+            for r, sh in zip(table["rank"], table["shortlist"], strict=True)
+        ]
+        table["counterfactual"] = [
+            "—" if pd.isna(c) else f"{int(c)} of {int(e)}"
+            for c, e in zip(table["counterfactual_rank"], table["eligible"], strict=True)
+        ]
+        table = table.drop(columns=["shortlist", "counterfactual_rank", "eligible"])
         st.dataframe(
             table,
             hide_index=True,
             width="stretch",
             column_config={
-                "over-expressed": st.column_config.CheckboxColumn(
-                    disabled=True, help="Measured: FDR < 0.05 and log2fc >= 1.0"
-                ),
                 "log2fc": st.column_config.NumberColumn(
-                    format="%.2f", help="Measured tumor-vs-normal fold-change in this cohort"
+                    format="%.2f", help="Measured tumour-vs-normal fold change in this cohort"
                 ),
                 "padj": st.column_config.NumberColumn(
                     format="%.2e",
-                    help="Multiple-testing-adjusted p-value (FDR); smaller = stronger "
+                    help="Multiple-testing-adjusted p-value; smaller means stronger "
                     "evidence the change is real",
                 ),
                 "rank": st.column_config.TextColumn(
-                    help="Position in the shortlist; — = not surfaced"
+                    "rank", help="Position in the candidate shortlist, and its size"
                 ),
-                "note": st.column_config.TextColumn("why", width="large"),
+                "counterfactual": st.column_config.TextColumn(
+                    help="Where it would have ranked with every filter removed. A low "
+                    "number means a filter excluded it; a high one means the ranking "
+                    "placed it low."
+                ),
+                "outcome": st.column_config.TextColumn(help="Which of the four outcomes"),
+                "why": st.column_config.TextColumn(width="large"),
             },
         )
 
-        if validation.data_limited:
-            with st.expander("Antigens excluded for data reasons (reported for transparency)"):
-                for d in validation.data_limited:
-                    st.markdown(f"- **{d.get('symbol')}** ({d.get('project')}) — {d.get('reason')}")
+        sensitivity = study.tier_sensitivity or {}
+        if sensitivity.get("at_k"):
+            with st.expander("Sensitivity to the regulatory tier"):
+                st.markdown(
+                    "The headline counts only antigens whose targeting agent is "
+                    "approved. That excludes CA9 and GPC3, whose evidence is strong "
+                    "and whose agents are simply not licensed yet. Widening the panel "
+                    "is reported separately rather than folded into the headline, "
+                    "because choosing a denominator after seeing the data is what made "
+                    "the earlier study untrustworthy."
+                )
+                rows = [
+                    {"cutoff": k, "surfaced": f"{v['numerator']}/{v['denominator']}"}
+                    for k, v in sensitivity["at_k"].items()
+                ]
+                st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
 
-        fig_cols = st.columns(2)
-        for i, key in enumerate(("antigen_rank", "recall_at_k")):
-            if key in validation.figures:
-                fig_cols[i].image(str(validation.figures[key]), width="stretch")
+        if study.design.get("unreachable_note"):
+            with st.expander("Antigens the instrument could not see"):
+                st.markdown(study.design["unreachable_note"])
 
-        volcanoes = {k: v for k, v in validation.figures.items() if k.startswith("volcano_")}
-        if volcanoes:
-            label = st.selectbox(
-                "Differential expression by cohort",
-                options=sorted(volcanoes),
-                format_func=lambda k: k.replace("volcano_", "").replace("_", " ").upper(),
-            )
-            st.image(str(volcanoes[label]), width="stretch")
+        if study.set_sizes:
+            with st.expander("The sets every rank was computed over"):
+                st.dataframe(
+                    pd.DataFrame(
+                        [
+                            {"cohort": k.removeprefix("TCGA-"), **v}
+                            for k, v in sorted(study.set_sizes.items())
+                        ]
+                    ),
+                    hide_index=True,
+                    width="stretch",
+                )
+
+        for key in ("surfaced_ranks", "outcome_classes"):
+            if key in study.figures:
+                st.image(str(study.figures[key]), width="stretch")
 
     # -- Designer benchmark ----------------------------------------------
     if designer is not None:
@@ -815,7 +868,7 @@ def _page_results() -> None:
     st.markdown("---")
     st.markdown(
         f"Reproduce these numbers yourself: "
-        f"[validation]({theme.GITHUB_URL}/blob/main/benchmarks/validation/RESULTS.md) · "
+        f"[study]({theme.GITHUB_URL}/blob/main/benchmarks/study/RESULTS.md) · "
         f"[designer benchmark]({theme.GITHUB_URL}/blob/main/benchmarks/designer_benchmark/RESULTS.md)"
     )
 

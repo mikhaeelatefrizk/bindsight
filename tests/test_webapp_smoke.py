@@ -80,8 +80,10 @@ def test_home_shows_derived_headline_numbers(app: AppTest) -> None:
     rendered = " ".join(m.value for m in app.markdown)
     assert "bs-hero" in rendered
     assert "bs-flow" in rendered
-    assert "ERBB2 rediscovered" in rendered
-    assert "rank 4" in rendered
+    assert "CA9 surfaced" in rendered
+    assert "rank 1" in rendered
+    # The retracted claim must not reappear on the landing page.
+    assert "rank 4" not in rendered
 
 
 def test_results_page_shows_published_metrics(app: AppTest) -> None:
@@ -90,7 +92,10 @@ def test_results_page_shows_published_metrics(app: AppTest) -> None:
     assert not app.exception
 
     metrics = {m.label: m.value for m in app.metric}
-    assert metrics["ERBB2 rank"] == "4"
+    # The best-ranked antigen, printed with the size of the list it sits in — a
+    # rank alone is not interpretable, so the page never shows one.
+    assert metrics["CA9 rank"] == "1 of 291"
+    assert "ERBB2 rank" not in metrics
     assert metrics["Designs"] == "20"
     assert metrics["Best ipTM"] == "0.84"
     assert metrics["Success @ ipTM 0.65"] == "50%"

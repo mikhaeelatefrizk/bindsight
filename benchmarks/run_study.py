@@ -120,6 +120,15 @@ def score_all(config: ST.StudyConfig) -> dict[str, Any]:
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
     (ARTIFACT_DIR / "results.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     LOG.info("wrote %s", ARTIFACT_DIR / "results.json")
+
+    # The written page and its figures come from the same summary object, so a
+    # figure can never disagree with the table beside it.
+    from bindsight.benchmark.study_figures import render_figures
+    from bindsight.benchmark.study_report import render_markdown
+
+    (ARTIFACT_DIR / "RESULTS.md").write_text(render_markdown(summary), encoding="utf-8")
+    figures = render_figures(summary, ARTIFACT_DIR / "figures")
+    LOG.info("wrote RESULTS.md and %d figure(s)", len(figures))
     return summary
 
 

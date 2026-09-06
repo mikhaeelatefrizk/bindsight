@@ -4,7 +4,7 @@
 
 ``benchmarks/`` already holds the strongest evidence this project has:
 
-- ``benchmarks/validation/`` — the rediscovery experiment over six real TCGA
+- ``benchmarks/study/`` — the rediscovery study over fifteen real TCGA
   cohorts (ERBB2 resurfaced at rank 4), with volcano and recall figures.
 - ``benchmarks/designer_benchmark/`` — 20 real ERBB2 binders designed on a free
   Kaggle P100, each with the actual Boltz-2 predicted complex ``.cif``,
@@ -36,7 +36,7 @@ from typing import Any
 
 ENV_BENCHMARKS_DIR = "BINDSIGHT_BENCHMARKS_DIR"
 
-_VALIDATION_SUBDIR = "validation"
+_STUDY_SUBDIR = "study"
 _DESIGNER_SUBDIR = "designer_benchmark"
 
 
@@ -62,7 +62,7 @@ def benchmarks_root() -> Path | None:
     here = Path(__file__).resolve()
     for parent in here.parents:
         candidate = parent / "benchmarks"
-        if (candidate / _VALIDATION_SUBDIR).is_dir() or (candidate / _DESIGNER_SUBDIR).is_dir():
+        if (candidate / _STUDY_SUBDIR).is_dir() or (candidate / _DESIGNER_SUBDIR).is_dir():
             return candidate
     return None
 
@@ -141,87 +141,98 @@ def _as_optional_bool(value: object) -> bool | None:
 
 
 # ---------------------------------------------------------------------------
-# Rediscovery validation
+# Rediscovery study
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
-class ValidationShowcase:
-    """The rediscovery experiment, as committed in ``benchmarks/validation/``."""
+class StudyShowcase:
+    """The rediscovery study, as committed in ``benchmarks/study/``.
 
-    generated_utc: str
-    bindsight_version: str
-    recall_at_k: dict[str, float]
-    # Not a specificity measurement: antigens failing the over-expression rule
-    # are excluded from candidacy by that same rule, so the check cannot fail.
-    exclusion_check: dict[str, Any]
-    cohorts: list[dict[str, Any]]
-    data_limited: list[dict[str, Any]]
+    Replaces the earlier six-cohort validation, whose single positive result came
+    from a cohort selected by a classifier keyed on the antigen being sought, and
+    whose denominator was chosen after seeing which antigens turned out to be
+    over-expressed. Neither survives here: cohorts are whole unstratified TCGA
+    projects, and the denominators are pre-registered.
+    """
+
+    design: dict[str, Any]
+    recall_cascade: dict[str, Any]
+    tier_sensitivity: dict[str, Any]
+    primary_interval: dict[str, Any]
+    outcome_counts: dict[str, int]
+    pairs: list[dict[str, Any]]
+    set_sizes: dict[str, dict[str, int]]
+    surfaceome_size: int
     figures: dict[str, Path]
-    report_html: Path | None
 
     @property
-    def over_expressed(self) -> list[dict[str, Any]]:
-        """Cohorts whose expected antigen is genuinely over-expressed."""
-        return [c for c in self.cohorts if c.get("category") == "over_expressed"]
-
-    @property
-    def not_over_expressed(self) -> list[dict[str, Any]]:
-        """Cohorts scored for specificity rather than sensitivity."""
-        return [c for c in self.cohorts if c.get("category") != "over_expressed"]
+    def surfaced(self) -> list[dict[str, Any]]:
+        """Pairs that reached the candidate shortlist, best rank first."""
+        ranked = [p for p in self.pairs if isinstance(p.get("rank"), int)]
+        return sorted(ranked, key=lambda p: p["rank"])
 
     @property
     def headline(self) -> dict[str, Any] | None:
-        """The best-ranked rediscovered antigen, i.e. the sensitivity result."""
-        ranked = [
-            c
-            for c in self.over_expressed
-            if isinstance(c.get("expected"), dict) and c["expected"].get("rank") is not None
-        ]
-        if not ranked:
-            return None
-        return min(ranked, key=lambda c: c["expected"]["rank"])
+        """The best-ranked surfaced antigen."""
+        surfaced = self.surfaced
+        return surfaced[0] if surfaced else None
+
+    @property
+    def n_scored(self) -> int:
+        """Antigen-cohort pairs in the scored panel."""
+        return len(self.pairs)
+
+    @property
+    def n_projects(self) -> int:
+        """TCGA projects the study covers."""
+        return len(self.set_sizes)
+
+    def recall_row(self, denominator: str = "all") -> dict[str, Any]:
+        """One denominator's rates across every reported cutoff."""
+        block = self.recall_cascade.get(denominator) or {}
+        return {
+            "median_shortlist": block.get("median_shortlist_size"),
+            "at_k": {k: v.get("wilson", {}) for k, v in (block.get("at_k") or {}).items()},
+        }
 
     def rows(self) -> list[dict[str, Any]]:
-        """Flatten the cohorts into one row per antigen, for tabular display.
+        """One display-ready row per antigen-cohort pair.
 
-        Fold-change and adjusted p-value are taken from ``deg_expected`` — the
-        *measured* differential expression, which is present for every cohort.
-        ``expected`` only carries them when the antigen was actually surfaced,
-        so reading from there alone silently blanks the antigens the benchmark
-        most wants to be transparent about (NECTIN4, FOLH1, MSLN).
-
-        Returns:
-            One dict per cohort with normalised, display-ready fields.
+        Every row carries the size of the set its rank was taken within, because
+        a rank without it cannot be interpreted, and the outcome class, because
+        an antigen the instrument could not see and one the ranking placed low
+        are different findings.
         """
         out: list[dict[str, Any]] = []
-        for c in self.cohorts:
-            expected = c.get("expected") or {}
-            measured = c.get("deg_expected") or {}
-            cohort = c.get("cohort") or {}
+        for pair in self.pairs:
             out.append(
                 {
-                    "antigen": expected.get("symbol") or cohort.get("expected_symbol") or "—",
-                    "cohort": cohort.get("label", ""),
-                    "project": cohort.get("project", ""),
-                    "over_expressed": c.get("category") == "over_expressed",
-                    "log2fc": _as_float(measured.get("log2fc", expected.get("log2fc"))),
-                    "padj": _as_float(measured.get("padj", expected.get("padj"))),
-                    "rank": expected.get("rank"),
-                    "note": cohort.get("note", ""),
+                    "antigen": pair.get("symbol", "—"),
+                    "cohort": str(pair.get("project", "")).removeprefix("TCGA-"),
+                    "agent": pair.get("agent", ""),
+                    "tier": pair.get("tier", ""),
+                    "outcome": pair.get("outcome_class", ""),
+                    "log2fc": _as_float(pair.get("log2fc")),
+                    "padj": _as_float(pair.get("padj")),
+                    "rank": pair.get("rank"),
+                    "shortlist": pair.get("shortlist_size"),
+                    "counterfactual_rank": pair.get("counterfactual_rank"),
+                    "eligible": pair.get("n_eligible"),
+                    "why": pair.get("reason", ""),
                 }
             )
-        return out
+        return sorted(out, key=lambda r: (r["rank"] is None, r["rank"] or 0, r["antigen"]))
 
 
-def load_validation(root: Path | None = None) -> ValidationShowcase | None:
-    """Load the rediscovery validation results.
+def load_study(root: Path | None = None) -> StudyShowcase | None:
+    """Load the rediscovery study results.
 
     Args:
         root: Optional explicit ``benchmarks/`` directory; discovered when omitted.
 
     Returns:
-        A :class:`ValidationShowcase`, or ``None`` when the results are absent.
+        A :class:`StudyShowcase`, or ``None`` when the results are absent.
     """
-    base = (root or benchmarks_root() or Path()) / _VALIDATION_SUBDIR
+    base = (root or benchmarks_root() or Path()) / _STUDY_SUBDIR
     data = _read_json(base / "results.json")
     if data is None:
         return None
@@ -231,16 +242,16 @@ def load_validation(root: Path | None = None) -> ValidationShowcase | None:
     if fig_dir.is_dir():
         figures = {p.stem: p for p in sorted(fig_dir.glob("*.png"))}
 
-    report = base / "report.html"
-    return ValidationShowcase(
-        generated_utc=str(data.get("generated_utc", "")),
-        bindsight_version=str(data.get("bindsight_version", "")),
-        recall_at_k={str(k): float(v) for k, v in (data.get("recall_at_k") or {}).items()},
-        exclusion_check=data.get("exclusion_consistency_check") or {},
-        cohorts=list(data.get("cohorts") or []),
-        data_limited=list(data.get("data_limited") or []),
+    return StudyShowcase(
+        design=dict(data.get("design") or {}),
+        recall_cascade=dict(data.get("recall_cascade") or {}),
+        tier_sensitivity=dict(data.get("tier_sensitivity") or {}),
+        primary_interval=dict(data.get("primary_interval") or {}),
+        outcome_counts=dict(data.get("outcome_class_counts") or {}),
+        pairs=list(data.get("pairs") or []),
+        set_sizes=dict(data.get("set_sizes_by_cohort") or {}),
+        surfaceome_size=int(data.get("surfaceome_size") or 0),
         figures=figures,
-        report_html=report if report.is_file() else None,
     )
 
 
@@ -417,25 +428,27 @@ def headline_stats() -> list[Headline]:
     """
     stats: list[Headline] = []
 
-    validation = load_validation()
-    if validation is not None:
-        top = validation.headline
+    study = load_study()
+    if study is not None:
+        top = study.headline
         if top is not None:
-            exp = top["expected"]
             stats.append(
                 Headline(
-                    value=f"rank {exp['rank']}",
-                    label=f"{exp['symbol']} rediscovered",
-                    detail=f"{top['cohort']['label']} · log2fc {exp['log2fc']:.2f}",
+                    value=f"rank {top['rank']}",
+                    label=f"{top['symbol']} surfaced",
+                    detail=(
+                        f"{str(top['project']).removeprefix('TCGA-')} · "
+                        f"of {top['shortlist_size']} candidates · "
+                        f"log2fc {top['log2fc']:.2f}"
+                    ),
                 )
             )
-        check = validation.exclusion_check or {}
-        if check.get("n"):
+        if study.n_projects:
             stats.append(
                 Headline(
-                    value=f"{check.get('consistent', 0)}/{check['n']}",
-                    label="consistency check",
-                    detail="not-over-expressed antigens excluded by construction",
+                    value=f"{study.n_scored} pairs",
+                    label=f"across {study.n_projects} TCGA cohorts",
+                    detail="whole unstratified projects, paired on patient",
                 )
             )
 
