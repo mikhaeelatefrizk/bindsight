@@ -54,7 +54,7 @@ from bindsight.provenance import (
 from bindsight.structures.alphafolddb import AlphaFoldDBClient
 from bindsight.structures.plddt import mean_plddt, region_plddt
 from bindsight.structures.topology import Topology, UniProtTopologyClient
-from bindsight.surfaceome import is_surface_protein, load_surfy
+from bindsight.surfaceome import is_surface_protein, load_surfy, load_surfy_gene_map
 from bindsight.targets.gtex import GTExTissueExpression
 from bindsight.targets.open_targets import OpenTargetsClient
 
@@ -409,6 +409,36 @@ def _do_discover(
     deg = pd.read_parquet(deg_table_path)
     sig = deg[deg["significant"]].copy()
     n_sig = len(sig)
+
+    # The surfaceome must be resolved before the enrichment cut, because the cut
+    # is now spent on surface proteins rather than on the whole genome.
+    surfy_set = _resolve_surfy(p, surfy)
+
+    # 1a. Surfaceome pre-filter. Enrichment slots are a scarce resource, and
+    # spending them on genes that could never be antibody targets discards most
+    # of the surfaceome before it is ever examined. Filtering first is free: the
+    # number of Open Targets calls is unchanged, only which genes get them.
+    surfaceome_gene_ids: frozenset[str] = frozenset()
+    n_before_prefilter = len(sig)
+    if p.surfaceome_prefilter and p.require_surfy:
+        surfaceome_gene_ids = frozenset(
+            gene for gene, accession in load_surfy_gene_map().items() if accession in surfy_set
+        )
+        if surfaceome_gene_ids:
+            sig = sig[sig["gene_id"].astype(str).isin(surfaceome_gene_ids)].copy()
+            LOG.info(
+                "surfaceome pre-filter: %d significant gene(s) → %d on the surfaceome",
+                n_before_prefilter,
+                len(sig),
+            )
+        else:
+            # Without the map the pre-filter cannot run, and silently skipping it
+            # would change the science without saying so.
+            LOG.warning(
+                "surfaceome gene map is unavailable; falling back to filtering AFTER "
+                "enrichment, which spends the cut on the whole genome"
+            )
+
     # Carry the most *confidently* over-expressed genes into enrichment, ranked
     # by the combined DE score π = log2fc × −log10(padj) rather than raw
     # fold-change — so a highly-significant, abundant antigen with a moderate
@@ -426,7 +456,6 @@ def _do_discover(
     # Default clients
     ot = open_targets_client or OpenTargetsClient()
     afdb = alphafolddb_client or AlphaFoldDBClient()
-    surfy_set = _resolve_surfy(p, surfy)
 
     # 2. For each significant gene, enrich via Open Targets (or fall back to
     #    the bundled offline map for well-known genes — used by the demo and
@@ -494,6 +523,7 @@ def _do_discover(
             p,
             surface_bind_active=surface_bind_client is not None,
             structure_queried=frozenset(),
+            surfaceome_gene_ids=surfaceome_gene_ids,
         )
         return _empty_candidates_frame(), _empty_epitopes_frame(), taxonomy
 
@@ -742,6 +772,7 @@ def _do_discover(
         p,
         surface_bind_active=surface_bind_client is not None,
         structure_queried=frozenset(structure_queried),
+        surfaceome_gene_ids=surfaceome_gene_ids,
     )
     return candidates, epitopes, taxonomy
 
@@ -786,6 +817,7 @@ def _build_taxonomy(
     *,
     surface_bind_active: bool,
     structure_queried: frozenset[str],
+    surfaceome_gene_ids: frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
     """One disposition per DEG gene explaining why it is / isn't a surfaced candidate.
 
@@ -807,6 +839,11 @@ def _build_taxonomy(
             ran to completion. Accessions outside this set were never assessed,
             so their genes are reported as ``structure_not_queried`` rather than
             as an absent model.
+        surfaceome_gene_ids: Genes on the surfaceome, when the pre-filter ran.
+            A significant, up-regulated gene outside this set was dropped before
+            the enrichment cut could apply, so it is reported as
+            ``not_surfaceome`` rather than blamed on a gate that never saw it.
+            Empty when the pre-filter is off, which restores the old behaviour.
 
     Returns:
         One row per DEG gene with its disposition and the Open Targets status
@@ -934,6 +971,11 @@ def _build_taxonomy(
             disp = "not_significant"
         elif (log2fc or 0.0) <= 0.0:
             disp = "down_regulated"
+        elif surfaceome_gene_ids and gid not in surfaceome_gene_ids:
+            # Dropped by the surfaceome pre-filter, before the enrichment cut
+            # could apply. Recording it as below_enrichment_cutoff would blame a
+            # gate that never saw this gene.
+            disp = "not_surfaceome"
         else:
             disp = "below_enrichment_cutoff"
         rows.append(

@@ -181,7 +181,13 @@ def test_failure_taxonomy_is_exhaustive(tmp_path: Path, fixtures_dir: Path) -> N
     disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
     assert disp["ENSG00000141736"] == "surfaced"  # ERBB2
     assert disp["ENSG00000142208"] == "not_significant"  # AKT1
-    assert disp["ENSG00000147889"] == "no_uniprot"  # CDKN2A (no UniProt)
+    # CDKN2A is significant, down-regulated and not on the surfaceome. It used to
+    # be reported as `no_uniprot`, which was only reachable because the tiny
+    # fixture enriched every gene. With the surfaceome pre-filter it is dropped
+    # before any Open Targets lookup happens, so claiming its accession could not
+    # be resolved would assert something never measured. `down_regulated` is what
+    # the run actually observed.
+    assert disp["ENSG00000147889"] == "down_regulated"  # CDKN2A
     # EGFR earns ``no_alphafold_model``: its lookup actually ran and came back empty.
     assert "P00533" in afdb.calls
     assert disp["ENSG00000146648"] == "no_alphafold_model"

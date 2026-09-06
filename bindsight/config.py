@@ -161,6 +161,22 @@ class TargetDiscoveryParams(BaseModel):
     # in the run manifest and can be reported as a gate, not disappear into the
     # ranking.
     enrich_top_k: int = Field(300, ge=1)
+    # Whether the surfaceome filter runs BEFORE the enrichment cut.
+    #
+    # It used to run after, which meant surface antigens competed against every
+    # gene in the genome for the enrichment slots. In a real cohort roughly four
+    # thousand genes are significant and only a few dozen of the top three
+    # hundred are surface proteins, so most of the surfaceome was discarded
+    # before it was ever looked at. Measured effect: NECTIN4 in bladder cancer,
+    # the target of an approved drug for that exact indication, ranks 259th of
+    # 2,104 surface proteins and was still excluded.
+    #
+    # The old ordering was forced rather than careless: the filter needs UniProt
+    # accessions, and those only existed after Open Targets enrichment. The
+    # vendored Ensembl-to-accession map removes that dependency, so the cut can
+    # now be spent on genes that could actually be targets. The number of Open
+    # Targets calls is unchanged.
+    surfaceome_prefilter: bool = True
 
     # Open Targets enrichment
     use_open_targets: bool = True

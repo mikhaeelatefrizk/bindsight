@@ -11,30 +11,54 @@
     "seed": 0
   },
   "set_sizes_by_cohort": {
+    "TCGA-BLCA": {
+      "n_genes_tested": 16875,
+      "n_eligible_surfaceome": 2104,
+      "n_candidates": 22,
+      "n_significant": 4418
+    },
     "TCGA-ESCA": {
       "n_genes_tested": 17592,
       "n_eligible_surfaceome": 2229,
       "n_candidates": 43,
       "n_significant": 3445
+    },
+    "TCGA-KICH": {
+      "n_genes_tested": 16932,
+      "n_eligible_surfaceome": 2119,
+      "n_candidates": 40,
+      "n_significant": 5948
+    },
+    "TCGA-KIRP": {
+      "n_genes_tested": 17173,
+      "n_eligible_surfaceome": 2170,
+      "n_candidates": 56,
+      "n_significant": 4586
+    },
+    "TCGA-UCEC": {
+      "n_genes_tested": 17059,
+      "n_eligible_surfaceome": 2140,
+      "n_candidates": 22,
+      "n_significant": 5776
     }
   },
   "recall_cascade": {
     "all": {
       "wilson": {
-        "point": 0.0,
-        "low": 5.551115123125783e-17,
-        "high": 0.7934506858870163,
-        "numerator": 0,
-        "denominator": 1,
+        "point": 0.2,
+        "low": 0.03622410859085168,
+        "high": 0.6244653705167631,
+        "numerator": 1,
+        "denominator": 5,
         "method": "wilson",
         "confidence": 0.95
       },
       "clopper_pearson": {
-        "point": 0.0,
-        "low": 0.0,
-        "high": 0.975,
-        "numerator": 0,
-        "denominator": 1,
+        "point": 0.2,
+        "low": 0.005050763379468061,
+        "high": 0.7164179361180893,
+        "numerator": 1,
+        "denominator": 5,
         "method": "clopper-pearson",
         "confidence": 0.95
       },
@@ -42,29 +66,45 @@
     },
     "reachable": {
       "wilson": {
-        "point": 0.0,
-        "low": 5.551115123125783e-17,
-        "high": 0.7934506858870163,
-        "numerator": 0,
-        "denominator": 1,
+        "point": 0.2,
+        "low": 0.03622410859085168,
+        "high": 0.6244653705167631,
+        "numerator": 1,
+        "denominator": 5,
         "method": "wilson",
         "confidence": 0.95
       },
       "clopper_pearson": {
-        "point": 0.0,
-        "low": 0.0,
-        "high": 0.975,
-        "numerator": 0,
-        "denominator": 1,
+        "point": 0.2,
+        "low": 0.005050763379468061,
+        "high": 0.7164179361180893,
+        "numerator": 1,
+        "denominator": 5,
         "method": "clopper-pearson",
         "confidence": 0.95
       },
       "removed_from_previous_step": 0
     },
     "gate_passed": {
-      "numerator": 0,
-      "denominator": 0,
-      "note": "no eligible pairs"
+      "wilson": {
+        "point": 1.0,
+        "low": 0.2065493141129836,
+        "high": 0.9999999999999999,
+        "numerator": 1,
+        "denominator": 1,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "clopper_pearson": {
+        "point": 1.0,
+        "low": 0.025000000000000022,
+        "high": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+        "method": "clopper-pearson",
+        "confidence": 0.95
+      },
+      "removed_from_previous_step": 0
     }
   },
   "infrastructure_failures": {
@@ -74,11 +114,45 @@
   },
   "outcome_class_counts": {
     "not_reachable": 0,
-    "gated_out": 1,
-    "ranked": 0,
+    "gated_out": 4,
+    "ranked": 1,
     "infrastructure": 0
   },
   "pairs": [
+    {
+      "project": "TCGA-BLCA",
+      "symbol": "NECTIN4",
+      "uniprot": "Q96NY8",
+      "ensembl": "ENSG00000143217",
+      "agent": "enfortumab vedotin (Padcev)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Nectin-4 is expressed in the large majority of urothelial carcinomas. Only 19 normals, the weakest retained cohort, so its power estimate must be published. Note the TROP2 alternative for this indication is unusable: sacituzumab govitecan's urothelial approval was withdrawn in October 2024.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 22,
+      "normalised_rank": null,
+      "reason": "did not clear the FDR threshold",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 259,
+      "n_eligible": 2104,
+      "n_up_regulated": 842,
+      "normalised_counterfactual_rank": 0.12309885931558935,
+      "log2fc": 1.516483369390482,
+      "direction": "up",
+      "combined_score": 1.94004658609529,
+      "tested": true,
+      "padj": 0.052564652027704925,
+      "base_mean": 8278.03721433951,
+      "lfc_se": 0.6846304015407969,
+      "significant": false,
+      "p_uniform_rank": 0.30760095011876487
+    },
     {
       "project": "TCGA-ESCA",
       "symbol": "CLDN18",
@@ -112,23 +186,152 @@
       "lfc_se": 0.6707107167936947,
       "significant": false,
       "p_uniform_rank": null
+    },
+    {
+      "project": "TCGA-KIRP",
+      "symbol": "MET",
+      "uniprot": "P08581",
+      "ensembl": "ENSG00000105976",
+      "agent": "telisotuzumab vedotin",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "MET is the defining driver of type 1 papillary RCC. A second MET indication in the panel, giving a within-antigen control against LUAD.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "ranked",
+      "disposition": "surfaced",
+      "rank": 7,
+      "shortlist_size": 56,
+      "normalised_rank": 0.125,
+      "reason": "reached the candidate shortlist at rank 7 of 56 (carried through to design)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 7,
+      "n_eligible": 2170,
+      "n_up_regulated": 921,
+      "normalised_counterfactual_rank": 0.0032258064516129032,
+      "log2fc": 2.3421379536627605,
+      "direction": "up",
+      "combined_score": 133.6808281597015,
+      "tested": true,
+      "padj": 8.38666178091498e-58,
+      "base_mean": 22139.022141803194,
+      "lfc_se": 0.14347652709960476,
+      "significant": true,
+      "p_uniform_rank": 0.00760043431053203
+    },
+    {
+      "project": "TCGA-UCEC",
+      "symbol": "ERBB2",
+      "uniprot": "P04626",
+      "ensembl": "ENSG00000141736",
+      "agent": "T-DXd (tumour-agnostic accelerated approval)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Fourth ERBB2 indication. 35 normals but only 23 matched pairs, the weakest pairing in the panel, so the paired primary analysis is underpowered here and the unpaired secondary carries this cohort.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "not_significant",
+      "rank": null,
+      "shortlist_size": 22,
+      "normalised_rank": null,
+      "reason": "did not clear the FDR threshold",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 545,
+      "n_eligible": 2140,
+      "n_up_regulated": 885,
+      "normalised_counterfactual_rank": 0.2546728971962617,
+      "log2fc": 0.4756174865620315,
+      "direction": "up",
+      "combined_score": 0.7132205082096603,
+      "tested": true,
+      "padj": 0.031654287016826516,
+      "base_mean": 7665.64693713344,
+      "lfc_se": 0.20196332927049226,
+      "significant": false,
+      "p_uniform_rank": 0.615819209039548
+    },
+    {
+      "project": "TCGA-UCEC",
+      "symbol": "FOLR1",
+      "uniprot": "P15328",
+      "ensembl": "ENSG00000110195",
+      "agent": "mirvetuximab soravtansine (Elahere)",
+      "tier": "approved",
+      "usable": "scored",
+      "note": "Folate receptor alpha has full approval in ovarian cancer with a companion diagnostic, and endometrial carcinoma is a phase 2 indication. This is the only way to test FOLR1 at all, because its on-label indication has no TCGA normals.",
+      "reachability": {
+        "uniprot_resolved": true,
+        "in_surfaceome": true
+      },
+      "outcome_class": "gated_out",
+      "disposition": "below_enrichment_cutoff",
+      "rank": null,
+      "shortlist_size": 22,
+      "normalised_rank": null,
+      "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 379,
+      "n_eligible": 2140,
+      "n_up_regulated": 885,
+      "normalised_counterfactual_rank": 0.17710280373831774,
+      "log2fc": 1.5096026179313793,
+      "direction": "up",
+      "combined_score": 2.498511631777639,
+      "tested": true,
+      "padj": 0.022126920382773488,
+      "base_mean": 2692.4595064668342,
+      "lfc_se": 0.6045913295688798,
+      "significant": true,
+      "p_uniform_rank": 0.42824858757062145
     }
   ],
+  "primary_interval": {
+    "description": "One cohort per antigen, so the trials are independent. This is the interval to quote; the cascade above is computed over correlated pairs.",
+    "wilson": {
+      "point": 0.0,
+      "low": 0.0,
+      "high": 0.6576197728563925,
+      "numerator": 0,
+      "denominator": 2,
+      "method": "wilson",
+      "confidence": 0.95
+    },
+    "clopper_pearson": {
+      "point": 0.0,
+      "low": 0.0,
+      "high": 0.841886116991581,
+      "numerator": 0,
+      "denominator": 2,
+      "method": "clopper-pearson",
+      "confidence": 0.95
+    },
+    "n_distinct_antigens": 2
+  },
+  "cluster_bootstrap": {
+    "point": 0.2,
+    "low": 0.0,
+    "high": 0.6,
+    "numerator": 1,
+    "denominator": 5,
+    "method": "cluster-bootstrap(n_clusters=5, B=10000)",
+    "confidence": 0.95
+  },
   "cohorts_not_yet_run": [
-    "TCGA-BLCA",
     "TCGA-BRCA",
     "TCGA-COAD",
     "TCGA-HNSC",
-    "TCGA-KICH",
     "TCGA-KIRC",
-    "TCGA-KIRP",
     "TCGA-LIHC",
     "TCGA-LUAD",
     "TCGA-LUSC",
     "TCGA-PRAD",
     "TCGA-STAD",
-    "TCGA-THCA",
-    "TCGA-UCEC"
+    "TCGA-THCA"
   ],
   "surfaceome_size": 2886
 }

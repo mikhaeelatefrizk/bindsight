@@ -6,6 +6,7 @@ from bindsight.surfaceome.surfy import (
     SURFY_PROTEIN_COUNT,
     is_surface_protein,
     load_surfy,
+    load_surfy_gene_map,
     populate_surfy_cache,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "SURFY_PROTEIN_COUNT",
     "is_surface_protein",
     "load_surfy",
+    "load_surfy_gene_map",
     "populate_surfy_cache",
 ]

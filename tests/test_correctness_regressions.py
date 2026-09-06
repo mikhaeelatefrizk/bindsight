@@ -422,3 +422,75 @@ def test_plain_clone_does_not_fetch_submodules(
     monkeypatch.setattr(job_exec, "_run", _fake_run)
     job_exec._git_clone("https://example/repo", "abc123", tmp_path / "plain")
     assert not any(c[:2] == ["git", "submodule"] for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# 9. The enrichment cut is spent on surface proteins, not the whole genome
+# ---------------------------------------------------------------------------
+class TestSurfaceomePrefilter:
+    """Enrichment slots are scarce; spending them on non-targets discards the surfaceome.
+
+    Measured on real data before this change: in bladder cancer 4,418 genes were
+    significant, the top 300 by combined score went to enrichment, and only 24 of
+    them were surface proteins. NECTIN4 — the target of an approved drug for that
+    exact indication, genuinely over-expressed at log2fc 1.52 — ranked 259th of
+    2,104 surface proteins and was still excluded, because it was competing
+    against every gene in the genome rather than against other surface proteins.
+    """
+
+    def test_the_prefilter_is_on_by_default(self) -> None:
+        from bindsight.config import TargetDiscoveryParams
+
+        assert TargetDiscoveryParams().surfaceome_prefilter is True
+
+    def test_a_non_surface_gene_is_recorded_as_such_not_blamed_on_the_cut(self) -> None:
+        """The disposition must name the filter that actually excluded the gene."""
+        import pandas as pd
+
+        from bindsight.config import TargetDiscoveryParams
+        from bindsight.pipelines.discover import _build_taxonomy
+
+        deg = pd.DataFrame(
+            [
+                {"gene_id": "ENSG_SURFACE", "log2fc": 3.0, "padj": 1e-9, "significant": True},
+                {"gene_id": "ENSG_CYTOSOL", "log2fc": 3.0, "padj": 1e-9, "significant": True},
+            ]
+        )
+        taxonomy = _build_taxonomy(
+            deg,
+            {"ENSG_SURFACE"},  # only the surface gene was enriched
+            pd.DataFrame(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+            frozenset(),
+            TargetDiscoveryParams(),
+            surface_bind_active=False,
+            structure_queried=frozenset(),
+            surfaceome_gene_ids=frozenset({"ENSG_SURFACE"}),
+        )
+        disposition = dict(zip(taxonomy["gene_id"], taxonomy["disposition"], strict=True))
+        assert disposition["ENSG_CYTOSOL"] == "not_surfaceome"
+
+    def test_without_the_prefilter_the_old_disposition_is_preserved(self) -> None:
+        """An empty gene set means the pre-filter did not run, so the cut is to blame."""
+        import pandas as pd
+
+        from bindsight.config import TargetDiscoveryParams
+        from bindsight.pipelines.discover import _build_taxonomy
+
+        deg = pd.DataFrame(
+            [{"gene_id": "ENSG_X", "log2fc": 3.0, "padj": 1e-9, "significant": True}]
+        )
+        taxonomy = _build_taxonomy(
+            deg,
+            set(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+            frozenset(),
+            TargetDiscoveryParams(),
+            surface_bind_active=False,
+            structure_queried=frozenset(),
+            surfaceome_gene_ids=frozenset(),
+        )
+        assert taxonomy.iloc[0]["disposition"] == "below_enrichment_cutoff"
