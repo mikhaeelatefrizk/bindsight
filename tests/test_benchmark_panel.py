@@ -108,17 +108,33 @@ class TestIdentifiers:
 class TestReachability:
     """An antigen the instrument cannot see is not a ranking failure."""
 
-    def test_the_two_unreachable_antigens_are_identified(self, surfaceome: frozenset[str]) -> None:
+    def test_surfy_alone_cannot_see_two_panel_antigens(self, surfaceome: frozenset[str]) -> None:
+        """The gap the study found, asserted against the SURFY list specifically."""
         unreachable = sorted(
             c.symbol for c in P.PANEL if not P.reachability(c.uniprot, surfaceome)["in_surfaceome"]
         )
         assert unreachable == ["CA9", "STEAP1"]
 
-    def test_the_documentation_names_them(self) -> None:
+    def test_the_extended_reference_closes_the_gap(self) -> None:
+        """CA9 carries the largest effect in the panel, so it must be reachable."""
+        from bindsight.surfaceome import load_surfaceome
+
+        extended = load_surfaceome(extended=True)
+        for cohort in P.PANEL:
+            assert P.reachability(cohort.uniprot, extended)["in_surfaceome"], cohort.symbol
+
+    def test_the_extension_is_additive(self) -> None:
+        """Nothing SURFY contained may be dropped, or an earlier result changes."""
+        from bindsight.surfaceome import load_surfaceome, load_surfy
+
+        assert load_surfy(allow_offline_fallback=False) <= load_surfaceome(extended=True)
+
+    def test_the_documentation_records_the_gap_and_its_fix(self) -> None:
         assert "CA9" in P.UNREACHABLE_NOTE
         assert "STEAP1" in P.UNREACHABLE_NOTE
-        # It must also name the fix, not only the symptom.
-        assert "extend the surfaceome" in P.UNREACHABLE_NOTE
+        # Both the measurement that made it matter and the remedy.
+        assert "9.58" in P.UNREACHABLE_NOTE
+        assert "extended reference" in P.UNREACHABLE_NOTE
 
     def test_every_other_panel_antigen_is_reachable(self, surfaceome: frozenset[str]) -> None:
         for c in P.PANEL:

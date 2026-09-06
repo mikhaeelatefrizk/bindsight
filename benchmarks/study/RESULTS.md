@@ -15,7 +15,7 @@ A stratifying variable is admissible only if BOTH hold: (a) it is computable wit
 
 ### Antigens the instrument cannot reach
 
-CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome reference bindsight filters on — verified against the vendored list and against the upstream file, so this is a genuine reference gap rather than a build error. Neither can enter the candidate table at any expression level. They are reported as instrument-coverage failures, never as ranking misses, and they name their own fix: extend the surfaceome reference.
+CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome list — verified against both the vendored file and the upstream one, so a genuine reference gap rather than a build error. Under SURFY alone neither could enter the candidate table at any expression level, and CA9 measures a log2 fold change of 9.58 in clear-cell kidney, the largest effect anywhere in this panel. That is an instrument-coverage failure, not a ranking failure, and the fix was a better instrument: the extended reference adds UniProt's curated cell-membrane annotations, 1,915 further accessions, and makes both reachable. Runs with `use_extended_surfaceome=False` reproduce the SURFY-only behaviour, under which these two are still reported as unreachable rather than as misses.
 
 ## Headline
 
@@ -33,9 +33,21 @@ An absolute cutoff is only comparable between cohorts whose shortlists are of si
 
 | Denominator | Median shortlist | @5 | @10 | @20 | @50 | @100 |
 |---|--:|--:|--:|--:|--:|--:|
-| `all` | 291 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
-| `reachable` | 291 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
-| `gate_passed` | 280 | 0/2 | 1/2 | 1/2 | 2/2 | 2/2 |
+| `all` | 295 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
+| `reachable` | 295 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
+| `gate_passed` | 286 | 0/2 | 1/2 | 1/2 | 2/2 | 2/2 |
+
+### Sensitivity to the regulatory tier
+
+Every scored pair regardless of regulatory tier, reported as a sensitivity analysis. The primary denominator remains ['approved'].
+
+| Cutoff | Every scored pair |
+|---|--:|
+| recall@5 | 1/22 |
+| recall@10 | 3/22 |
+| recall@20 | 3/22 |
+| recall@50 | 4/22 |
+| recall@100 | 4/22 |
 
 ### Interval over independent antigens
 
@@ -54,15 +66,17 @@ One cohort per antigen, so the trials are independent. This is the interval to q
 
 ## Results by outcome class
 
-### Reached the shortlist (3)
+### Reached the shortlist (5)
 
 These entered the candidate shortlist. The rank is only interpretable beside the shortlist size, so both are printed.
 
 | Cohort | Antigen | Agent | Tier | log2FC | padj | Rank / shortlist | Counterfactual rank / eligible | Direction | Why |
 |---|---|---|---|--:|--:|--:|--:|---|---|
-| TCGA-KIRP | **MET** (P08581) | telisotuzumab vedotin | approved | 2.34 | 8.39e-58 | 7 / 282 | 7 / 2170 | up | reached the candidate shortlist at rank 7 of 282 (carried through to design) |
-| TCGA-LIHC | **GPC3** (P51654) | GPC3 CAR-T and bispecifics (phase 1/2) | clinical_stage | 3.97 | 8.17e-33 | 6 / 284 | 6 / 2057 | up | reached the candidate shortlist at rank 6 of 284 (carried through to design) |
-| TCGA-PRAD | **FOLH1** (Q04609) | [177Lu]Lu-PSMA-617 (Pluvicto) | approved | 2.21 | 2.35e-15 | 22 / 279 | 24 / 2207 | up | reached the candidate shortlist at rank 22 of 279 (ranked below the design carry-forward cutoff) |
+| TCGA-KIRC | **CA9** (Q16790) | [89Zr]Zr-girentuximab (imaging, under FDA review) | clinical_stage | 9.58 | 0.000 | 1 / 291 | 1 / 2210 | up | reached the candidate shortlist at rank 1 of 291 (carried through to design) |
+| TCGA-KIRP | **MET** (P08581) | telisotuzumab vedotin | approved | 2.34 | 8.39e-58 | 10 / 287 | 7 / 2170 | up | reached the candidate shortlist at rank 10 of 287 (carried through to design) |
+| TCGA-LIHC | **GPC3** (P51654) | GPC3 CAR-T and bispecifics (phase 1/2) | clinical_stage | 3.97 | 8.17e-33 | 9 / 289 | 6 / 2057 | up | reached the candidate shortlist at rank 9 of 289 (carried through to design) |
+| TCGA-PRAD | **FOLH1** (Q04609) | [177Lu]Lu-PSMA-617 (Pluvicto) | approved | 2.21 | 2.35e-15 | 34 / 285 | 24 / 2208 | up | reached the candidate shortlist at rank 34 of 285 (past the structure-fetch cap; no lookup was attempted) |
+| TCGA-PRAD | **STEAP1** (Q9UHE8) | xaluritamig (phase 3) | late_clinical | 1.14 | 1.13e-06 | 158 / 285 | 151 / 2208 | up | reached the candidate shortlist at rank 158 of 285 (past the structure-fetch cap; no lookup was attempted) |
 
 ### Measured, then excluded by a stated filter (17)
 
@@ -76,7 +90,7 @@ These were measured and then excluded by a named filter. The counterfactual rank
 | TCGA-COAD | **CEACAM5** (P06731) | tusamitamab ravtansine, labetuzumab govitecan (phase 2/3) | late_clinical | -0.48 | 0.045 | — | 972 / 2098 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-COAD | **EGFR** (P00533) | cetuximab, panitumumab | approved | -1.04 | 3.46e-14 | — | 1547 / 2098 | down | measured as down-regulated in tumour |
 | TCGA-ESCA | **CLDN18** (P56856) | zolbetuximab (Vyloy) | approved | -0.39 | 0.693 | — | 1362 / 2229 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-HNSC | **EGFR** (P00533) | cetuximab | approved | 1.03 | 2.88e-07 | — | 278 / 2174 | up | too many vital-tissue safety events |
+| TCGA-HNSC | **EGFR** (P00533) | cetuximab | approved | 1.03 | 2.88e-07 | — | 278 / 2174 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
 | TCGA-LUAD | **EGFR** (P00533) | cetuximab, necitumumab | approved | 0.06 | 0.755 | — | 844 / 2241 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-LUAD | **ERBB2** (P04626) | T-DXd (tumour-agnostic, HER2 IHC3+) | approved | 0.41 | 0.001 | — | 508 / 2241 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-LUAD | **MET** (P08581) | telisotuzumab vedotin | approved | 0.67 | 6.57e-04 | — | 429 / 2241 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
@@ -88,36 +102,27 @@ These were measured and then excluded by a named filter. The counterfactual rank
 | TCGA-UCEC | **ERBB2** (P04626) | T-DXd (tumour-agnostic accelerated approval) | approved | 0.48 | 0.032 | — | 545 / 2140 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-UCEC | **FOLR1** (P15328) | mirvetuximab soravtansine (Elahere) | approved | 1.51 | 0.022 | — | 379 / 2140 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
 
-### Outside the instrument's reach (2)
-
-These are absent from the surfaceome reference, so no expression level could have surfaced them. They are instrument-coverage failures, not ranking failures, and are excluded from every rate. The fix is to extend the reference.
-
-| Cohort | Antigen | Agent | Tier | log2FC | padj | Rank / shortlist | Counterfactual rank / eligible | Direction | Why |
-|---|---|---|---|--:|--:|--:|--:|---|---|
-| TCGA-KIRC | **CA9** (Q16790) | [89Zr]Zr-girentuximab (imaging, under FDA review) | clinical_stage | 9.58 | 0.000 | — | — | — | absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference |
-| TCGA-PRAD | **STEAP1** (Q9UHE8) | xaluritamig (phase 3) | late_clinical | 1.14 | 1.13e-06 | — | — | — | absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference |
-
 ## Set sizes
 
 A rank means nothing without the size of the set it was taken within, so those sizes are published rather than left to be inferred.
 
 | Cohort | Genes tested | Significant | Eligible surfaceome | Candidate shortlist |
 |---|--:|--:|--:|--:|
-| TCGA-BLCA | 16875 | 4418 | 2104 | 289 |
-| TCGA-BRCA | 17851 | 4369 | 2284 | 287 |
-| TCGA-COAD | 16787 | 5006 | 2098 | 287 |
+| TCGA-BLCA | 16875 | 4418 | 2104 | 291 |
+| TCGA-BRCA | 17851 | 4369 | 2284 | 295 |
+| TCGA-COAD | 16787 | 5006 | 2098 | 290 |
 | TCGA-ESCA | 17592 | 3445 | 2229 | 291 |
-| TCGA-HNSC | 17362 | 3959 | 2174 | 283 |
-| TCGA-KICH | 16932 | 5948 | 2119 | 278 |
-| TCGA-KIRC | 17348 | 5121 | 2209 | 289 |
-| TCGA-KIRP | 17173 | 4586 | 2170 | 282 |
-| TCGA-LIHC | 16766 | 3650 | 2057 | 284 |
-| TCGA-LUAD | 17578 | 4426 | 2241 | 291 |
-| TCGA-LUSC | 17741 | 6407 | 2250 | 285 |
-| TCGA-PRAD | 17361 | 2381 | 2207 | 279 |
-| TCGA-STAD | 17806 | 3508 | 2273 | 292 |
-| TCGA-THCA | 17066 | 3151 | 2140 | 289 |
-| TCGA-UCEC | 17059 | 5776 | 2140 | 291 |
+| TCGA-HNSC | 17362 | 3959 | 2174 | 290 |
+| TCGA-KICH | 16932 | 5948 | 2119 | 290 |
+| TCGA-KIRC | 17348 | 5121 | 2210 | 291 |
+| TCGA-KIRP | 17173 | 4586 | 2170 | 287 |
+| TCGA-LIHC | 16766 | 3650 | 2057 | 289 |
+| TCGA-LUAD | 17578 | 4426 | 2241 | 296 |
+| TCGA-LUSC | 17741 | 6407 | 2250 | 294 |
+| TCGA-PRAD | 17361 | 2381 | 2208 | 285 |
+| TCGA-STAD | 17806 | 3508 | 2273 | 295 |
+| TCGA-THCA | 17066 | 3151 | 2140 | 293 |
+| TCGA-UCEC | 17059 | 5776 | 2140 | 297 |
 
 ## Published but excluded from every denominator
 

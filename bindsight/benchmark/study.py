@@ -506,6 +506,35 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
             clusters, seed=config.seed
         ).as_dict()
 
+    # Sensitivity to the regulatory tier. The primary denominator is
+    # pre-registered on approved agents alone, but restricting to them excludes
+    # antigens whose evidence is strong and whose agent is merely not yet
+    # licensed — CA9 among them, which ranks first in its cohort. Reporting the
+    # wider panel separately shows what the pre-registration costs, without
+    # letting a post-hoc denominator inflate the headline.
+    all_tiers: tuple[P.Tier, ...] = ("approved", "late_clinical", "clinical_stage")
+    wider = [p for p in pairs if p.get("tier") in all_tiers]
+    wider_eligible = [p for p in wider if p["outcome_class"] != O.INFRASTRUCTURE]
+    if wider_eligible:
+        headline_k = 20 if 20 in config.recall_at_k else config.recall_at_k[-1]
+        summary["tier_sensitivity"] = {
+            "description": (
+                "Every scored pair regardless of regulatory tier, reported as a "
+                "sensitivity analysis. The primary denominator remains "
+                f"{list(config.tiers)}."
+            ),
+            "at_k": {
+                f"recall@{k}": S.wilson_interval(
+                    sum(1 for p in wider_eligible if _is_hit(p, k=k)), len(wider_eligible)
+                ).as_dict()
+                for k in config.recall_at_k
+            },
+            "headline": S.wilson_interval(
+                sum(1 for p in wider_eligible if _is_hit(p, k=headline_k)),
+                len(wider_eligible),
+            ).as_dict(),
+        }
+
     for p in summary["pairs"]:
         cf, n_up = p.get("counterfactual_rank"), p.get("n_up_regulated")
         if isinstance(cf, int) and isinstance(n_up, int) and n_up > 0 and cf <= n_up:

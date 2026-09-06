@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+# SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Extend the surfaceome reference with UniProt's own cell-membrane annotations.
+
+    python scripts/build_surfaceome_extension.py
+
+**Why this exists.** The SURFY list is a prediction-based inventory of 2,886
+accessions, and the rediscovery study found real targets missing from it. CA9,
+the defining clear-cell renal antigen, measures a log2 fold change of 9.58 in
+TCGA-KIRC — the largest effect anywhere in the panel — at an adjusted p below
+floating-point resolution, and bindsight could not surface it at any expression
+level because the accession is not in the list. STEAP1 is in the same position.
+Neither is a ranking failure; both are instrument-coverage failures, and the fix
+is a better instrument.
+
+**What it adds.** Reviewed human proteins UniProt curates as located at the cell
+membrane (subcellular location SL-0039). That is a curated experimental call
+rather than a second prediction, so it complements SURFY instead of competing
+with it.
+
+**What it preserves.** Every entry records its source. SURFY membership stays
+identifiable, so a result can be reported against the original list, the
+extension, or both, and an earlier result stays reproducible. The extension is
+additive: nothing is ever removed from SURFY.
+
+Writes ``bindsight/surfaceome/data/surfaceome_extended.tsv``. Run it when either
+reference changes. The output is committed.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+DATA_DIR = REPO_ROOT / "bindsight" / "surfaceome" / "data"
+SURFY_ACCESSIONS = DATA_DIR / "surfy_v1.uniprot.txt"
+OUT = DATA_DIR / "surfaceome_extended.tsv"
+
+#: UniProt subcellular-location term for the cell membrane.
+CELL_MEMBRANE_TERM = "SL-0039"
+
+STREAM_URL = (
+    "https://rest.uniprot.org/uniprotkb/stream?query="
+    + urllib.parse.quote(f"reviewed:true AND organism_id:9606 AND cc_scl_term:{CELL_MEMBRANE_TERM}")
+    + "&fields=accession,gene_names,xref_ensembl&format=json"
+)
+
+
+def fetch_membrane_proteins(url: str = STREAM_URL) -> dict[str, dict[str, object]]:
+    """Accession -> {symbol, genes} for reviewed human cell-membrane proteins."""
+    print(f"fetching {url}", file=sys.stderr)
+    with urllib.request.urlopen(url, timeout=600) as response:
+        payload = json.load(response)
+
+    out: dict[str, dict[str, object]] = {}
+    for entry in payload.get("results", []):
+        accession = entry.get("primaryAccession")
+        if not accession:
+            continue
+        genes: set[str] = set()
+        for xref in entry.get("uniProtKBCrossReferences", []):
+            if xref.get("database") != "Ensembl":
+                continue
+            for prop in xref.get("properties", []):
+                if prop.get("key") == "GeneId" and prop.get("value"):
+                    genes.add(str(prop["value"]).split(".")[0])
+        gene_block = entry.get("genes") or [{}]
+        symbol = (gene_block[0].get("geneName") or {}).get("value", "")
+        out[accession] = {"symbol": symbol, "genes": sorted(genes)}
+    print(f"{len(out)} reviewed human cell-membrane protein(s)", file=sys.stderr)
+    return out
+
+
+def main() -> int:
+    """Build and write the extended surfaceome."""
+    from bindsight.surfaceome.surfy import _parse_accessions
+
+    if not SURFY_ACCESSIONS.exists():
+        print(f"missing {SURFY_ACCESSIONS}", file=sys.stderr)
+        return 1
+    surfy = set(_parse_accessions(SURFY_ACCESSIONS.read_text(encoding="utf-8")))
+    membrane = fetch_membrane_proteins()
+
+    rows: list[tuple[str, str, str, str]] = []
+    for accession in sorted(surfy | set(membrane)):
+        info = membrane.get(accession, {})
+        genes = info.get("genes") or []
+        symbol = str(info.get("symbol") or "")
+        in_surfy = accession in surfy
+        in_membrane = accession in membrane
+        source = (
+            "surfy+uniprot" if (in_surfy and in_membrane) else ("surfy" if in_surfy else "uniprot")
+        )
+        rows.append((accession, symbol, ";".join(genes), source))
+
+    added = sorted(set(membrane) - surfy)
+    header = (
+        "# Extended surfaceome: the SURFY list plus reviewed human proteins UniProt\n"
+        "# curates as located at the cell membrane (subcellular location "
+        f"{CELL_MEMBRANE_TERM}).\n"
+        "#\n"
+        "# Additive only: SURFY membership is preserved and identifiable in the\n"
+        "# `source` column, so a result can be reported against the original list,\n"
+        "# the extension, or both, and an earlier result stays reproducible.\n"
+        "#\n"
+        "# SURFY: Bausch-Fluck et al., PNAS 2018, CC BY 4.0.\n"
+        "# UniProt: CC BY 4.0.\n"
+        "# Generated by scripts/build_surfaceome_extension.py.\n"
+        f"# {len(rows)} accessions: {len(surfy)} from SURFY, {len(added)} added by UniProt.\n"
+        "#\n"
+        "accession\tsymbol\tensembl_genes\tsource\n"
+    )
+    OUT.write_text(header + "\n".join("\t".join(r) for r in rows) + "\n", encoding="utf-8")
+    print(f"wrote {OUT}: {len(rows)} accessions ({len(added)} newly reachable)", file=sys.stderr)
+
+    # Name the antigens this was built to reach, so the run says whether it worked.
+    for accession, label in (("Q16790", "CA9"), ("Q9UHE8", "STEAP1")):
+        where = (
+            "SURFY"
+            if accession in surfy
+            else ("UniProt extension" if accession in membrane else "STILL MISSING")
+        )
+        print(f"  {label} ({accession}): {where}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

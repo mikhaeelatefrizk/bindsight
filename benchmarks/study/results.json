@@ -4,7 +4,7 @@
     "cohorts": "whole unstratified TCGA project, all primary tumour vs all normal",
     "contrast": "~ case_barcode + condition (paired on patient)",
     "admissible_stratifier_rule": "A stratifying variable is admissible only if BOTH hold: (a) it is computable without the run's own counts matrix, and (b) it is not a measurement of the antigen under test on any analyte. PAM50 and every other mRNA-cluster subtype fails (a). Clinical HER2 IHC/FISH passes (a) but fails (b), so it may appear only as a labelled sensitivity analysis and never in a recall denominator. Receptor status for a different receptor, histology and stage pass both.",
-    "unreachable_note": "CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome reference bindsight filters on \u2014 verified against the vendored list and against the upstream file, so this is a genuine reference gap rather than a build error. Neither can enter the candidate table at any expression level. They are reported as instrument-coverage failures, never as ranking misses, and they name their own fix: extend the surfaceome reference.",
+    "unreachable_note": "CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome list \u2014 verified against both the vendored file and the upstream one, so a genuine reference gap rather than a build error. Under SURFY alone neither could enter the candidate table at any expression level, and CA9 measures a log2 fold change of 9.58 in clear-cell kidney, the largest effect anywhere in this panel. That is an instrument-coverage failure, not a ranking failure, and the fix was a better instrument: the extended reference adds UniProt's curated cell-membrane annotations, 1,915 further accessions, and makes both reachable. Runs with `use_extended_surfaceome=False` reproduce the SURFY-only behaviour, under which these two are still reported as unreachable rather than as misses.",
     "tiers_in_primary_denominator": [
       "approved"
     ],
@@ -14,19 +14,19 @@
     "TCGA-BLCA": {
       "n_genes_tested": 16875,
       "n_eligible_surfaceome": 2104,
-      "n_candidates": 289,
+      "n_candidates": 291,
       "n_significant": 4418
     },
     "TCGA-BRCA": {
       "n_genes_tested": 17851,
       "n_eligible_surfaceome": 2284,
-      "n_candidates": 287,
+      "n_candidates": 295,
       "n_significant": 4369
     },
     "TCGA-COAD": {
       "n_genes_tested": 16787,
       "n_eligible_surfaceome": 2098,
-      "n_candidates": 287,
+      "n_candidates": 290,
       "n_significant": 5006
     },
     "TCGA-ESCA": {
@@ -38,67 +38,67 @@
     "TCGA-HNSC": {
       "n_genes_tested": 17362,
       "n_eligible_surfaceome": 2174,
-      "n_candidates": 283,
+      "n_candidates": 290,
       "n_significant": 3959
     },
     "TCGA-KICH": {
       "n_genes_tested": 16932,
       "n_eligible_surfaceome": 2119,
-      "n_candidates": 278,
+      "n_candidates": 290,
       "n_significant": 5948
     },
     "TCGA-KIRC": {
       "n_genes_tested": 17348,
-      "n_eligible_surfaceome": 2209,
-      "n_candidates": 289,
+      "n_eligible_surfaceome": 2210,
+      "n_candidates": 291,
       "n_significant": 5121
     },
     "TCGA-KIRP": {
       "n_genes_tested": 17173,
       "n_eligible_surfaceome": 2170,
-      "n_candidates": 282,
+      "n_candidates": 287,
       "n_significant": 4586
     },
     "TCGA-LIHC": {
       "n_genes_tested": 16766,
       "n_eligible_surfaceome": 2057,
-      "n_candidates": 284,
+      "n_candidates": 289,
       "n_significant": 3650
     },
     "TCGA-LUAD": {
       "n_genes_tested": 17578,
       "n_eligible_surfaceome": 2241,
-      "n_candidates": 291,
+      "n_candidates": 296,
       "n_significant": 4426
     },
     "TCGA-LUSC": {
       "n_genes_tested": 17741,
       "n_eligible_surfaceome": 2250,
-      "n_candidates": 285,
+      "n_candidates": 294,
       "n_significant": 6407
     },
     "TCGA-PRAD": {
       "n_genes_tested": 17361,
-      "n_eligible_surfaceome": 2207,
-      "n_candidates": 279,
+      "n_eligible_surfaceome": 2208,
+      "n_candidates": 285,
       "n_significant": 2381
     },
     "TCGA-STAD": {
       "n_genes_tested": 17806,
       "n_eligible_surfaceome": 2273,
-      "n_candidates": 292,
+      "n_candidates": 295,
       "n_significant": 3508
     },
     "TCGA-THCA": {
       "n_genes_tested": 17066,
       "n_eligible_surfaceome": 2140,
-      "n_candidates": 289,
+      "n_candidates": 293,
       "n_significant": 3151
     },
     "TCGA-UCEC": {
       "n_genes_tested": 17059,
       "n_eligible_surfaceome": 2140,
-      "n_candidates": 291,
+      "n_candidates": 297,
       "n_significant": 5776
     }
   },
@@ -226,7 +226,7 @@
         "confidence": 0.95
       },
       "removed_from_previous_step": 0,
-      "median_shortlist_size": 291
+      "median_shortlist_size": 295
     },
     "reachable": {
       "at_k": {
@@ -351,7 +351,7 @@
         "confidence": 0.95
       },
       "removed_from_previous_step": 0,
-      "median_shortlist_size": 291
+      "median_shortlist_size": 295
     },
     "gate_passed": {
       "at_k": {
@@ -476,7 +476,7 @@
         "confidence": 0.95
       },
       "removed_from_previous_step": 0,
-      "median_shortlist_size": 280
+      "median_shortlist_size": 286
     }
   },
   "infrastructure_failures": {
@@ -507,7 +507,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 289,
+      "shortlist_size": 291,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -541,7 +541,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 287,
+      "shortlist_size": 295,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -575,7 +575,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 287,
+      "shortlist_size": 295,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -609,7 +609,7 @@
       "outcome_class": "gated_out",
       "disposition": "down_regulated",
       "rank": null,
-      "shortlist_size": 287,
+      "shortlist_size": 290,
       "normalised_rank": null,
       "reason": "measured as down-regulated in tumour",
       "counts_in_denominator": true,
@@ -643,7 +643,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 287,
+      "shortlist_size": 290,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -709,11 +709,11 @@
         "in_surfaceome": true
       },
       "outcome_class": "gated_out",
-      "disposition": "fails_safety",
+      "disposition": "below_enrichment_cutoff",
       "rank": null,
-      "shortlist_size": 283,
+      "shortlist_size": 290,
       "normalised_rank": null,
-      "reason": "too many vital-tissue safety events",
+      "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
       "counts_in_denominator": true,
       "counterfactual_rank": 278,
       "n_eligible": 2174,
@@ -737,26 +737,31 @@
       "agent": "[89Zr]Zr-girentuximab (imaging, under FDA review)",
       "tier": "clinical_stage",
       "usable": "scored",
-      "note": "Carbonic anhydrase IX is the defining clear-cell RCC surface antigen and is genuinely, strongly over-expressed. Two honesty notes: the girentuximab ADJUVANT phase 3 (ARISER) FAILED its primary endpoint, so the live asset is the diagnostic imaging agent, not a therapeutic; and CA9 is ABSENT from the SURFY reference, so bindsight cannot surface it at any expression level. It is scored as an instrument-coverage failure, which is exactly what it is.",
+      "note": "Carbonic anhydrase IX is the defining clear-cell RCC surface antigen. Measured here at log2fc 9.58 with an adjusted p below floating-point resolution, the largest effect in the panel. Two notes: the girentuximab ADJUVANT phase 3 (ARISER) FAILED its primary endpoint, so the live asset is the diagnostic imaging agent rather than a therapeutic; and CA9 is absent from the SURFY list, so under that reference alone it was unreachable at any expression level. It is reachable through the extended reference, and this pair is why that extension exists.",
       "reachability": {
         "uniprot_resolved": true,
-        "in_surfaceome": false
+        "in_surfaceome": true
       },
-      "outcome_class": "not_reachable",
-      "disposition": "not_surfaceome",
-      "rank": null,
-      "shortlist_size": 289,
-      "normalised_rank": null,
-      "reason": "absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference",
-      "counts_in_denominator": false,
-      "counterfactual_rank": null,
-      "tested": true,
+      "outcome_class": "ranked",
+      "disposition": "surfaced",
+      "rank": 1,
+      "shortlist_size": 291,
+      "normalised_rank": 0.003436426116838488,
+      "reason": "reached the candidate shortlist at rank 1 of 291 (carried through to design)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 1,
+      "n_eligible": 2210,
+      "n_up_regulated": 1144,
+      "normalised_counterfactual_rank": 0.00045248868778280545,
       "log2fc": 9.577900559877728,
+      "direction": "up",
+      "combined_score": 2873.370167963318,
+      "tested": true,
       "padj": 0.0,
       "base_mean": 6866.628835436495,
       "lfc_se": 0.24649445756739938,
       "significant": true,
-      "p_uniform_rank": null
+      "p_uniform_rank": 0.0008741258741258741
     },
     {
       "project": "TCGA-KIRP",
@@ -773,10 +778,10 @@
       },
       "outcome_class": "ranked",
       "disposition": "surfaced",
-      "rank": 7,
-      "shortlist_size": 282,
-      "normalised_rank": 0.024822695035460994,
-      "reason": "reached the candidate shortlist at rank 7 of 282 (carried through to design)",
+      "rank": 10,
+      "shortlist_size": 287,
+      "normalised_rank": 0.03484320557491289,
+      "reason": "reached the candidate shortlist at rank 10 of 287 (carried through to design)",
       "counts_in_denominator": true,
       "counterfactual_rank": 7,
       "n_eligible": 2170,
@@ -807,10 +812,10 @@
       },
       "outcome_class": "ranked",
       "disposition": "surfaced",
-      "rank": 6,
-      "shortlist_size": 284,
-      "normalised_rank": 0.02112676056338028,
-      "reason": "reached the candidate shortlist at rank 6 of 284 (carried through to design)",
+      "rank": 9,
+      "shortlist_size": 289,
+      "normalised_rank": 0.031141868512110725,
+      "reason": "reached the candidate shortlist at rank 9 of 289 (carried through to design)",
       "counts_in_denominator": true,
       "counterfactual_rank": 6,
       "n_eligible": 2057,
@@ -842,7 +847,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 296,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -876,7 +881,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 296,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -910,7 +915,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 296,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -944,7 +949,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 296,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -978,7 +983,7 @@
       "outcome_class": "gated_out",
       "disposition": "below_enrichment_cutoff",
       "rank": null,
-      "shortlist_size": 285,
+      "shortlist_size": 294,
       "normalised_rank": null,
       "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
       "counts_in_denominator": true,
@@ -1010,16 +1015,16 @@
         "in_surfaceome": true
       },
       "outcome_class": "ranked",
-      "disposition": "not_top_n",
-      "rank": 22,
-      "shortlist_size": 279,
-      "normalised_rank": 0.07885304659498207,
-      "reason": "reached the candidate shortlist at rank 22 of 279 (ranked below the design carry-forward cutoff)",
+      "disposition": "structure_not_queried",
+      "rank": 34,
+      "shortlist_size": 285,
+      "normalised_rank": 0.11929824561403508,
+      "reason": "reached the candidate shortlist at rank 34 of 285 (past the structure-fetch cap; no lookup was attempted)",
       "counts_in_denominator": true,
       "counterfactual_rank": 24,
-      "n_eligible": 2207,
-      "n_up_regulated": 888,
-      "normalised_counterfactual_rank": 0.010874490258269144,
+      "n_eligible": 2208,
+      "n_up_regulated": 889,
+      "normalised_counterfactual_rank": 0.010869565217391304,
       "log2fc": 2.2145832366755562,
       "direction": "up",
       "combined_score": 32.39709648764778,
@@ -1028,7 +1033,7 @@
       "base_mean": 23319.696450202166,
       "lfc_se": 0.2687558749178037,
       "significant": true,
-      "p_uniform_rank": 0.02702702702702703
+      "p_uniform_rank": 0.02699662542182227
     },
     {
       "project": "TCGA-PRAD",
@@ -1038,26 +1043,31 @@
       "agent": "xaluritamig (phase 3)",
       "tier": "late_clinical",
       "usable": "scored",
-      "note": "STEAP1 is prostate-restricted and a strong a-priori positive. Like CA9 it is ABSENT from the SURFY reference, so it is unreachable by construction and scored as an instrument-coverage failure.",
+      "note": "STEAP1 is prostate-restricted and a strong a-priori positive. Like CA9 it is absent from the SURFY list, so under that reference alone it was unreachable by construction. Reachable through the extended reference.",
       "reachability": {
         "uniprot_resolved": true,
-        "in_surfaceome": false
+        "in_surfaceome": true
       },
-      "outcome_class": "not_reachable",
-      "disposition": "not_surfaceome",
-      "rank": null,
-      "shortlist_size": 279,
-      "normalised_rank": null,
-      "reason": "absent from the surfaceome reference, so unreachable at any expression level. This is an instrument-coverage failure, not a ranking miss; the fix is to extend the reference",
-      "counts_in_denominator": false,
-      "counterfactual_rank": null,
-      "tested": true,
+      "outcome_class": "ranked",
+      "disposition": "structure_not_queried",
+      "rank": 158,
+      "shortlist_size": 285,
+      "normalised_rank": 0.5543859649122806,
+      "reason": "reached the candidate shortlist at rank 158 of 285 (past the structure-fetch cap; no lookup was attempted)",
+      "counts_in_denominator": true,
+      "counterfactual_rank": 151,
+      "n_eligible": 2208,
+      "n_up_regulated": 889,
+      "normalised_counterfactual_rank": 0.06838768115942029,
       "log2fc": 1.1379958617181842,
+      "direction": "up",
+      "combined_score": 6.769607388764963,
+      "tested": true,
       "padj": 1.1253561196903014e-06,
       "base_mean": 6988.3956403008715,
       "lfc_se": 0.22178245853555262,
       "significant": true,
-      "p_uniform_rank": null
+      "p_uniform_rank": 0.16985376827896512
     },
     {
       "project": "TCGA-STAD",
@@ -1075,7 +1085,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 292,
+      "shortlist_size": 295,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -1109,7 +1119,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 292,
+      "shortlist_size": 295,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -1143,7 +1153,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 292,
+      "shortlist_size": 295,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -1177,7 +1187,7 @@
       "outcome_class": "gated_out",
       "disposition": "not_significant",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 297,
       "normalised_rank": null,
       "reason": "did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor \u2014 naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92",
       "counts_in_denominator": true,
@@ -1211,7 +1221,7 @@
       "outcome_class": "gated_out",
       "disposition": "below_enrichment_cutoff",
       "rank": null,
-      "shortlist_size": 291,
+      "shortlist_size": 297,
       "normalised_rank": null,
       "reason": "outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome)",
       "counts_in_denominator": true,
@@ -1261,6 +1271,65 @@
     "method": "cluster-bootstrap(n_clusters=8, B=10000)",
     "confidence": 0.95
   },
+  "tier_sensitivity": {
+    "description": "Every scored pair regardless of regulatory tier, reported as a sensitivity analysis. The primary denominator remains ['approved'].",
+    "at_k": {
+      "recall@5": {
+        "point": 0.045454545454545456,
+        "low": 0.00806942761212387,
+        "high": 0.21798045858122436,
+        "numerator": 1,
+        "denominator": 22,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "recall@10": {
+        "point": 0.13636363636363635,
+        "low": 0.047490037102623145,
+        "high": 0.33334987185205545,
+        "numerator": 3,
+        "denominator": 22,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "recall@20": {
+        "point": 0.13636363636363635,
+        "low": 0.047490037102623145,
+        "high": 0.33334987185205545,
+        "numerator": 3,
+        "denominator": 22,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "recall@50": {
+        "point": 0.18181818181818182,
+        "low": 0.07306884578220338,
+        "high": 0.38516607455314034,
+        "numerator": 4,
+        "denominator": 22,
+        "method": "wilson",
+        "confidence": 0.95
+      },
+      "recall@100": {
+        "point": 0.18181818181818182,
+        "low": 0.07306884578220338,
+        "high": 0.38516607455314034,
+        "numerator": 4,
+        "denominator": 22,
+        "method": "wilson",
+        "confidence": 0.95
+      }
+    },
+    "headline": {
+      "point": 0.13636363636363635,
+      "low": 0.047490037102623145,
+      "high": 0.33334987185205545,
+      "numerator": 3,
+      "denominator": 22,
+      "method": "wilson",
+      "confidence": 0.95
+    }
+  },
   "cohorts_not_yet_run": [],
-  "surfaceome_size": 2886
+  "surfaceome_size": 4801
 }

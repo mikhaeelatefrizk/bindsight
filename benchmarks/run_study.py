@@ -41,11 +41,17 @@ DEFAULT_OUT = REPO_ROOT / "runs" / "study"
 ARTIFACT_DIR = REPO_ROOT / "benchmarks" / "study"
 
 
-def _surfaceome() -> frozenset[str]:
-    """The accessions the pipeline filters on, read from the vendored list."""
-    from bindsight.surfaceome.surfy import load_surfy
+def _surfaceome(*, extended: bool = True) -> frozenset[str]:
+    """The accessions the pipeline filters on.
 
-    return load_surfy(allow_offline_fallback=False)
+    This must match what discovery actually used. Scoring against SURFY alone
+    while the pipeline ran against the extended reference would report antigens
+    as unreachable that the run could see perfectly well — which is exactly what
+    happened the first time the extension landed.
+    """
+    from bindsight.surfaceome import load_surfaceome
+
+    return load_surfaceome(extended=extended)
 
 
 def _list_projects() -> None:

@@ -60,14 +60,18 @@ ADMISSIBLE_STRATIFIER_RULE = (
     "Receptor status for a different receptor, histology and stage pass both."
 )
 
-#: Why two panel antigens can never be surfaced, whatever the expression.
+#: The instrument-coverage gap this study found, and what closing it took.
 UNREACHABLE_NOTE = (
-    "CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome "
-    "reference bindsight filters on — verified against the vendored list and "
-    "against the upstream file, so this is a genuine reference gap rather than a "
-    "build error. Neither can enter the candidate table at any expression level. "
-    "They are reported as instrument-coverage failures, never as ranking misses, "
-    "and they name their own fix: extend the surfaceome reference."
+    "CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome list — "
+    "verified against both the vendored file and the upstream one, so a genuine "
+    "reference gap rather than a build error. Under SURFY alone neither could "
+    "enter the candidate table at any expression level, and CA9 measures a log2 "
+    "fold change of 9.58 in clear-cell kidney, the largest effect anywhere in this "
+    "panel. That is an instrument-coverage failure, not a ranking failure, and the "
+    "fix was a better instrument: the extended reference adds UniProt's curated "
+    "cell-membrane annotations, 1,915 further accessions, and makes both reachable. "
+    "Runs with `use_extended_surfaceome=False` reproduce the SURFY-only behaviour, "
+    "under which these two are still reported as unreachable rather than as misses."
 )
 
 #: Minimum solid-tissue normals for a cohort to enter a recall denominator.
@@ -213,12 +217,14 @@ PANEL: list[AntigenCohort] = [
         agent="[89Zr]Zr-girentuximab (imaging, under FDA review)",
         tier="clinical_stage",
         usable="scored",
-        note="Carbonic anhydrase IX is the defining clear-cell RCC surface antigen and "
-        "is genuinely, strongly over-expressed. Two honesty notes: the girentuximab "
+        note="Carbonic anhydrase IX is the defining clear-cell RCC surface antigen. "
+        "Measured here at log2fc 9.58 with an adjusted p below floating-point "
+        "resolution, the largest effect in the panel. Two notes: the girentuximab "
         "ADJUVANT phase 3 (ARISER) FAILED its primary endpoint, so the live asset is "
-        "the diagnostic imaging agent, not a therapeutic; and CA9 is ABSENT from the "
-        "SURFY reference, so bindsight cannot surface it at any expression level. It "
-        "is scored as an instrument-coverage failure, which is exactly what it is.",
+        "the diagnostic imaging agent rather than a therapeutic; and CA9 is absent "
+        "from the SURFY list, so under that reference alone it was unreachable at any "
+        "expression level. It is reachable through the extended reference, and this "
+        "pair is why that extension exists.",
     ),
     AntigenCohort(
         project="TCGA-KIRP",
@@ -314,8 +320,8 @@ PANEL: list[AntigenCohort] = [
         tier="late_clinical",
         usable="scored",
         note="STEAP1 is prostate-restricted and a strong a-priori positive. Like CA9 it "
-        "is ABSENT from the SURFY reference, so it is unreachable by construction and "
-        "scored as an instrument-coverage failure.",
+        "is absent from the SURFY list, so under that reference alone it was "
+        "unreachable by construction. Reachable through the extended reference.",
     ),
     # -- Stomach and oesophagus -------------------------------------------
     AntigenCohort(

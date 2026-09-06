@@ -55,7 +55,12 @@ from bindsight.provenance import (
 from bindsight.structures.alphafolddb import AlphaFoldDBClient
 from bindsight.structures.plddt import mean_plddt, region_plddt
 from bindsight.structures.topology import Topology, UniProtTopologyClient
-from bindsight.surfaceome import is_surface_protein, load_surfy, load_surfy_gene_map
+from bindsight.surfaceome import (
+    is_surface_protein,
+    load_surfaceome,
+    load_surfaceome_gene_map,
+    load_surfy,
+)
 from bindsight.targets.gtex import GTExTissueExpression
 from bindsight.targets.open_targets import OpenTargetsClient
 
@@ -215,6 +220,13 @@ def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
     assert isinstance(p, TargetDiscoveryParams)
     if surfy is not None:
         return surfy
+    if p.use_extended_surfaceome:
+        # SURFY plus UniProt's curated cell-membrane annotations. SURFY alone
+        # cannot see CA9 or STEAP1, and CA9 carries the largest effect measured
+        # anywhere in the rediscovery panel.
+        resolved = load_surfaceome(extended=True)
+        LOG.info("surfaceome: %d accessions (SURFY + UniProt cell membrane)", len(resolved))
+        return resolved
     return load_surfy(allow_offline_fallback=p.surfy_allow_offline_fallback)
 
 
@@ -475,7 +487,11 @@ def _do_discover(
     n_before_prefilter = len(sig)
     if p.surfaceome_prefilter and p.require_surfy:
         surfaceome_gene_ids = frozenset(
-            gene for gene, accession in load_surfy_gene_map().items() if accession in surfy_set
+            gene
+            for gene, accession in load_surfaceome_gene_map(
+                extended=p.use_extended_surfaceome
+            ).items()
+            if accession in surfy_set
         )
         if surfaceome_gene_ids:
             sig = sig[sig["gene_id"].astype(str).isin(surfaceome_gene_ids)].copy()

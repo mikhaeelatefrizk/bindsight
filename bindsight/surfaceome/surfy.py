@@ -116,6 +116,82 @@ def load_vendored_surfy() -> frozenset[str] | None:
     return accessions or None
 
 
+def load_surfaceome_extension() -> dict[str, tuple[str, str]]:
+    """Accession -> (source, semicolon-joined Ensembl gene ids), extended reference.
+
+    The SURFY list is prediction-based and demonstrably incomplete: the
+    rediscovery study measured CA9 at a log2 fold change of 9.58 in clear-cell
+    kidney, the largest effect in the whole panel, and could not surface it at any
+    expression level because the accession is absent. STEAP1 is in the same
+    position. Those are instrument-coverage failures, and the fix is a better
+    instrument.
+
+    The extension adds reviewed human proteins UniProt curates as located at the
+    cell membrane — a curated experimental call rather than a second prediction.
+    It is additive: SURFY membership is preserved in the ``source`` field, so a
+    result can be reported against the original list, the extension, or both, and
+    an earlier result stays reproducible.
+
+    Regenerate with ``scripts/build_surfaceome_extension.py``.
+
+    Returns:
+        The mapping, or an empty dict if the file is not packaged.
+    """
+    text = _read_packaged("surfaceome_extended.tsv")
+    if not text:
+        LOG.warning("surfaceome_extended.tsv is not packaged; falling back to the SURFY list alone")
+        return {}
+    out: dict[str, tuple[str, str]] = {}
+    for line in text.splitlines():
+        line = line.rstrip()
+        if not line or line.startswith("#") or line.startswith("accession\t"):
+            continue
+        parts = line.split("\t")
+        if len(parts) < 4:
+            continue
+        accession, _symbol, genes, source = parts[0], parts[1], parts[2], parts[3]
+        if accession:
+            out[accession] = (source, genes)
+    return out
+
+
+def load_surfaceome(*, extended: bool = True) -> frozenset[str]:
+    """The surfaceome accessions to filter on.
+
+    Args:
+        extended: include the UniProt cell-membrane extension alongside SURFY.
+            ``False`` reproduces a SURFY-only run exactly.
+
+    Returns:
+        The accession set. Falls back to SURFY alone if the extension is absent,
+        with a warning, rather than silently narrowing what the tool can see.
+    """
+    core = load_surfy(allow_offline_fallback=False)
+    if not extended:
+        return core
+    extension = load_surfaceome_extension()
+    if not extension:
+        return core
+    return frozenset(core | set(extension))
+
+
+def load_surfaceome_gene_map(*, extended: bool = True) -> dict[str, str]:
+    """Ensembl gene id -> accession, over the chosen surfaceome.
+
+    Merges the vendored SURFY gene map with the extension's own gene ids, so a
+    gene reachable through either reference can be pre-filtered before the
+    enrichment cut.
+    """
+    mapping = dict(load_surfy_gene_map())
+    if not extended:
+        return mapping
+    for accession, (_source, genes) in load_surfaceome_extension().items():
+        for gene in genes.split(";"):
+            if gene:
+                mapping.setdefault(gene, accession)
+    return mapping
+
+
 def load_surfy_gene_map() -> dict[str, str]:
     """Ensembl gene id -> UniProt accession, for the surfaceome.
 

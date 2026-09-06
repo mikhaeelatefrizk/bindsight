@@ -177,6 +177,18 @@ class TargetDiscoveryParams(BaseModel):
     # now be spent on genes that could actually be targets. The number of Open
     # Targets calls is unchanged.
     surfaceome_prefilter: bool = True
+    # Whether to use the extended surfaceome (SURFY plus UniProt's curated
+    # cell-membrane annotations) rather than SURFY alone.
+    #
+    # SURFY is prediction-based and demonstrably incomplete. The rediscovery study
+    # measured CA9 at log2fc 9.58 in clear-cell kidney — the largest effect in the
+    # panel — and could not surface it at any expression level, because the
+    # accession is not in the list. STEAP1 is in the same position. The extension
+    # adds 1,915 accessions and makes both reachable.
+    #
+    # Set False to reproduce a SURFY-only run exactly; SURFY membership is
+    # preserved in the extension's source column either way.
+    use_extended_surfaceome: bool = True
 
     # Open Targets enrichment
     use_open_targets: bool = True

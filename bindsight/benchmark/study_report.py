@@ -169,6 +169,20 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 )
             lines.append("")
 
+    sensitivity = summary.get("tier_sensitivity")
+    if sensitivity:
+        lines += [
+            "### Sensitivity to the regulatory tier",
+            "",
+            str(sensitivity.get("description", "")),
+            "",
+            "| Cutoff | Every scored pair |",
+            "|---|--:|",
+        ]
+        for k, block in sensitivity.get("at_k", {}).items():
+            lines.append(f"| {k} | {block['numerator']}/{block['denominator']} |")
+        lines.append("")
+
     primary = summary.get("primary_interval")
     if primary:
         lines += [

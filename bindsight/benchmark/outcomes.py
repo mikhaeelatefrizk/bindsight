@@ -210,11 +210,16 @@ def classify(
             counts_in_denominator=False,
         )
 
-    if disposition in _INFRASTRUCTURE_DISPOSITIONS:
+    # A pair that reached the shortlist was assessed by the ranking, which is what
+    # this study measures, so its rank stands whatever a later stage reports.
+    # `structure_not_queried` in particular is the normal outcome for anything
+    # past the structure-fetch cap: treating it as an infrastructure failure
+    # would discard a genuine rank and shrink the denominator for no reason.
+    if rank is None and disposition in _INFRASTRUCTURE_DISPOSITIONS:
         return Outcome(
             outcome_class=INFRASTRUCTURE,
             disposition=disposition,
-            rank=rank,
+            rank=None,
             shortlist_size=shortlist_size,
             reason=(
                 f"{GATE_EXPLANATIONS.get(disposition, disposition)} — this pair is "
