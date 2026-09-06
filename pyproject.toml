@@ -211,6 +211,7 @@ exclude = ["tests/fixtures", "build", "dist"]
 [[tool.mypy.overrides]]
 module = [
     "pydeseq2.*",
+    "scipy.*",
     "Bio.*",
     "py3Dmol.*",
     "modal.*",
