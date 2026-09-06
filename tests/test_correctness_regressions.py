@@ -381,3 +381,44 @@ def test_epitope_plddt_resolves_a_run_relative_path(tmp_path: Path, fixtures_dir
     assert epitopes.iloc[0]["mean_epitope_plddt"] is not None, (
         "mean_epitope_plddt was None: the run-relative structure path was not resolved"
     )
+
+
+# ---------------------------------------------------------------------------
+# 8. dl_binder_design needs its silent_tools submodule
+# ---------------------------------------------------------------------------
+def test_af2ig_clone_requests_submodules(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """predict.py imports silent_tools at module scope, and it is a git submodule.
+
+    A plain clone leaves that directory empty, so the AF2 initial-guess validator
+    fails on import rather than at any legible point.
+    """
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd: list[str], *, cwd: Path | None = None) -> Any:
+        calls.append(list(cmd))
+        # git clone must appear to have created the destination.
+        if cmd[:2] == ["git", "clone"]:
+            Path(cmd[-1]).mkdir(parents=True, exist_ok=True)
+        return None
+
+    monkeypatch.setattr(job_exec, "_run", _fake_run)
+    job_exec._git_clone("https://example/repo", "abc123", tmp_path / "dl", submodules=True)
+    assert any(c[:2] == ["git", "submodule"] for c in calls), (
+        "submodules were not initialised: silent_tools would be missing"
+    )
+
+
+def test_plain_clone_does_not_fetch_submodules(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd: list[str], *, cwd: Path | None = None) -> Any:
+        calls.append(list(cmd))
+        if cmd[:2] == ["git", "clone"]:
+            Path(cmd[-1]).mkdir(parents=True, exist_ok=True)
+        return None
+
+    monkeypatch.setattr(job_exec, "_run", _fake_run)
+    job_exec._git_clone("https://example/repo", "abc123", tmp_path / "plain")
+    assert not any(c[:2] == ["git", "submodule"] for c in calls)

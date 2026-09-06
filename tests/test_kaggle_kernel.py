@@ -88,3 +88,53 @@ def test_status_name_and_state_mapping() -> None:
     assert kaggle._STATE_MAP["RUNNING"] == "running"
     # Dict fallback (older clients).
     assert kaggle._status_name({"status": "running"}) == "RUNNING"
+
+
+def test_metadata_pins_the_t4_accelerator() -> None:
+    """`enable_gpu` alone gets Kaggle's default P100, which cannot run the stack.
+
+    Kaggle's own CLI docs warn the P100 is unusable with the default image because
+    current PyTorch ships no Pascal kernels. Pinning `machine_shape` puts the
+    hardware a published result was produced on under version control.
+    """
+    meta = kaggle_kernel.build_kernel_metadata(username="u", slug="run-1")
+    assert meta["machine_shape"] == "NvidiaTeslaT4"
+    assert meta["enable_gpu"] is True
+    assert meta["enable_internet"] is True
+
+
+def test_metadata_accelerator_is_overridable() -> None:
+    meta = kaggle_kernel.build_kernel_metadata(
+        username="u", slug="run-1", accelerator="NvidiaTeslaT4x2"
+    )
+    assert meta["machine_shape"] == "NvidiaTeslaT4x2"
+
+
+def test_kernel_refuses_an_insufficient_gpu() -> None:
+    """The kernel must fail fast rather than die hours in on the first CUDA op."""
+    src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
+    assert "compute_cap" in src
+    assert "MIN_CC" in src
+    # The failure has to name the fix, not just the symptom.
+    assert "machine_shape" in src
+    assert "NvidiaTeslaT4" in src
+
+
+def test_kernel_reports_disk_and_gpu_at_every_stage() -> None:
+    """Kaggle does not publish the scratch volume size, so it gets measured."""
+    src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
+    assert "def disk_report(" in src
+    assert "def gpu_report(" in src
+    # step() drives both, so every stage records what was available.
+    body = src.split("def step(msg):", 1)[1].split("step(", 1)[0]
+    assert "disk_report(msg)" in body
+    assert "gpu_report(msg)" in body
+    for volume in ("/kaggle/working", "/kaggle/temp", "/tmp"):
+        assert volume in src
+
+
+def test_kernel_still_forces_fp32_for_boltz() -> None:
+    """bfloat16 needs sm_80+; the pinned T4 is sm_75, so the patch stays required."""
+    src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
+    assert "precision=32" in src
+    assert "bf16-mixed" in src

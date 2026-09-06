@@ -71,11 +71,20 @@ def _run(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProc
 # ---------------------------------------------------------------------------
 # Tool setup (idempotent; no-ops when an image already ships the tools)
 # ---------------------------------------------------------------------------
-def _git_clone(repo: str, commit: str, dest: Path) -> Path:
+def _git_clone(repo: str, commit: str, dest: Path, *, submodules: bool = False) -> Path:
+    """Clone ``repo`` at ``commit`` into ``dest``, optionally with submodules.
+
+    ``submodules`` matters for dl_binder_design: its ``af2_initial_guess``
+    predict.py imports ``silent_tools`` at module scope, and that is a git
+    submodule. A plain clone leaves the directory empty, so the AF2
+    initial-guess validator fails on import rather than at a legible point.
+    """
     if dest.exists():
         return dest
     _run(["git", "clone", "--quiet", repo, str(dest)])
     _run(["git", "checkout", "--quiet", commit], cwd=dest)
+    if submodules:
+        _run(["git", "submodule", "update", "--init", "--recursive", "--quiet"], cwd=dest)
     return dest
 
 
@@ -420,7 +429,12 @@ def _validate_af2_ig(
 ) -> list[dict[str, Any]]:
     tools_root = work / "_tools"
     dl = _git_clone(
-        tools.DL_BINDER_DESIGN_REPO, tools.DL_BINDER_DESIGN_COMMIT, tools_root / "dl_binder_design"
+        tools.DL_BINDER_DESIGN_REPO,
+        tools.DL_BINDER_DESIGN_COMMIT,
+        tools_root / "dl_binder_design",
+        # predict.py does `from silent_tools import silent_tools` at import time,
+        # and silent_tools is a submodule.
+        submodules=True,
     )
     af2_root = work / "af2_out"
     metrics: list[dict[str, Any]] = []
