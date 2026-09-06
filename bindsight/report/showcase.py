@@ -4,8 +4,9 @@
 
 ``benchmarks/`` already holds the strongest evidence this project has:
 
-- ``benchmarks/study/`` — the rediscovery study over fifteen real TCGA
-  cohorts (ERBB2 resurfaced at rank 4), with volcano and recall figures.
+- ``benchmarks/study/`` — the rediscovery study over fifteen whole, unstratified
+  TCGA projects (CA9 surfaced at rank 1 of 291), with its rank and outcome-class
+  figures.
 - ``benchmarks/designer_benchmark/`` — 20 real ERBB2 binders designed on a free
   Kaggle P100, each with the actual Boltz-2 predicted complex ``.cif``,
   per-design metrics, developability descriptors, and ESM-2 embedding coords.

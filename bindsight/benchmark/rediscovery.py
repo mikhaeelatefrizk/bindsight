@@ -23,11 +23,11 @@ report groups antigens by their *measured* differential expression so the result
 is transparent and not gamed; the requested cohort sizes are the only hand-set
 values and are reported as inputs next to the achieved per-arm counts.
 
-The honest finding the runs produce: bulk-DE discovery surfaces antigens that
-are genuinely transcriptionally over-expressed (ERBB2 in HER2-enriched breast,
-rank 4 — exposed by PAM50 subtype-stratification via
-:mod:`bindsight.io.cbioportal`, which otherwise averages the HER2 signal away)
-and withholds antigens whose tumor-selectivity arises from other mechanisms —
+What these runs produced, and why it does not stand: bulk-DE discovery appeared
+to surface ERBB2 at rank 4 in breast, but only because the cohort was
+subtype-stratified via :mod:`bindsight.io.cbioportal` on a classifier built on
+ERBB2 itself. The surviving observation is the uncontroversial half — that the
+method withholds antigens whose tumour-selectivity arises from other mechanisms —
 mutation/amplification (EGFR) or lineage co-expression in the normal
 tissue-of-origin (CEA, PSMA). Sensitivity therefore tracks effect size, the
 expected behaviour of a differential-expression method. That withholding

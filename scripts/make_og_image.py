@@ -106,7 +106,7 @@ def main() -> int:
     draw.line([(80, 456), (W - 80, 456)], fill=(255, 255, 255, 60), width=2)
 
     facts = [
-        ("ERBB2", "rediscovered, rank 4"),
+        ("CA9", "surfaced, rank 1 of 291"),
         ("0.84", "best ipTM, free GPU"),
         ("50%", "success @ ipTM 0.65"),
         ("AGPL-3.0", "open + citable"),

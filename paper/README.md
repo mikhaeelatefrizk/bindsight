@@ -194,13 +194,17 @@ To stay honest:
   mock-tested only and have still never been run on real hardware. The
   manuscripts in this directory were written before that run and understate
   what has been executed.
-- **Rediscovery validation: done (discovery half).** A companion report
-  (`paper/validation/manuscript.md`, artifacts in `benchmarks/study/`)
-  runs the discovery half on six real indication-matched TCGA cohorts: ERBB2
-  is rediscovered at rank 4 in HER2-enriched breast (PAM50-stratified). EGFR
-  and CEA are not surfaced, which the report presents as an internal
-  consistency check on the over-expression rule (it excludes them by
-  construction) rather than as evidence of ranking discrimination. The
+- **Rediscovery study: done (discovery half).** A companion report
+  (`paper/validation/manuscript.md`, artifacts in `benchmarks/study/`) runs the
+  discovery half on fifteen whole, unstratified TCGA projects as patient-paired
+  contrasts, against a pre-registered panel of 22 antigen-cohort pairs. Recall at
+  rank 20 is 1/17 on approved-agent antigens (95% CI 0.01-0.27); CA9 surfaces at
+  rank 1 of 291 in clear-cell kidney. Most validated antigens are not
+  significantly over-expressed in an unstratified bulk contrast, which the report
+  states as a limit of the signal rather than of the ranking. **This supersedes an
+  earlier six-cohort version whose ERBB2-at-rank-4 headline is withdrawn**: that
+  breast cohort was stratified by a PAM50 call, and ERBB2 is one of the fifty
+  genes that classifier is built on. The
   single-arm *designer* benchmark has since been run: `benchmarks/designer_
   benchmark/` carries 20 real Boltz-2 complexes with per-design metrics. The
   full three-way comparison is still pending, because BindCraft and BoltzGen
