@@ -50,7 +50,16 @@ def main() -> None:
     parser.add_argument("--validator", default="boltz2")
     parser.add_argument("--trajectories", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--structures-dir", type=Path, default=None)
+    parser.add_argument(
+        "--structures-dir",
+        type=Path,
+        default=REPO_ROOT / "data" / "target_structures",
+        help=(
+            "directory of prepared target structures (default: data/target_structures, "
+            "where prepare_erbb2_target.py writes). On a real backend a missing "
+            "structure is an error, never a placeholder."
+        ),
+    )
     parser.add_argument(
         "--targets",
         nargs="*",

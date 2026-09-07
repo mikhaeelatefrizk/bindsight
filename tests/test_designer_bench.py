@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from bindsight.benchmark.designer_bench import (
     Target,
     _floats,
@@ -160,3 +162,99 @@ class TestBinderArtifactStaging:
         (binders / "developability.tsv").write_text("keep\n")
         stage_binder_artifacts([self._archive(tmp_path, "P04626_binder_0_seq0")], out)
         assert (binders / "developability.tsv").is_file()
+
+
+class TestStructureResolution:
+    """A real GPU backend must never design against the placeholder.
+
+    The placeholder is a three-residue stub for offline mock runs. On a real
+    backend RFdiffusion will design binders against it, Boltz-2 will score them,
+    and the run reports ipTM figures for a target that was never present — GPU
+    hours spent producing numbers that look real. This was observed: a Kaggle run
+    reached `contigmap.contigs=[A1-3/0 50-100]` against a 242-byte target.
+    """
+
+    @staticmethod
+    def _no_alphafold(monkeypatch: pytest.MonkeyPatch) -> None:
+        """Make the AlphaFold fallback fail, isolating the resolution logic."""
+        import bindsight.structures.alphafolddb as afdb
+
+        class _Empty:
+            def fetch(self, uniprot: str) -> None:
+                return None
+
+        monkeypatch.setattr(afdb, "AlphaFoldDBClient", _Empty)
+
+    def test_a_real_backend_refuses_to_use_the_placeholder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.benchmark.designer_bench import Target, _resolve_structure
+
+        self._no_alphafold(monkeypatch)
+        with pytest.raises(FileNotFoundError, match="placeholder"):
+            _resolve_structure(
+                Target("P00000", "NOPE"), tmp_path, tmp_path, allow_placeholder=False
+            )
+
+    def test_the_error_names_how_to_fix_it(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.benchmark.designer_bench import Target, _resolve_structure
+
+        self._no_alphafold(monkeypatch)
+        with pytest.raises(FileNotFoundError) as exc:
+            _resolve_structure(
+                Target("P00000", "NOPE"), tmp_path, tmp_path, allow_placeholder=False
+            )
+        assert "prepare_erbb2_target" in str(exc.value)
+
+    def test_the_mock_backend_may_still_use_it(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.benchmark.designer_bench import Target, _resolve_structure
+
+        self._no_alphafold(monkeypatch)
+        path = _resolve_structure(
+            Target("P00000", "NOPE"), tmp_path, tmp_path, allow_placeholder=True
+        )
+        assert path.is_file()
+
+    def test_a_prepared_structure_wins(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.designer_bench import Target, _resolve_structure
+
+        real = tmp_path / "P04626.pdb"
+        real.write_text("ATOM      1  CA  ALA A   1       0.000   0.000   0.000\n")
+        got = _resolve_structure(Target("P04626", "ERBB2"), tmp_path, tmp_path)
+        assert got == real
+
+    def test_the_default_directory_is_searched_when_none_is_given(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Passing no directory used to mean 'write a placeholder' immediately."""
+        from bindsight.benchmark import designer_bench as db
+
+        monkeypatch.setattr(db, "DEFAULT_STRUCTURES_DIR", tmp_path)
+        real = tmp_path / "P04626.pdb"
+        real.write_text("ATOM      1  CA  ALA A   1       0.000   0.000   0.000\n")
+        assert db._resolve_structure(db.Target("P04626", "ERBB2"), None, tmp_path) == real
+
+    def test_a_missing_structure_aborts_the_designer(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Submitting the remaining targets would spend GPU on an incomplete run."""
+        from bindsight.benchmark.designer_bench import Target, run_one_designer
+
+        self._no_alphafold(monkeypatch)
+        score = run_one_designer(
+            "rfdiff_mpnn",
+            [Target("P00000", "NOPE")],
+            backend="kaggle",
+            validator="boltz2",
+            n_trajectories=1,
+            seed=0,
+            structures_dir=tmp_path,
+            scratch=tmp_path,
+        )
+        assert score.error is not None
+        assert "placeholder" in score.error
+        assert score.n_designs == 0

@@ -95,28 +95,69 @@ class DesignerScore:
 # ---------------------------------------------------------------------------
 # Structure resolution
 # ---------------------------------------------------------------------------
-def _resolve_structure(target: Target, structures_dir: Path | None, scratch: Path) -> Path:
-    """Return a target-structure path: provided file, AlphaFold fetch, or placeholder.
+#: Where prepared target structures live by default. Leaving this unset used to
+#: mean "write a placeholder", which is catastrophic on a real backend.
+DEFAULT_STRUCTURES_DIR = Path("data/target_structures")
 
-    For ``--backend mock`` (no structures_dir) a placeholder PDB is written so the
-    harness runs offline; real backends should pass ``structures_dir`` with true
-    structures or rely on the AlphaFoldDB fetch.
+
+def _resolve_structure(
+    target: Target,
+    structures_dir: Path | None,
+    scratch: Path,
+    *,
+    allow_placeholder: bool = False,
+) -> Path:
+    """Return a real target structure, or fail.
+
+    The placeholder is a three-residue stub. It exists so the harness can run
+    offline on ``--backend mock``, and it is worthless anywhere else: RFdiffusion
+    will happily design binders against three residues, Boltz-2 will score them,
+    and the run will report ipTM figures for a target that was never present.
+    That is the most expensive kind of silent failure this project can produce —
+    it costs GPU hours and yields numbers that look real.
+
+    So ``allow_placeholder`` is False by default and only the mock backend passes
+    True. A real backend with no resolvable structure raises.
+
+    Resolution order: the structures directory, then AlphaFoldDB. The directory
+    is consulted even when the caller passed none, because the default location
+    is where ``prepare_erbb2_target.py`` writes.
+
+    Raises:
+        FileNotFoundError: On a real backend when no structure could be resolved.
     """
-    if structures_dir is not None:
-        for ext in (".cif", ".pdb", ".mmcif"):
-            cand = structures_dir / f"{target.uniprot}{ext}"
-            if cand.exists():
-                return cand
-        # Fall through to AlphaFold fetch if not found locally.
-        try:
-            from bindsight.structures.alphafolddb import AlphaFoldDBClient
+    search_dir = structures_dir if structures_dir is not None else DEFAULT_STRUCTURES_DIR
+    for ext in (".cif", ".pdb", ".mmcif"):
+        cand = Path(search_dir) / f"{target.uniprot}{ext}"
+        if cand.exists():
+            LOG.info("%s: using %s", target.symbol, cand)
+            return cand
 
-            fetched = AlphaFoldDBClient().fetch(target.uniprot)
-            if fetched is not None:
-                return Path(fetched)
-        except Exception as e:  # pragma: no cover - network edge cases
-            LOG.warning("AlphaFold fetch failed for %s: %s", target.uniprot, e)
+    try:
+        from bindsight.structures.alphafolddb import AlphaFoldDBClient
 
+        fetched = AlphaFoldDBClient().fetch(target.uniprot)
+        if fetched is not None:
+            LOG.info("%s: using AlphaFold model %s", target.symbol, fetched)
+            return Path(fetched)
+    except Exception as e:  # pragma: no cover - network edge cases
+        LOG.warning("AlphaFold fetch failed for %s: %s", target.uniprot, e)
+
+    if not allow_placeholder:
+        raise FileNotFoundError(
+            f"no structure for {target.symbol} ({target.uniprot}). Looked in "
+            f"{search_dir}/ and AlphaFoldDB. A real backend will not fall back to "
+            "the three-residue placeholder: designing against it burns GPU hours "
+            "and produces ipTM figures for a target that was never there. Prepare "
+            "the structure first, e.g. "
+            "`python benchmarks/designer_benchmark/prepare_erbb2_target.py`."
+        )
+
+    LOG.warning(
+        "%s: no structure found; writing the three-residue placeholder. This is "
+        "only meaningful on the mock backend.",
+        target.symbol,
+    )
     placeholder = scratch / f"{target.uniprot}.pdb"
     placeholder.write_text(_PLACEHOLDER_PDB, encoding="utf-8")
     return placeholder
@@ -178,7 +219,16 @@ def run_one_designer(
     n_designs = 0
 
     for target in targets:
-        struct = _resolve_structure(target, structures_dir, scratch)
+        try:
+            struct = _resolve_structure(
+                target, structures_dir, scratch, allow_placeholder=(backend == "mock")
+            )
+        except FileNotFoundError as e:
+            # Abort the whole designer: submitting the remaining targets would
+            # spend GPU time on a run whose summary is already incomplete.
+            LOG.error("%s", e)
+            score.error = str(e)
+            return score
         spec = designer.make_spec(
             target_uniprot=target.uniprot,
             target_structure_path=struct,
