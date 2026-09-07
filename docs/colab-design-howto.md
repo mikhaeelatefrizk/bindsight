@@ -8,6 +8,14 @@ description: A step-by-step recipe to run the bindsight GPU design half (RFdiffu
 > + epitopes) and produce real, designed binder PDBs on free or paid Google
 > Colab. No GPU on your laptop required.
 
+!!! note "This page is the hands-on route, not the reproducible one"
+    Colab needs you present with a browser tab open, because Google's API does
+    not permit launching a free-tier notebook from a command line. That makes it
+    an on-ramp for learning what the design half does, and unsuitable as a
+    reproducibility path. For a run someone else can repeat from a single
+    command, use the Kaggle backend: see
+    [`benchmarks/RUN_ON_KAGGLE.md`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/RUN_ON_KAGGLE.md).
+
 ---
 
 ## What you need before starting

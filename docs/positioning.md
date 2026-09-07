@@ -48,20 +48,25 @@ reproducible.
 |---|---|---|
 | Input | Target structure | RNA-seq counts |
 | Provenance | PDB + maybe a log | PROV-O JSON-LD + RO-Crate, audit trail to cohort |
-| Hardware | HPC assumed | CPU laptop + free Colab/Modal/Kaggle offload |
+| Hardware | HPC assumed | CPU laptop + a free Kaggle T4 for the GPU half (the one verified backend; Modal is the paid escape hatch and Colab needs a human) |
 | Cost-awareness | None | `--dry-run` estimates GPU $ before running |
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
 | Citability | Code dump | DOI per release, schema-validated outputs (Pydantic v2) |
 
 ## Roadmap
 
-- **v0.2.1 (now)** — discovery half end-to-end on CPU; design + validation **demonstrated on a free GPU**
+- **v0.2.2 (now)** — discovery half end-to-end on CPU; design + validation **demonstrated on a free GPU**
   (bindsight's first real ERBB2 binders — see the designer benchmark, whose figures predate the
   ProteinMPNN target-chain fix in this release and will be superseded by a corrected re-run);
   multi-page web UI live.
 - **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
   fully wired; scRNA-seq input.
-- **v1.0.0** — JOSS submission + validation paper (blinded rediscovery of HER2/EGFR/MSLN/CLDN6).
+- **v1.0.0** — JOSS submission + validation paper. The rediscovery study is
+  already run and published in `benchmarks/study/`: fifteen unstratified TCGA
+  projects against a pre-registered panel, recall at rank 20 of 1 in 17 with a
+  95% interval of 0.01 to 0.27. An earlier HER2-centred version is withdrawn as
+  circular, so v1.0 is about strengthening the signal — single-cell evidence,
+  co-expression, immunopeptidomics — not about repeating the same measurement.
 
 ## Get involved
 
