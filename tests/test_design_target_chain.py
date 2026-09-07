@@ -460,3 +460,61 @@ def test_top_targets_is_quiet_when_every_target_has_ranges(tmp_path: Path, capsy
     _seed_epitopes(run, design_ranges=[[23, 652]])
     cli._top_targets(run)
     assert "No extracellular ranges" not in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# P4 — the join key must be unique across targets, in the real executor
+# ---------------------------------------------------------------------------
+def test_two_targets_do_not_produce_colliding_binder_ids(recorded_run, tmp_path: Path) -> None:
+    """binder_id is the key the provenance chain is walked by.
+
+    RFdiffusion writes every trajectory under a fixed ``binder_*`` prefix, so
+    without a per-target namespace two different targets both yield
+    ``binder_0_seq0``: the rows collide in validated.parquet and each target's
+    ``validate/<binder_id>/`` overwrites the previous target's on disk.
+
+    The end-to-end join test cannot catch this. It runs the mock backend, which
+    invents its own already-unique ids, so the executor's construction — the one
+    every real GPU run uses — was never exercised. Reintroducing the defect left
+    the entire suite green.
+    """
+    made: dict[str, list[str]] = {}
+    for accession in ("P04626", "Q16790"):
+        work = tmp_path / accession
+        work.mkdir()
+        (work / "target.pdb").write_text(_target_pdb())
+        designs = job_exec._design_rfdiff_mpnn(
+            _spec(target_uniprot=accession), work, tmp_path / "tools"
+        )
+        assert designs, f"no designs produced for {accession}"
+        made[accession] = [d.binder_id for d in designs]
+
+    first, second = made["P04626"], made["Q16790"]
+    assert set(first).isdisjoint(second), (
+        f"binder ids collide across targets: {sorted(set(first) & set(second))}"
+    )
+    assert all(b.startswith("P04626_") for b in first)
+    assert all(b.startswith("Q16790_") for b in second)
+
+    # And the collision is real, not hypothetical: strip the namespace and the
+    # two targets produce byte-identical names.
+    assert {b.removeprefix("P04626_") for b in first} == {
+        b.removeprefix("Q16790_") for b in second
+    }, "the backbone names differ, so this test would pass without the namespace"
+
+
+def test_an_accession_with_awkward_characters_still_yields_a_usable_id(
+    recorded_run, tmp_path: Path
+) -> None:
+    """binder_id becomes a filename, so the namespace must be path-safe."""
+    work = tmp_path / "odd"
+    work.mkdir()
+    (work / "target.pdb").write_text(_target_pdb())
+    designs = job_exec._design_rfdiff_mpnn(
+        _spec(target_uniprot="P0/44:26"), work, tmp_path / "tools"
+    )
+    assert designs
+    for d in designs:
+        assert "/" not in d.binder_id
+        assert ":" not in d.binder_id
+        assert d.pdb_path.is_file(), "the id must be usable as a filename"
