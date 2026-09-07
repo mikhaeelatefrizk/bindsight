@@ -31,7 +31,10 @@
           "mean_affinity": null
         }
       ],
-      "error": null
+      "error": null,
+      "n_success": 8,
+      "success_ci_low": 0.2188,
+      "success_ci_high": 0.6134
     }
   ],
   "gpu": "Tesla T4-16GB (Kaggle free)"

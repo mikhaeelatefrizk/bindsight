@@ -31,6 +31,7 @@ from typing import Any
 
 from bindsight import __version__
 from bindsight import cost as cost_mod
+from bindsight.benchmark.statistics import wilson_interval
 from bindsight.plugins import get_designer, get_runner
 
 LOG = logging.getLogger(__name__)
@@ -82,6 +83,14 @@ class DesignerScore:
     mean_pae_interaction: float | None = None
     mean_affinity: float | None = None
     success_rate: float | None = None  # fraction of designs with ipTM >= threshold
+    # The numerator and a Wilson interval for it. Two runs of the same target
+    # differing only in seed returned 2/20 and 6/20 - 10% and 30% - which a
+    # Fisher exact test cannot separate (p = 0.24). A bare percentage from
+    # twenty designs claims a precision the sample does not carry, so the
+    # interval travels with it.
+    n_success: int | None = None
+    success_ci_low: float | None = None
+    success_ci_high: float | None = None
     per_target: list[dict[str, Any]] = field(default_factory=list)
     # Results tarballs this designer produced, so the binder artifacts can be
     # staged after the run. Excluded from the serialised summary: a local scratch
@@ -275,9 +284,12 @@ def run_one_designer(
     if all_iptm:
         score.mean_iptm = round(statistics.fmean(all_iptm), 4)
         score.median_iptm = round(statistics.median(all_iptm), 4)
-        score.success_rate = round(
-            sum(1 for v in all_iptm if v >= DEFAULT_IPTM_SUCCESS) / len(all_iptm), 4
-        )
+        n_ok = sum(1 for v in all_iptm if v >= DEFAULT_IPTM_SUCCESS)
+        score.success_rate = round(n_ok / len(all_iptm), 4)
+        score.n_success = n_ok
+        interval = wilson_interval(n_ok, len(all_iptm))
+        score.success_ci_low = round(interval.low, 4)
+        score.success_ci_high = round(interval.high, 4)
     if all_pae:
         score.mean_pae_interaction = round(statistics.fmean(all_pae), 4)
     if all_aff:
@@ -526,11 +538,31 @@ def _score_dict(s: DesignerScore) -> dict[str, Any]:
         "mean_pae_interaction": s.mean_pae_interaction,
         "mean_affinity": s.mean_affinity,
         "success_rate": s.success_rate,
+        "n_success": s.n_success,
+        "success_ci_low": s.success_ci_low,
+        "success_ci_high": s.success_ci_high,
         "cost_usd": s.cost_usd,
         "gpu_hours": s.gpu_hours,
         "per_target": s.per_target,
         "error": s.error,
     }
+
+
+def _success_cell(d: dict[str, Any]) -> str:
+    """Render success@0.65 with its interval, never as a bare percentage.
+
+    Twenty designs put a roughly twenty-point interval around any rate they
+    produce, so the point estimate alone invites a comparison the sample
+    cannot support.
+    """
+    rate = d.get("success_rate")
+    if rate is None:
+        return "—"
+    low, high = d.get("success_ci_low"), d.get("success_ci_high")
+    n_ok, n = d.get("n_success"), d.get("n_designs")
+    if low is None or high is None or n_ok is None or not n:
+        return f"{rate:.0%}"
+    return f"{n_ok}/{n} = {rate:.0%} ({low:.0%}–{high:.0%})"
 
 
 def _render_md(summary: dict[str, Any]) -> str:
@@ -583,14 +615,17 @@ def _render_md(summary: dict[str, Any]) -> str:
         a(
             f"| {d['designer']} | {d['n_designs']} | {fmt(d['mean_iptm'])} | "
             f"{fmt(d['median_iptm'])} | {fmt(d['mean_pae_interaction'])} | "
-            f"{fmt(d['mean_affinity'])} | {fmt(d['success_rate'], pct=True)} | "
+            f"{fmt(d['mean_affinity'])} | {_success_cell(d)} | "
             f"{fmt(d['cost_usd'])} | {fmt(d['gpu_hours'])} |"
         )
     a("")
     a(
         "**ipTM** / **PAE-interaction** / **affinity** are the validator's "
         "(Boltz-2) interface-confidence and predicted-affinity outputs; "
-        "**success@0.65** is the fraction of designs with ipTM ≥ 0.65. Cost is the "
+        "**success@0.65** is the fraction of designs with ipTM ≥ 0.65, with a 95% "
+        "Wilson interval. Read the interval, not the point: two runs of the same "
+        "target differing only in seed returned 2/20 and 6/20, which a Fisher exact "
+        "test cannot separate. Cost is the "
         "`bindsight.cost` estimate for the run on the chosen backend.\n"
     )
     return "\n".join(lines)

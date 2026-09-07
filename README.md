@@ -19,13 +19,13 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 > The free-tier Space sleeps after a quiet spell; a GitHub Actions cron pings it every 6 hours so the next visitor lands on a warm container. After a long quiet stretch, give the wake-up screen 30–60 s and reload once.
 
-> 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — 20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65, with the real Boltz-2-predicted complexes, in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed as a Hugging Face Space.
+> 🚀 **v0.2.2** — discovery half end-to-end on CPU (real TCGA data); design + validation demonstrated end-to-end on a **free GPU** — 20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65 (8/20, 95% CI 22–61%), with the real Boltz-2-predicted complexes, in the [designer benchmark](benchmarks/designer_benchmark/RESULTS.md); web UI deployed as a Hugging Face Space.
 
 > ✅ **These figures come from the corrected protocol.** An earlier run invoked ProteinMPNN without `--pdb_path_chains`, so it redesigned the HER2 target chain as well as the binder, and its numbers (best ipTM 0.84, 50% success@0.65) are withdrawn. The re-run above holds the target fixed, and that is checked rather than asserted: all 20 designs carry a target chain byte-identical to the native 142-residue domain IV. The corrected mean ipTM is *lower* (0.51 against 0.59), which is what you would expect once designs stop being scored against a surface they helped invent.
 
 **New here?** → [Documentation site](https://mikhaeelatefrizk.github.io/bindsight/) · [What is bindsight?](https://mikhaeelatefrizk.github.io/bindsight/what-is-bindsight/) (5-min read) · [How to use it](https://mikhaeelatefrizk.github.io/bindsight/how-to-use/) · [Use cases](https://mikhaeelatefrizk.github.io/bindsight/use-cases/) · [Designing on Colab](https://mikhaeelatefrizk.github.io/bindsight/colab-design-howto/)
 
-**Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — the fifteen-cohort rediscovery study, and 20 de novo ERBB2 binders (best ipTM 0.88, 40% success@0.65, corrected protocol) with their Boltz-2 predicted complexes.
+**Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — the fifteen-cohort rediscovery study, and 20 de novo ERBB2 binders (best ipTM 0.88, 40% success@0.65 — 8/20, 95% CI 22–61% — corrected protocol) with their Boltz-2 predicted complexes.
 
 ---
 

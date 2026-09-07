@@ -57,7 +57,7 @@ reproducible.
 
 - **v0.2.2 (now)** — discovery half end-to-end on CPU; design + validation
   **demonstrated on a free Kaggle T4** under the corrected ProteinMPNN protocol:
-  20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65, every one carrying
+  20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65 (8/20, 95% CI 22–61%), every one carrying
   a target chain byte-identical to the native domain IV. Multi-page web UI live.
 - **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
   fully wired; scRNA-seq input.

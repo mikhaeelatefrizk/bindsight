@@ -426,7 +426,8 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 
 - [x] Designer benchmark — `rfdiff_mpnn` arm run for real under the corrected
   protocol: 20 ERBB2 domain-IV binders on a free Kaggle T4, best ipTM 0.88,
-  mean 0.51, 40% success@0.65, with the real folded Boltz-2 complexes committed.
+  mean 0.51, 40% success@0.65 (8/20, 95% CI 22–61%), with the real folded Boltz-2 complexes
+  committed.
   Artifacts in `benchmarks/designer_benchmark/RESULTS.md`. The target chain was
   held fixed, and that is verified rather than asserted: all 20 designs carry a
   chain byte-identical to the native 142-residue domain IV. A superseded run on

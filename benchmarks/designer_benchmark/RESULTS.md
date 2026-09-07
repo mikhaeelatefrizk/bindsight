@@ -15,6 +15,6 @@
 
 | designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | success@0.65 | est. cost (USD) | GPU-h |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|
-| rfdiff_mpnn | 20 | 0.508 | 0.492 | 15.6 | — | 40% | 0 | 0.722 |
+| rfdiff_mpnn | 20 | 0.508 | 0.492 | 15.6 | — | 8/20 = 40% (22%–61%) | 0 | 0.722 |
 
-**ipTM** / **PAE-interaction** / **affinity** are the validator's (Boltz-2) interface-confidence and predicted-affinity outputs; **success@0.65** is the fraction of designs with ipTM ≥ 0.65. Cost is the `bindsight.cost` estimate for the run on the chosen backend.
+**ipTM** / **PAE-interaction** / **affinity** are the validator's (Boltz-2) interface-confidence and predicted-affinity outputs; **success@0.65** is the fraction of designs with ipTM ≥ 0.65, with a 95% Wilson interval. Read the interval, not the point: two runs of the same target differing only in seed returned 2/20 and 6/20, which a Fisher exact test cannot separate. Cost is the `bindsight.cost` estimate for the run on the chosen backend.

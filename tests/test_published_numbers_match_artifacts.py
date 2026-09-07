@@ -268,3 +268,65 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
             assert "pdb_path_chains" in low or "provisional" in low, (
                 f"{rel} quotes the pre-fix binder numbers without disclosing the protocol"
             )
+
+
+class TestTheSuccessRateNeverAppearsBare:
+    """A percentage from twenty designs must carry the interval around it.
+
+    Two runs of the same target, differing only in the random seed, returned
+    2/20 and 6/20 — 10% and 30% — which a Fisher exact test cannot separate
+    (p = 0.24). The point estimate alone invites a comparison the sample cannot
+    support, and the panel half of this project already holds itself to the
+    rule that the interval is the finding.
+
+    A retracted figure is exempt: the interval around a withdrawn number is not
+    information anyone should be acting on.
+    """
+
+    #: "40% success@0.65", "50 % success@0.65", and so on.
+    RATE = re.compile(r"(\d{1,3})\s?%\s*success@0\.65")
+    #: Any of the ways an interval is written in these documents.
+    INTERVAL = re.compile(r"CI|\u2013\s?\d{1,3}\s?%|\d{1,3}\s?%\u2013|\(\d{1,3}%\u2013")
+    RETRACTED = ("withdraw", "supersed", "retract", "earlier run", "no longer")
+
+    SURFACES = (
+        "README.md",
+        "ARCHITECTURE.md",
+        "docs/positioning.md",
+        "docs/index.md",
+        "docs/results.md",
+        "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
+        "benchmarks/designer_benchmark/RESULTS.md",
+    )
+
+    @pytest.mark.parametrize("rel", SURFACES)
+    def test_no_bare_success_percentage(self, rel: str) -> None:
+        path = REPO / rel
+        if not path.is_file():
+            pytest.skip(f"{rel} not present")
+        text = path.read_text(encoding="utf-8")
+        for match in self.RATE.finditer(text):
+            window = text[max(0, match.start() - 300) : match.end() + 300]
+            low = window.lower()
+            if any(word in low for word in self.RETRACTED):
+                continue  # a withdrawn figure needs no interval
+            assert self.INTERVAL.search(window), (
+                f"{rel} states {match.group(0)!r} with no interval near it; "
+                "twenty designs do not support a bare percentage"
+            )
+
+    def test_the_artifact_carries_the_interval_too(self, bench: dict) -> None:
+        """Prose can only quote an interval the artifact actually records."""
+        arm = self._arm(bench)
+        assert arm.get("n_success") is not None, "results.json records no numerator"
+        assert arm.get("success_ci_low") is not None
+        assert arm.get("success_ci_high") is not None
+        assert arm["success_ci_low"] < arm["success_rate"] < arm["success_ci_high"], (
+            "the recorded interval does not contain its own point estimate"
+        )
+
+    @staticmethod
+    def _arm(bench: dict) -> dict:
+        arms = [d for d in bench["designers"] if d.get("n_designs")]
+        assert arms
+        return arms[0]
