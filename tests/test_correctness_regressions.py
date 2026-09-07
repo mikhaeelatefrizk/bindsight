@@ -1201,3 +1201,49 @@ class TestDeclaredConfigValuesAreHonoured:
         kept = _split_on_thresholds(df, run, validate_dir)
         assert list(kept["binder_id"]) == ["a", "b"]
         assert not (validate_dir / "excluded_by_thresholds.parquet").exists()
+
+
+# ---------------------------------------------------------------------------
+# 11. The manifest must name the validator that actually ran
+# ---------------------------------------------------------------------------
+class TestTheManifestNamesTheRealValidator:
+    """`bindsight validate` takes a --validator flag but usually runs none.
+
+    By default it materialises metrics the design job already produced, using
+    whichever validator *that* job was given. Recording the flag meant passing
+    `--validator chai1r` to a Boltz-2 run filed Chai-1r's name against Boltz-2's
+    numbers — a provenance claim contradicted by the very table it described.
+    """
+
+    def test_the_rows_name_the_validator_not_the_flag(self, tmp_path: Path) -> None:
+        from bindsight.cli import _validators_that_produced
+
+        validated = tmp_path / "validated.parquet"
+        pd.DataFrame(
+            [
+                {"binder_id": "a", "validator_name": "boltz2"},
+                {"binder_id": "b", "validator_name": "boltz2"},
+            ]
+        ).to_parquet(validated, index=False)
+        assert _validators_that_produced(validated) == ["boltz2"]
+
+    def test_a_mixed_table_names_every_validator_in_it(self, tmp_path: Path) -> None:
+        """Revalidating some targets and not others must not be reported as one."""
+        from bindsight.cli import _validators_that_produced
+
+        validated = tmp_path / "validated.parquet"
+        pd.DataFrame(
+            [
+                {"binder_id": "a", "validator_name": "boltz2"},
+                {"binder_id": "b", "validator_name": "chai1r"},
+            ]
+        ).to_parquet(validated, index=False)
+        assert _validators_that_produced(validated) == ["boltz2", "chai1r"]
+
+    def test_a_missing_or_unlabelled_table_claims_nothing(self, tmp_path: Path) -> None:
+        from bindsight.cli import _validators_that_produced
+
+        assert _validators_that_produced(tmp_path / "absent.parquet") == []
+        unlabelled = tmp_path / "unlabelled.parquet"
+        pd.DataFrame([{"binder_id": "a"}]).to_parquet(unlabelled, index=False)
+        assert _validators_that_produced(unlabelled) == []

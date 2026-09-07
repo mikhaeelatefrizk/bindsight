@@ -407,12 +407,21 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
     # materialise those into validate/validated.parquet (+ per-binder dirs).
     n = _finalize_validate(run_dir)
     validated = run_dir / "validate" / "validated.parquet"
+    # Record the validator that produced these numbers, not the one the flag
+    # asked for. Without --revalidate no validator runs here, so the flag is a
+    # request the metrics may not answer to.
+    produced_by = _validators_that_produced(validated)
     provenance.record(
         run_dir,
         name="validate",
-        tool=f"bindsight.validate.{validator}",
+        tool=f"bindsight.validate.{'+'.join(produced_by) if produced_by else validator}",
         outputs={"validated": validated},
-        params={"validator": validator, "backend": backend, "revalidate": revalidate},
+        params={
+            "validator_requested": validator,
+            "validator_recorded": produced_by,
+            "backend": backend,
+            "revalidate": revalidate,
+        },
         notes=f"{n} design(s) materialised into validated.parquet",
     )
     if n > 0:
@@ -1287,6 +1296,38 @@ def _structure_pdb_b64(structure_path: Path) -> str | None:
             return None
         return base64.b64encode(data).decode()
     return base64.b64encode(structure_path.read_bytes()).decode()
+
+
+def _validators_that_produced(validated: Path) -> list[str]:
+    """Return the validators named in a validated table, as recorded per row.
+
+    ``bindsight validate`` takes a ``--validator`` flag, but by default it does
+    not run one: it materialises metrics the design job already produced, using
+    whichever validator *that* job was given. Recording the flag in the manifest
+    therefore described a validator that may never have run — passing
+    ``--validator chai1r`` to a Boltz-2 run filed Chai-1r's name against
+    Boltz-2's numbers. The rows themselves carry the truth, so ask them.
+
+    Args:
+        validated: path to ``validated.parquet``.
+
+    Returns:
+        Sorted distinct validator names, or an empty list when the table is
+        missing, empty, or carries no ``validator_name``.
+    """
+    if not validated.is_file():
+        return []
+    try:
+        import pandas as pd
+
+        df = pd.read_parquet(validated)
+    except Exception as e:  # a corrupt table must not sink the manifest
+        LOG_CLI.warning("could not read %s (%s) to name the validator", validated, e)
+        return []
+    if "validator_name" not in df.columns:
+        return []
+    names = {str(v) for v in df["validator_name"].dropna().tolist() if str(v).strip()}
+    return sorted(names)
 
 
 def _validate_params(run_dir: Path) -> Any:
