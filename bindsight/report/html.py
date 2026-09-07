@@ -28,7 +28,7 @@ import base64
 import io
 import json
 import logging
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import pandas as pd
@@ -41,12 +41,20 @@ LOG = logging.getLogger(__name__)
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
-def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
+def render_run(
+    run_dir: Path | str,
+    out_path: Path | str | None = None,
+    *,
+    include_binders: bool = False,
+) -> Path:
     """Render a finished run as a single self-contained HTML file.
 
     Args:
         run_dir: directory produced by ``bindsight discover``.
         out_path: destination file. Defaults to ``<run_dir>/report.html``.
+        include_binders: also embed each ranked binder's designed sequence.
+            The sequences live in the design tarballs rather than the ranking
+            table, so reading them costs a pass over those archives.
 
     Returns:
         Path to the rendered HTML.
@@ -58,6 +66,7 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
     candidates_df = _maybe_read_parquet(run_dir / "targets" / "candidates.parquet")
     epitopes_df = _maybe_read_parquet(run_dir / "epitopes" / "epitopes.parquet")
     taxonomy_df = _maybe_read_parquet(run_dir / "taxonomy" / "failure_taxonomy.parquet")
+    ranking_df = _maybe_read_parquet(run_dir / "rank" / "ranking.parquet")
     manifest = _maybe_read_jsonld(run_dir / "run_manifest.jsonld")
 
     volcano_b64 = _render_volcano(deg_df) if deg_df is not None and len(deg_df) else ""
@@ -86,6 +95,9 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
         ),
         candidates_table=_df_to_records(candidates_df, _CANDIDATE_DISPLAY_COLS, head=20),
         epitopes_table=_df_to_records(epitopes_df, _EPITOPE_DISPLAY_COLS, head=20),
+        binders_table=_binders_table(ranking_df, run_dir, include_sequences=include_binders),
+        n_binders=len(ranking_df) if ranking_df is not None else 0,
+        include_binders=include_binders,
         taxonomy_counts=_disposition_counts(taxonomy_df),
         n_taxonomy=len(taxonomy_df) if taxonomy_df is not None else 0,
         manifest=manifest,
@@ -103,6 +115,78 @@ def render_run(run_dir: Path | str, out_path: Path | str | None = None) -> Path:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+_BINDER_DISPLAY_COLS = [
+    "rank",
+    "binder_id",
+    "symbol",
+    "target_uniprot",
+    "iptm",
+    "pae_interaction",
+    "score",
+    "passes_thresholds",
+]
+
+
+def _binder_sequences(run_dir: Path) -> dict[str, str]:
+    """Designed sequence per binder id, read from the per-target design archives.
+
+    The ranking table carries every metric and no sequence, because the sequence
+    is an output of the design stage rather than of validation. A reader who
+    wants to order a peptide needs it, so it is pulled from the archives on
+    request rather than being absent from the report entirely.
+    """
+    import tarfile
+
+    sequences: dict[str, str] = {}
+    targets_dir = run_dir / "design" / "_targets"
+    if not targets_dir.is_dir():
+        return sequences
+    for archive in sorted(targets_dir.glob("*.tar.gz")):
+        try:
+            with tarfile.open(archive) as tf:
+                for member in tf.getmembers():
+                    name = PurePosixPath(member.name)
+                    if name.suffix != ".fasta" or not member.isfile():
+                        continue
+                    handle = tf.extractfile(member)
+                    if handle is None:
+                        continue
+                    body = handle.read().decode("utf-8", errors="replace")
+                    seq = "".join(
+                        line.strip()
+                        for line in body.splitlines()
+                        if line.strip() and not line.startswith(">")
+                    )
+                    if seq:
+                        sequences[name.stem] = seq
+        except (OSError, tarfile.TarError) as e:  # a damaged archive is not fatal
+            LOG.warning("could not read binder sequences from %s (%s)", archive, e)
+    return sequences
+
+
+def _binders_table(
+    ranking: pd.DataFrame | None,
+    run_dir: Path,
+    *,
+    include_sequences: bool = False,
+    head: int = 40,
+) -> list[dict[str, Any]]:
+    """The ranked binders, which are the run's actual output.
+
+    The report rendered the discovery half and stopped: a run that designed
+    forty binders, validated and ranked them produced a paper-style HTML in
+    which none of them appeared. ``--include-binders`` was accepted, documented
+    and recorded in the manifest, and never reached this module at all.
+    """
+    rows = _df_to_records(ranking, _BINDER_DISPLAY_COLS, head=head)
+    if not rows or not include_sequences:
+        return rows
+    sequences = _binder_sequences(run_dir)
+    for row in rows:
+        row["sequence"] = sequences.get(str(row.get("binder_id", "")), "")
+    return rows
+
+
 _CANDIDATE_DISPLAY_COLS = [
     "rank",
     "symbol",
@@ -130,16 +214,27 @@ _EPITOPE_DISPLAY_COLS = [
 # Funnel order for the negative-result taxonomy (display only; the canonical list
 # lives in bindsight.pipelines.discover.TAXONOMY_DISPOSITIONS — duplicated here so the
 # report renders without importing the heavy discovery module).
+#
+# The copy had drifted by three: uniprot_lookup_failed, normal_tissue_unassessed
+# and structure_not_queried were all missing, which are precisely the
+# dispositions that separate "not measured" from "measured and rejected". The
+# taxonomy is documented as exhaustive, so a funnel omitting them did not sum to
+# the gene count it claimed to. tests/test_report_html.py fails if the two lists
+# diverge again.
 _DISPOSITION_ORDER = (
     "not_significant",
     "down_regulated",
     "below_enrichment_cutoff",
+    "uniprot_lookup_failed",
     "no_uniprot",
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
+    "safety_unassessed",
     "high_normal_tissue_expression",
+    "normal_tissue_unassessed",
     "no_extracellular_domain",
+    "structure_not_queried",
     "no_alphafold_model",
     "low_confidence_structure",
     "not_top_n",

@@ -169,3 +169,110 @@ def test_manifest_round_trip_through_renderer(tmp_path: Path) -> None:
     text = out.read_text(encoding="utf-8")
     assert "deg" in text
     assert "pydeseq2" in text
+
+
+# ---------------------------------------------------------------------------
+# The report omitted the run's actual output
+# ---------------------------------------------------------------------------
+class TestTheReportShowsTheDesignedBinders:
+    """A run that designed forty binders rendered a report containing none.
+
+    `--include-binders` was accepted, documented as embedding designed binder
+    structures, recorded in the manifest's params, and never passed to
+    `render_run` — which had no such parameter and never read the ranking at
+    all. The paper-style HTML covered the discovery half and stopped.
+    """
+
+    @staticmethod
+    def _run(tmp_path: Path) -> Path:
+        run = tmp_path / "run"
+        (run / "rank").mkdir(parents=True)
+        pd.DataFrame(
+            [
+                {
+                    "rank": 1,
+                    "binder_id": "P32970_binder_6_seq0",
+                    "symbol": "CD70",
+                    "target_uniprot": "P32970",
+                    "iptm": 0.946,
+                    "pae_interaction": 3.3,
+                    "score": 0.937,
+                    "passes_thresholds": "pass",
+                },
+                {
+                    "rank": 2,
+                    "binder_id": "Q16790_binder_0_seq1",
+                    "symbol": "CA9",
+                    "target_uniprot": "Q16790",
+                    "iptm": 0.167,
+                    "pae_interaction": 28.0,
+                    "score": 0.201,
+                    "passes_thresholds": "fail",
+                },
+            ]
+        ).to_parquet(run / "rank" / "ranking.parquet", index=False)
+        return run
+
+    def test_the_ranked_binders_appear_without_any_flag(self, tmp_path: Path) -> None:
+        """The table is the run's output, not an optional extra."""
+        from bindsight.report import render_run
+
+        html = render_run(self._run(tmp_path)).read_text(encoding="utf-8")
+        assert "Designed binders" in html
+        assert "P32970_binder_6_seq0" in html
+        assert "Q16790_binder_0_seq1" in html
+        assert "0.946" in html
+
+    def test_sequences_are_embedded_only_when_asked_for(self, tmp_path: Path) -> None:
+        import tarfile
+
+        run = self._run(tmp_path)
+        targets = run / "design" / "_targets"
+        targets.mkdir(parents=True)
+        fasta = tmp_path / "P32970_binder_6_seq0.fasta"
+        fasta.write_text(">P32970_binder_6_seq0\nMKTAYIAKQRQISFVKSHFSRQ\n")
+        with tarfile.open(targets / "P32970.tar.gz", "w:gz") as tf:
+            tf.add(fasta, arcname="design/P32970_binder_6_seq0.fasta")
+
+        from bindsight.report import render_run
+
+        plain = render_run(run, run / "plain.html").read_text(encoding="utf-8")
+        assert "MKTAYIAKQRQISFVKSHFSRQ" not in plain
+        assert "--include-binders" in plain, "the report should say the flag exists"
+
+        withseq = render_run(run, run / "withseq.html", include_binders=True).read_text(
+            encoding="utf-8"
+        )
+        assert "MKTAYIAKQRQISFVKSHFSRQ" in withseq
+
+    def test_a_run_without_designs_says_so(self, tmp_path: Path) -> None:
+        from bindsight.report import render_run
+
+        run = tmp_path / "empty"
+        run.mkdir()
+        html = render_run(run).read_text(encoding="utf-8")
+        assert "No designed binders in this run" in html
+
+    def test_the_cli_flag_reaches_the_renderer(self, tmp_path: Path) -> None:
+        """The regression: the flag existed and changed nothing."""
+        import inspect
+
+        from bindsight.report import render_run
+
+        assert "include_binders" in inspect.signature(render_run).parameters, (
+            "render_run takes no include_binders, so the CLI flag cannot do anything"
+        )
+
+
+def test_the_report_funnel_matches_the_canonical_disposition_list() -> None:
+    """The report hand-copies the funnel order; the copy had already drifted.
+
+    `safety_unassessed` was added to the pipeline's cascade and not to the
+    report's list, so a run withholding a candidate for an unmeasured safety
+    record would have rendered a funnel that silently omitted it.
+    """
+    from bindsight.pipelines.discover import TAXONOMY_DISPOSITIONS
+    from bindsight.report.html import _DISPOSITION_ORDER
+
+    missing = set(TAXONOMY_DISPOSITIONS) - set(_DISPOSITION_ORDER)
+    assert not missing, f"the report cannot render these dispositions: {sorted(missing)}"

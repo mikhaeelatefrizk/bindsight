@@ -514,7 +514,11 @@ def rank(run_dir: Path) -> None:
 @click.option(
     "--include-binders/--no-include-binders",
     default=False,
-    help="Embed designed binder structures (requires GPU stages to have run).",
+    help=(
+        "Embed each ranked binder's designed sequence in the report. The ranked "
+        "binder table itself is always included when the design and rank stages "
+        "have run."
+    ),
 )
 def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
     """Render the run as a self-contained HTML report or launch the Streamlit dashboard.
@@ -526,7 +530,7 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
     if fmt == "html":
         from bindsight.report import render_run
 
-        out_path = render_run(run_dir)
+        out_path = render_run(run_dir, include_binders=include_binders)
         provenance.record(
             run_dir,
             name="report",

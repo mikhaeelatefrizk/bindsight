@@ -167,6 +167,61 @@
   {% endif %}
 </section>
 
+<section>
+  <h2>Designed binders</h2>
+  <p>
+    Every design the run produced, ranked by the composite score. <code>ipTM</code>
+    is the validator's interface confidence (higher is better) and
+    <code>PAE-int</code> the predicted interface error in &Aring;ngstr&ouml;m
+    (lower is better). <code>passes</code> records each design against the
+    configured quality bars; nothing is dropped on their account unless
+    <code>apply_thresholds</code> is set.
+  </p>
+  {% if binders_table %}
+  <table>
+    <thead>
+      <tr>
+        <th>rank</th><th>binder</th><th>target</th><th>ipTM</th>
+        <th>PAE-int</th><th>score</th><th>passes</th>
+        {% if include_binders %}<th>sequence</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for b in binders_table %}
+      <tr>
+        <td>{{ b.rank or '-' }}</td>
+        <td><code>{{ b.binder_id or '-' }}</code></td>
+        <td><strong>{{ b.symbol or b.target_uniprot or '-' }}</strong></td>
+        <td>{{ b.iptm or '-' }}</td>
+        <td>{{ b.pae_interaction or '-' }}</td>
+        <td>{{ b.score or '-' }}</td>
+        <td>
+          {% if b.passes_thresholds == 'pass' %}
+            <span class="badge ok">pass</span>
+          {% elif b.passes_thresholds == 'fail' %}
+            <span class="badge warn">fail</span>
+          {% else %}
+            <span class="badge">{{ b.passes_thresholds or '-' }}</span>
+          {% endif %}
+        </td>
+        {% if include_binders %}<td><code>{{ b.sequence or '-' }}</code></td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if not include_binders %}
+  <p class="note">
+    Re-render with <code>--include-binders</code> to embed each designed sequence.
+  </p>
+  {% endif %}
+  {% else %}
+  <p class="note">
+    No designed binders in this run. Run <code>bindsight design</code> and
+    <code>bindsight rank</code> to produce them.
+  </p>
+  {% endif %}
+</section>
+
 {% if taxonomy_counts %}
 <section>
   <h2>Why candidates dropped (negative-result taxonomy)</h2>
