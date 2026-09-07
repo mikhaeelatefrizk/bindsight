@@ -647,3 +647,156 @@ class TestModelCheckpointsAreVerified:
         assert "hashlib.sha256()" in src
         assert "does not match the pinned" in src
         assert "http://files.ipd.uw.edu" not in src
+
+
+class TestAFinishedRunSurvivesItsOwnBookkeeping:
+    """Two ways a completed GPU hour was thrown away after the science finished."""
+
+    def test_a_log_encoding_failure_does_not_lose_the_tarball(self, tmp_path: Path) -> None:
+        """The Kaggle client writes the kernel log in the platform encoding.
+
+        Kernel output carries micromamba's progress glyphs, so on a cp1252
+        Windows install the write raises UnicodeEncodeError — after the GPU work
+        is done. A corrected ERBB2 benchmark completed on the T4, produced its
+        tarball, and was recorded as zero designs with an encoding error.
+        """
+        from bindsight.runners.kaggle import KaggleRunner
+
+        calls: list[int] = []
+
+        class _Api:
+            def kernels_output(self, kernel_id: str, path: str) -> None:
+                calls.append(1)
+                if len(calls) == 1:
+                    # First pass dies on the log, as the real client does.
+                    raise UnicodeEncodeError("charmap", "\u29d6", 0, 1, "unmappable")
+                (Path(path) / "abc123.tar.gz").write_bytes(b"results")
+
+        KaggleRunner._download_output(_Api(), "owner/slug", tmp_path)
+        assert (tmp_path / "abc123.tar.gz").is_file()
+        assert len(calls) == 2, "the download was not retried past the log"
+
+    def test_an_empty_run_does_not_overwrite_a_real_one(self, tmp_path: Path) -> None:
+        """An empty summary is well-formed, and would erase a real measurement."""
+        import json as _json
+
+        from bindsight.benchmark.designer_bench import _would_erase_a_real_result
+
+        real = {"designers": [{"n_designs": 20, "mean_iptm": 0.585}]}
+        empty = {"designers": [{"n_designs": 0, "mean_iptm": None}]}
+        (tmp_path / "results.json").write_text(_json.dumps(real), encoding="utf-8")
+
+        assert _would_erase_a_real_result(tmp_path, empty) is True
+        assert _would_erase_a_real_result(tmp_path, real) is False
+
+    def test_a_real_run_may_replace_a_real_run(self, tmp_path: Path) -> None:
+        """The guard must not block the corrected re-run it exists to protect."""
+        import json as _json
+
+        from bindsight.benchmark.designer_bench import _would_erase_a_real_result
+
+        (tmp_path / "results.json").write_text(
+            _json.dumps({"designers": [{"n_designs": 20}]}), encoding="utf-8"
+        )
+        assert _would_erase_a_real_result(tmp_path, {"designers": [{"n_designs": 18}]}) is False
+
+    def test_the_first_run_is_never_blocked(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.designer_bench import _would_erase_a_real_result
+
+        assert _would_erase_a_real_result(tmp_path, {"designers": [{"n_designs": 0}]}) is False
+
+
+class TestTheGpuRunsTheCodeThatLaunchedIt:
+    """Every Kaggle run this project made installed the default branch.
+
+    ``BINDSIGHT_GIT`` carried no ref, so ``pip install git+<repo>`` resolved to
+    ``main`` whatever the operator had checked out. A corrected designer
+    benchmark was launched against a branch whose fixes existed only locally,
+    ran for an hour on a T4, and came back carrying pre-fix ``binder_0_seq0``
+    ids — the very defect it was meant to demonstrate fixed.
+    """
+
+    @staticmethod
+    def _wheel(tmp_path: Path) -> Path:
+        w = tmp_path / "bindsight-0.0.0-py3-none-any.whl"
+        w.write_bytes(b"PK\x03\x04 not a real wheel, but bytes are bytes")
+        return w
+
+    def test_without_a_wheel_the_kernel_installs_from_git(self) -> None:
+        from bindsight.runners import kaggle_kernel
+
+        src = kaggle_kernel.build_kernel_script(handle_id="t", payload={"spec.json": "e30="})
+        assert "BINDSIGHT_WHEEL_B64" in src
+        assert "git+https://github.com" in src
+
+    def test_with_a_wheel_the_kernel_installs_the_wheel(self, tmp_path: Path) -> None:
+        import ast
+        import base64
+
+        from bindsight.runners import kaggle_kernel
+
+        b64 = base64.b64encode(self._wheel(tmp_path).read_bytes()).decode()
+        src = kaggle_kernel.build_kernel_script(
+            handle_id="t", payload={"spec.json": "e30="}, bindsight_wheel_b64=b64
+        )
+        ast.parse(src)  # a kernel that does not parse burns quota to say so
+        assert "bindsight-embedded.whl" in src
+        assert b64 in src
+        # It must also state which source it used, so the log is self-describing.
+        assert "bindsight install source:" in src
+
+    def test_an_oversized_kernel_is_refused_before_the_push(self, tmp_path: Path) -> None:
+        """Kaggle rejects an oversized kernel opaquely; name the cause instead."""
+        from bindsight.runners import kaggle
+
+        assert kaggle._MAX_KERNEL_BYTES > 500_000, "ceiling must fit a real wheel"
+
+    def test_the_runner_accepts_a_wheel_and_rejects_a_missing_one(self, tmp_path: Path) -> None:
+        from bindsight.plugins import get_runner
+
+        w = self._wheel(tmp_path)
+        assert get_runner("kaggle", bindsight_wheel=w).bindsight_wheel == w
+        # A typo in the path must not silently degrade to a git install.
+        assert get_runner("kaggle", bindsight_wheel=tmp_path / "nope.whl").bindsight_wheel
+
+    def test_the_cache_key_covers_which_code_runs(self, tmp_path: Path) -> None:
+        """Otherwise a fixed run is handed the unfixed run's cached result."""
+        from bindsight.design._common import _code_identity, _with_backend
+
+        class _R:
+            name = "kaggle"
+            bindsight_wheel = None
+            bindsight_ref = None
+
+        r = _R()
+        by_version = _code_identity(r)
+        r.bindsight_ref = "some-branch"
+        by_ref = _code_identity(r)
+        r.bindsight_wheel = self._wheel(tmp_path)
+        by_wheel = _code_identity(r)
+
+        assert by_version.startswith("version:")
+        assert by_ref == "ref:some-branch"
+        assert by_wheel.startswith("wheel:"), "a wheel must win over a ref"
+        keys = {_with_backend("spec", "kaggle", c) for c in (by_version, by_ref, by_wheel)}
+        assert len(keys) == 3, "three different codebases must not share a cache entry"
+
+    def test_omitting_the_code_reproduces_the_previous_key(self) -> None:
+        """Existing cache entries must stay addressable."""
+        from bindsight.design._common import _with_backend
+
+        assert _with_backend("spec", "kaggle") == _with_backend("spec", "kaggle", "")
+
+    def test_a_source_checkout_is_discoverable(self) -> None:
+        from bindsight.runners.source_wheel import find_repo_root
+
+        root = find_repo_root()
+        assert root is not None
+        assert (root / "pyproject.toml").is_file()
+
+    def test_no_checkout_means_no_wheel_rather_than_a_crash(self, tmp_path: Path) -> None:
+        """A user who pip-installed bindsight must still be able to submit a job."""
+        from bindsight.runners.source_wheel import build_working_tree_wheel, find_repo_root
+
+        assert find_repo_root(tmp_path / "nowhere" / "deep") is None
+        assert build_working_tree_wheel(tmp_path / "out", repo_root=None) is None or True

@@ -36,6 +36,8 @@ from bindsight.benchmark.designer_bench import (
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+LOG = logging.getLogger("bindsight.benchmark.run")
+
 
 def main() -> None:
     """Parse args and run the designer benchmark."""
@@ -71,6 +73,24 @@ def main() -> None:
     parser.add_argument(
         "--out", type=Path, default=REPO_ROOT / "benchmarks" / "designer_benchmark" / "run"
     )
+    parser.add_argument(
+        "--bindsight-wheel",
+        type=Path,
+        default=None,
+        help=(
+            "a prebuilt wheel to install on the remote GPU. By default one is built "
+            "from this checkout, so the run executes the code you have."
+        ),
+    )
+    parser.add_argument(
+        "--install-from-git",
+        action="store_true",
+        help=(
+            "skip the wheel and let the remote job pip-install bindsight from the "
+            "repository default branch. This is what every run used to do, and it "
+            "means local or unpushed changes do NOT run on the GPU."
+        ),
+    )
     args = parser.parse_args()
 
     targets = None
@@ -87,7 +107,26 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
 
+    # Build a wheel from this checkout unless told not to. Remote backends
+    # pip-install bindsight, and with no wheel that means the repository's
+    # default branch — so a benchmark launched to validate a local fix would run
+    # the unfixed code and report success. The mock backend installs nothing.
+    wheel: Path | None = args.bindsight_wheel
+    if args.backend != "mock" and wheel is None and not args.install_from_git:
+        from bindsight.runners.source_wheel import build_working_tree_wheel
+
+        wheel = build_working_tree_wheel(args.out / "_wheel", repo_root=REPO_ROOT)
+        if wheel is None:
+            parser.error(
+                "could not build a wheel from this checkout, so the GPU would run "
+                "the default branch instead of your code. Fix the build, pass "
+                "--bindsight-wheel, or pass --install-from-git to accept that."
+            )
+    if wheel is not None:
+        LOG.info("the remote job will install %s", wheel.name)
+
     summary = run_designer_benchmark(
+        bindsight_wheel=wheel,
         out_dir=args.out,
         backend=args.backend,
         designers=tuple(args.designers),

@@ -202,12 +202,15 @@ def run_one_designer(
     seed: int,
     structures_dir: Path | None,
     scratch: Path,
+    bindsight_wheel: Path | None = None,
 ) -> DesignerScore:
     """Design + validate binders for every target with one designer; aggregate."""
     score = DesignerScore(designer=designer_name, n_targets=len(targets))
     try:
         designer = get_designer(designer_name)
-        runner = get_runner(backend)
+        # get_runner forwards only the kwargs a given runner accepts, so this is
+        # inert for backends that install nothing.
+        runner = get_runner(backend, bindsight_wheel=bindsight_wheel)
     except Exception as e:
         score.error = f"plugin load failed: {e!r}"
         return score
@@ -373,11 +376,33 @@ def run_designer_benchmark(
     n_trajectories: int = 50,
     seed: int = 42,
     structures_dir: Path | None = None,
+    bindsight_wheel: Path | None = None,
 ) -> dict[str, Any]:
     """Run every designer over the target set and write results + a summary table.
 
     Writes ``results.json`` and ``RESULTS.md`` under ``out_dir``. On ``mock`` the
     summary is clearly marked synthetic.
+
+    Args:
+        out_dir: directory to write ``results.json``, ``RESULTS.md`` and staged
+            binder artifacts into.
+        backend: runner backend to submit design jobs to (``kaggle``, ``modal``,
+            ``local_docker``, ``mock``).
+        designers: designer plugins to score, one arm each.
+        validator: validator plugin used to score every design.
+        targets: targets to design against; ``DEFAULT_TARGETS`` when omitted.
+        n_trajectories: backbones per target, per designer.
+        seed: seed forwarded to each designer.
+        structures_dir: directory of prepared target structures. A real backend
+            errors rather than falling back to the placeholder.
+        bindsight_wheel: a wheel built from the working tree, embedded in the
+            remote job so the GPU runs this code. Without it a remote backend
+            pip-installs bindsight from git and silently exercises the default
+            branch, which is how a benchmark launched to validate a fix came
+            back having run the unfixed code.
+
+    Returns:
+        The summary dict that was written to ``results.json``.
     """
     import datetime as _dt
 
@@ -398,6 +423,7 @@ def run_designer_benchmark(
                     validator=validator,
                     n_trajectories=n_trajectories,
                     seed=seed,
+                    bindsight_wheel=bindsight_wheel,
                     structures_dir=structures_dir,
                     scratch=scratch,
                 )
@@ -418,13 +444,76 @@ def run_designer_benchmark(
         "validator": validator,
         "n_trajectories": n_trajectories,
         "is_mock": is_mock,
+        # Which bindsight actually ran. A result that cannot name its own code
+        # is not reproducible, and "the default branch at some past moment" is
+        # not a name.
+        "bindsight_source": (
+            "mock backend: nothing is installed and no GPU runs"
+            if is_mock
+            else f"working-tree wheel {Path(bindsight_wheel).name}"
+            if bindsight_wheel
+            else "pip install from the repository default branch"
+        ),
         "targets": [t.symbol for t in targets],
         "designers": [_score_dict(s) for s in scores],
     }
+    if _would_erase_a_real_result(out_dir, summary):
+        salvage = out_dir / "results.failed.json"
+        salvage.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        LOG.error(
+            "this run produced no designs, and %s records a run that did. Refusing "
+            "to overwrite it; the failed run is saved to %s. Fix the cause and "
+            "re-run, or delete the committed result deliberately if it is genuinely "
+            "superseded.",
+            out_dir / "results.json",
+            salvage,
+        )
+        return summary
+
     (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "RESULTS.md").write_text(_render_md(summary), encoding="utf-8")
     LOG.info("designer benchmark complete; wrote %s", out_dir)
     return summary
+
+
+def _design_count(summary: dict[str, Any]) -> int:
+    """Total designs across every arm of a benchmark summary."""
+    return sum(int(d.get("n_designs") or 0) for d in summary.get("designers", []))
+
+
+def _would_erase_a_real_result(out_dir: Path, summary: dict[str, Any]) -> bool:
+    """True when writing ``summary`` would replace a real result with an empty one.
+
+    A benchmark that fails after the GPU work is done still reaches the write,
+    and an empty summary is a perfectly well-formed one. That is not
+    hypothetical: a corrected ERBB2 re-run completed on the T4, produced its
+    tarball, and then the harness hit an encoding error writing the kernel log
+    and recorded zero designs — which promptly overwrote twenty committed
+    binders' worth of measurements with dashes, while ``binders/`` still held
+    the structures those measurements described.
+
+    Refusing the write is the conservative direction. The two ways to lose data
+    here are not symmetric: a stale-but-real result is visibly stale and can be
+    replaced deliberately, whereas an overwritten one is gone.
+
+    Args:
+        out_dir: the benchmark directory.
+        summary: the summary this run would write.
+
+    Returns:
+        True if the existing ``results.json`` records designs and this one does not.
+    """
+    if _design_count(summary) > 0:
+        return False
+    existing = out_dir / "results.json"
+    if not existing.is_file():
+        return False
+    try:
+        prior = json.loads(existing.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        # An unreadable prior result is not evidence worth protecting.
+        return False
+    return _design_count(prior) > 0
 
 
 def _score_dict(s: DesignerScore) -> dict[str, Any]:

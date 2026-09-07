@@ -23,16 +23,68 @@ from bindsight.runners.protocol import GPURunner
 LOG = logging.getLogger(__name__)
 
 
-def _with_backend(cache_key: str, backend: str) -> str:
-    """Fold the backend into a cache key.
+def _code_identity(runner: object) -> str:
+    """Identify the bindsight that will actually execute on the runner.
+
+    A remote runner pip-installs bindsight before running anything, so the code
+    that produces a result is not necessarily the code that submitted it. When
+    the runner carries a working-tree wheel, that wheel's content hash is the
+    exact answer. When it carries only a git ref, the honest answer is the ref
+    name, which is weaker: a branch resolves to different commits over time.
+    With neither, the local package version is the best available.
+
+    Args:
+        runner: the GPU runner about to receive the job.
+
+    Returns:
+        A short string identifying the code, for folding into the cache key.
+    """
+    import hashlib
+
+    wheel = getattr(runner, "bindsight_wheel", None)
+    if wheel is not None:
+        try:
+            digest = hashlib.sha256(Path(wheel).read_bytes()).hexdigest()[:16]
+            return f"wheel:{digest}"
+        except OSError:
+            return f"wheel:{Path(wheel).name}"
+    ref = getattr(runner, "bindsight_ref", None)
+    if ref:
+        return f"ref:{ref}"
+    from bindsight import __version__
+
+    return f"version:{__version__}"
+
+
+def _with_backend(cache_key: str, backend: str, code: str = "") -> str:
+    """Fold the backend, and the code that will run, into a cache key.
 
     Two runs that differ only in where they executed are not the same work: one
     may be synthetic. Mixing them is the difference between a real result and a
     mock's canned numbers wearing a real result's label.
+
+    The same applies to which bindsight runs. A corrected designer benchmark was
+    submitted against a branch whose fixes existed only locally, so the GPU
+    pip-installed the default branch and produced pre-fix output. Had that run
+    succeeded and been cached, a later run of the fixed code would have been
+    handed the unfixed result under the same key.
+
+    Args:
+        cache_key: the spec-derived key.
+        backend: the runner's name.
+        code: identity of the bindsight that will execute, from
+            :func:`_code_identity`. Empty reproduces the previous key exactly,
+            which keeps existing cache entries addressable.
+
+    Returns:
+        The folded key.
     """
     import hashlib
 
-    return hashlib.sha256(f"{cache_key}|backend={backend}".encode()).hexdigest()
+    bits = f"{cache_key}|backend={backend}"
+    if code:
+        bits += f"|code={code}"
+    return hashlib.sha256(bits.encode()).hexdigest()
 
 
 def submit_via_runner(
@@ -55,7 +107,7 @@ def submit_via_runner(
     # run on a real GPU share a cache entry, so a later real run silently returns
     # the mock's synthetic tarball and reports it as a genuine result. The
     # designer's commit is already folded in by the caller; the runner is not.
-    cache_key = _with_backend(cache_key, getattr(runner, "name", "unknown"))
+    cache_key = _with_backend(cache_key, getattr(runner, "name", "unknown"), _code_identity(runner))
     spec_dir = Path(f"_bindsight_spec_{cache_key[:8]}")
     spec_dir.mkdir(parents=True, exist_ok=True)
     if payload_dir is not None and Path(payload_dir).is_dir():
