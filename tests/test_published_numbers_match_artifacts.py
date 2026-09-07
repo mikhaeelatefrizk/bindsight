@@ -142,3 +142,87 @@ class TestTheWithdrawnHeadlineStaysWithdrawn:
                 w in low
                 for w in ("withdraw", "retract", "supersed", "previous", "old", "no longer")
             ), f"{rel}: states recall@5 33% without retracting it:\n{line}"
+
+
+BENCH = REPO / "benchmarks" / "designer_benchmark" / "results.json"
+
+
+@pytest.fixture(scope="module")
+def bench() -> dict:
+    if not BENCH.is_file():
+        pytest.skip("designer benchmark artifact not present")
+    return json.loads(BENCH.read_text(encoding="utf-8"))
+
+
+class TestTheDesignerBenchmarkMatchesTheArtifact:
+    """The binder figures quoted in prose must come from the committed run.
+
+    This one is load-bearing right now. The committed run used a ProteinMPNN
+    protocol that has since been corrected, and a re-run under the fixed
+    protocol will move every number here. When it lands, these tests fail until
+    the prose is updated — which is the only reliable way to keep a superseded
+    ipTM from surviving in one document after being replaced in five others.
+    """
+
+    #: Surfaces that quote the binder numbers.
+    SURFACES = ("README.md", "docs/index.md", "docs/results.md")
+
+    @staticmethod
+    def _arm(bench: dict) -> dict:
+        arms = [d for d in bench["designers"] if d.get("n_designs")]
+        assert arms, "benchmark records no designer arm with any designs"
+        return arms[0]
+
+    def test_the_run_is_not_a_mock(self, bench: dict) -> None:
+        """A mock arm published as a result is the failure the backend cache key guards."""
+        assert bench["is_mock"] is False
+        assert bench["backend"] != "mock"
+
+    def test_the_design_count_is_stated_as_written(self, bench: dict) -> None:
+        n = self._arm(bench)["n_designs"]
+        for rel in self.SURFACES:
+            assert str(n) in _doc(rel), f"{rel} does not state {n} designs"
+
+    def test_the_best_iptm_matches(self, bench: dict) -> None:
+        """Prose quotes the best ipTM to two decimals; it must be the artifact's."""
+        metrics = REPO / "benchmarks" / "designer_benchmark" / "binders" / "metrics.jsonl"
+        if not metrics.is_file():
+            pytest.skip("per-design metrics not present")
+        best = max(
+            json.loads(ln)["iptm"]
+            for ln in metrics.read_text(encoding="utf-8").splitlines()
+            if ln.strip() and json.loads(ln).get("iptm") is not None
+        )
+        for rel in self.SURFACES:
+            assert f"{best:.2f}" in _doc(rel), f"{rel} does not state best ipTM {best:.2f}"
+
+    def test_the_success_rate_matches(self, bench: dict) -> None:
+        rate = self._arm(bench)["success_rate"]
+        pct = f"{rate * 100:g}"
+        for rel in self.SURFACES:
+            assert pct in _doc(rel), f"{rel} does not state success rate {pct}%"
+
+    def test_the_gpu_is_named_consistently(self, bench: dict) -> None:
+        """The card a result was produced on is part of the result."""
+        gpu = bench["gpu"]
+        assert gpu and "mock" not in gpu.lower()
+        # "Tesla T4-16GB (Kaggle free)" -> the docs say "T4"; "Tesla P100-..." -> "P100".
+        model = gpu.split()[1].split("-")[0]
+        text = _doc("docs/results.md")
+        assert model in text, f"docs/results.md does not name the {model} the run used"
+
+    def test_a_superseded_protocol_is_disclosed_wherever_its_numbers_appear(
+        self, bench: dict
+    ) -> None:
+        """Until the corrected re-run lands, every quoting surface must say so.
+
+        Delete this test in the same commit that replaces the artifact — and
+        only then, because the caveat and the numbers have to move together.
+        """
+        if bench.get("bindsight_version", "") not in {"0.2.0"}:
+            pytest.skip("artifact is from the corrected protocol; caveat no longer required")
+        for rel in self.SURFACES:
+            low = _doc(rel).lower()
+            assert "pdb_path_chains" in low or "provisional" in low, (
+                f"{rel} quotes the pre-fix binder numbers without disclosing the protocol"
+            )
