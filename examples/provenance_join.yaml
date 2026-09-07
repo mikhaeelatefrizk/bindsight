@@ -1,0 +1,105 @@
+# The provenance-chain demonstration run.
+#
+# One purpose: produce a single artifact set in which a reviewer can walk from a
+# ranked, GPU-designed binder back to the TCGA case barcodes it came from,
+# without running anything. That walk is the project's central claim, and
+# `git ls-files` has never contained a run manifest or an RO-Crate to exhibit it.
+#
+# Clear-cell kidney is the right cohort. CA9 ranks first of 291 candidates there
+# (log2 fold change 9.58, the largest effect in the study panel), so the
+# top-ranked target is a real, strongly over-expressed antigen rather than an
+# arbitrary pick.
+#
+# `top_n: 2` keeps the GPU cost near two hours. The chain is demonstrated by one
+# binder; the second target only shows the join is not a special case.
+#
+# Point `inputs` at a cohort you already have. With `benchmarks/study/`'s kidney
+# run present, the differential-expression cache hits and nothing is recomputed:
+#
+#     inputs:
+#       counts: runs/study/kirc/counts.tsv.gz
+#       design: runs/study/kirc/design.tsv
+#
+# Otherwise let it download one by replacing `inputs` with the `download` block
+# from `examples/tcga_luad.yaml`, changing the project to TCGA-KIRC.
+#
+# Usage:
+#     python -m bindsight.cli discover examples/provenance_join.yaml --out runs/join
+#     python -m bindsight.cli design   runs/join --backend kaggle
+#     python -m bindsight.cli validate runs/join
+#     python -m bindsight.cli rank     runs/join
+#     python -m bindsight.cli report   runs/join --format html
+#     python -m bindsight.cli export   runs/join --out runs/join.crate.zip
+name: join_demo
+out_dir: runs/join
+inputs:
+  counts: runs/study/kirc/counts.tsv.gz
+  design: runs/study/kirc/design.tsv
+  download: null
+params:
+  deg:
+    # Paired on the patient. Nearly every TCGA normal has a tumour from the same
+    # case, and removing inter-patient variance is the largest free power gain
+    # available on this data.
+    design_formula: ~ case_barcode + condition
+    contrast:
+      - condition
+      - tumor
+      - normal
+    fdr_threshold: 0.05
+    log2fc_threshold: 1.0
+    min_replicates: 3
+    min_count: 10
+    # Two cores. The pydeseq2 default is every core, which is right on a server
+    # and hostile on a laptop running a multi-hour sweep.
+    n_cpus: 2
+  target_discovery:
+    require_surfy: true
+    surfy_allow_offline_fallback: false
+    vital_tissues:
+      - heart_left_ventricle
+      - brain_cortex
+      - liver
+      - lung
+    vital_tissue_max_tpm: 5.0
+    gtex_require_measured: true
+    min_mean_plddt: 0.0
+    use_uniprot_topology: false
+    require_extracellular_domain: false
+    enrich_top_k: 300
+    # Filter to the surfaceome before the enrichment cut, not after. The other
+    # order makes surface antigens compete against every gene in the genome for
+    # the top 300 slots.
+    surfaceome_prefilter: true
+    # SURFY omits CA9. Without the UniProt cell-membrane extension the antigen
+    # this run exists to design against is unreachable at any expression level.
+    use_extended_surfaceome: true
+    use_open_targets: true
+    require_tractable_modality: []
+    max_safety_events: 5
+    use_gtex_safety: false
+    require_surface_bind_site: false
+    min_surface_bind_score: 0.5
+    top_n: 2
+  design:
+    designer: rfdiff_mpnn
+    n_trajectories: 10
+    binder_length_min: 50
+    binder_length_max: 100
+    seed: 42
+    gpu_type: null
+    prescreen_top_k: null
+  validate:
+    validator: boltz2
+    iptm_threshold: 0.65
+    pae_interaction_threshold: 8.0
+    apply_thresholds: false
+  rank:
+    weights:
+      log2fc_specificity: 0.25
+      iptm: 0.3
+      affinity: 0.3
+      sequence_recovery: 0.15
+      developability: 0.15
+backend: kaggle
+cheap_profile: false

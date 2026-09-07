@@ -91,13 +91,13 @@ design half.
 Clear-cell kidney is the best cohort for it. CA9 ranks first of 291 candidates
 there, so the top-ranked target is a real, strongly over-expressed antigen.
 
-`runs/join/config.yaml` is committed for this, pointing at the study cohort so
-the differential-expression cache hits, and carrying `top_n: 2` because the
-chain is demonstrated by one binder and the second target only shows the join is
-not a special case.
+`examples/provenance_join.yaml` is committed for this, pointing at the study
+cohort so the differential-expression cache hits, and carrying `top_n: 2`
+because the chain is demonstrated by one binder and the second target only shows
+the join is not a special case.
 
 ```bash
-python -m bindsight.cli discover runs/join/config.yaml --out runs/join
+python -m bindsight.cli discover examples/provenance_join.yaml --out runs/join
 python -m bindsight.cli design runs/join --backend kaggle
 python -m bindsight.cli validate runs/join
 python -m bindsight.cli rank runs/join
