@@ -198,8 +198,6 @@ class KaggleRunner:
                 self.bindsight_ref or "the default branch",
             )
 
-        work = results_dir / f"kaggle_{handle_id}"
-        work.mkdir(parents=True, exist_ok=True)
         script = kaggle_kernel.build_kernel_script(
             handle_id=handle_id,
             payload=payload,
@@ -218,6 +216,10 @@ class KaggleRunner:
                 "structure are what grow it. Push the branch and pass bindsight_ref "
                 "instead of a wheel, or reduce the payload."
             )
+        # Only now, once the script is known to be submittable: a refused
+        # submit should leave no half-built kernel directory behind.
+        work = results_dir / f"kaggle_{handle_id}"
+        work.mkdir(parents=True, exist_ok=True)
         (work / "kernel.py").write_text(script, encoding="utf-8")
         (work / "kernel-metadata.json").write_text(
             json.dumps(kaggle_kernel.build_kernel_metadata(username=user, slug=slug)),
