@@ -1,0 +1,1862 @@
+{
+  "@context": "https://w3id.org/ro/crate/1.1/context",
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "about": {
+        "@id": "./"
+      }
+    },
+    {
+      "@id": "./",
+      "@type": "Dataset",
+      "name": "join_demo",
+      "description": "bindsight run output: ranked de novo protein binder candidates produced from RNA-seq counts, with full PROV-O provenance.",
+      "datePublished": "2026-09-07",
+      "creator": {
+        "@type": "SoftwareApplication",
+        "name": "bindsight",
+        "version": "0.2.2",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "license": "AGPL-3.0-or-later"
+      },
+      "hasPart": [
+        {
+          "@id": "config.yaml"
+        },
+        {
+          "@id": "deg/results.parquet"
+        },
+        {
+          "@id": "targets/candidates.parquet"
+        },
+        {
+          "@id": "epitopes/epitopes.parquet"
+        },
+        {
+          "@id": "taxonomy/failure_taxonomy.parquet"
+        },
+        {
+          "@id": "design/results.tar.gz"
+        },
+        {
+          "@id": "design/metrics.jsonl"
+        },
+        {
+          "@id": "validate/validated.parquet"
+        },
+        {
+          "@id": "rank/ranking.parquet"
+        },
+        {
+          "@id": "report.html"
+        },
+        {
+          "@id": "run_manifest.jsonld"
+        },
+        {
+          "@id": "structures/AF-O14638-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-O14764-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-O15296-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-O15427-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-O75762-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-O95047-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P08637-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P08670-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P14784-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P32970-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P50406-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-P61073-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q13003-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q13349-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q16790-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q4W5P6-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q86Y22-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q8NC67-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q8WTV0-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q969F8-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q96LC7-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q99705-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q9NYZ4-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q9NZC2-F1-model_v6.cif"
+        },
+        {
+          "@id": "structures/AF-Q9P283-F1-model_v6.cif"
+        },
+        {
+          "@id": "design/_targets/P32970.tar.gz"
+        },
+        {
+          "@id": "design/_targets/Q16790.tar.gz"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq0/confidence_P32970_binder_0_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq0/P32970_binder_0_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq0/pae_P32970_binder_0_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq0/plddt_P32970_binder_0_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq1/confidence_P32970_binder_0_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq1/P32970_binder_0_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq1/pae_P32970_binder_0_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_0_seq1/plddt_P32970_binder_0_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq0/confidence_P32970_binder_1_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq0/P32970_binder_1_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq0/pae_P32970_binder_1_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq0/plddt_P32970_binder_1_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq1/confidence_P32970_binder_1_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq1/P32970_binder_1_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq1/pae_P32970_binder_1_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_1_seq1/plddt_P32970_binder_1_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq0/confidence_P32970_binder_2_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq0/P32970_binder_2_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq0/pae_P32970_binder_2_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq0/plddt_P32970_binder_2_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq1/confidence_P32970_binder_2_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq1/P32970_binder_2_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq1/pae_P32970_binder_2_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_2_seq1/plddt_P32970_binder_2_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq0/confidence_P32970_binder_3_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq0/P32970_binder_3_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq0/pae_P32970_binder_3_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq0/plddt_P32970_binder_3_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq1/confidence_P32970_binder_3_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq1/P32970_binder_3_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq1/pae_P32970_binder_3_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_3_seq1/plddt_P32970_binder_3_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq0/confidence_P32970_binder_4_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq0/P32970_binder_4_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq0/pae_P32970_binder_4_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq0/plddt_P32970_binder_4_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq1/confidence_P32970_binder_4_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq1/P32970_binder_4_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq1/pae_P32970_binder_4_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_4_seq1/plddt_P32970_binder_4_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq0/confidence_P32970_binder_5_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq0/P32970_binder_5_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq0/pae_P32970_binder_5_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq0/plddt_P32970_binder_5_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq1/confidence_P32970_binder_5_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq1/P32970_binder_5_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq1/pae_P32970_binder_5_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_5_seq1/plddt_P32970_binder_5_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq0/confidence_P32970_binder_6_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq0/P32970_binder_6_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq0/pae_P32970_binder_6_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq0/plddt_P32970_binder_6_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq1/confidence_P32970_binder_6_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq1/P32970_binder_6_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq1/pae_P32970_binder_6_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_6_seq1/plddt_P32970_binder_6_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq0/confidence_P32970_binder_7_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq0/P32970_binder_7_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq0/pae_P32970_binder_7_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq0/plddt_P32970_binder_7_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq1/confidence_P32970_binder_7_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq1/P32970_binder_7_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq1/pae_P32970_binder_7_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_7_seq1/plddt_P32970_binder_7_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq0/confidence_P32970_binder_8_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq0/P32970_binder_8_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq0/pae_P32970_binder_8_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq0/plddt_P32970_binder_8_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq1/confidence_P32970_binder_8_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq1/P32970_binder_8_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq1/pae_P32970_binder_8_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_8_seq1/plddt_P32970_binder_8_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq0/confidence_P32970_binder_9_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq0/P32970_binder_9_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq0/pae_P32970_binder_9_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq0/plddt_P32970_binder_9_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq1/confidence_P32970_binder_9_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq1/P32970_binder_9_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq1/pae_P32970_binder_9_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/P32970_binder_9_seq1/plddt_P32970_binder_9_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq0/confidence_Q16790_binder_0_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq0/pae_Q16790_binder_0_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq0/plddt_Q16790_binder_0_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq0/Q16790_binder_0_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq1/confidence_Q16790_binder_0_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq1/pae_Q16790_binder_0_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq1/plddt_Q16790_binder_0_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_0_seq1/Q16790_binder_0_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq0/confidence_Q16790_binder_1_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq0/pae_Q16790_binder_1_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq0/plddt_Q16790_binder_1_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq0/Q16790_binder_1_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq1/confidence_Q16790_binder_1_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq1/pae_Q16790_binder_1_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq1/plddt_Q16790_binder_1_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_1_seq1/Q16790_binder_1_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq0/confidence_Q16790_binder_2_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq0/pae_Q16790_binder_2_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq0/plddt_Q16790_binder_2_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq0/Q16790_binder_2_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq1/confidence_Q16790_binder_2_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq1/pae_Q16790_binder_2_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq1/plddt_Q16790_binder_2_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_2_seq1/Q16790_binder_2_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq0/confidence_Q16790_binder_3_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq0/pae_Q16790_binder_3_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq0/plddt_Q16790_binder_3_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq0/Q16790_binder_3_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq1/confidence_Q16790_binder_3_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq1/pae_Q16790_binder_3_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq1/plddt_Q16790_binder_3_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_3_seq1/Q16790_binder_3_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq0/confidence_Q16790_binder_4_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq0/pae_Q16790_binder_4_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq0/plddt_Q16790_binder_4_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq0/Q16790_binder_4_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq1/confidence_Q16790_binder_4_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq1/pae_Q16790_binder_4_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq1/plddt_Q16790_binder_4_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_4_seq1/Q16790_binder_4_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq0/confidence_Q16790_binder_5_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq0/pae_Q16790_binder_5_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq0/plddt_Q16790_binder_5_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq0/Q16790_binder_5_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq1/confidence_Q16790_binder_5_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq1/pae_Q16790_binder_5_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq1/plddt_Q16790_binder_5_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_5_seq1/Q16790_binder_5_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq0/confidence_Q16790_binder_6_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq0/pae_Q16790_binder_6_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq0/plddt_Q16790_binder_6_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq0/Q16790_binder_6_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq1/confidence_Q16790_binder_6_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq1/pae_Q16790_binder_6_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq1/plddt_Q16790_binder_6_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_6_seq1/Q16790_binder_6_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq0/confidence_Q16790_binder_7_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq0/pae_Q16790_binder_7_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq0/plddt_Q16790_binder_7_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq0/Q16790_binder_7_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq1/confidence_Q16790_binder_7_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq1/pae_Q16790_binder_7_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq1/plddt_Q16790_binder_7_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_7_seq1/Q16790_binder_7_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq0/confidence_Q16790_binder_8_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq0/pae_Q16790_binder_8_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq0/plddt_Q16790_binder_8_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq0/Q16790_binder_8_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq1/confidence_Q16790_binder_8_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq1/pae_Q16790_binder_8_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq1/plddt_Q16790_binder_8_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_8_seq1/Q16790_binder_8_seq1_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq0/confidence_Q16790_binder_9_seq0_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq0/pae_Q16790_binder_9_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq0/plddt_Q16790_binder_9_seq0_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq0/Q16790_binder_9_seq0_model_0.cif"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq1/confidence_Q16790_binder_9_seq1_model_0.json"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq1/pae_Q16790_binder_9_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq1/plddt_Q16790_binder_9_seq1_model_0.npz"
+        },
+        {
+          "@id": "validate/Q16790_binder_9_seq1/Q16790_binder_9_seq1_model_0.cif"
+        },
+        {
+          "@id": "inputs/counts.tsv.gz"
+        },
+        {
+          "@id": "inputs/design.tsv"
+        },
+        {
+          "@id": "inputs/provenance.json"
+        }
+      ],
+      "bindsight:run_id": "3ecd94df-4415-4737-83d3-8aa1b8d25bf5"
+    },
+    {
+      "@id": "config.yaml",
+      "@type": "File",
+      "name": "config.yaml",
+      "contentSize": 1642
+    },
+    {
+      "@id": "deg/results.parquet",
+      "@type": "File",
+      "name": "results.parquet",
+      "contentSize": 1152356,
+      "sha256": "1aca39cc344e2e7508fff90dd3c2ca3babbc59133c59fec323160ba04f7f4e6b"
+    },
+    {
+      "@id": "targets/candidates.parquet",
+      "@type": "File",
+      "name": "candidates.parquet",
+      "contentSize": 29664,
+      "sha256": "48d5488ef4dd32d8d1b7c78a4fa1c1f4345777b70b52775a184e32083e178bad"
+    },
+    {
+      "@id": "epitopes/epitopes.parquet",
+      "@type": "File",
+      "name": "epitopes.parquet",
+      "contentSize": 8855,
+      "sha256": "b83ae8be3cb313ad4d386ebaf11d844c9a808c67e6e95d1868a1f2e3579b6edd"
+    },
+    {
+      "@id": "taxonomy/failure_taxonomy.parquet",
+      "@type": "File",
+      "name": "failure_taxonomy.parquet",
+      "contentSize": 473286,
+      "sha256": "64c43e065740627ffdc2d7c2bd0389f65a59c5f21ca73a99624a6405ea35b6d1"
+    },
+    {
+      "@id": "design/results.tar.gz",
+      "@type": "File",
+      "name": "results.tar.gz",
+      "contentSize": 21853768,
+      "sha256": "de169261cd1a1821d35aa4bc48cee4fed554ca43e328e450960db020d2561c15"
+    },
+    {
+      "@id": "design/metrics.jsonl",
+      "@type": "File",
+      "name": "metrics.jsonl",
+      "contentSize": 14618,
+      "sha256": "39ff94ab300e0a28dd51b6bcc6a130c8043d13edf67daa4a40741a1d648f3d25"
+    },
+    {
+      "@id": "validate/validated.parquet",
+      "@type": "File",
+      "name": "validated.parquet",
+      "contentSize": 9816,
+      "sha256": "d67151ff65891e485771e1053550bbff2068886f028b8830b02fc8bbf2a100a6"
+    },
+    {
+      "@id": "rank/ranking.parquet",
+      "@type": "File",
+      "name": "ranking.parquet",
+      "contentSize": 16830,
+      "sha256": "eadc3cfc1cfb0f43533f88ef5941de49ae850ea39ab4611ab4f6c34fb0449c9e"
+    },
+    {
+      "@id": "report.html",
+      "@type": "File",
+      "name": "report.html",
+      "contentSize": 245678,
+      "sha256": "f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115"
+    },
+    {
+      "@id": "run_manifest.jsonld",
+      "@type": "File",
+      "name": "run_manifest.jsonld",
+      "contentSize": 15587
+    },
+    {
+      "@id": "structures/AF-O14638-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O14638-F1-model_v6.cif",
+      "contentSize": 819584
+    },
+    {
+      "@id": "structures/AF-O14764-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O14764-F1-model_v6.cif",
+      "contentSize": 420188
+    },
+    {
+      "@id": "structures/AF-O15296-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O15296-F1-model_v6.cif",
+      "contentSize": 626132
+    },
+    {
+      "@id": "structures/AF-O15427-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O15427-F1-model_v6.cif",
+      "contentSize": 411579
+    },
+    {
+      "@id": "structures/AF-O75762-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O75762-F1-model_v6.cif",
+      "contentSize": 1067516
+    },
+    {
+      "@id": "structures/AF-O95047-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-O95047-F1-model_v6.cif",
+      "contentSize": 291225
+    },
+    {
+      "@id": "structures/AF-P08637-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P08637-F1-model_v6.cif",
+      "contentSize": 248663
+    },
+    {
+      "@id": "structures/AF-P08670-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P08670-F1-model_v6.cif",
+      "contentSize": 437296
+    },
+    {
+      "@id": "structures/AF-P14784-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P14784-F1-model_v6.cif",
+      "contentSize": 505417
+    },
+    {
+      "@id": "structures/AF-P32970-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P32970-F1-model_v6.cif",
+      "contentSize": 184736
+    },
+    {
+      "@id": "structures/AF-P50406-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P50406-F1-model_v6.cif",
+      "contentSize": 389088
+    },
+    {
+      "@id": "structures/AF-P61073-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-P61073-F1-model_v6.cif",
+      "contentSize": 331972
+    },
+    {
+      "@id": "structures/AF-Q13003-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q13003-F1-model_v6.cif",
+      "contentSize": 848658
+    },
+    {
+      "@id": "structures/AF-Q13349-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q13349-F1-model_v6.cif",
+      "contentSize": 1069855
+    },
+    {
+      "@id": "structures/AF-Q16790-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q16790-F1-model_v6.cif",
+      "contentSize": 415603
+    },
+    {
+      "@id": "structures/AF-Q4W5P6-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q4W5P6-F1-model_v6.cif",
+      "contentSize": 70975
+    },
+    {
+      "@id": "structures/AF-Q86Y22-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q86Y22-F1-model_v6.cif",
+      "contentSize": 438886
+    },
+    {
+      "@id": "structures/AF-Q8NC67-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q8NC67-F1-model_v6.cif",
+      "contentSize": 488960
+    },
+    {
+      "@id": "structures/AF-Q8WTV0-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q8WTV0-F1-model_v6.cif",
+      "contentSize": 506718
+    },
+    {
+      "@id": "structures/AF-Q969F8-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q969F8-F1-model_v6.cif",
+      "contentSize": 355940
+    },
+    {
+      "@id": "structures/AF-Q96LC7-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q96LC7-F1-model_v6.cif",
+      "contentSize": 635549
+    },
+    {
+      "@id": "structures/AF-Q99705-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q99705-F1-model_v6.cif",
+      "contentSize": 325523
+    },
+    {
+      "@id": "structures/AF-Q9NYZ4-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q9NYZ4-F1-model_v6.cif",
+      "contentSize": 449052
+    },
+    {
+      "@id": "structures/AF-Q9NZC2-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q9NZC2-F1-model_v6.cif",
+      "contentSize": 218783
+    },
+    {
+      "@id": "structures/AF-Q9P283-F1-model_v6.cif",
+      "@type": "File",
+      "name": "AF-Q9P283-F1-model_v6.cif",
+      "contentSize": 1058658
+    },
+    {
+      "@id": "design/_targets/P32970.tar.gz",
+      "@type": "File",
+      "name": "P32970.tar.gz",
+      "contentSize": 5045092
+    },
+    {
+      "@id": "design/_targets/Q16790.tar.gz",
+      "@type": "File",
+      "name": "Q16790.tar.gz",
+      "contentSize": 16877549
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq0/confidence_P32970_binder_0_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_0_seq0_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq0/P32970_binder_0_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_0_seq0_model_0.cif",
+      "contentSize": 164527
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq0/pae_P32970_binder_0_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_0_seq0_model_0.npz",
+      "contentSize": 213610
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq0/plddt_P32970_binder_0_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_0_seq0_model_0.npz",
+      "contentSize": 1097
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq1/confidence_P32970_binder_0_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_0_seq1_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq1/P32970_binder_0_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_0_seq1_model_0.cif",
+      "contentSize": 163752
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq1/pae_P32970_binder_0_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_0_seq1_model_0.npz",
+      "contentSize": 213578
+    },
+    {
+      "@id": "validate/P32970_binder_0_seq1/plddt_P32970_binder_0_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_0_seq1_model_0.npz",
+      "contentSize": 1119
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq0/confidence_P32970_binder_1_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_1_seq0_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq0/P32970_binder_1_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_1_seq0_model_0.cif",
+      "contentSize": 144041
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq0/pae_P32970_binder_1_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_1_seq0_model_0.npz",
+      "contentSize": 157255
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq0/plddt_P32970_binder_1_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_1_seq0_model_0.npz",
+      "contentSize": 970
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq1/confidence_P32970_binder_1_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_1_seq1_model_0.json",
+      "contentSize": 658
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq1/P32970_binder_1_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_1_seq1_model_0.cif",
+      "contentSize": 143698
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq1/pae_P32970_binder_1_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_1_seq1_model_0.npz",
+      "contentSize": 157316
+    },
+    {
+      "@id": "validate/P32970_binder_1_seq1/plddt_P32970_binder_1_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_1_seq1_model_0.npz",
+      "contentSize": 978
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq0/confidence_P32970_binder_2_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_2_seq0_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq0/P32970_binder_2_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_2_seq0_model_0.cif",
+      "contentSize": 159650
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq0/pae_P32970_binder_2_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_2_seq0_model_0.npz",
+      "contentSize": 201634
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq0/plddt_P32970_binder_2_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_2_seq0_model_0.npz",
+      "contentSize": 1060
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq1/confidence_P32970_binder_2_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_2_seq1_model_0.json",
+      "contentSize": 655
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq1/P32970_binder_2_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_2_seq1_model_0.cif",
+      "contentSize": 162905
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq1/pae_P32970_binder_2_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_2_seq1_model_0.npz",
+      "contentSize": 201821
+    },
+    {
+      "@id": "validate/P32970_binder_2_seq1/plddt_P32970_binder_2_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_2_seq1_model_0.npz",
+      "contentSize": 1061
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq0/confidence_P32970_binder_3_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_3_seq0_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq0/P32970_binder_3_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_3_seq0_model_0.cif",
+      "contentSize": 168949
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq0/pae_P32970_binder_3_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_3_seq0_model_0.npz",
+      "contentSize": 223032
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq0/plddt_P32970_binder_3_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_3_seq0_model_0.npz",
+      "contentSize": 1119
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq1/confidence_P32970_binder_3_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_3_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq1/P32970_binder_3_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_3_seq1_model_0.cif",
+      "contentSize": 169015
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq1/pae_P32970_binder_3_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_3_seq1_model_0.npz",
+      "contentSize": 222452
+    },
+    {
+      "@id": "validate/P32970_binder_3_seq1/plddt_P32970_binder_3_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_3_seq1_model_0.npz",
+      "contentSize": 1110
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq0/confidence_P32970_binder_4_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_4_seq0_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq0/P32970_binder_4_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_4_seq0_model_0.cif",
+      "contentSize": 141763
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq0/pae_P32970_binder_4_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_4_seq0_model_0.npz",
+      "contentSize": 160177
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq0/plddt_P32970_binder_4_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_4_seq0_model_0.npz",
+      "contentSize": 986
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq1/confidence_P32970_binder_4_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_4_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq1/P32970_binder_4_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_4_seq1_model_0.cif",
+      "contentSize": 141574
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq1/pae_P32970_binder_4_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_4_seq1_model_0.npz",
+      "contentSize": 160601
+    },
+    {
+      "@id": "validate/P32970_binder_4_seq1/plddt_P32970_binder_4_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_4_seq1_model_0.npz",
+      "contentSize": 989
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq0/confidence_P32970_binder_5_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_5_seq0_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq0/P32970_binder_5_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_5_seq0_model_0.cif",
+      "contentSize": 173279
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq0/pae_P32970_binder_5_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_5_seq0_model_0.npz",
+      "contentSize": 231559
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq0/plddt_P32970_binder_5_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_5_seq0_model_0.npz",
+      "contentSize": 1133
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq1/confidence_P32970_binder_5_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_5_seq1_model_0.json",
+      "contentSize": 655
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq1/P32970_binder_5_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_5_seq1_model_0.cif",
+      "contentSize": 170802
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq1/pae_P32970_binder_5_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_5_seq1_model_0.npz",
+      "contentSize": 231459
+    },
+    {
+      "@id": "validate/P32970_binder_5_seq1/plddt_P32970_binder_5_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_5_seq1_model_0.npz",
+      "contentSize": 1130
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq0/confidence_P32970_binder_6_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_6_seq0_model_0.json",
+      "contentSize": 655
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq0/P32970_binder_6_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_6_seq0_model_0.cif",
+      "contentSize": 158158
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq0/pae_P32970_binder_6_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_6_seq0_model_0.npz",
+      "contentSize": 198166
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq0/plddt_P32970_binder_6_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_6_seq0_model_0.npz",
+      "contentSize": 1071
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq1/confidence_P32970_binder_6_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_6_seq1_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq1/P32970_binder_6_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_6_seq1_model_0.cif",
+      "contentSize": 158747
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq1/pae_P32970_binder_6_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_6_seq1_model_0.npz",
+      "contentSize": 198487
+    },
+    {
+      "@id": "validate/P32970_binder_6_seq1/plddt_P32970_binder_6_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_6_seq1_model_0.npz",
+      "contentSize": 1077
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq0/confidence_P32970_binder_7_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_7_seq0_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq0/P32970_binder_7_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_7_seq0_model_0.cif",
+      "contentSize": 141711
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq0/pae_P32970_binder_7_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_7_seq0_model_0.npz",
+      "contentSize": 155115
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq0/plddt_P32970_binder_7_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_7_seq0_model_0.npz",
+      "contentSize": 982
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq1/confidence_P32970_binder_7_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_7_seq1_model_0.json",
+      "contentSize": 655
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq1/P32970_binder_7_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_7_seq1_model_0.cif",
+      "contentSize": 141932
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq1/pae_P32970_binder_7_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_7_seq1_model_0.npz",
+      "contentSize": 154736
+    },
+    {
+      "@id": "validate/P32970_binder_7_seq1/plddt_P32970_binder_7_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_7_seq1_model_0.npz",
+      "contentSize": 974
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq0/confidence_P32970_binder_8_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_8_seq0_model_0.json",
+      "contentSize": 652
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq0/P32970_binder_8_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_8_seq0_model_0.cif",
+      "contentSize": 162295
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq0/pae_P32970_binder_8_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_8_seq0_model_0.npz",
+      "contentSize": 199199
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq0/plddt_P32970_binder_8_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_8_seq0_model_0.npz",
+      "contentSize": 1070
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq1/confidence_P32970_binder_8_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_8_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq1/P32970_binder_8_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_8_seq1_model_0.cif",
+      "contentSize": 162655
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq1/pae_P32970_binder_8_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_8_seq1_model_0.npz",
+      "contentSize": 199874
+    },
+    {
+      "@id": "validate/P32970_binder_8_seq1/plddt_P32970_binder_8_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_8_seq1_model_0.npz",
+      "contentSize": 1060
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq0/confidence_P32970_binder_9_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_9_seq0_model_0.json",
+      "contentSize": 653
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq0/P32970_binder_9_seq0_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_9_seq0_model_0.cif",
+      "contentSize": 140409
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq0/pae_P32970_binder_9_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_9_seq0_model_0.npz",
+      "contentSize": 157202
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq0/plddt_P32970_binder_9_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_9_seq0_model_0.npz",
+      "contentSize": 1004
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq1/confidence_P32970_binder_9_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_P32970_binder_9_seq1_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq1/P32970_binder_9_seq1_model_0.cif",
+      "@type": "File",
+      "name": "P32970_binder_9_seq1_model_0.cif",
+      "contentSize": 141510
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq1/pae_P32970_binder_9_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_P32970_binder_9_seq1_model_0.npz",
+      "contentSize": 157195
+    },
+    {
+      "@id": "validate/P32970_binder_9_seq1/plddt_P32970_binder_9_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_P32970_binder_9_seq1_model_0.npz",
+      "contentSize": 977
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq0/confidence_Q16790_binder_0_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_0_seq0_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq0/pae_Q16790_binder_0_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_0_seq0_model_0.npz",
+      "contentSize": 728701
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq0/plddt_Q16790_binder_0_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_0_seq0_model_0.npz",
+      "contentSize": 1865
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq0/Q16790_binder_0_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_0_seq0_model_0.cif",
+      "contentSize": 303987
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq1/confidence_Q16790_binder_0_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_0_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq1/pae_Q16790_binder_0_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_0_seq1_model_0.npz",
+      "contentSize": 724100
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq1/plddt_Q16790_binder_0_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_0_seq1_model_0.npz",
+      "contentSize": 1867
+    },
+    {
+      "@id": "validate/Q16790_binder_0_seq1/Q16790_binder_0_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_0_seq1_model_0.cif",
+      "contentSize": 303705
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq0/confidence_Q16790_binder_1_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_1_seq0_model_0.json",
+      "contentSize": 659
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq0/pae_Q16790_binder_1_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_1_seq0_model_0.npz",
+      "contentSize": 722419
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq0/plddt_Q16790_binder_1_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_1_seq0_model_0.npz",
+      "contentSize": 1849
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq0/Q16790_binder_1_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_1_seq0_model_0.cif",
+      "contentSize": 307074
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq1/confidence_Q16790_binder_1_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_1_seq1_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq1/pae_Q16790_binder_1_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_1_seq1_model_0.npz",
+      "contentSize": 724399
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq1/plddt_Q16790_binder_1_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_1_seq1_model_0.npz",
+      "contentSize": 1848
+    },
+    {
+      "@id": "validate/Q16790_binder_1_seq1/Q16790_binder_1_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_1_seq1_model_0.cif",
+      "contentSize": 305043
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq0/confidence_Q16790_binder_2_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_2_seq0_model_0.json",
+      "contentSize": 658
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq0/pae_Q16790_binder_2_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_2_seq0_model_0.npz",
+      "contentSize": 697205
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq0/plddt_Q16790_binder_2_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_2_seq0_model_0.npz",
+      "contentSize": 1833
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq0/Q16790_binder_2_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_2_seq0_model_0.cif",
+      "contentSize": 296243
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq1/confidence_Q16790_binder_2_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_2_seq1_model_0.json",
+      "contentSize": 658
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq1/pae_Q16790_binder_2_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_2_seq1_model_0.npz",
+      "contentSize": 700244
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq1/plddt_Q16790_binder_2_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_2_seq1_model_0.npz",
+      "contentSize": 1832
+    },
+    {
+      "@id": "validate/Q16790_binder_2_seq1/Q16790_binder_2_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_2_seq1_model_0.cif",
+      "contentSize": 296957
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq0/confidence_Q16790_binder_3_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_3_seq0_model_0.json",
+      "contentSize": 653
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq0/pae_Q16790_binder_3_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_3_seq0_model_0.npz",
+      "contentSize": 723311
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq0/plddt_Q16790_binder_3_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_3_seq0_model_0.npz",
+      "contentSize": 1865
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq0/Q16790_binder_3_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_3_seq0_model_0.cif",
+      "contentSize": 308161
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq1/confidence_Q16790_binder_3_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_3_seq1_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq1/pae_Q16790_binder_3_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_3_seq1_model_0.npz",
+      "contentSize": 729069
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq1/plddt_Q16790_binder_3_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_3_seq1_model_0.npz",
+      "contentSize": 1859
+    },
+    {
+      "@id": "validate/Q16790_binder_3_seq1/Q16790_binder_3_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_3_seq1_model_0.cif",
+      "contentSize": 306824
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq0/confidence_Q16790_binder_4_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_4_seq0_model_0.json",
+      "contentSize": 660
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq0/pae_Q16790_binder_4_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_4_seq0_model_0.npz",
+      "contentSize": 792670
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq0/plddt_Q16790_binder_4_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_4_seq0_model_0.npz",
+      "contentSize": 1923
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq0/Q16790_binder_4_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_4_seq0_model_0.cif",
+      "contentSize": 321001
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq1/confidence_Q16790_binder_4_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_4_seq1_model_0.json",
+      "contentSize": 658
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq1/pae_Q16790_binder_4_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_4_seq1_model_0.npz",
+      "contentSize": 789748
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq1/plddt_Q16790_binder_4_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_4_seq1_model_0.npz",
+      "contentSize": 1927
+    },
+    {
+      "@id": "validate/Q16790_binder_4_seq1/Q16790_binder_4_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_4_seq1_model_0.cif",
+      "contentSize": 320794
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq0/confidence_Q16790_binder_5_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_5_seq0_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq0/pae_Q16790_binder_5_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_5_seq0_model_0.npz",
+      "contentSize": 785691
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq0/plddt_Q16790_binder_5_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_5_seq0_model_0.npz",
+      "contentSize": 1922
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq0/Q16790_binder_5_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_5_seq0_model_0.cif",
+      "contentSize": 318953
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq1/confidence_Q16790_binder_5_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_5_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq1/pae_Q16790_binder_5_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_5_seq1_model_0.npz",
+      "contentSize": 787703
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq1/plddt_Q16790_binder_5_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_5_seq1_model_0.npz",
+      "contentSize": 1913
+    },
+    {
+      "@id": "validate/Q16790_binder_5_seq1/Q16790_binder_5_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_5_seq1_model_0.cif",
+      "contentSize": 320521
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq0/confidence_Q16790_binder_6_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_6_seq0_model_0.json",
+      "contentSize": 660
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq0/pae_Q16790_binder_6_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_6_seq0_model_0.npz",
+      "contentSize": 649867
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq0/plddt_Q16790_binder_6_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_6_seq0_model_0.npz",
+      "contentSize": 1773
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq0/Q16790_binder_6_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_6_seq0_model_0.cif",
+      "contentSize": 291638
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq1/confidence_Q16790_binder_6_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_6_seq1_model_0.json",
+      "contentSize": 651
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq1/pae_Q16790_binder_6_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_6_seq1_model_0.npz",
+      "contentSize": 653195
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq1/plddt_Q16790_binder_6_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_6_seq1_model_0.npz",
+      "contentSize": 1778
+    },
+    {
+      "@id": "validate/Q16790_binder_6_seq1/Q16790_binder_6_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_6_seq1_model_0.cif",
+      "contentSize": 291282
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq0/confidence_Q16790_binder_7_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_7_seq0_model_0.json",
+      "contentSize": 651
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq0/pae_Q16790_binder_7_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_7_seq0_model_0.npz",
+      "contentSize": 740502
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq0/plddt_Q16790_binder_7_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_7_seq0_model_0.npz",
+      "contentSize": 1874
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq0/Q16790_binder_7_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_7_seq0_model_0.cif",
+      "contentSize": 309870
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq1/confidence_Q16790_binder_7_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_7_seq1_model_0.json",
+      "contentSize": 654
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq1/pae_Q16790_binder_7_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_7_seq1_model_0.npz",
+      "contentSize": 745572
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq1/plddt_Q16790_binder_7_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_7_seq1_model_0.npz",
+      "contentSize": 1867
+    },
+    {
+      "@id": "validate/Q16790_binder_7_seq1/Q16790_binder_7_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_7_seq1_model_0.cif",
+      "contentSize": 310257
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq0/confidence_Q16790_binder_8_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_8_seq0_model_0.json",
+      "contentSize": 657
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq0/pae_Q16790_binder_8_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_8_seq0_model_0.npz",
+      "contentSize": 690069
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq0/plddt_Q16790_binder_8_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_8_seq0_model_0.npz",
+      "contentSize": 1819
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq0/Q16790_binder_8_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_8_seq0_model_0.cif",
+      "contentSize": 295358
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq1/confidence_Q16790_binder_8_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_8_seq1_model_0.json",
+      "contentSize": 650
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq1/pae_Q16790_binder_8_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_8_seq1_model_0.npz",
+      "contentSize": 694757
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq1/plddt_Q16790_binder_8_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_8_seq1_model_0.npz",
+      "contentSize": 1819
+    },
+    {
+      "@id": "validate/Q16790_binder_8_seq1/Q16790_binder_8_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_8_seq1_model_0.cif",
+      "contentSize": 296949
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq0/confidence_Q16790_binder_9_seq0_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_9_seq0_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq0/pae_Q16790_binder_9_seq0_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_9_seq0_model_0.npz",
+      "contentSize": 723812
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq0/plddt_Q16790_binder_9_seq0_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_9_seq0_model_0.npz",
+      "contentSize": 1857
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq0/Q16790_binder_9_seq0_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_9_seq0_model_0.cif",
+      "contentSize": 308237
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq1/confidence_Q16790_binder_9_seq1_model_0.json",
+      "@type": "File",
+      "name": "confidence_Q16790_binder_9_seq1_model_0.json",
+      "contentSize": 656
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq1/pae_Q16790_binder_9_seq1_model_0.npz",
+      "@type": "File",
+      "name": "pae_Q16790_binder_9_seq1_model_0.npz",
+      "contentSize": 724669
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq1/plddt_Q16790_binder_9_seq1_model_0.npz",
+      "@type": "File",
+      "name": "plddt_Q16790_binder_9_seq1_model_0.npz",
+      "contentSize": 1855
+    },
+    {
+      "@id": "validate/Q16790_binder_9_seq1/Q16790_binder_9_seq1_model_0.cif",
+      "@type": "File",
+      "name": "Q16790_binder_9_seq1_model_0.cif",
+      "contentSize": 308305
+    },
+    {
+      "@id": "inputs/counts.tsv.gz",
+      "@type": "File",
+      "name": "counts.tsv.gz",
+      "contentSize": 4693864,
+      "description": "Cohort input consumed by this run, carried into the crate from outside the run directory so the provenance chain reaches the patient barcodes it started from.",
+      "sha256": "9687ee53fb46d3b4719848a764e1172f41d0993527ca8331514e2acb5759d4a9"
+    },
+    {
+      "@id": "inputs/design.tsv",
+      "@type": "File",
+      "name": "design.tsv",
+      "contentSize": 13677,
+      "description": "Cohort input consumed by this run, carried into the crate from outside the run directory so the provenance chain reaches the patient barcodes it started from.",
+      "sha256": "c3df7ce23f8d2c24c71465187de1ff604d2baf1c562fc9550f9ac8c789906f01"
+    },
+    {
+      "@id": "inputs/provenance.json",
+      "@type": "File",
+      "name": "provenance.json",
+      "contentSize": 40593,
+      "description": "Cohort input consumed by this run, carried into the crate from outside the run directory so the provenance chain reaches the patient barcodes it started from."
+    },
+    {
+      "@id": "software.bib",
+      "@type": "File",
+      "name": "software.bib",
+      "encodingFormat": "application/x-bibtex",
+      "description": "BibTeX for every upstream tool this run depended on."
+    }
+  ]
+}

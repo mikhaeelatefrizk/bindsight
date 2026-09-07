@@ -1,0 +1,473 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "prov": "http://www.w3.org/ns/prov#",
+    "schema": "http://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "bindsight": "https://github.com/mikhaeelatefrizk/bindsight/ns#",
+    "schema_version": "bindsight:schemaVersion",
+    "run_id": "bindsight:runId",
+    "created_at": {
+      "@id": "prov:generatedAtTime",
+      "@type": "xsd:dateTime"
+    },
+    "name": "schema:name",
+    "config_path": "bindsight:configPath",
+    "runtime": "bindsight:runtimeEnvironment",
+    "stages": "bindsight:stage",
+    "python": "bindsight:pythonVersion",
+    "platform": "bindsight:platform",
+    "machine": "bindsight:machine",
+    "bindsight_version": "bindsight:bindsightVersion",
+    "libraries": {
+      "@id": "bindsight:libraryVersions",
+      "@type": "@json"
+    },
+    "started_at": {
+      "@id": "prov:startedAtTime",
+      "@type": "xsd:dateTime"
+    },
+    "ended_at": {
+      "@id": "prov:endedAtTime",
+      "@type": "xsd:dateTime"
+    },
+    "status": "bindsight:status",
+    "tool": "prov:wasAssociatedWith",
+    "container": {
+      "@id": "prov:wasAssociatedWith",
+      "@context": {
+        "runtime": "bindsight:containerRuntime"
+      }
+    },
+    "inputs": "prov:used",
+    "outputs": "prov:generated",
+    "params": {
+      "@id": "bindsight:params",
+      "@type": "@json"
+    },
+    "cache_key": "bindsight:cacheKey",
+    "cache_status": "bindsight:cacheStatus",
+    "notes": "schema:description",
+    "error": "bindsight:error",
+    "version": "schema:softwareVersion",
+    "license": "schema:license",
+    "repo_url": {
+      "@id": "schema:codeRepository",
+      "@type": "@id"
+    },
+    "commit_sha": "bindsight:commitSha",
+    "weights_sha256": "bindsight:weightsSha256",
+    "citation": "schema:citation",
+    "image": "bindsight:containerImage",
+    "tag": "bindsight:containerTag",
+    "digest": "bindsight:containerDigest",
+    "role": "bindsight:role",
+    "path": "bindsight:path",
+    "sha256": "bindsight:sha256",
+    "bytes": {
+      "@id": "schema:contentSize",
+      "@type": "xsd:nonNegativeInteger"
+    },
+    "media_type": "schema:encodingFormat"
+  },
+  "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5",
+  "@type": "prov:Bundle",
+  "schema_version": "1.1.0",
+  "run_id": "3ecd94df-4415-4737-83d3-8aa1b8d25bf5",
+  "created_at": "2026-09-07T13:59:17+00:00",
+  "name": "join_demo",
+  "config_path": "runs\\join\\config.yaml",
+  "runtime": {
+    "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#runtime",
+    "@type": [
+      "prov:Entity",
+      "bindsight:RuntimeEnvironment"
+    ],
+    "python": "3.14.7",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "bindsight_version": "0.2.2",
+    "libraries": {
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "pandas": "2.3.3",
+      "pyarrow": "24.0.0",
+      "pydeseq2": "0.5.4",
+      "biopython": "1.87",
+      "scikit-learn": "1.9.0",
+      "anndata": "0.12.16",
+      "torch": "2.12.0",
+      "transformers": "5.12.0"
+    }
+  },
+  "stages": [
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/0/deg",
+      "@type": "prov:Activity",
+      "name": "deg",
+      "started_at": "2026-09-07T13:59:17+00:00",
+      "ended_at": "2026-09-07T13:59:17+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/pydeseq2/0.5.4",
+        "@type": "prov:SoftwareAgent",
+        "name": "pydeseq2",
+        "version": "0.5.4",
+        "license": "MIT",
+        "repo_url": "https://github.com/owkin/PyDESeq2",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": "10.1093/bioinformatics/btad547"
+      },
+      "container": null,
+      "inputs": [
+        {
+          "@id": "urn:sha256:9687ee53fb46d3b4719848a764e1172f41d0993527ca8331514e2acb5759d4a9",
+          "@type": "prov:Entity",
+          "role": "counts",
+          "path": "runs\\study\\kirc\\counts.tsv.gz",
+          "sha256": "9687ee53fb46d3b4719848a764e1172f41d0993527ca8331514e2acb5759d4a9",
+          "bytes": 4693864,
+          "media_type": "text/tab-separated-values"
+        },
+        {
+          "@id": "urn:sha256:c3df7ce23f8d2c24c71465187de1ff604d2baf1c562fc9550f9ac8c789906f01",
+          "@type": "prov:Entity",
+          "role": "design",
+          "path": "runs\\study\\kirc\\design.tsv",
+          "sha256": "c3df7ce23f8d2c24c71465187de1ff604d2baf1c562fc9550f9ac8c789906f01",
+          "bytes": 13677,
+          "media_type": "text/tab-separated-values"
+        }
+      ],
+      "outputs": [
+        {
+          "@id": "urn:sha256:1aca39cc344e2e7508fff90dd3c2ca3babbc59133c59fec323160ba04f7f4e6b",
+          "@type": "prov:Entity",
+          "role": "deg_table",
+          "path": "runs\\join\\deg\\results.parquet",
+          "sha256": "1aca39cc344e2e7508fff90dd3c2ca3babbc59133c59fec323160ba04f7f4e6b",
+          "bytes": 1152356,
+          "media_type": "application/x-parquet"
+        }
+      ],
+      "params": {
+        "design_formula": "~ case_barcode + condition",
+        "contrast": [
+          "condition",
+          "tumor",
+          "normal"
+        ],
+        "fdr_threshold": 0.05,
+        "log2fc_threshold": 1.0,
+        "min_replicates": 3,
+        "min_count": 10,
+        "n_cpus": 2
+      },
+      "cache_key": "e4785898e360bf34e8accaf132ca06816cfc87d3c974abc1edd6cddb618f753d",
+      "cache_status": "hit",
+      "notes": "reused an existing DEG table with identical inputs and parameters",
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/1/discover",
+      "@type": "prov:Activity",
+      "name": "discover",
+      "started_at": "2026-09-07T13:59:17+00:00",
+      "ended_at": "2026-09-07T13:59:42+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight%2F0.2.2/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight/0.2.2",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [
+        {
+          "@id": "urn:sha256:1aca39cc344e2e7508fff90dd3c2ca3babbc59133c59fec323160ba04f7f4e6b",
+          "@type": "prov:Entity",
+          "role": "deg_table",
+          "path": "runs\\join\\deg\\results.parquet",
+          "sha256": "1aca39cc344e2e7508fff90dd3c2ca3babbc59133c59fec323160ba04f7f4e6b",
+          "bytes": 1152356,
+          "media_type": "application/x-parquet"
+        }
+      ],
+      "outputs": [
+        {
+          "@id": "urn:sha256:48d5488ef4dd32d8d1b7c78a4fa1c1f4345777b70b52775a184e32083e178bad",
+          "@type": "prov:Entity",
+          "role": "candidates",
+          "path": "runs\\join\\targets\\candidates.parquet",
+          "sha256": "48d5488ef4dd32d8d1b7c78a4fa1c1f4345777b70b52775a184e32083e178bad",
+          "bytes": 29664,
+          "media_type": "application/x-parquet"
+        },
+        {
+          "@id": "urn:sha256:b83ae8be3cb313ad4d386ebaf11d844c9a808c67e6e95d1868a1f2e3579b6edd",
+          "@type": "prov:Entity",
+          "role": "epitopes",
+          "path": "runs\\join\\epitopes\\epitopes.parquet",
+          "sha256": "b83ae8be3cb313ad4d386ebaf11d844c9a808c67e6e95d1868a1f2e3579b6edd",
+          "bytes": 8855,
+          "media_type": "application/x-parquet"
+        },
+        {
+          "@id": "urn:sha256:64c43e065740627ffdc2d7c2bd0389f65a59c5f21ca73a99624a6405ea35b6d1",
+          "@type": "prov:Entity",
+          "role": "failure_taxonomy",
+          "path": "runs\\join\\taxonomy\\failure_taxonomy.parquet",
+          "sha256": "64c43e065740627ffdc2d7c2bd0389f65a59c5f21ca73a99624a6405ea35b6d1",
+          "bytes": 473286,
+          "media_type": "application/x-parquet"
+        }
+      ],
+      "params": {
+        "require_surfy": true,
+        "surfy_allow_offline_fallback": false,
+        "vital_tissues": [
+          "heart_left_ventricle",
+          "brain_cortex",
+          "liver",
+          "lung"
+        ],
+        "vital_tissue_max_tpm": 5.0,
+        "gtex_require_measured": true,
+        "min_mean_plddt": 0.0,
+        "use_uniprot_topology": true,
+        "require_extracellular_domain": true,
+        "enrich_top_k": 300,
+        "surfaceome_prefilter": true,
+        "use_extended_surfaceome": true,
+        "use_open_targets": true,
+        "require_tractable_modality": [],
+        "max_safety_events": 5,
+        "use_gtex_safety": false,
+        "require_surface_bind_site": false,
+        "min_surface_bind_score": 0.5,
+        "top_n": 2
+      },
+      "cache_key": null,
+      "cache_status": null,
+      "notes": "n_candidates=291, n_with_structure=22, n_top=2; taxonomy(17348 genes)=below_enrichment_cutoff:548,down_regulated:2853,fails_safety:10,no_extracellular_domain:3,not_significant:12227,not_surfaceome:1420,not_top_n:20,structure_not_queried:265,surfaced:2; caveats: mRNA abundance is not cell-surface protein abundance; Bulk expression cannot attribute a transcript to a cell type (see report Limitations)",
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/2/design",
+      "@type": "prov:Activity",
+      "name": "design",
+      "started_at": "2026-09-07T22:34:35+00:00",
+      "ended_at": "2026-09-07T22:34:36+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.design.rfdiff_mpnn/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight.design.rfdiff_mpnn",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "@id": "urn:sha256:39ff94ab300e0a28dd51b6bcc6a130c8043d13edf67daa4a40741a1d648f3d25",
+          "@type": "prov:Entity",
+          "role": "design_metrics",
+          "path": "runs\\join\\design\\metrics.jsonl",
+          "sha256": "39ff94ab300e0a28dd51b6bcc6a130c8043d13edf67daa4a40741a1d648f3d25",
+          "bytes": 14618,
+          "media_type": "application/x-ndjson"
+        },
+        {
+          "@id": "urn:sha256:de169261cd1a1821d35aa4bc48cee4fed554ca43e328e450960db020d2561c15",
+          "@type": "prov:Entity",
+          "role": "design_results",
+          "path": "runs\\join\\design\\results.tar.gz",
+          "sha256": "de169261cd1a1821d35aa4bc48cee4fed554ca43e328e450960db020d2561c15",
+          "bytes": 21853768,
+          "media_type": "application/gzip"
+        }
+      ],
+      "params": {
+        "designer": "rfdiff_mpnn",
+        "validator": "boltz2",
+        "backend": "kaggle",
+        "n_trajectories": 10
+      },
+      "cache_key": null,
+      "cache_status": null,
+      "notes": "2 target(s) designed on the kaggle backend",
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/3/validate",
+      "@type": "prov:Activity",
+      "name": "validate",
+      "started_at": "2026-09-07T22:40:27+00:00",
+      "ended_at": "2026-09-07T22:40:27+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.validate.boltz2/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight.validate.boltz2",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "@id": "urn:sha256:d67151ff65891e485771e1053550bbff2068886f028b8830b02fc8bbf2a100a6",
+          "@type": "prov:Entity",
+          "role": "validated",
+          "path": "runs\\join\\validate\\validated.parquet",
+          "sha256": "d67151ff65891e485771e1053550bbff2068886f028b8830b02fc8bbf2a100a6",
+          "bytes": 9816,
+          "media_type": "application/x-parquet"
+        }
+      ],
+      "params": {
+        "validator_requested": "boltz2",
+        "validator_recorded": [
+          "boltz2"
+        ],
+        "backend": "kaggle",
+        "revalidate": false
+      },
+      "cache_key": null,
+      "cache_status": null,
+      "notes": "40 design(s) materialised into validated.parquet",
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/4/rank",
+      "@type": "prov:Activity",
+      "name": "rank",
+      "started_at": "2026-09-07T23:00:47+00:00",
+      "ended_at": "2026-09-07T23:00:47+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.rank/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight.rank",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "@id": "urn:sha256:eadc3cfc1cfb0f43533f88ef5941de49ae850ea39ab4611ab4f6c34fb0449c9e",
+          "@type": "prov:Entity",
+          "role": "ranking",
+          "path": "runs\\join\\rank\\ranking.parquet",
+          "sha256": "eadc3cfc1cfb0f43533f88ef5941de49ae850ea39ab4611ab4f6c34fb0449c9e",
+          "bytes": 16830,
+          "media_type": "application/x-parquet"
+        }
+      ],
+      "params": {},
+      "cache_key": null,
+      "cache_status": null,
+      "notes": null,
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/5/report",
+      "@type": "prov:Activity",
+      "name": "report",
+      "started_at": "2026-09-07T23:04:41+00:00",
+      "ended_at": "2026-09-07T23:04:41+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.report/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight.report",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "@id": "urn:sha256:f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115",
+          "@type": "prov:Entity",
+          "role": "report_html",
+          "path": "runs\\join\\report.html",
+          "sha256": "f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115",
+          "bytes": 245678,
+          "media_type": "text/html"
+        }
+      ],
+      "params": {
+        "format": "html",
+        "include_binders": false
+      },
+      "cache_key": null,
+      "cache_status": null,
+      "notes": null,
+      "error": null
+    },
+    {
+      "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/6/export",
+      "@type": "prov:Activity",
+      "name": "export",
+      "started_at": "2026-09-07T23:04:47+00:00",
+      "ended_at": "2026-09-07T23:04:48+00:00",
+      "status": "completed",
+      "tool": {
+        "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.export/0.2.2",
+        "@type": "prov:SoftwareAgent",
+        "name": "bindsight.export",
+        "version": "0.2.2",
+        "license": "AGPL-3.0-or-later",
+        "repo_url": "https://github.com/mikhaeelatefrizk/bindsight",
+        "commit_sha": null,
+        "weights_sha256": null,
+        "citation": null
+      },
+      "container": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "@id": "urn:sha256:2a51ae1b659c578abfbdccef8c45aa0d2fef77a8106929adf5b8d6ccc516b1d8",
+          "@type": "prov:Entity",
+          "role": "crate",
+          "path": "runs\\join.crate.zip",
+          "sha256": "2a51ae1b659c578abfbdccef8c45aa0d2fef77a8106929adf5b8d6ccc516b1d8",
+          "bytes": 73952542,
+          "media_type": null
+        }
+      ],
+      "params": {
+        "format": "ro-crate"
+      },
+      "cache_key": null,
+      "cache_status": null,
+      "notes": null,
+      "error": null
+    }
+  ]
+}
