@@ -273,6 +273,7 @@ def design(
         )
         return
 
+    _seed, _blo, _bhi = _design_spec_params_from_run(run_dir)
     launched = _launch_design(
         run_dir, backend=backend, designer=designer, validator=validator, trajectories=trajectories
     )
@@ -300,6 +301,14 @@ def design(
             "validator": validator,
             "backend": backend,
             "n_trajectories": trajectories,
+            # ARCHITECTURE 5 promises a reviewer can reach "the trajectory seed
+            # and the resolved design parameters" from the manifest. They were
+            # not recorded here, so a run's own manifest could not answer the
+            # one question that makes it reproducible. `bindsight run` recorded
+            # them by dumping the whole config; this path did not.
+            "seed": _seed,
+            "binder_length_min": _blo,
+            "binder_length_max": _bhi,
         },
         notes=f"{launched} target(s) designed on the {backend} backend",
     )

@@ -1513,3 +1513,73 @@ class TestEvidenceHasAnAbsoluteFloor:
         ranked = rank_validated(validated, candidates).set_index("binder_id")
         assert pd.isna(ranked.loc["unknown", "score_evidence"])
         assert ranked.loc["known", "score_evidence"] == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# 16. The manifest must record the seed it promises
+# ---------------------------------------------------------------------------
+class TestTheManifestRecordsTheSeed:
+    """ARCHITECTURE 5 names the trajectory seed as something the manifest carries.
+
+    It is listed as one of the things a reviewer walks to, and again as a
+    headline differentiator: "show me the gene, the patients it came from, the
+    structure, the trajectory seed". The standalone `bindsight design` recorded
+    the designer, the validator, the backend and the trajectory count, and not
+    the seed — so the artifact could not answer the question that makes it
+    reproducible. `bindsight run` recorded it only by dumping the whole config.
+    """
+
+    def test_the_architecture_still_promises_it(self) -> None:
+        """If the promise is dropped, this test should be dropped with it."""
+        prose = Path("ARCHITECTURE.md").read_text(encoding="utf-8")
+        assert "trajectory seed" in prose
+
+    def test_the_design_stage_records_the_resolved_spec_parameters(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import yaml
+        from click.testing import CliRunner
+
+        from bindsight import cli
+
+        run = tmp_path / "run"
+        (run / "epitopes").mkdir(parents=True)
+        structure = _write_pdb(run / "target.pdb", n=10)
+        pd.DataFrame(
+            [
+                {
+                    "uniprot_id": "Q16790",
+                    "structure_path": str(structure),
+                    "chain": "A",
+                    "residues": [1, 2, 3],
+                    "design_ranges": [[38, 414]],
+                }
+            ]
+        ).to_parquet(run / "epitopes" / "epitopes.parquet")
+        (run / "config.yaml").write_text(
+            yaml.safe_dump(
+                {"params": {"design": {"seed": 4242, "binder_length_min": 55}}},
+            ),
+            encoding="utf-8",
+        )
+        # The chain needs a root: design appends to the manifest discover writes.
+        from bindsight.provenance import new_manifest
+
+        new_manifest(name="seed-test").write(run / "run_manifest.jsonld")
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                cli.main, ["design", str(run), "--backend", "mock", "--trajectories", "2"]
+            )
+        assert result.exit_code == 0, result.output
+
+        manifest = json.loads((run / "run_manifest.jsonld").read_text(encoding="utf-8"))
+        design = next(s for s in manifest["stages"] if s["name"] == "design")
+        params = design["params"]
+        assert params["seed"] == 4242, (
+            "the manifest does not record the seed the run was given, so the run "
+            "cannot be reproduced from its own provenance"
+        )
+        assert params["binder_length_min"] == 55
+        assert "binder_length_max" in params
