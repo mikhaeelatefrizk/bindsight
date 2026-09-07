@@ -161,21 +161,48 @@ Implementations:
 
 ### 4.4 Idempotency
 
-Every GPU work unit has a deterministic cache key:
+Every GPU work unit has a deterministic cache key, computed in two steps. First
+over the work itself:
 
 ```
 sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
-       ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed ‖ designer_commits)
+       ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed
+       ‖ validator ‖ prescreen_top_k ‖ designer_commits)
+```
+
+then folded with where the work will run and which code will run there:
+
+```
+sha256(work_key ‖ backend ‖ code_identity)
 ```
 
 Reruns skip completed work, and `cache_status` records the hit or miss on both
 the `DesignResult` and the manifest's `StageRecord`, so a reader can tell reused
 work from repeated work without re-running anything.
 
-The target structure's *content* is in the key, not just its accession: a new
-AlphaFold model for the same protein is different work, and keying on the
-accession alone would silently reuse a result computed against the superseded
-structure.
+Every component is there because leaving it out produced, or would have
+produced, a wrong answer that looked right:
+
+- **Target structure content**, not just the accession. A new AlphaFold model
+  for the same protein is different work, and keying on the accession alone
+  would silently reuse a result computed against the superseded structure.
+- **Validator.** The remote executor runs whichever validator the spec names, so
+  without it a Boltz-2 run and a Chai-1r run shared an entry and the second
+  returned the first's numbers under the other validator's name.
+- **Prescreen size**, because the ESM-2 screen drops designs before they are
+  scored, which changes the result rather than just the cost.
+- **Backend.** Two runs differing only in where they executed are not the same
+  work: one of them may be a mock's canned numbers wearing a real result's
+  label.
+- **Code identity** — the content hash of the working-tree wheel the runner will
+  install, falling back to the git ref, then to the installed version. A
+  corrected benchmark was once submitted against a branch whose fixes existed
+  only locally, so the GPU installed the default branch and produced pre-fix
+  output. Had that run been cached, a later run of the fixed code would have
+  been handed the unfixed result under the same key.
+
+Each of these is asserted by varying it and checking the key moves, so this
+description cannot drift away from the implementation unnoticed.
 
 This was previously specified here and not implemented — the key was computed
 and then used only as a directory name, so every rerun resubmitted.

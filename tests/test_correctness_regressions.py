@@ -1247,3 +1247,99 @@ class TestTheManifestNamesTheRealValidator:
         unlabelled = tmp_path / "unlabelled.parquet"
         pd.DataFrame([{"binder_id": "a"}]).to_parquet(unlabelled, index=False)
         assert _validators_that_produced(unlabelled) == []
+
+
+# ---------------------------------------------------------------------------
+# 12. The documented cache key must be the real one
+# ---------------------------------------------------------------------------
+class TestTheDocumentedCacheKeyIsTheRealOne:
+    """ARCHITECTURE 4.4 names the components; each must actually change the key.
+
+    The document and the implementation drifted apart once already: the formula
+    was specified there and used only as a directory name, so every rerun
+    resubmitted. It drifted again when the validator was folded in and the prose
+    was not updated. Varying each named component and checking the key moves is
+    what stops the description becoming decorative.
+    """
+
+    @staticmethod
+    def _spec(structure: Path, **overrides: Any) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        base: dict[str, Any] = {
+            "target_uniprot": "Q16790",
+            "target_structure_path": str(structure),
+            "epitope_chain": "A",
+            "epitope_residues": [1, 2, 3],
+            "design_ranges": [(38, 414)],
+            "binder_length_min": 50,
+            "binder_length_max": 100,
+            "n_trajectories": 10,
+            "seed": 42,
+            "extra_params": {"designer": "rfdiff_mpnn", "validator": "boltz2"},
+        }
+        base.update(overrides)
+        return DesignSpec(**base)
+
+    def test_every_documented_component_changes_the_key(self, tmp_path: Path) -> None:
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        other = _write_pdb(tmp_path / "other.pdb", n=12)
+        commits = ("rfdiff-abc", "mpnn-def")
+        base = make_cache_key(self._spec(structure), extra=commits)
+
+        variations: dict[str, Any] = {
+            "target_uniprot": self._spec(structure, target_uniprot="P04626"),
+            "target structure content": self._spec(other),
+            "epitope_chain": self._spec(structure, epitope_chain="B"),
+            "epitope_residues": self._spec(structure, epitope_residues=[1, 2, 4]),
+            "design_ranges": self._spec(structure, design_ranges=[(38, 400)]),
+            "binder_length_min": self._spec(structure, binder_length_min=60),
+            "binder_length_max": self._spec(structure, binder_length_max=90),
+            "n_trajectories": self._spec(structure, n_trajectories=20),
+            "seed": self._spec(structure, seed=0),
+            "validator": self._spec(
+                structure, extra_params={"designer": "rfdiff_mpnn", "validator": "chai1r"}
+            ),
+            "prescreen_top_k": self._spec(
+                structure,
+                extra_params={
+                    "designer": "rfdiff_mpnn",
+                    "validator": "boltz2",
+                    "prescreen_top_k": 5,
+                },
+            ),
+        }
+        for label, spec in variations.items():
+            assert make_cache_key(spec, extra=commits) != base, (
+                f"ARCHITECTURE 4.4 names {label} as part of the cache key, "
+                "but changing it leaves the key identical"
+            )
+
+        # designer_commits, the last term of the documented work key.
+        assert make_cache_key(self._spec(structure), extra=("rfdiff-zzz", "mpnn-def")) != base
+
+    def test_the_backend_and_the_code_are_folded_in(self, tmp_path: Path) -> None:
+        """The second documented step: where it runs, and which code runs there."""
+        from bindsight.design._common import _with_backend
+
+        work = "0" * 64
+        kaggle = _with_backend(work, "kaggle", "wheel:aaaaaaaaaaaaaaaa")
+        assert _with_backend(work, "mock", "wheel:aaaaaaaaaaaaaaaa") != kaggle, (
+            "a mock result must never be addressable as a real GPU result"
+        )
+        assert _with_backend(work, "kaggle", "wheel:bbbbbbbbbbbbbbbb") != kaggle, (
+            "a different wheel is different code and therefore different work"
+        )
+
+    def test_the_result_affecting_params_are_all_documented(self) -> None:
+        """A parameter added to the key must be added to the prose in the same change."""
+        from bindsight.design._common import _RESULT_AFFECTING_PARAMS
+
+        prose = Path("ARCHITECTURE.md").read_text(encoding="utf-8")
+        section = prose.split("### 4.4 Idempotency", 1)[1].split("---", 1)[0]
+        for name in _RESULT_AFFECTING_PARAMS:
+            assert name in section, (
+                f"{name} is folded into the cache key but ARCHITECTURE 4.4 does not say so"
+            )
