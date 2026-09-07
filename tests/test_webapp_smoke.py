@@ -96,9 +96,31 @@ def test_results_page_shows_published_metrics(app: AppTest) -> None:
     # rank alone is not interpretable, so the page never shows one.
     assert metrics["CA9 rank"] == "1 of 291"
     assert "ERBB2 rank" not in metrics
-    assert metrics["Designs"] == "20"
-    assert metrics["Best ipTM"] == "0.84"
-    assert metrics["Success @ ipTM 0.65"] == "50%"
+
+    # The binder figures are read from the committed artifact rather than
+    # hardcoded. This test exists to catch a page that renders defaults or stale
+    # cached values, not to pin numbers that move whenever the benchmark is
+    # re-run — `tests/test_published_numbers_match_artifacts.py` is what keeps
+    # the artifact and the prose in step.
+    import json
+    from pathlib import Path
+
+    artifact = Path(__file__).resolve().parents[1] / ("benchmarks/designer_benchmark/results.json")
+    summary = json.loads(artifact.read_text(encoding="utf-8"))
+    arm = next(a for a in summary["designers"] if a.get("n_designs"))
+
+    rows = (
+        Path(__file__).resolve().parents[1] / "benchmarks/designer_benchmark/binders/metrics.jsonl"
+    ).read_text(encoding="utf-8")
+    best = max(
+        json.loads(ln)["iptm"]
+        for ln in rows.splitlines()
+        if ln.strip() and json.loads(ln).get("iptm") is not None
+    )
+
+    assert metrics["Designs"] == str(arm["n_designs"])
+    assert metrics["Best ipTM"] == f"{best:.2f}"
+    assert metrics["Success @ ipTM 0.65"] == f"{arm['success_rate'] * 100:g}%"
 
 
 def test_results_page_renders_a_structure(app: AppTest) -> None:
