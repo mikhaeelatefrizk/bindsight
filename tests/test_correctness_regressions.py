@@ -1343,3 +1343,86 @@ class TestTheDocumentedCacheKeyIsTheRealOne:
             assert name in section, (
                 f"{name} is folded into the cache key but ARCHITECTURE 4.4 does not say so"
             )
+
+
+# ---------------------------------------------------------------------------
+# 13. The structure component's error metrics must point the right way
+# ---------------------------------------------------------------------------
+class TestErrorMetricsAreInverted:
+    """pAE-interaction and RMSD are errors: lower is better.
+
+    The affinity component's direction is asserted numerically because getting
+    it backwards silently promotes the weakest designs. The structure component
+    carries two more metrics with exactly that hazard, and neither had a test —
+    removing `invert=True` from either left the whole suite green while ranking
+    the least confident interfaces first.
+    """
+
+    @staticmethod
+    def _frame(column: str) -> pd.DataFrame:
+        # iptm is held constant so the composite isolates the metric under test.
+        return pd.DataFrame(
+            [
+                {"binder_id": "tight", "target_uniprot": "P1", "iptm": 0.7, column: 5.0},
+                {"binder_id": "loose", "target_uniprot": "P1", "iptm": 0.7, column: 25.0},
+            ]
+        )
+
+    def test_a_lower_interface_error_scores_higher(self) -> None:
+        ranked = rank_validated(self._frame("pae_interaction")).set_index("binder_id")
+        assert ranked.loc["tight", "score_structure"] > ranked.loc["loose", "score_structure"], (
+            "a 25 A interface error must not outscore a 5 A one"
+        )
+
+    def test_a_lower_rmsd_scores_higher(self) -> None:
+        ranked = rank_validated(self._frame("rmsd_to_designed")).set_index("binder_id")
+        assert ranked.loc["tight", "score_structure"] > ranked.loc["loose", "score_structure"]
+
+    def test_the_inverted_metric_spans_the_full_range(self) -> None:
+        """Hand-computed: min-max over (5, 25) inverted puts 5 at 1.0 and 25 at 0.0.
+
+        Averaged with a constant iptm, which min-max maps to the neutral 0.5.
+        """
+        ranked = rank_validated(self._frame("pae_interaction")).set_index("binder_id")
+        assert ranked.loc["tight", "score_structure"] == pytest.approx((0.5 + 1.0) / 2)
+        assert ranked.loc["loose", "score_structure"] == pytest.approx((0.5 + 0.0) / 2)
+
+    def test_the_better_interface_ranks_first(self) -> None:
+        ranked = rank_validated(self._frame("pae_interaction"))
+        assert list(ranked["binder_id"]) == ["tight", "loose"]
+
+
+# ---------------------------------------------------------------------------
+# 14. An unscored binder must not lead the ranking
+# ---------------------------------------------------------------------------
+class TestUnscoredRowsSortLast:
+    """A row with no metrics has no score, and no score is not a good score.
+
+    Sorting NaN first put binders carrying no evidence whatsoever at the top of
+    the ranked table — the one place a reader looks. Nothing caught it.
+    """
+
+    @staticmethod
+    def _frame() -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                {"binder_id": "unscored", "target_uniprot": "P1"},
+                {"binder_id": "poor", "target_uniprot": "P1", "iptm": 0.2},
+                {"binder_id": "good", "target_uniprot": "P1", "iptm": 0.9},
+            ]
+        )
+
+    def test_the_top_of_the_table_carries_a_score(self) -> None:
+        ranked = rank_validated(self._frame())
+        assert pd.notna(ranked.iloc[0]["score"]), "the first ranked binder has no score at all"
+        assert ranked.iloc[0]["binder_id"] == "good"
+
+    def test_an_unscored_binder_ranks_below_a_poor_one(self) -> None:
+        ranked = rank_validated(self._frame()).set_index("binder_id")
+        assert ranked.loc["unscored", "rank"] > ranked.loc["poor", "rank"], (
+            "a binder with no metrics outranked one that was measured and scored badly"
+        )
+
+    def test_ranks_are_dense_and_start_at_one(self) -> None:
+        ranked = rank_validated(self._frame())
+        assert list(ranked["rank"]) == [1, 2, 3]
