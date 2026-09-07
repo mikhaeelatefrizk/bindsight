@@ -9,7 +9,7 @@ This is the designer half of the v0.2 validation. The harness is real and
 runnable; the numbers come from a real GPU run. The **first real result** —
 RFdiffusion + ProteinMPNN against ERBB2 domain IV (the trastuzumab epitope), on
 Kaggle's free T4 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs, best
-ipTM 0.88, mean 0.51, 40% success@0.65 — 8/20, 95% CI 22–61%), with the real Boltz-2-predicted
+ipTM 0.88, mean 0.51, 40% success@0.65 — 8/20, 95% CI 15–70% over backbones), with the real Boltz-2-predicted
 complexes (`binders/*_complex.cif`) and the raw metrics in `results.json`.
 
 > ✅ **The committed result uses the corrected ProteinMPNN protocol, and the

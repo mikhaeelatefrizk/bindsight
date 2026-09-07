@@ -258,3 +258,91 @@ class TestStructureResolution:
         assert score.error is not None
         assert "placeholder" in score.error
         assert score.n_designs == 0
+
+
+# ---------------------------------------------------------------------------
+# Designs sharing a backbone are not independent trials
+# ---------------------------------------------------------------------------
+class TestTheSuccessIntervalIsClusteredOverBackbones:
+    """A binomial interval over designs reads narrower than the run earns.
+
+    ProteinMPNN produces several sequences per RFdiffusion trajectory, so twenty
+    designs from ten backbones are ten attempts, not twenty. On the committed
+    ERBB2 run success clusters hard — five backbones yield nothing and three
+    yield two — and the binomial interval gave (22%, 61%) where clustering gives
+    (15%, 70%).
+
+    This is the same error the study half was already fixed for, where one
+    antigen across several cohorts is one piece of evidence.
+    `cluster_bootstrap_interval` existed, was tested, and was simply never
+    called from here.
+    """
+
+    def test_a_backbone_groups_its_sequences(self) -> None:
+        from bindsight.benchmark.designer_bench import _backbone_of
+
+        assert _backbone_of("Q16790_binder_0_seq0") == "Q16790_binder_0"
+        assert _backbone_of("Q16790_binder_0_seq1") == "Q16790_binder_0"
+        assert _backbone_of("Q16790_binder_1_seq0") == "Q16790_binder_1"
+
+    def test_an_id_without_sequences_is_its_own_cluster(self) -> None:
+        """Nothing may be assumed correlated that is not known to be."""
+        from bindsight.benchmark.designer_bench import _backbone_of, _success_intervals
+
+        assert _backbone_of("boltzgen_design_3") == "boltzgen_design_3"
+        singletons = {f"d{i}": [i < 4] for i in range(10)}
+        fields = _success_intervals(singletons)
+        assert fields["n_backbones"] == 10
+        # With one design per cluster there is nothing to correct for, so the
+        # clustered interval should sit close to the independent one.
+        assert abs(fields["success_ci_low"] - fields["success_ci_independent_low"]) < 0.2
+
+    def test_clustering_widens_the_interval_when_success_is_correlated(self) -> None:
+        """The whole point: correlated designs carry less information."""
+        from bindsight.benchmark.designer_bench import _success_intervals
+
+        # Five backbones all-hit, five all-miss: maximal within-cluster
+        # correlation, and exactly the shape the real run has.
+        outcomes = {f"bb{i}": [i < 5, i < 5] for i in range(10)}
+        f = _success_intervals(outcomes)
+        clustered_width = f["success_ci_high"] - f["success_ci_low"]
+        independent_width = f["success_ci_independent_high"] - f["success_ci_independent_low"]
+        assert clustered_width > independent_width, (
+            "clustering must not report more precision than a binomial over designs"
+        )
+
+    def test_the_backbone_level_rate_is_reported(self) -> None:
+        from bindsight.benchmark.designer_bench import _success_intervals
+
+        outcomes = {"a": [True, False], "b": [False, False], "c": [True, True]}
+        f = _success_intervals(outcomes)
+        assert f["n_backbones"] == 3
+        assert f["n_backbones_with_success"] == 2
+
+    def test_the_committed_artifact_carries_the_clustered_interval(self) -> None:
+        """Regression on the published figure itself.
+
+        The artifact must not carry the binomial bounds as its reported
+        interval. 0.2188/0.6134 are the independence-assuming ones and belong
+        only in the field named for them.
+        """
+        repo = Path(__file__).resolve().parents[1]
+        artifact = repo / "benchmarks" / "designer_benchmark" / "results.json"
+        if not artifact.is_file():
+            pytest.skip("designer benchmark artifact not present")
+        arm = next(
+            d
+            for d in json.loads(artifact.read_text(encoding="utf-8"))["designers"]
+            if d.get("n_designs")
+        )
+        assert arm["success_ci_method"].startswith("cluster-bootstrap"), (
+            "the reported interval is not clustered over backbones"
+        )
+        assert arm["n_backbones"] == 10
+        assert arm["n_backbones_with_success"] == 5
+        assert arm["success_ci_low"] == pytest.approx(0.15)
+        assert arm["success_ci_high"] == pytest.approx(0.70)
+        # The narrower binomial bounds survive only under their own name.
+        assert arm["success_ci_independent_low"] == pytest.approx(0.2188)
+        assert arm["success_ci_low"] < arm["success_ci_independent_low"]
+        assert arm["success_ci_high"] > arm["success_ci_independent_high"]

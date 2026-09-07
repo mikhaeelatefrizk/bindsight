@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import math
 import random
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -202,7 +202,7 @@ def clopper_pearson_interval(successes: int, trials: int, *, confidence: float =
 
 
 def cluster_bootstrap_interval(
-    clusters: dict[str, Sequence[bool]],
+    clusters: Mapping[str, Sequence[bool]],
     *,
     n_boot: int = 10_000,
     confidence: float = 0.95,

@@ -31,7 +31,7 @@ from typing import Any
 
 from bindsight import __version__
 from bindsight import cost as cost_mod
-from bindsight.benchmark.statistics import wilson_interval
+from bindsight.benchmark.statistics import cluster_bootstrap_interval, wilson_interval
 from bindsight.plugins import get_designer, get_runner
 
 LOG = logging.getLogger(__name__)
@@ -89,8 +89,19 @@ class DesignerScore:
     # twenty designs claims a precision the sample does not carry, so the
     # interval travels with it.
     n_success: int | None = None
+    # The reported interval, clustered over backbones. See _success_intervals.
     success_ci_low: float | None = None
     success_ci_high: float | None = None
+    success_ci_method: str | None = None
+    # The same interval computed as if every design were independent, kept so a
+    # reader can see how much the clustering costs rather than taking it on
+    # trust. Never the reported figure.
+    success_ci_independent_low: float | None = None
+    success_ci_independent_high: float | None = None
+    # Backbone-level view: how many RFdiffusion trajectories yielded any design
+    # over the bar. This is the number of independent attempts that worked.
+    n_backbones: int | None = None
+    n_backbones_with_success: int | None = None
     per_target: list[dict[str, Any]] = field(default_factory=list)
     # Results tarballs this designer produced, so the binder artifacts can be
     # staged after the run. Excluded from the serialised summary: a local scratch
@@ -227,6 +238,7 @@ def run_one_designer(
     all_iptm: list[float] = []
     all_pae: list[float] = []
     all_aff: list[float] = []
+    outcomes_by_backbone: dict[str, list[bool]] = {}
     archives: list[Path] = []
     n_designs = 0
 
@@ -269,6 +281,12 @@ def run_one_designer(
         all_iptm += iptm
         all_pae += pae
         all_aff += aff
+        for row in rows:
+            value = row.get("iptm")
+            if value is None:
+                continue
+            key = _backbone_of(str(row.get("binder_id", "")))
+            outcomes_by_backbone.setdefault(key, []).append(float(value) >= DEFAULT_IPTM_SUCCESS)
         n_designs += len(rows)
         score.per_target.append(
             {
@@ -287,9 +305,8 @@ def run_one_designer(
         n_ok = sum(1 for v in all_iptm if v >= DEFAULT_IPTM_SUCCESS)
         score.success_rate = round(n_ok / len(all_iptm), 4)
         score.n_success = n_ok
-        interval = wilson_interval(n_ok, len(all_iptm))
-        score.success_ci_low = round(interval.low, 4)
-        score.success_ci_high = round(interval.high, 4)
+        for field, value in _success_intervals(outcomes_by_backbone).items():
+            setattr(score, field, value)
     if all_pae:
         score.mean_pae_interaction = round(statistics.fmean(all_pae), 4)
     if all_aff:
@@ -541,6 +558,11 @@ def _score_dict(s: DesignerScore) -> dict[str, Any]:
         "n_success": s.n_success,
         "success_ci_low": s.success_ci_low,
         "success_ci_high": s.success_ci_high,
+        "success_ci_method": s.success_ci_method,
+        "success_ci_independent_low": s.success_ci_independent_low,
+        "success_ci_independent_high": s.success_ci_independent_high,
+        "n_backbones": s.n_backbones,
+        "n_backbones_with_success": s.n_backbones_with_success,
         "cost_usd": s.cost_usd,
         "gpu_hours": s.gpu_hours,
         "per_target": s.per_target,
@@ -548,12 +570,65 @@ def _score_dict(s: DesignerScore) -> dict[str, Any]:
     }
 
 
+def _backbone_of(binder_id: str) -> str:
+    """The trajectory a design came from.
+
+    Ids are ``<target>_<backbone>_seq<i>``, so several designs share a backbone:
+    ProteinMPNN produces multiple sequences per RFdiffusion trajectory. A
+    designer whose ids carry no ``_seq`` suffix gets one cluster per design,
+    which is the right degradation — nothing is assumed to be correlated that
+    is not known to be.
+    """
+    return binder_id.rsplit("_seq", 1)[0]
+
+
+def _success_intervals(outcomes: dict[str, list[bool]]) -> dict[str, Any]:
+    """Interval for the success rate, clustered over backbones.
+
+    Designs are not independent trials. Ten RFdiffusion trajectories times two
+    ProteinMPNN sequences is twenty designs but ten attempts, and success
+    clusters hard: on the committed ERBB2 run five backbones yielded nothing,
+    three yielded two, and within-trajectory ipTM correlates at about 0.55.
+    A binomial interval over the designs therefore claims more precision than
+    the run contains — it gave (22%, 61%) where clustering gives (15%, 70%).
+
+    This is the same error the study half was already fixed for, where one
+    antigen appearing in several cohorts is one piece of evidence rather than
+    several; :func:`cluster_bootstrap_interval` exists for it and was simply
+    never called from here.
+
+    Args:
+        outcomes: backbone id -> whether each of its designs cleared the bar.
+
+    Returns:
+        Fields to merge into the score: the clustered interval, the
+        independence-assuming one for contrast, and the backbone-level counts.
+    """
+    flat = [ok for v in outcomes.values() for ok in v]
+    n_ok = sum(flat)
+    independent = wilson_interval(n_ok, len(flat))
+    out: dict[str, Any] = {
+        "n_backbones": len(outcomes),
+        "n_backbones_with_success": sum(1 for v in outcomes.values() if any(v)),
+        "success_ci_independent_low": round(independent.low, 4),
+        "success_ci_independent_high": round(independent.high, 4),
+    }
+    try:
+        clustered = cluster_bootstrap_interval(outcomes, n_boot=10_000, seed=0)
+    except ValueError:  # no clusters with outcomes; nothing to report
+        return out
+    out["success_ci_low"] = round(clustered.low, 4)
+    out["success_ci_high"] = round(clustered.high, 4)
+    out["success_ci_method"] = clustered.method
+    return out
+
+
 def _success_cell(d: dict[str, Any]) -> str:
     """Render success@0.65 with its interval, never as a bare percentage.
 
-    Twenty designs put a roughly twenty-point interval around any rate they
-    produce, so the point estimate alone invites a comparison the sample
-    cannot support.
+    The interval is clustered over backbones, because designs sharing a
+    trajectory are not independent trials. A binomial interval over the designs
+    reads narrower than the run earns.
     """
     rate = d.get("success_rate")
     if rate is None:
@@ -563,6 +638,14 @@ def _success_cell(d: dict[str, Any]) -> str:
     if low is None or high is None or n_ok is None or not n:
         return f"{rate:.0%}"
     return f"{n_ok}/{n} = {rate:.0%} ({low:.0%}–{high:.0%})"
+
+
+def _backbone_cell(d: dict[str, Any]) -> str:
+    """Backbones that yielded any design over the bar — the independent attempts."""
+    hit, total = d.get("n_backbones_with_success"), d.get("n_backbones")
+    if hit is None or not total:
+        return "—"
+    return f"{hit}/{total} = {hit / total:.0%}"
 
 
 def _render_md(summary: dict[str, Any]) -> str:
@@ -602,9 +685,9 @@ def _render_md(summary: dict[str, Any]) -> str:
 
     a(
         "| designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | "
-        "success@0.65 | est. cost (USD) | GPU-h |"
+        "success@0.65 | backbones hit | est. cost (USD) | GPU-h |"
     )
-    a("|---|--:|--:|--:|--:|--:|--:|--:|--:|")
+    a("|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|")
     for d in summary["designers"]:
 
         def fmt(v: Any, pct: bool = False) -> str:
@@ -615,7 +698,7 @@ def _render_md(summary: dict[str, Any]) -> str:
         a(
             f"| {d['designer']} | {d['n_designs']} | {fmt(d['mean_iptm'])} | "
             f"{fmt(d['median_iptm'])} | {fmt(d['mean_pae_interaction'])} | "
-            f"{fmt(d['mean_affinity'])} | {_success_cell(d)} | "
+            f"{fmt(d['mean_affinity'])} | {_success_cell(d)} | {_backbone_cell(d)} | "
             f"{fmt(d['cost_usd'])} | {fmt(d['gpu_hours'])} |"
         )
     a("")
@@ -623,9 +706,14 @@ def _render_md(summary: dict[str, Any]) -> str:
         "**ipTM** / **PAE-interaction** / **affinity** are the validator's "
         "(Boltz-2) interface-confidence and predicted-affinity outputs; "
         "**success@0.65** is the fraction of designs with ipTM ≥ 0.65, with a 95% "
-        "Wilson interval. Read the interval, not the point: two runs of the same "
-        "target differing only in seed returned 2/20 and 6/20, which a Fisher exact "
-        "test cannot separate. Cost is the "
+        "interval **bootstrapped over backbones**, not over designs: ProteinMPNN "
+        "produces several sequences per RFdiffusion trajectory, so the designs are "
+        "not independent trials and a binomial interval over them reads narrower "
+        "than the run earns. **backbones hit** is the fraction of trajectories that "
+        "yielded any design over the bar, which is the count of independent attempts "
+        "that worked. Read the interval, not the point: two runs of the same target "
+        "differing only in seed returned 2/20 and 6/20, which a Fisher exact test "
+        "cannot separate. Cost is the "
         "`bindsight.cost` estimate for the run on the chosen backend.\n"
     )
     return "\n".join(lines)

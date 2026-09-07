@@ -33,8 +33,13 @@
       ],
       "error": null,
       "n_success": 8,
-      "success_ci_low": 0.2188,
-      "success_ci_high": 0.6134
+      "success_ci_low": 0.15,
+      "success_ci_high": 0.7,
+      "n_backbones": 10,
+      "n_backbones_with_success": 5,
+      "success_ci_independent_low": 0.2188,
+      "success_ci_independent_high": 0.6134,
+      "success_ci_method": "cluster-bootstrap(n_clusters=10, B=10000)"
     }
   ],
   "gpu": "Tesla T4-16GB (Kaggle free)"
