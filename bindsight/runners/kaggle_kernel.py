@@ -75,6 +75,7 @@ def build_kernel_script(
     bindsight_ref: str | None = None,
     n_trajectories_note: int | None = None,
     bindsight_wheel_b64: str | None = None,
+    bindsight_wheel_name: str = "bindsight-0.0.0-py3-none-any.whl",
 ) -> str:
     """Return the full Python source of the Kaggle kernel.
 
@@ -90,6 +91,11 @@ def build_kernel_script(
             tree. When given the kernel installs it instead of pip-installing
             from git, which is the only way an unpushed change reaches the GPU.
             Without it a run silently exercises whatever the ref resolves to.
+        bindsight_wheel_name: the wheel's filename, which must be a valid PEP 427
+            name. pip parses the distribution, version and compatibility tags out
+            of it and rejects anything else outright: writing the payload to
+            ``bindsight-embedded.whl`` failed a run with "Invalid wheel filename
+            (wrong number of parts)" after the environment build had finished.
     """
     git_url = f"git+{_BINDSIGHT_REPO}" + (f"@{bindsight_ref}" if bindsight_ref else "")
     # A wheel built from the working tree beats any git ref: it is the code that
@@ -118,6 +124,7 @@ def build_kernel_script(
         "BOLTZ_TORCH_INDEX": _BOLTZ_TORCH_INDEX,
         "BINDSIGHT_GIT": git_url,
         "BINDSIGHT_WHEEL_B64": bindsight_wheel_b64 or "",
+        "BINDSIGHT_WHEEL_NAME": bindsight_wheel_name,
         "INSTALL_SOURCE": install_source,
         "MIN_CC": MIN_COMPUTE_CAPABILITY,
     }
@@ -349,7 +356,9 @@ if BINDSIGHT_WHEEL_B64:
     # Install the exact tree that launched this run. Pinning a branch name would
     # still leave the GPU installing whatever that branch points at now, and an
     # unpushed commit would be invisible entirely.
-    _whl = "/tmp/bindsight-embedded.whl"
+    # The filename matters: pip reads the distribution, version and
+    # compatibility tags out of it, and rejects a name it cannot parse.
+    _whl = f"/tmp/{BINDSIGHT_WHEEL_NAME}"
     pathlib.Path(_whl).write_bytes(base64.b64decode(BINDSIGHT_WHEEL_B64))
     print("  wheel bytes:", pathlib.Path(_whl).stat().st_size, flush=True)
     sh(f"{MM} run -p {BOLTZ} pip install -q --no-input '{_whl}'")

@@ -740,10 +740,34 @@ class TestTheGpuRunsTheCodeThatLaunchedIt:
             handle_id="t", payload={"spec.json": "e30="}, bindsight_wheel_b64=b64
         )
         ast.parse(src)  # a kernel that does not parse burns quota to say so
-        assert "bindsight-embedded.whl" in src
+        assert "BINDSIGHT_WHEEL_NAME" in src
         assert b64 in src
         # It must also state which source it used, so the log is self-describing.
         assert "bindsight install source:" in src
+
+    def test_the_embedded_wheel_keeps_a_parseable_filename(self, tmp_path: Path) -> None:
+        """pip reads the distribution, version and tags out of a wheel's name.
+
+        Writing the payload to ``bindsight-embedded.whl`` failed a run with
+        "Invalid wheel filename (wrong number of parts)" — after the two
+        micromamba environments had already been built, so the cost was paid
+        before the error appeared.
+        """
+        import base64
+
+        from bindsight.runners import kaggle_kernel
+
+        name = "bindsight-0.2.2-py3-none-any.whl"
+        src = kaggle_kernel.build_kernel_script(
+            handle_id="t",
+            payload={"spec.json": "e30="},
+            bindsight_wheel_b64=base64.b64encode(self._wheel(tmp_path).read_bytes()).decode(),
+            bindsight_wheel_name=name,
+        )
+        assert name in src
+        assert "bindsight-embedded.whl" not in src
+        # PEP 427: name-version-python-abi-platform, so five dash-separated parts.
+        assert len(Path(name).stem.split("-")) == 5
 
     def test_an_oversized_kernel_is_refused_before_the_push(self, tmp_path: Path) -> None:
         """Kaggle rejects an oversized kernel opaquely; name the cause instead."""

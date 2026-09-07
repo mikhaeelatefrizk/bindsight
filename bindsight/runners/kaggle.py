@@ -15,10 +15,13 @@ the extra installed.
 from __future__ import annotations
 
 import base64
+import builtins
+import contextlib
 import json
 import logging
 import time
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -74,6 +77,45 @@ def _status_name(status: Any) -> str:
     if isinstance(status, dict):
         return str(status.get("status", "")).upper()
     return str(s).upper()
+
+
+@contextlib.contextmanager
+def _default_text_encoding(encoding: str) -> Iterator[None]:
+    """Make encoding-less text ``open()`` calls use ``encoding`` inside this block.
+
+    The Kaggle client writes the kernel log with a plain ``open(path, "w")``, so
+    it inherits the interpreter's locale encoding. Kernel output carries
+    micromamba's progress glyphs (U+29D6, U+2714), which cp1252 cannot represent,
+    so on a default Windows install the write raises — discarding a completed GPU
+    run over a log file.
+
+    Running the whole interpreter with ``PYTHONUTF8=1`` fixes it, but that is a
+    startup setting and cannot be applied to a library call. Narrowing the
+    default for the duration of one download can.
+
+    Only calls that pass no ``encoding`` and no ``mode`` containing ``b`` are
+    affected; binary reads and writes, including the results tarball, go through
+    untouched.
+
+    Args:
+        encoding: the encoding to use when a caller specifies none.
+
+    Yields:
+        None, for the duration of the override.
+    """
+    real_open = builtins.open
+
+    def _open(file: Any, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        if "b" not in mode and "encoding" not in kwargs:
+            kwargs["encoding"] = encoding
+            kwargs.setdefault("errors", "replace")
+        return real_open(file, mode, *args, **kwargs)
+
+    builtins.open = _open  # type: ignore[assignment]
+    try:
+        yield
+    finally:
+        builtins.open = real_open  # type: ignore[assignment]
 
 
 class KaggleRunner:
@@ -157,6 +199,11 @@ class KaggleRunner:
             payload=payload,
             bindsight_ref=self.bindsight_ref,
             bindsight_wheel_b64=wheel_b64,
+            bindsight_wheel_name=(
+                self.bindsight_wheel.name
+                if self.bindsight_wheel is not None
+                else "bindsight-0.0.0-py3-none-any.whl"
+            ),
         )
         if len(script.encode("utf-8")) > _MAX_KERNEL_BYTES:
             raise ValueError(
@@ -228,21 +275,22 @@ class KaggleRunner:
             kernel_id: ``owner/slug`` of the finished kernel.
             results_dir: directory to download into.
         """
-        try:
-            api.kernels_output(kernel_id, str(results_dir))
-            return
-        except UnicodeEncodeError as e:
-            LOG.warning(
-                "kaggle: could not write the kernel log on this platform (%s). "
-                "The log is not the result; retrying for the tarball.",
-                e,
-            )
-        # Second pass. Anything already written is skipped, so this picks up
-        # where the encoding error interrupted.
-        try:
-            api.kernels_output(kernel_id, str(results_dir))
-        except UnicodeEncodeError as e:
-            LOG.warning("kaggle: log still unwritable (%s); checking for the tarball anyway", e)
+        with _default_text_encoding("utf-8"):
+            try:
+                api.kernels_output(kernel_id, str(results_dir))
+                return
+            except UnicodeEncodeError as e:
+                LOG.warning(
+                    "kaggle: could not write the kernel log on this platform (%s). "
+                    "The log is not the result; retrying for the tarball.",
+                    e,
+                )
+            # Second pass. Anything already written is skipped, so this picks up
+            # where the encoding error interrupted.
+            try:
+                api.kernels_output(kernel_id, str(results_dir))
+            except UnicodeEncodeError as e:
+                LOG.warning("kaggle: log still unwritable (%s); checking for the tarball anyway", e)
 
 
 __all__ = ["KaggleRunner"]

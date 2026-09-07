@@ -121,3 +121,9 @@ _bindsight_spec_*/
 
 # Compiled manuscripts are built at submission time, never committed
 paper/biorxiv/*.pdf
+
+# Designer-benchmark staging. A run writes here first so a failure cannot
+# overwrite the committed result; only the promoted artifacts are tracked.
+# The wheel built for the remote job lives here too and is a build product.
+benchmarks/designer_benchmark/run/
+benchmarks/designer_benchmark/run_t4/
