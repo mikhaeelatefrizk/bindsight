@@ -138,3 +138,89 @@ def test_kernel_still_forces_fp32_for_boltz() -> None:
     src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
     assert "precision=32" in src
     assert "bf16-mixed" in src
+
+
+# ---------------------------------------------------------------------------
+# VRAM instrumentation: it promised a measurement and delivered a constant
+# ---------------------------------------------------------------------------
+def _extract(src: str, names: set[str]) -> dict[str, object]:
+    """Exec just the named top-level defs/assignments from the kernel script.
+
+    The kernel is a generated program, so its helpers cannot be imported. Pulling
+    the relevant nodes out and running them is what lets the behaviour be tested
+    rather than the text grepped.
+    """
+    import subprocess as real_subprocess
+
+    tree = ast.parse(src)
+    keep: list[ast.stmt] = []
+    for node in tree.body:
+        wanted_def = isinstance(node, ast.FunctionDef) and node.name in names
+        wanted_assign = isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id in names for t in node.targets
+        )
+        if wanted_def or wanted_assign:
+            keep.append(node)
+    ns: dict[str, object] = {"subprocess": real_subprocess, "time": __import__("time")}
+    exec(compile(ast.Module(body=keep, type_ignores=[]), "<kernel>", "exec"), ns)
+    return ns
+
+
+def test_the_kernel_samples_vram_in_the_background() -> None:
+    """Between-stage sampling measured nothing, because the work had already exited.
+
+    RFdiffusion and Boltz-2 run in subprocesses under separate micromamba
+    environments. By the time a stage boundary is reached they have exited and
+    released their memory, so a 3h49m design run reported 0 MiB at every single
+    stage while plainly using the GPU. The docstring promised "every memory
+    claim is a measurement"; the number was a constant.
+    """
+    src = kaggle_kernel.build_kernel_script(handle_id="t", payload=_payload())
+    assert "threading.Thread(target=_vram_sampler" in src, "nothing samples during the work"
+    assert "daemon=True" in src, "the sampler must not keep the kernel alive"
+    assert "peak so far" in src, "gpu_report must report the high-water mark"
+    # The sampler has to be running before the first stage boundary, or the
+    # early stages report a peak that was never observed.
+    assert src.index("threading.Thread(target=_vram_sampler") < src.index("def step(")
+
+
+def test_the_vram_reader_parses_nvidia_smi_and_survives_its_absence(
+    monkeypatch: object,
+) -> None:
+    ns = _extract(
+        kaggle_kernel.build_kernel_script(handle_id="t", payload=_payload()),
+        {"_vram_now", "_VRAM_PEAK"},
+    )
+    vram_now = ns["_vram_now"]
+
+    class _Result:
+        def __init__(self, returncode: int, stdout: str) -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+
+    calls: list[object] = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _Result(0, "4321\n")
+
+    ns["subprocess"] = SimpleNamespace(run=fake_run)
+    assert vram_now() == 4321
+    assert "--query-gpu=memory.used" in " ".join(calls[0])
+
+    # A GPU-less machine, or a driver that answers with prose, must not crash
+    # the run: the measurement is instrumentation, not the result.
+    ns["subprocess"] = SimpleNamespace(run=lambda cmd, **kw: _Result(9, ""))
+    assert vram_now() is None
+    ns["subprocess"] = SimpleNamespace(run=lambda cmd, **kw: _Result(0, "[N/A]\n"))
+    assert vram_now() is None
+
+
+def test_the_peak_starts_at_zero_and_is_a_mutable_cell() -> None:
+    """The sampler thread and gpu_report must see the same counter."""
+    ns = _extract(
+        kaggle_kernel.build_kernel_script(handle_id="t", payload=_payload()),
+        {"_VRAM_PEAK"},
+    )
+    peak = ns["_VRAM_PEAK"]
+    assert peak == [0]

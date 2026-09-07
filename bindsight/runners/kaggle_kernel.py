@@ -187,7 +187,7 @@ def build_kernel_metadata(
 # The static kernel body. References the variables defined in the generated header
 # above; kept brace-safe (no .format) so the embedded shell/Python is verbatim.
 _BODY = r'''
-import base64, gzip, hashlib, json, os, pathlib, subprocess, sys, time
+import base64, gzip, hashlib, json, os, pathlib, subprocess, sys, threading, time
 
 MR = "/opt/mamba"                       # MAMBA_ROOT_PREFIX (off the /kaggle/working output volume)
 MM = "/opt/micromamba/bin/micromamba"
@@ -232,6 +232,46 @@ def disk_report(label):
     print(f"[disk @ {label}] " + " | ".join(parts), flush=True)
 
 
+_VRAM_PEAK = [0]
+
+
+def _vram_now():
+    """Device-wide VRAM in use, in MiB, or None if it cannot be read."""
+    out = subprocess.run(
+        ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+        capture_output=True, text=True,
+    )
+    if out.returncode != 0 or not out.stdout.strip():
+        return None
+    try:
+        return int(out.stdout.strip().splitlines()[0])
+    except ValueError:
+        return None
+
+
+def _vram_sampler():
+    """Record the high-water mark of VRAM for the whole kernel.
+
+    Sampling only between stages measured nothing: the work runs in subprocesses
+    under two separate micromamba environments, and by the time a stage boundary
+    is reached every one of them has exited and released its memory. A whole
+    3h49m design run reported 0 MiB at every stage while plainly using the GPU,
+    which made the "every memory claim is a measurement" promise false.
+
+    Device-wide sampling from a background thread is what actually observes it,
+    and it does so regardless of which environment or subprocess holds the
+    allocation — which is the reason not to use torch's own counter here.
+    """
+    while True:
+        v = _vram_now()
+        if v is not None and v > _VRAM_PEAK[0]:
+            _VRAM_PEAK[0] = v
+        time.sleep(5)
+
+
+threading.Thread(target=_vram_sampler, daemon=True).start()
+
+
 def gpu_report(label):
     """Print current and peak VRAM, so every memory claim is a measurement."""
     out = subprocess.run(
@@ -240,7 +280,10 @@ def gpu_report(label):
         capture_output=True, text=True,
     )
     if out.returncode == 0 and out.stdout.strip():
-        print(f"[gpu @ {label}] {out.stdout.strip()}", flush=True)
+        print(
+            f"[gpu @ {label}] {out.stdout.strip()} | peak so far {_VRAM_PEAK[0]} MiB",
+            flush=True,
+        )
 
 
 def step(msg):
