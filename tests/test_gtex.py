@@ -55,3 +55,65 @@ def test_unknown_gene_or_tissue_is_none() -> None:
     assert c.max_expression("ENSG99999999999", VITAL) is None  # not in GTEx
     assert c.max_expression("ENSG00000163631", ["nonexistent_tissue"]) is None
     assert c.max_expression("", VITAL) is None
+
+
+# ---------------------------------------------------------------------------
+# The gate itself. `assess` decides whether a candidate cleared normal-tissue
+# safety, and until now only `max_expression` was tested — so the three-way
+# verdict this gate exists to make had nothing holding it in place. Reporting an
+# unmeasured gene as "safe" passed the entire suite.
+# ---------------------------------------------------------------------------
+_UNMEASURED = "ENSG99999999999"
+_ALB = "ENSG00000163631"  # liver-specific, ~25201 TPM
+_MAGEA4 = "ENSG00000147381"  # cancer-testis, 0 in vital tissues
+
+
+class TestTheGateFailsClosed:
+    """An answer we do not have is not an answer of "safe"."""
+
+    def test_a_gene_absent_from_gtex_is_unassessed_never_safe(self) -> None:
+        """The whole point of the gate: silence must not read as clearance."""
+        v = _client().assess(_UNMEASURED, VITAL, max_tpm=5.0)
+        assert v.status == "unassessed"
+        assert v.status != "safe", "an unmeasured gene must never clear the gate"
+        assert v.max_tpm is None
+        assert "no GTEx median-TPM entry" in v.reason
+
+    def test_an_empty_gene_id_is_unassessed(self) -> None:
+        v = _client().assess("", VITAL, max_tpm=5.0)
+        assert v.status == "unassessed"
+        assert v.max_tpm is None
+
+    def test_tissues_that_are_not_in_the_reference_are_unassessed(self) -> None:
+        """A gene measured elsewhere is still unmeasured *here*."""
+        v = _client().assess(_ALB, ["nonexistent_tissue"], max_tpm=5.0)
+        assert v.status == "unassessed"
+
+    def test_a_gene_over_the_ceiling_is_unsafe_and_says_by_how_much(self) -> None:
+        v = _client().assess(_ALB, VITAL, max_tpm=5.0)
+        assert v.status == "unsafe"
+        assert v.max_tpm == pytest.approx(25201.3, rel=1e-3)
+        assert "exceeds" in v.reason
+
+    def test_only_a_measured_value_may_be_reported_safe(self) -> None:
+        v = _client().assess(_MAGEA4, VITAL, max_tpm=5.0)
+        assert v.status == "safe"
+        assert v.max_tpm is not None, "a safe verdict must carry the measurement it rests on"
+        assert v.max_tpm <= 5.0
+
+    def test_the_ceiling_is_inclusive_at_its_boundary(self) -> None:
+        """A gene exactly at the ceiling is at or below it, per the stated reason."""
+        c = _client()
+        exact = c.max_expression(_MAGEA4, VITAL)
+        assert exact is not None
+        assert c.assess(_MAGEA4, VITAL, max_tpm=exact).status == "safe"
+
+    def test_every_status_is_one_of_the_three_declared_verdicts(self) -> None:
+        """A fourth state would slip past every consumer's branch."""
+        c = _client()
+        seen = {
+            c.assess(_UNMEASURED, VITAL, 5.0).status,
+            c.assess(_ALB, VITAL, 5.0).status,
+            c.assess(_MAGEA4, VITAL, 5.0).status,
+        }
+        assert seen == {"unassessed", "unsafe", "safe"}
