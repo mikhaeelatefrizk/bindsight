@@ -23,9 +23,9 @@ Three nested denominators. Each is a different question, and merging them would 
 
 | Denominator | What it asks | Recall@20 |
 |---|---|---|
-| `all` | Of every scored pair, how many were surfaced? | 1/17 = 0.059 (95% CI 0.010–0.270) |
-| `reachable` | Of the pairs the instrument could see at all? | 1/17 = 0.059 (95% CI 0.010–0.270) |
-| `gate_passed` | Of the pairs that reached the shortlist? This alone measures the ranking. | 1/2 = 0.500 (95% CI 0.095–0.905) |
+| `all (approved)` | Of every scored **approved**-tier pair, how many were surfaced? | 1/17 = 0.059 (95% CI 0.010–0.270) |
+| `reachable` | Of those the instrument could see at all? | 1/17 = 0.059 (95% CI 0.010–0.270) |
+| `gate_passed` | Of those that reached the shortlist? This alone measures the ranking. | 1/2 = 0.500 (95% CI 0.095–0.905) |
 
 ### Recall across cutoffs
 
@@ -33,7 +33,7 @@ An absolute cutoff is only comparable between cohorts whose shortlists are of si
 
 | Denominator | Median shortlist | @5 | @10 | @20 | @50 | @100 |
 |---|--:|--:|--:|--:|--:|--:|
-| `all` | 295 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
+| `all (approved)` | 295 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
 | `reachable` | 295 | 0/17 | 1/17 | 1/17 | 2/17 | 2/17 |
 | `gate_passed` | 286 | 0/2 | 1/2 | 1/2 | 2/2 | 2/2 |
 

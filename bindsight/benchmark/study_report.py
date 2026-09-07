@@ -124,14 +124,27 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "| Denominator | What it asks | Recall@20 |",
             "|---|---|---|",
         ]
+        # `all` means every pair in the primary tier, NOT every scored pair: the
+        # sensitivity table below counts 22 where this counts 17. Printing "every
+        # scored pair" beside 1/17 invited the reader to conclude five pairs had
+        # been dropped without explanation. The tier is now named in the label.
+        tiers = summary.get("design", {}).get("tiers_in_primary_denominator") or []
+        tier_label = "+".join(str(t) for t in tiers) if tiers else "primary tier"
         questions = {
-            "all": "Of every scored pair, how many were surfaced?",
-            "reachable": "Of the pairs the instrument could see at all?",
-            "gate_passed": "Of the pairs that reached the shortlist? This alone measures the ranking.",
+            "all": f"Of every scored **{tier_label}**-tier pair, how many were surfaced?",
+            "reachable": "Of those the instrument could see at all?",
+            "gate_passed": "Of those that reached the shortlist? This alone measures the ranking.",
+        }
+        labels = {
+            "all": f"all ({tier_label})",
+            "reachable": "reachable",
+            "gate_passed": "gate_passed",
         }
         for name in ("all", "reachable", "gate_passed"):
             block = cascade.get(name, {})
-            lines.append(f"| `{name}` | {questions[name]} | {_interval(block.get('wilson'))} |")
+            lines.append(
+                f"| `{labels[name]}` | {questions[name]} | {_interval(block.get('wilson'))} |"
+            )
         lines.append("")
 
         # One cutoff cannot be compared across studies whose shortlists differ in
@@ -158,6 +171,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 at_k = block.get("at_k", {})
                 if not at_k:
                     continue
+                name = labels[name]
                 cells = []
                 for k in cutoffs:
                     w = at_k.get(f"recall@{k}", {}).get("wilson")

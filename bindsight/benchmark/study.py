@@ -405,7 +405,11 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     numerator and count, so a reader can reconstruct the conservative headline
     from the permissive one:
 
-    - **all** — every scored pair. The headline, and the most conservative.
+    - **all** — every scored pair *in the primary regulatory tier*
+      (``config.tiers``), not every scored pair in the panel. The headline, and
+      the most conservative of the three. The unrestricted figure is published
+      separately as the tier sensitivity analysis, and is a different number:
+      1/17 here against 3/22 across every tier.
     - **reachable** — pairs the instrument could have surfaced at all.
     - **gate_passed** — pairs that entered the shortlist. This, and only this, is
       a measure of the ranker.
