@@ -394,8 +394,8 @@
       "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/5/report",
       "@type": "prov:Activity",
       "name": "report",
-      "started_at": "2026-09-07T23:04:41+00:00",
-      "ended_at": "2026-09-07T23:04:41+00:00",
+      "started_at": "2026-09-07T23:15:22+00:00",
+      "ended_at": "2026-09-07T23:15:22+00:00",
       "status": "completed",
       "tool": {
         "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.report/0.2.2",
@@ -412,18 +412,18 @@
       "inputs": [],
       "outputs": [
         {
-          "@id": "urn:sha256:f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115",
+          "@id": "urn:sha256:9af214bce2a8d1fb3d37732c4aca958aa71228d3d2f77fb888bb913138ea42b3",
           "@type": "prov:Entity",
           "role": "report_html",
           "path": "runs\\join\\report.html",
-          "sha256": "f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115",
-          "bytes": 245678,
+          "sha256": "9af214bce2a8d1fb3d37732c4aca958aa71228d3d2f77fb888bb913138ea42b3",
+          "bytes": 262314,
           "media_type": "text/html"
         }
       ],
       "params": {
         "format": "html",
-        "include_binders": false
+        "include_binders": true
       },
       "cache_key": null,
       "cache_status": null,
@@ -434,8 +434,8 @@
       "@id": "urn:uuid:3ecd94df-4415-4737-83d3-8aa1b8d25bf5#stage/6/export",
       "@type": "prov:Activity",
       "name": "export",
-      "started_at": "2026-09-07T23:04:47+00:00",
-      "ended_at": "2026-09-07T23:04:48+00:00",
+      "started_at": "2026-09-07T23:17:55+00:00",
+      "ended_at": "2026-09-07T23:17:55+00:00",
       "status": "completed",
       "tool": {
         "@id": "https://github.com/mikhaeelatefrizk/bindsight/ns#tool/bindsight.export/0.2.2",
@@ -452,12 +452,12 @@
       "inputs": [],
       "outputs": [
         {
-          "@id": "urn:sha256:2a51ae1b659c578abfbdccef8c45aa0d2fef77a8106929adf5b8d6ccc516b1d8",
+          "@id": "urn:sha256:336985255abe4690a8b0da776a8ef7ac42665e4b204eb0e4ba437489beccdb6a",
           "@type": "prov:Entity",
           "role": "crate",
           "path": "runs\\join.crate.zip",
-          "sha256": "2a51ae1b659c578abfbdccef8c45aa0d2fef77a8106929adf5b8d6ccc516b1d8",
-          "bytes": 73952542,
+          "sha256": "336985255abe4690a8b0da776a8ef7ac42665e4b204eb0e4ba437489beccdb6a",
+          "bytes": 73955939,
           "media_type": null
         }
       ],

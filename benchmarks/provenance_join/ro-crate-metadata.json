@@ -697,14 +697,14 @@
       "@id": "report.html",
       "@type": "File",
       "name": "report.html",
-      "contentSize": 245678,
-      "sha256": "f5883ee62d9928bac35d877b9be1771ca0d122aac3293034794aa89e08b0a115"
+      "contentSize": 262314,
+      "sha256": "9af214bce2a8d1fb3d37732c4aca958aa71228d3d2f77fb888bb913138ea42b3"
     },
     {
       "@id": "run_manifest.jsonld",
       "@type": "File",
       "name": "run_manifest.jsonld",
-      "contentSize": 15587
+      "contentSize": 16901
     },
     {
       "@id": "structures/AF-O14638-F1-model_v6.cif",
