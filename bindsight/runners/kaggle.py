@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import builtins
 import contextlib
+import gzip
 import json
 import logging
 import time
@@ -168,9 +169,14 @@ class KaggleRunner:
         user = self.username or api.config_values.get("username", "user")
         slug = f"bindsight-{handle_id}"
 
-        # Embed every file in the spec dir (spec.json + target structure).
+        # Embed every file in the spec dir (spec.json + target structure),
+        # gzipped. Structures are mmCIF or PDB text and compress to roughly a
+        # fifth: a full-length receptor is about 550 KB of base64 raw and 120 KB
+        # compressed. Without this, that structure plus the working-tree wheel
+        # pushes the kernel script past its size ceiling, and the run cannot be
+        # submitted at all.
         payload = {
-            f.name: base64.b64encode(f.read_bytes()).decode("ascii")
+            f.name: base64.b64encode(gzip.compress(f.read_bytes(), 9)).decode("ascii")
             for f in sorted(spec_path.parent.iterdir())
             if f.is_file()
         }

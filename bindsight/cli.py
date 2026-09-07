@@ -222,6 +222,15 @@ def design(
     """
     from bindsight.cost import estimate_full_run
 
+    # A run directory carries the configuration it was produced under. Until now
+    # this command ignored it, so `params.design.n_trajectories: 10` in a config
+    # became the flag's default of 50 — five times the GPU cost the user asked
+    # for, printed in the cost panel as though it were their choice. An
+    # explicitly passed flag still wins.
+    designer, validator, trajectories = _design_defaults_from_run(
+        run_dir, designer=designer, validator=validator, trajectories=trajectories
+    )
+
     epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
     n_targets = _count_top_targets(epitopes_parquet)
 
@@ -1013,6 +1022,91 @@ def _apply_cheap_profile(cfg: RunConfig) -> None:
     )
 
 
+def _design_defaults_from_run(
+    run_dir: Path, *, designer: str, validator: str, trajectories: int
+) -> tuple[str, str, int]:
+    """Fill unset design options from the configuration the run was produced under.
+
+    ``bindsight design <run>`` takes a run directory, not a config, so it had no
+    way to see what the user configured and used its own flag defaults instead.
+    That silently overrode ``params.design.n_trajectories`` — a fivefold change
+    in GPU cost, reported in the cost panel as if it had been requested.
+
+    Click knows whether a value came from the command line or from a default, so
+    an explicit flag still wins and only unset options are filled in.
+
+    Args:
+        run_dir: the run directory, which holds the effective ``config.yaml``.
+        designer: the designer option as Click resolved it.
+        validator: the validator option as Click resolved it.
+        trajectories: the trajectory count as Click resolved it.
+
+    Returns:
+        The three values, with defaults replaced by the run's configuration
+        where one is available.
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return designer, validator, trajectories
+
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        design_params = params.get("design") or {}
+        validate_params = params.get("validate") or {}
+    except Exception as e:  # pragma: no cover - a malformed config is the user's
+        log.warning("could not read %s (%s); using command-line defaults", cfg_path, e)
+        return designer, validator, trajectories
+
+    ctx = click.get_current_context(silent=True)
+
+    def _from_default(name: str) -> bool:
+        if ctx is None:
+            return False
+        return ctx.get_parameter_source(name) is click.core.ParameterSource.DEFAULT
+
+    if _from_default("designer") and design_params.get("designer"):
+        designer = str(design_params["designer"])
+    if _from_default("validator") and validate_params.get("validator"):
+        validator = str(validate_params["validator"])
+    if _from_default("trajectories") and design_params.get("n_trajectories"):
+        trajectories = int(design_params["n_trajectories"])
+        log.info("using n_trajectories=%d from %s", trajectories, cfg_path)
+
+    return designer, validator, trajectories
+
+
+def _working_tree_wheel(backend: str, run_dir: Path) -> Path | None:
+    """Build a wheel of this checkout for a remote backend to install.
+
+    Remote runners pip-install bindsight before doing anything, and with no
+    wheel that means the repository's default branch — not the code you are
+    running. A designer benchmark launched to validate a fix once spent an hour
+    on a GPU executing the unfixed code for exactly this reason, and reported
+    success.
+
+    Failure is not fatal: the runner falls back to a git install and warns that
+    local changes will not run, so someone who installed bindsight from PyPI can
+    still submit a job.
+
+    Args:
+        backend: the runner name. Local backends install nothing, so they get None.
+        run_dir: the run directory; the wheel is built into ``_wheel`` inside it.
+
+    Returns:
+        Path to the built wheel, or None when it is unnecessary or unavailable.
+    """
+    if backend in {"mock", "local_docker"}:
+        return None
+    from bindsight.runners.source_wheel import build_working_tree_wheel
+
+    return build_working_tree_wheel(run_dir / "_wheel")
+
+
 def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
     """Return top-N targets (uniprot, structure_path, chain, residues, ranges) to design.
 
@@ -1228,7 +1322,12 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
         return 0
     design_dir = run_dir / "design"
     targets_dir = design_dir / "_targets"
-    runner = get_runner(backend, designer="rfdiff_mpnn", n_units_per_target=1)
+    runner = get_runner(
+        backend,
+        designer="rfdiff_mpnn",
+        n_units_per_target=1,
+        bindsight_wheel=_working_tree_wheel(backend, run_dir),
+    )
 
     metrics_lines: list[str] = []
     done = 0
@@ -1302,7 +1401,12 @@ def _launch_design(
     if not targets:
         return 0
     plugin = get_designer(designer)
-    runner = get_runner(backend, designer=designer, n_units_per_target=trajectories)
+    runner = get_runner(
+        backend,
+        designer=designer,
+        n_units_per_target=trajectories,
+        bindsight_wheel=_working_tree_wheel(backend, run_dir),
+    )
     design_dir = run_dir / "design"
     targets_dir = design_dir / "_targets"
     targets_dir.mkdir(parents=True, exist_ok=True)

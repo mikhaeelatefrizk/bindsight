@@ -187,7 +187,7 @@ def build_kernel_metadata(
 # The static kernel body. References the variables defined in the generated header
 # above; kept brace-safe (no .format) so the embedded shell/Python is verbatim.
 _BODY = r'''
-import base64, hashlib, json, os, pathlib, subprocess, sys, time
+import base64, gzip, hashlib, json, os, pathlib, subprocess, sys, time
 
 MR = "/opt/mamba"                       # MAMBA_ROOT_PREFIX (off the /kaggle/working output volume)
 MM = "/opt/micromamba/bin/micromamba"
@@ -389,7 +389,10 @@ print("patched", _bm, "-> precision=32")
 step("materialise spec + target structure (embedded base64)")
 spec_dir = pathlib.Path("/tmp/spec"); spec_dir.mkdir(parents=True, exist_ok=True)
 for name, b64 in PAYLOAD.items():
-    (spec_dir / name).write_bytes(base64.b64decode(b64))
+    # The payload is gzipped: structures are text and shrink to about a fifth,
+    # which is what keeps the script under Kaggle's size limit once a
+    # working-tree wheel is embedded alongside them.
+    (spec_dir / name).write_bytes(gzip.decompress(base64.b64decode(b64)))
     print("  wrote", name, (spec_dir / name).stat().st_size, "bytes")
 print("  spec:", (spec_dir / "spec.json").read_text()[:400])
 

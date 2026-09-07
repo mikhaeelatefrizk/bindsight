@@ -64,8 +64,13 @@ params:
     vital_tissue_max_tpm: 5.0
     gtex_require_measured: true
     min_mean_plddt: 0.0
-    use_uniprot_topology: false
-    require_extracellular_domain: false
+    # Restrict design to the extracellular domain. Without this the
+    # designer is handed the full-length chain, transmembrane and
+    # cytoplasmic regions included: a binder against an intracellular
+    # region is meaningless for a cell-surface target, and CA9's 459
+    # residues do not fit a 16 GB T4 alongside a binder anyway.
+    use_uniprot_topology: true
+    require_extracellular_domain: true
     enrich_top_k: 300
     # Filter to the surfaceome before the enrichment cut, not after. The other
     # order makes surface antigens compete against every gene in the genome for
