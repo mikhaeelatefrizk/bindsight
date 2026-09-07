@@ -8,6 +8,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — what running the documented chain on a real cohort exposed
+
+Driving `discover → design` end to end on the clear-cell kidney cohort found
+four defects the designer benchmark could not, because that benchmark uses a
+hand-sliced 142-residue target and its own runner script rather than the CLI.
+
+- **`bindsight design` never read the run's own configuration.** The subcommand
+  takes a run directory, not a config file, so it used its flag defaults and
+  silently replaced a configured `n_trajectories: 10` with 50 — five times the
+  GPU cost, printed in the cost panel as though the user had chosen it. It now
+  fills any option the user did not pass from the run's `config.yaml`; an
+  explicit flag still wins. The same run went from an estimated 5.00 GPU-hours
+  to 1.00.
+- **The CLI design path installed bindsight from git**, exactly as the benchmark
+  used to. A provenance run designed there would have produced colliding binder
+  ids under `main`'s code — the defect the run exists to disprove. Both CLI call
+  sites now ship a working-tree wheel; local backends skip the build.
+- **The kernel payload was embedded uncompressed.** A full-length receptor plus
+  that wheel came to 1,112,226 bytes against the 900,000-byte ceiling, so the
+  run could not be submitted at all. The size check refused before pushing
+  rather than failing opaquely at Kaggle, which is what it was added for.
+  Structures are mmCIF text and compress to roughly a fifth; the CA9 kernel is
+  now 677,871 bytes.
+- **Discovery handed the designer the full-length chain**, transmembrane and
+  cytoplasmic regions included. A binder against an intracellular region is
+  meaningless for a cell-surface target, and CA9's 459 residues do not fit a
+  16 GB T4 beside a binder. `examples/provenance_join.yaml` enables the topology
+  restriction, giving CA9 residues 38–414 and CD70 39–193.
+
+Two things the run confirmed rather than broke: the differential-expression
+cache hit on the second discovery pass, turning a 3.5-minute DESeq2 fit into 26
+seconds, and the shortlist reproduced the study exactly — 291 candidates, CA9
+first, CD70 second.
+
+`examples/provenance_join.yaml` is the committed configuration for this run. An
+earlier commit message claimed to add it at `runs/join/config.yaml`; that was
+wrong, because `runs/` is gitignored and the pipeline then overwrote the file
+with the effective config it writes into every run directory.
+
 ### Added — the designer benchmark, re-run under the corrected protocol
 
 - **20 de novo ERBB2 binders on a free Kaggle T4**, superseding the run whose
