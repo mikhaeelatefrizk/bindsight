@@ -1,0 +1,41 @@
+# The Hugging Face Space's Dockerfile, version-controlled here.
+#
+# It used to exist only in the Space repository, hand-maintained and invisible
+# to review, which is how the Space came to silently ignore .streamlit/config.toml
+# for its whole life: the file sits at this repository's root, the Space never
+# received it, and the theme and telemetry settings it declares therefore
+# applied to local runs only while the file's own comment named the Space.
+#
+# `.github/workflows/sync-hf-space.yml` uploads this file and that config to the
+# Space on every release, so the two can no longer drift.
+
+FROM python:3.13.5-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+COPY src/ ./src/
+# bindsight's _find_repo_root() walks up from the installed package looking
+# for examples/demo/config.yaml; on this Space the package is in
+# site-packages so the walk fails and the function falls back to Path.cwd()
+# == /app.  Copy the shipped demo cohort to /app/examples/ so the fallback
+# finds the data.
+COPY examples/ ./examples/
+# Streamlit reads its config from $CWD/.streamlit/config.toml, and WORKDIR is
+# /app, so this is what makes the navy theme and gatherUsageStats=false apply
+# to the hosted demo rather than only to local clones.
+COPY .streamlit/ ./.streamlit/
+
+RUN pip3 install -r requirements.txt
+
+EXPOSE 8501
+
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+ENTRYPOINT ["streamlit", "run", "src/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

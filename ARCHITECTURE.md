@@ -63,7 +63,7 @@ bindsight/
 ├── io/              # GDC + cBioPortal cohort clients; run-directory path helpers
 ├── deg/             # pydeseq2 wrapper
 ├── targets/         # Open Targets GraphQL client + ENSG→UniProt fallback + GTEx safety
-├── surfaceome/      # SURFY filter + SURFACE-Bind client
+├── surfaceome/      # SURFY filter + the UniProt cell-membrane extension
 ├── structures/      # AlphaFoldDB fetch (RCSB/PDBe planned); pLDDT (disorder) + UniProt topology
 ├── epitopes/        # SURFACE-Bind site lookup; fpocket fallback (planned)
 ├── design/          # Designer plugin interface (RFdiffusion+MPNN, BindCraft, BoltzGen);
@@ -72,7 +72,8 @@ bindsight/
 ├── validate/        # Boltz-2 (default), Chai-1r, AF2-IG (opt-in)
 ├── rank/            # Multi-objective scoring (incl. developability component)
 ├── pipelines/       # End-to-end orchestrators (discover.py) + honesty caveats
-├── benchmark/       # Rediscovery + designer-benchmark scoring harness
+├── benchmark/       # Rediscovery study: pre-registered panel, four-way outcome
+│                    #   classification, null models + intervals, designer bench
 ├── provenance/      # Pydantic schema for run_manifest.jsonld + provenance fragments
 ├── export/          # RO-Crate emitter (FAIR bundle for Zenodo)
 ├── report/          # HTML report template + Streamlit app (+ Limitations section)
@@ -116,8 +117,8 @@ yet and nothing in the codebase depends on it.
 | Sequences | FASTA | Universal |
 | Structures | mmCIF (preferred), PDB (fallback) | mmCIF handles >9999 residues and modern naming |
 | Per-stage params | YAML | Human-editable |
-| Provenance | PROV-O JSON-LD | W3C standard, plays with RO-Crate |
-| Final bundle | RO-Crate zip | FAIR, Zenodo-friendly |
+| Provenance | PROV-O JSON-LD | Run | W3C standard, plays with RO-Crate |
+| Final bundle | RO-Crate zip | Run | FAIR, Zenodo-friendly |
 
 ---
 
@@ -214,85 +215,95 @@ Final RO-Crate bundles the manifest + all artifacts + a `software.bib` for citat
 - `--dry-run` shows what would run
 - Reviewers in academic bioinformatics already know it
 
-Snakefile structure:
+The real DAG, as `Snakefile` declares it. Seven rules, plus `all`:
 
 ```
-rule discover:
-    input: counts, design
-    output: targets.parquet, epitopes.parquet, manifest.jsonld
-    conda: "envs/discover.yaml"
-    script: "scripts/discover.py"
+rule deg:                                   # counts + design  →  deg/results.parquet
+    conda:  envs/discover.yaml
+    script: scripts/run_deg.py
 
-rule design:
-    input: epitopes.parquet
-    output: results.tar.gz, manifest.jsonld
-    params: backend=config["backend"], designer=config["designer"]
-    script: "scripts/design.py"     # delegates to runners/
+rule discover:                              # deg table  →  candidates, epitopes, taxonomy
+    conda:  envs/discover.yaml
+    script: scripts/run_discover.py
 
-rule validate:
-    input: results.tar.gz
-    output: validated.parquet
-    script: "scripts/validate.py"
+rule design:                                # epitopes  →  design/results.tar.gz
+    params: backend                         # dispatched to the selected runner
+    script: scripts/run_design.py
 
-rule rank:
-    input: validated.parquet, targets.parquet
-    output: ranking.parquet
-    script: "scripts/rank.py"
+rule validate:                              # results.tar.gz  →  validated.parquet
+    params: backend
+    script: scripts/run_validate.py
 
-rule report:
-    input: ranking.parquet, manifest.jsonld
-    output: "report.html"
-    script: "scripts/report.py"
+rule rank:                                  # validated + candidates  →  ranking.parquet
+    script: scripts/run_rank.py
 
-rule export_crate:
-    input: report, manifest.jsonld, ranking.parquet
-    output: "{run_id}.crate.zip"
-    script: "scripts/export_crate.py"
+rule manifest:                              # five fragments  →  run_manifest.jsonld
+    script: scripts/assemble_manifest.py
+
+rule report:                                # ranking + manifest  →  report.html
+    script: scripts/run_report.py
 ```
+
+Every stage rule also emits a `manifest_fragment.jsonld`, and `manifest`
+stitches the five of them together. That rule runs **before** `report`, not
+after: `report/html.py` reads `run_manifest.jsonld` to render its provenance
+table, so while the manifest was assembled last, every Snakemake-produced
+report shipped with an empty Provenance section. `report` now takes the
+manifest as an input and appends its own record after rendering.
+
+Only `deg` and `discover` declare `conda:`. The design half runs wherever its
+backend sends it, so pinning a local environment for those rules would describe
+something that is not where the work happens.
 
 The Click CLI and the Snakefile are two front-ends over the same
 ``bindsight.*`` pipeline functions: the CLI calls them directly, and each
 Snakemake rule's ``scripts/`` wrapper calls the same functions.
 
-They are **not** interchangeable in every respect, and this document previously
-claimed they produced identical artifacts. They do not: the two front-ends
-differ in what they write outside the core stage outputs. Treat the CLI as the
-reference and the Snakemake path as a DAG-driven equivalent for the stages it
-covers.
-
-The rule sketch below is illustrative of the DAG's shape. It is not the real
-Snakefile — read `Snakefile` for that.
+They are **not** interchangeable, and this document previously claimed they
+produced identical artifacts. The concrete difference is that **there is no
+`export_crate` rule.** `bindsight export`, which writes the RO-Crate, exists
+only on the CLI, so the full Snakemake DAG terminates at `report.html` and
+produces no crate. Treat the CLI as the reference and the Snakemake path as a
+DAG-driven equivalent for the stages it covers.
 
 ```bash
-bindsight discover   ≡  snakemake --until discover
-bindsight design     ≡  snakemake --until design
-bindsight run <cfg>  ≡  snakemake (full DAG)
+bindsight discover   ≈  snakemake --until discover     # --until also runs deg
+bindsight design     ≈  snakemake --until design
+bindsight run <cfg>  ≈  snakemake                      # full DAG, minus the crate
 ```
+
+The full DAG stops at `report.html`. To get a crate, run `bindsight export`
+against the same output directory afterwards.
 
 ---
 
-## 7. Key OSS components (verified)
+## 7. Key OSS components
 
-| Stage | Tool | License | GPU | Notes |
-|---|---|---|---|---|
-| DE analysis | [pydeseq2](https://github.com/owkin/PyDESeq2) v0.5.4 | MIT | No | scverse-maintained. Not bit-equivalent to R DESeq2 — documented |
-| Target evidence | [Open Targets Platform](https://platform-docs.opentargets.org/) GraphQL | CC0 / Apache | No | Rate-limited but generous |
-| Tissue baselines | [GTEx](https://gtexportal.org/) | open | No | Specificity filtering |
-| Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY-SA 3.0 | No | **No client implemented.** Listed as intended, not shipped |
-| Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | 2,886 surface proteins |
-| Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | 2,800+ proteins, sites + seeds |
-| Structures | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) | CC-BY 4.0 | No | mmCIF by UniProt. RCSB/PDBe clients are planned, **not implemented** |
-| Epitope fallback (planned) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | When SURFACE-Bind has no entry |
-| Designer (default) | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) + [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | BSD-3 / MIT | T4 OK (~16GB) | Free-Colab-friendly baseline |
-| Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32GB) | Higher reported success rate |
-| Designer (newest) | [BoltzGen](https://github.com/HannesStark/boltzgen) | MIT (code+weights) | Yes | Nov 2025 release; bet on it for v0.2 |
-| Validator (default) | [Boltz-2](https://github.com/jwohlwend/boltz) | MIT (code+weights) | Yes | Structure + affinity, has CLI |
-| Validator (alt) | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2 | Yes | Independent confirmation |
-| Validator (gold, opt-in) | AF2-IG via [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | AF2 weights non-commercial | Yes | Behind license-banner flag |
-| MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | BYO MMseqs2 fallback |
-| Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | DAG, conda envs, --report |
-| Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | |
-| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Embed in HTML + Streamlit |
+This heading used to read "(verified)", over a table whose own rows say
+**not implemented**. Licences and versions here are checked; the GPU column
+is what the tool requires, not what this project has run it on. The
+**Status** column says which is which.
+
+| Stage | Tool | License | GPU | Status | Notes |
+|---|---|---|---|---|---|
+| DE analysis | [pydeseq2](https://github.com/owkin/PyDESeq2) v0.5.4 | MIT | No | Run | scverse-maintained. Not bit-equivalent to R DESeq2 — documented |
+| Target evidence | [Open Targets Platform](https://platform-docs.opentargets.org/) GraphQL | CC0 / Apache | No | Run | Rate-limited but generous |
+| Tissue baselines | [GTEx](https://gtexportal.org/) | open | No | Run | Specificity filtering |
+| Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY-SA 3.0 | No | Planned | **No client implemented.** Listed as intended, not shipped |
+| Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | Run | 2,886 accessions. The shipped default unions this with a UniProt cell-membrane extension, 4,801 in total, because SURFY omits CA9 and STEAP1 |
+| Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | Run | 2,800+ proteins, sites + seeds |
+| Structures | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) | CC-BY 4.0 | No | Run | mmCIF by UniProt. RCSB/PDBe clients are planned, **not implemented** |
+| Epitope fallback (planned) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | **Not implemented** | Intended for proteins SURFACE-Bind does not cover. No code exists |
+| Designer (default) | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) + [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | BSD-3 / MIT | T4, ~16 GB | Run on Kaggle T4 | The verified design path. The committed benchmark used a since-corrected ProteinMPNN protocol; see `benchmarks/designer_benchmark/RESULTS.md` for which run its numbers come from |
+| Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32 GB) full; T4 for a reduced target | Prepared | Fits a free T4 only below roughly 250 total residues |
+| Designer (newest) | [BoltzGen](https://github.com/HannesStark/boltzgen) | MIT (code+weights) | Yes | Prepared, not executed | The command this project built, `boltzgen design`, does not exist upstream, so this path had never run. Rewritten to emit a design-spec YAML and call `boltzgen run` |
+| Validator (default) | [Boltz-2](https://github.com/jwohlwend/boltz) | MIT (code+weights) | Yes | Run on Kaggle T4 | Structure + affinity, has CLI |
+| Validator (alt) | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2 | **Ampere or newer** | Cannot run on any free GPU | Needs bfloat16, which Turing lacks. The only commercially usable validator, so worth renting an hour for |
+| Validator (gold, opt-in) | AF2-IG via [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | AF2 weights non-commercial | Yes | Prepared | Behind license-banner flag |
+| MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | Run | BYO MMseqs2 fallback |
+| Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | Run | DAG, conda envs, --report |
+| Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | Run | |
+| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Run | Embed in HTML + Streamlit |
 
 See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guidance.
 
@@ -304,11 +315,11 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 |---|---|---|---|
 | [ProteinDJ](https://www.biorxiv.org/content/10.1101/2025.09.24.678028v2) | Target structure + epitope | Binders (HPC) | We start upstream — could hand off to ProteinDJ |
 | [Ovo](https://www.biorxiv.org/content/10.1101/2025.11.27.691041v1) | Various | General OSS framework | Opinionated narrow vertical, deeply pinned |
-| [BindCraft](https://github.com/martinpacesa/BindCraft) | Target + hotspots | Binder PDBs | One designer plugin among several |
-| [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | Target + interface | Filtered designs | AF2-IG step is one opt-in validator |
+| Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32 GB) full; T4 for a reduced target | Prepared | Fits a free T4 only below roughly 250 total residues |
+| [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | Target + interface | Filtered designs | Prepared | AF2-IG step is one opt-in validator |
 | [Tamarind.bio](https://www.tamarind.bio/) | Target | Binders (SaaS) | Open, reproducible, license-defensible |
 | [nf-binder-design](https://github.com/Australian-Protein-Design-Initiative/nf-binder-design) | Target | Binders (Nextflow) | Targets non-HPC users + adds genomics front-end |
-| [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | UniProt ID | Sites + seeds | Data dependency, not competitor |
+| [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | UniProt ID | Sites + seeds | Run | Data dependency, not competitor |
 | **`bindsight`** | **RNA-seq counts** | **Ranked binders + provenance** | **Only one that starts at counts** |
 
 ---
@@ -326,12 +337,12 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 ## 10. Risks (honest)
 
 1. **Licensing landmines** — see [LICENSING.md](LICENSING.md). Defaults to MIT/Apache/BSD/CC-BY components.
-2. **GPU offload latency** — Colab sessions die. Mitigation: per-trajectory checkpointing, idempotent rerun keys.
+2. **GPU offload latency** — free sessions die mid-run. Mitigation: content-addressed design caching keyed on the target, its structure's contents, the epitope, the design ranges, the trajectory count, the seed, the designer commits and the backend, so a re-issued command resumes rather than repeats. Kaggle is the verified backend; Colab is an interactive on-ramp, not a reproducibility path, because Google's API does not permit launching a free-tier notebook from a CLI.
 3. **Model output instability across versions** — pin commit SHA + weights hash + CUDA in containers; document that exact reproducibility requires the same digest.
 4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: the `--cheap` profile, **shipped**: RFdiffusion+ProteinMPNN, `n_trajectories=10`, costed against a T4, and an ESM-2 pre-screen that keeps the 5 most representative designs per target before validation (`bindsight/design/prescreen.py`, applied inside `runners/job_exec.run_job` between design and validation — the only point where dropping a design saves GPU). On the demo config against Modal this takes the `--dry-run` estimate from ~$27.89 (A100) to ~$4.26 (T4). The pre-screen is off unless `params.design.prescreen_top_k` is set, degrades to validating everything if the optional `embed` extra is absent, and records what it screened out.
-5. **SURFACE-Bind coverage gaps** — ~2,800 ≠ all surfaceome (2,886 is the SURFY list, a different inventory). Mitigation: graceful drop with `no_surfacebind_entry` tag; a planned fpocket fallback.
+5. **SURFACE-Bind coverage gaps** — roughly 2,800 proteins against a shipped surfaceome of 4,801 (SURFY's 2,886 unioned with a UniProt cell-membrane extension). Extending the surfaceome widened this gap rather than closing it: more proteins are now reachable by expression than have a known targetable site. Mitigation: graceful drop tagged `no_surfacebind_entry`, which is recorded rather than silent. The fpocket fallback that would close it is not implemented.
 6. **Designer choice will age.** Mitigation: plugin interface; ship RFdiff+MPNN default, BindCraft and BoltzGen as flags; benchmark all three in the paper.
-7. **Disease specificity is hard.** "Up in cancer, low in vital tissue" predictably finds known antigens. *This is a feature for v0.1* (rediscovery validation). Real novelty in v1.0 layers scRNA-seq + co-expression + immunopeptidomics.
+7. **Disease specificity is hard, and the signal is weaker than this section used to claim.** "Up in cancer, low in vital tissue" does *not* predictably find known antigens. Measured against a pre-registered panel over fifteen unstratified TCGA projects, recall at rank 20 is 1 of 17 on approved-agent antigens (95% CI 0.01 to 0.27) and 0 of 8 over independent antigens. Thirteen of seventeen are not significantly over-expressed in a bulk tumour-versus-normal contrast at all. Their agents are licensed, so the antigens are real; the limit is in the signal, not the ranking. The earlier claim survived because the headline cohort was stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes that classifier is built from. Layering scRNA-seq, co-expression and immunopeptidomics is the plausible route to a stronger signal, and none of it is implemented.
 8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + Zenodo + GitHub stars is a real moat for academic users.
 9. **PyDESeq2 ≠ DESeq2 numerically.** Documented in `bindsight/deg/pydeseq2_runner.py`. There is no R bridge: users who need exact DESeq2/edgeR numbers must run those tools themselves and feed the resulting DEG table in.
 10. **R-strong dev learning Python+Snakemake.** The DEG step is pure Python (pydeseq2); Snakemake's R rule support is unused.

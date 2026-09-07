@@ -19,7 +19,7 @@ nor the GPU, so those stay operator-declared and are labelled as such in both
 artifacts.
 
     python benchmarks/designer_benchmark/score_run.py RUN.tar.gz \
-        --designer rfdiff_mpnn --gpu "Tesla P100-16GB (Kaggle free)" \
+        --designer rfdiff_mpnn --gpu "Tesla T4-16GB (Kaggle free)" \
         --target "ERBB2 domain IV (P04626, trastuzumab epitope)" \
         --out benchmarks/designer_benchmark
 """
@@ -114,8 +114,11 @@ def main() -> None:
     )
     ap.add_argument(
         "--gpu",
-        default="Tesla P100-16GB (Kaggle free)",
-        help="GPU the run used. Operator-declared: the results tarball does not record it.",
+        default="Tesla T4-16GB (Kaggle free)",
+        help="GPU the run used. Operator-declared: the results tarball does not "
+        "record it. The default matches the card the kernel now pins "
+        "(kaggle_kernel.KAGGLE_ACCELERATOR). Pass --gpu explicitly when re-scoring "
+        "an older tarball, which will have run on Kaggle's default P100.",
     )
     ap.add_argument("--target", default="ERBB2 domain IV (P04626, trastuzumab epitope)")
     ap.add_argument("--n-trajectories", type=int, default=2)

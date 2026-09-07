@@ -6,10 +6,16 @@ committed result in `RESULTS.md` — real *de novo* binders against ERBB2, at **
 local GPU. See `results.json` / `binders/` for the actual run.
 
 ## The reality of "free GPU" (why this is a split-environment build)
-Kaggle's free accelerator is a **Tesla P100 (16 GB, compute capability sm_60)**, and its
-preinstalled stack (Python 3.12 / PyTorch 2.10) supports **neither** the P100 chip **nor**
+Kaggle's *default* accelerator is a **Tesla P100 (16 GB, compute capability sm_60)**,
+and current PyTorch ships no Pascal kernels, so that card cannot run the stack at all.
+The failure mode is the expensive kind: `torch.cuda.is_available()` returns `True` and
+the first real kernel launch dies, hours into a run. The kernel therefore pins
+`machine_shape` to a **Tesla T4 (16 GB, sm_75)** and reads compute capability up front,
+exiting immediately if it is below 7.5.
+
+Even on a T4, Kaggle's preinstalled stack (Python 3.12 / PyTorch 2.10) does not satisfy
 RFdiffusion's legacy requirements. So the kernel `bindsight.runners.kaggle_kernel` builds
-**two micromamba environments** on the P100 and runs the one executor
+**two micromamba environments** and runs the one executor
 (`bindsight.runners.job_exec`) across them:
 
 - **`se3`** — Python 3.9 / torch 1.12.1+cu113 (+ cudatoolkit 11.3 for dgl): RFdiffusion +
@@ -53,7 +59,7 @@ python benchmarks/run_designer_benchmark.py --backend kaggle \
 ```
 This pushes a self-contained kernel (spec + structure embedded as base64 — no Kaggle
 dataset needed), builds the two environments, runs RFdiffusion → ProteinMPNN → Boltz-2 on
-the P100, polls to completion (~20 min for 2 trajectories; ~60–70 min for 10), and pulls
+the T4, polls to completion (~20 min for 2 trajectories; ~60–70 min for 10), and pulls
 back `<id>.tar.gz`. **Use `rfdiff_mpnn` only** — it is the one designer that fits 16 GB
 (see the VRAM table below).
 
@@ -71,10 +77,12 @@ the run's `design/` directory — the designed binder PDBs and FASTAs plus the p
   **success@0.65** is the standard fraction of designs with ipTM ≥ 0.65.
 - **Affinity is N/A** for protein binders: Boltz-2 affinity prediction is *ligand-only*,
   so `affinity_pred_value` is blank. ipTM + plDDT are the protein–protein metrics.
-- Boltz-2 runs in **fp32** here because the P100/T4 lack bfloat16 (Boltz-2's default).
+- Boltz-2 runs in **fp32** here because Turing lacks bfloat16, which is Boltz-2's
+  default. This is also why Chai-1r cannot run on any free GPU: its bfloat16
+  assumption is spread through its modules rather than behind one argument.
 
 ## GPU memory — what fits a FREE GPU (read before picking designers)
-The free Kaggle GPU is a single **P100/T4 (16 GB)**. Per the VRAM table in
+The Kaggle GPU this kernel requests is a single **T4 (16 GB)**. Per the VRAM table in
 `DESIGNER_BENCHMARK.md`, only one designer fits:
 
 | designer | min VRAM | fits a free 16 GB GPU? |

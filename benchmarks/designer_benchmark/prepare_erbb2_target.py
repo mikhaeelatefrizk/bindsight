@@ -8,7 +8,7 @@ target in the diffusion, so designing against the whole protein would not fit a 
 16 GB GPU. We therefore design against **extracellular subdomain IV** (~residues
 511–652) — the clinically validated epitope bound by trastuzumab (Herceptin) — which
 is both the most therapeutically relevant ERBB2 surface and small enough to run on a
-free Tesla P100.
+free 16 GB Tesla T4.
 
 This fetches the current AlphaFold model for P04626, slices chain A to the domain-IV
 window, and writes ``data/target_structures/P04626.pdb`` (the file the designer

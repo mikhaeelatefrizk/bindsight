@@ -2,12 +2,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Builder for the self-contained Kaggle kernel that runs the design+validation job.
 
-Kaggle's free GPU is a **Tesla P100 (sm_60)** whose preinstalled stack
-(py3.12 / torch 2.10+cu128) supports neither the P100 chip nor RFdiffusion's
+Kaggle's *default* free GPU is a **Tesla P100 (sm_60)**, which current PyTorch
+cannot drive at all: it ships no Pascal kernels, so CUDA reports available and
+the first real launch dies hours into a run. This kernel therefore pins
+``machine_shape`` to a **Tesla T4 (sm_75)** and checks compute capability before
+doing any work.
+
+Even on a T4, the preinstalled stack
+(py3.12 / torch 2.10+cu128) supports neither that image's CUDA nor RFdiffusion's
 legacy requirements. RFdiffusion (the only designer that fits 16 GB) needs an old
 py3.9 / torch-1.12 environment, and that environment is mutually exclusive with
 the modern Boltz-2 validator (torch ≥2.2 / py ≥3.10). So the kernel builds **two
-micromamba environments** on the P100 and runs the existing executor
+micromamba environments** on the T4 and runs the existing executor
 (:mod:`bindsight.runners.job_exec`) across them:
 
 - ``se3``  (py3.9, torch 1.12.1+cu113 — supports sm_60): RFdiffusion + ProteinMPNN.
@@ -122,6 +128,16 @@ KAGGLE_ACCELERATOR = "NvidiaTeslaT4"
 #: P100 or older and cannot run the pinned stack; the kernel fails fast rather
 #: than burning quota to discover it mid-run.
 MIN_COMPUTE_CAPABILITY = (7, 5)
+
+#: The same accelerator under the name :mod:`bindsight.cost` knows it by.
+#:
+#: These two constants have to agree. When the accelerator was pinned to a T4,
+#: ``KaggleRunner`` kept defaulting to ``"P100"``, so every Kaggle runtime and
+#: cost estimate was computed against a card the run would never be given —
+#: a 3.0x slowdown factor applied where 4.0x was correct, quietly under-quoting
+#: every estimate by a quarter. Deriving the default from here removes the
+#: opportunity to make that mistake twice.
+KAGGLE_COST_GPU = "T4"
 
 
 def build_kernel_metadata(

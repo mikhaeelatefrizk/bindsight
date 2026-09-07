@@ -1,7 +1,12 @@
-# Web-app deploy requirements for hosted Streamlit runtimes.
-# Mirrors `pip install -e ".[discover,report]"` so the hosted deployment has
-# everything the web demo needs. Local installs should prefer the editable
-# install via pyproject.toml.
+# A flat mirror of `pip install -e ".[discover,report]"`, for Streamlit hosts
+# and other runtimes that install from a requirements file rather than from
+# pyproject extras. Local installs should prefer the editable install.
+#
+# This file is a second copy of a dependency list, which is a thing that drifts:
+# it was already missing openpyxl, without which the SURFY surfaceome .xlsx
+# cannot be parsed and discovery yields nothing. So it is no longer maintained
+# by hand — `tests/test_requirements_mirror.py` fails if it stops matching the
+# extras exactly, in either direction.
 #
 # Bounds match pyproject.toml. For an exact, re-derivable environment (the one
 # the Docker image builds), install with the pinned stack instead:
@@ -17,10 +22,9 @@ pyarrow>=16,<25
 numpy>=1.26,<3
 scipy>=1.11,<2
 biopython>=1.83,<2
-gql[requests]>=3.5
+openpyxl>=3.1
 
 # ---- report ----
 matplotlib>=3.8,<4
-seaborn>=0.13
 streamlit>=1.60,<2
 py3Dmol>=2.0

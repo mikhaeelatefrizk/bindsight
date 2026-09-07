@@ -552,3 +552,45 @@ class TestDegCache:
 
         inputs = self._inputs("aa", "bb")
         assert _deg_cache_key(inputs, {}) == _deg_cache_key(list(reversed(inputs)), {})
+
+
+class TestKaggleHardwareIsDescribedConsistently:
+    """The pinned accelerator and the costed one must be the same card.
+
+    Pinning ``machine_shape`` to a T4 fixed the real problem — Kaggle's default
+    P100 cannot run the current stack — but left ``KaggleRunner`` defaulting to
+    ``gpu_type="P100"``. Nothing failed. Estimates simply applied the P100's
+    3.0x slowdown factor where the T4's 4.0x was correct, under-quoting every
+    Kaggle runtime by a quarter, on hardware no run would ever be given.
+    """
+
+    def test_the_runner_costs_the_card_the_kernel_pins(self) -> None:
+        from bindsight.runners.kaggle import KaggleRunner
+        from bindsight.runners.kaggle_kernel import (
+            KAGGLE_ACCELERATOR,
+            KAGGLE_COST_GPU,
+        )
+
+        # "NvidiaTeslaT4" and "T4" are the same card under two vocabularies:
+        # Kaggle's metadata name and the cost table's key.
+        assert KAGGLE_COST_GPU.lower() in KAGGLE_ACCELERATOR.lower().replace("nvidiatesla", "")
+        assert KaggleRunner().gpu_type == KAGGLE_COST_GPU
+
+    def test_the_costed_card_is_priced_and_has_a_slowdown_factor(self) -> None:
+        """An unknown GPU key would fall back to a default and quote silently wrong."""
+        from bindsight.cost import _GPU_SLOWDOWN, GPU_PRICE_USD_PER_HOUR
+        from bindsight.runners.kaggle_kernel import KAGGLE_COST_GPU
+
+        assert ("kaggle", KAGGLE_COST_GPU) in GPU_PRICE_USD_PER_HOUR
+        assert KAGGLE_COST_GPU in _GPU_SLOWDOWN
+
+    def test_the_pinned_card_clears_the_compute_capability_gate(self) -> None:
+        """A pin below the gate would make every kernel exit on its own check."""
+        from bindsight.runners.kaggle_kernel import (
+            KAGGLE_ACCELERATOR,
+            MIN_COMPUTE_CAPABILITY,
+        )
+
+        # Turing (T4) is 7.5; Pascal (P100) is 6.0 and must not satisfy the gate.
+        assert MIN_COMPUTE_CAPABILITY >= (7, 5)
+        assert "P100" not in KAGGLE_ACCELERATOR

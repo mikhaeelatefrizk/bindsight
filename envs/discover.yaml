@@ -24,7 +24,6 @@ dependencies:
   - biopython>=1.83,<2
   # Provenance / validation
   - pydantic>=2.6
-  - pydantic-settings>=2.2
   # HTTP / GraphQL
   - requests>=2.32
   - urllib3>=2.0
@@ -33,5 +32,4 @@ dependencies:
   - snakemake-minimal>=8.0
   # Pip-only dependencies
   - pip:
-      - gql[requests]>=3.5
       - -e ..

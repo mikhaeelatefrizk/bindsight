@@ -1,12 +1,26 @@
 name: Sync Hugging Face Space
 
-# Push this repository's Space landing page to the Hugging Face Space and
+# Push this repository's Space assets to the Hugging Face Space and
 # factory-rebuild it, so the mirror can never drift from `main` again.
 #
 # The Space's own requirements.txt installs
 # `bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@main`,
-# so a rebuild is what makes it serve current code; its README.md is a separate
-# file in the Space repo and is what this workflow replaces.
+# so a rebuild is what makes it serve current code. Three things do NOT arrive
+# that way, because they are not part of the installed package, and each is
+# uploaded here instead:
+#
+#   README.md              the Space landing page
+#   Dockerfile             the Space build, previously hand-maintained in the
+#                          Space repo and invisible to review
+#   .streamlit/config.toml the theme and `gatherUsageStats = false`
+#
+# The last two are why this list grew. The config sits at this repository's
+# root, the Space's Dockerfile copied only requirements.txt, src/ and examples/,
+# and Streamlit reads its config from the working directory — so for the Space's
+# whole life the navy theme and the telemetry opt-out applied to local clones
+# only, while the config file's own comment named the Space as covered. The
+# Dockerfile is now version-controlled at .huggingface/Dockerfile and copies the
+# config, which is what makes that claim true.
 #
 # Dormant until an `HF_TOKEN` secret exists (Settings → Secrets and variables →
 # Actions → New repository secret; the token needs *write* access to
@@ -35,7 +49,7 @@ env:
 
 jobs:
   sync:
-    name: Push landing page + rebuild
+    name: Push Space assets + rebuild
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +75,7 @@ jobs:
         if: steps.gate.outputs.has_token == 'true'
         run: python -m pip install --quiet "huggingface_hub>=0.25,<1"
 
-      - name: Upload the Space landing page
+      - name: Upload the Space assets
         if: steps.gate.outputs.has_token == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -73,14 +87,24 @@ jobs:
 
           api = HfApi(token=os.environ["HF_TOKEN"])
           space = os.environ["SPACE_ID"]
-          api.upload_file(
-              path_or_fileobj=".huggingface/README.md",
-              path_in_repo="README.md",
-              repo_id=space,
-              repo_type="space",
-              commit_message="Sync landing page from the bindsight repository",
-          )
-          print(f"uploaded README.md to {space}")
+
+          # Order matters. The Dockerfile's `COPY .streamlit/` fails the build if
+          # that directory is absent, so the config has to land first: on the very
+          # first run of this workflow the Space has no .streamlit/ at all.
+          uploads = [
+              (".streamlit/config.toml", ".streamlit/config.toml"),
+              (".huggingface/Dockerfile", "Dockerfile"),
+              (".huggingface/README.md", "README.md"),
+          ]
+          for local, remote in uploads:
+              api.upload_file(
+                  path_or_fileobj=local,
+                  path_in_repo=remote,
+                  repo_id=space,
+                  repo_type="space",
+                  commit_message=f"Sync {remote} from the bindsight repository",
+              )
+              print(f"uploaded {remote} to {space}")
           PY
 
       - name: Factory-rebuild the Space

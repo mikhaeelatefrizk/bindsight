@@ -78,7 +78,7 @@ class KaggleRunner:
         self,
         *,
         designer: str = "rfdiff_mpnn",
-        gpu_type: str = "P100",
+        gpu_type: str = kaggle_kernel.KAGGLE_COST_GPU,
         username: str | None = None,
         poll_interval_s: int = 30,
         bindsight_ref: str | None = None,

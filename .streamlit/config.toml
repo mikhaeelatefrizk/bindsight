@@ -1,8 +1,16 @@
 # Streamlit configuration for the bindsight web app.
 #
-# Read automatically by `streamlit run` when the working directory is the repo
-# root — which covers `bindsight ui` run from a clone, the Hugging Face Space
-# (the hosted deployment), and any other Streamlit host.
+# Read automatically by `streamlit run` when the working directory contains it,
+# which covers `bindsight ui` from a clone and any Streamlit host launched from
+# the repository root.
+#
+# It did NOT cover the hosted Hugging Face Space, despite this comment having
+# claimed it for the Space's whole life. The Space is a separate repository
+# whose Dockerfile copied only requirements.txt, src/ and examples/, so the file
+# never arrived and neither setting below applied to the hosted demo. That
+# Dockerfile is now version-controlled at .huggingface/Dockerfile, copies this
+# file into the image's working directory, and is uploaded by
+# .github/workflows/sync-hf-space.yml — so the claim holds on the next release.
 #
 # Why this file exists:
 #

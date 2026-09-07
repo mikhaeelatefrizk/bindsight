@@ -66,7 +66,7 @@ def main() -> None:
         default=None,
         help="restrict to these target gene symbols (e.g. --targets ERBB2). "
         "Default: all DEFAULT_TARGETS. Only those needing a real GPU + structure fit a "
-        "free 16 GB P100 when sliced (e.g. ERBB2 domain IV).",
+        "free 16 GB T4 when sliced (e.g. ERBB2 domain IV).",
     )
     parser.add_argument(
         "--out", type=Path, default=REPO_ROOT / "benchmarks" / "designer_benchmark" / "run"
