@@ -56,7 +56,8 @@ def export_ro_crate(
     out = Path(out_path) if out_path else run.parent / f"{run.name}.crate.zip"
 
     files = _collect_files(run)
-    metadata = _build_metadata(run, files)
+    external = _external_inputs(run)
+    metadata = _build_metadata(run, files, external)
     bibtex = _build_software_bib(run, files)
 
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -69,8 +70,16 @@ def export_ro_crate(
         for f in files:
             arcname = f.relative_to(run).as_posix()
             zf.write(f, arcname)
+        # The cohort the run consumed, which lives outside the run directory.
+        for arcname, src in external:
+            zf.write(src, arcname)
 
-    LOG.info("wrote RO-Crate: %s (%d files)", out, len(files))
+    LOG.info(
+        "wrote RO-Crate: %s (%d run artifacts, %d carried-in inputs)",
+        out,
+        len(files),
+        len(external),
+    )
     return out
 
 
@@ -150,6 +159,95 @@ def _collect_files(run: Path) -> list[Path]:
     return files
 
 
+def _resolve_recorded(path_str: str, run: Path) -> Path | None:
+    """Resolve a manifest-recorded path to a file on this machine.
+
+    Recorded paths are relative to the working directory the run was launched
+    from, which is typically the repository root rather than the run directory,
+    and they are written in the launching platform's separator style. So try the
+    run directory first, then the working directory, then each ancestor. The run
+    comes first because a run-relative name like ``counts.tsv`` must not be
+    satisfied by an unrelated file of the same name sitting in the caller's
+    working directory.
+
+    Args:
+        path_str: the path as the manifest recorded it.
+        run: the run directory, used as the base for the upward search.
+
+    Returns:
+        The resolved file, or None if nothing matching exists.
+    """
+    raw = Path(PurePosixPath(path_str.replace("\\", "/")))
+    if raw.is_absolute():
+        return raw if raw.is_file() else None
+    for base in (run, Path.cwd(), *run.parents):
+        candidate = base / raw
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _external_inputs(run: Path) -> list[tuple[str, Path]]:
+    """Cohort inputs the run consumed from outside its own directory.
+
+    The allowlist above names ``counts.tsv.gz`` and ``design.tsv`` because they
+    are the only artifacts carrying TCGA case and sample barcodes — without them
+    a crate cannot answer which patients a binder came from. But naming them was
+    not enough: a run configured with ``inputs.counts`` pointing anywhere else
+    keeps them outside the run directory, so the allowlist matched nothing and
+    the crate shipped without a cohort. That was true of the provenance run this
+    was written for; the exported crate stopped at the DEG table.
+
+    The manifest already records every stage input by path and by sha256, so it
+    is the authoritative list. Anything it names that resolves outside the run
+    is carried in under ``inputs/``, keeping its basename so the recorded digest
+    still identifies it.
+
+    Args:
+        run: the run directory.
+
+    Returns:
+        ``(arcname, source)`` pairs, in manifest order, deduplicated.
+    """
+    manifest_path = run / "run_manifest.jsonld"
+    if not manifest_path.is_file():
+        return []
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        LOG.warning("could not read %s (%s); the crate will carry no inputs", manifest_path, e)
+        return []
+
+    run_resolved = run.resolve()
+    out: list[tuple[str, Path]] = []
+    taken: set[str] = set()
+    seen: set[Path] = set()
+    for stage in manifest.get("stages", []) or []:
+        for ref in stage.get("inputs") or []:
+            recorded = ref.get("path")
+            if not recorded:
+                continue
+            src = _resolve_recorded(str(recorded), run)
+            if src is None:
+                LOG.warning(
+                    "input %s recorded by stage %s is not on this machine, so the "
+                    "crate cannot carry it",
+                    recorded,
+                    stage.get("name", "?"),
+                )
+                continue
+            src = src.resolve()
+            if src in seen or src.is_relative_to(run_resolved):
+                continue  # already inside the run, so the allowlist has it
+            seen.add(src)
+            arcname = f"inputs/{src.name}"
+            if arcname in taken:  # two inputs sharing a basename
+                arcname = f"inputs/{stage.get('name', 'stage')}-{src.name}"
+            taken.add(arcname)
+            out.append((arcname, src))
+    return out
+
+
 def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
     """Map run-relative artifact path -> sha256, as recorded in the manifest.
 
@@ -168,8 +266,16 @@ def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
     return digests
 
 
-def _build_metadata(run: Path, files: list[Path]) -> dict[str, Any]:
-    """Construct the RO-Crate 1.1 metadata document."""
+def _build_metadata(
+    run: Path, files: list[Path], external: list[tuple[str, Path]] | None = None
+) -> dict[str, Any]:
+    """Construct the RO-Crate 1.1 metadata document.
+
+    Args:
+        run: the run directory.
+        files: artifacts inside the run, named by their run-relative path.
+        external: ``(arcname, source)`` inputs carried in from outside it.
+    """
     manifest_path = run / "run_manifest.jsonld"
     manifest = {}
     if manifest_path.exists():
@@ -194,6 +300,23 @@ def _build_metadata(run: Path, files: list[Path]) -> dict[str, Any]:
             # schema.org has no sha256 term; this is the RO-Crate convention.
             entry["sha256"] = sha
         file_entries.append(entry)
+
+    for arcname, src in external or []:
+        input_entry: dict[str, object] = {
+            "@id": arcname,
+            "@type": "File",
+            "name": src.name,
+            "contentSize": src.stat().st_size,
+            "description": (
+                "Cohort input consumed by this run, carried into the crate from "
+                "outside the run directory so the provenance chain reaches the "
+                "patient barcodes it started from."
+            ),
+        }
+        sha = digests.get(src.name)
+        if sha:
+            input_entry["sha256"] = sha
+        file_entries.append(input_entry)
 
     return {
         "@context": RO_CRATE_CONTEXT,
