@@ -79,7 +79,13 @@ def _fake_run(cmd, *, cwd=None):
         (pred / "affinity_run.json").write_text(
             json.dumps({"affinity_pred_value": -7.0, "affinity_probability_binary": 0.9})
         )
-    # git clone / checkout / wget: no-ops
+    elif "wget" in cmd[0]:
+        # The executor now hashes every checkpoint it fetched, so a stub that
+        # writes nothing fails verification instead of the behaviour under test.
+        dst = Path(cmd[cmd.index("-O") + 1])
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(b"stub checkpoint bytes")
+    # git clone / checkout: no-ops
     return SimpleNamespace(returncode=0, stdout="", stderr="")
 
 

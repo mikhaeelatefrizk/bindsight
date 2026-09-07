@@ -148,6 +148,13 @@ def recorded_run(monkeypatch):
             outdir = Path(prefix).parent
             outdir.mkdir(parents=True, exist_ok=True)
             (outdir / "binder_0.pdb").write_text(_backbone_pdb(_kept_target_seq(contig)))
+        elif "wget" in cmd[0]:
+            # A real fetch writes the checkpoint; the executor now hashes it, so
+            # a stub that writes nothing would fail verification rather than the
+            # behaviour under test.
+            dst = Path(cmd[cmd.index("-O") + 1])
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(b"stub checkpoint bytes")
         elif "protein_mpnn_run.py" in s:
             seqs = Path(cmd[cmd.index("--out_folder") + 1]) / "seqs"
             seqs.mkdir(parents=True, exist_ok=True)
@@ -268,6 +275,12 @@ def test_executor_refuses_a_backbone_whose_binder_chain_is_ambiguous(
     """A target-only 'backbone' must fail, not fall back to designing everything."""
 
     def _fake(cmd, *, cwd=None):
+        if "wget" in cmd[0]:
+            # The executor hashes every checkpoint it fetched; a stub that
+            # writes nothing fails there instead of at the behaviour under test.
+            dst = Path(cmd[cmd.index("-O") + 1])
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(b"stub checkpoint bytes")
         if any("run_inference.py" in a for a in cmd):
             prefix = next(
                 a.split("=", 1)[1] for a in cmd if a.startswith("inference.output_prefix=")

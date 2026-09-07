@@ -121,7 +121,12 @@ def test_render_run_produces_self_contained_html(tmp_path: Path) -> None:
     # Limitations section is always rendered (honest scope of discovery).
     assert "<h2>Limitations</h2>" in text
     assert "cell-surface protein abundance" in text
-    assert "infiltrating immune" in text
+    # The cell-composition caveat. Its wording used to be tumour-specific, so a
+    # drug-treatment run came back describing tumour purity; it now states the
+    # general case and names the tumour instance as one example. Assert on the
+    # general clause, so the test tracks the limitation rather than one phrasing.
+    assert "cannot tell whether a transcript" in text
+    assert "different mixtures of cells" in text
 
 
 def test_render_run_handles_missing_optional_files(tmp_path: Path) -> None:

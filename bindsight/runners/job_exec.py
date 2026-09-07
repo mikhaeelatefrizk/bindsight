@@ -108,6 +108,16 @@ def _verify_checkpoint(path: Path, expected_sha256: str | None) -> str:
     """
     import hashlib
 
+    if not path.is_file():
+        # wget exiting 0 without producing a file is a silent failure. Before
+        # this check the run continued to RFdiffusion, which failed later with a
+        # message about the model rather than about the download.
+        raise RuntimeError(
+            f"{path.name} is missing after the download step. The fetch reported "
+            f"no error but produced no file at {path}. Re-run with network access, "
+            "or place the checkpoint there yourself."
+        )
+
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
