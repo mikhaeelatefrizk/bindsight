@@ -594,3 +594,56 @@ class TestKaggleHardwareIsDescribedConsistently:
         # Turing (T4) is 7.5; Pascal (P100) is 6.0 and must not satisfy the gate.
         assert MIN_COMPUTE_CAPABILITY >= (7, 5)
         assert "P100" not in KAGGLE_ACCELERATOR
+
+
+class TestModelCheckpointsAreVerified:
+    """~480 MB of model parameters arrived over plain HTTP, unchecked.
+
+    The comment above the URLs claimed they were "verified on download in the
+    executor when a hash is supplied". No verification code existed at either
+    download site, and neither URL used TLS. A truncated transfer produces a
+    checkpoint that may still load, and then designs against different weights
+    than the run claims.
+    """
+
+    def test_every_weight_url_uses_tls(self) -> None:
+        from bindsight.runners import tools
+
+        for name, url in tools.RFDIFF_WEIGHTS.items():
+            assert url.startswith("https://"), f"{name} is fetched over {url.split(':')[0]}"
+
+    def test_every_weight_has_a_pin_slot(self) -> None:
+        """A checkpoint with no entry would be silently unpinnable."""
+        from bindsight.runners import tools
+
+        assert set(tools.RFDIFF_WEIGHT_SHA256) == set(tools.RFDIFF_WEIGHTS)
+
+    def test_a_mismatched_digest_raises(self, tmp_path: Path) -> None:
+        from bindsight.runners.job_exec import _verify_checkpoint
+
+        f = tmp_path / "Base_ckpt.pt"
+        f.write_bytes(b"not the real weights")
+        with pytest.raises(RuntimeError, match="does not match the pinned"):
+            _verify_checkpoint(f, "0" * 64)
+
+    def test_the_digest_is_returned_when_nothing_is_pinned(self, tmp_path: Path) -> None:
+        """Hashing unconditionally is how the first run establishes the pin."""
+        import hashlib
+
+        from bindsight.runners.job_exec import _verify_checkpoint
+
+        f = tmp_path / "Complex_base_ckpt.pt"
+        f.write_bytes(b"payload")
+        assert _verify_checkpoint(f, None) == hashlib.sha256(b"payload").hexdigest()
+
+    def test_the_kernel_verifies_on_the_gpu_side_too(self) -> None:
+        """The GPU download is the one a published result was produced from."""
+        import ast
+
+        from bindsight.runners import kaggle_kernel
+
+        src = kaggle_kernel.build_kernel_script(handle_id="t", payload={"spec.yaml": "x"})
+        ast.parse(src)  # a kernel that does not parse burns quota to say so
+        assert "hashlib.sha256()" in src
+        assert "does not match the pinned" in src
+        assert "http://files.ipd.uw.edu" not in src

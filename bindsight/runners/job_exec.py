@@ -88,6 +88,43 @@ def _git_clone(repo: str, commit: str, dest: Path, *, submodules: bool = False) 
     return dest
 
 
+def _verify_checkpoint(path: Path, expected_sha256: str | None) -> str:
+    """Hash a downloaded checkpoint, log it, and fail on a pinned mismatch.
+
+    Always hashing, rather than only when a pin exists, is what makes pinning
+    possible at all: the first run publishes the digest into its own log, and
+    that is where the pinned value comes from. Inventing one locally would
+    certify whatever this machine downloaded.
+
+    Args:
+        path: the checkpoint on disk.
+        expected_sha256: the pinned digest, or None if none is established.
+
+    Returns:
+        The hex digest of the file.
+
+    Raises:
+        RuntimeError: if a pinned digest is present and does not match.
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    digest = h.hexdigest()
+    size = path.stat().st_size
+    LOG.info("checkpoint %s: %d bytes sha256=%s", path.name, size, digest)
+    if expected_sha256 and digest != expected_sha256:
+        raise RuntimeError(
+            f"{path.name}: sha256 {digest} does not match the pinned "
+            f"{expected_sha256}. Refusing to design against a checkpoint that is "
+            "not the one this result claims. Delete the file and re-fetch; if the "
+            "mismatch persists, upstream has republished and the pin needs review."
+        )
+    return digest
+
+
 def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
     rfdiff_dir = tools_root / "RFdiffusion"
     fresh = not rfdiff_dir.exists()
@@ -98,6 +135,7 @@ def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
         dst = weights / name
         if not dst.exists():
             _run(["wget", "-q", url, "-O", str(dst)])
+        _verify_checkpoint(dst, tools.RFDIFF_WEIGHT_SHA256.get(name))
     if fresh:
         # Install RFdiffusion's SE3-Transformer deps so the executor is
         # self-sufficient on a *bare* GPU (headless Kaggle / a fresh box), not

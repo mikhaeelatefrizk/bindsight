@@ -96,6 +96,7 @@ def build_kernel_script(
         "RFDIFF_REPO": tools.RFDIFF_REPO,
         "RFDIFF_COMMIT": tools.RFDIFF_COMMIT,
         "RFDIFF_WEIGHTS": tools.RFDIFF_WEIGHTS,
+        "RFDIFF_WEIGHT_SHA256": tools.RFDIFF_WEIGHT_SHA256,
         "MPNN_REPO": tools.PROTEINMPNN_REPO,
         "MPNN_COMMIT": tools.PROTEINMPNN_COMMIT,
         "BOLTZ_PIP": tools.BOLTZ_PIP,
@@ -168,7 +169,7 @@ def build_kernel_metadata(
 # The static kernel body. References the variables defined in the generated header
 # above; kept brace-safe (no .format) so the embedded shell/Python is verbatim.
 _BODY = r'''
-import base64, json, os, pathlib, subprocess, sys, time
+import base64, hashlib, json, os, pathlib, subprocess, sys, time
 
 MR = "/opt/mamba"                       # MAMBA_ROOT_PREFIX (off the /kaggle/working output volume)
 MM = "/opt/micromamba/bin/micromamba"
@@ -273,6 +274,25 @@ for name, url in RFDIFF_WEIGHTS.items():
     dst = f"{TOOLS}/RFdiffusion/models/{name}"
     if not pathlib.Path(dst).exists():
         sh(f"wget -q '{url}' -O '{dst}'")
+    # Hash every checkpoint and print it. Until now these ~480 MB of model
+    # parameters arrived over plain HTTP, were loaded and executed, and nothing
+    # checked that what landed was what was asked for. A truncated transfer
+    # produces a checkpoint that may still load and quietly design differently.
+    # Printing the digest unconditionally is also how a pin gets established:
+    # the first run publishes it into this log.
+    _h = hashlib.sha256()
+    with open(dst, "rb") as _fh:
+        for _chunk in iter(lambda: _fh.read(1 << 20), b""):
+            _h.update(_chunk)
+    _digest = _h.hexdigest()
+    print(f"checkpoint {name}: {pathlib.Path(dst).stat().st_size} bytes sha256={_digest}", flush=True)
+    _want = RFDIFF_WEIGHT_SHA256.get(name)
+    if _want and _digest != _want:
+        raise SystemExit(
+            f"{name}: sha256 {_digest} does not match the pinned {_want}. "
+            "Refusing to design against a checkpoint that is not the one this "
+            "result would claim."
+        )
 if not pathlib.Path(f"{TOOLS}/ProteinMPNN").exists():
     sh(f"git clone -q {MPNN_REPO} {TOOLS}/ProteinMPNN")
     sh(f"git -C {TOOLS}/ProteinMPNN checkout -q {MPNN_COMMIT}")

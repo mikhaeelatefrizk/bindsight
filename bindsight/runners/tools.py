@@ -56,12 +56,32 @@ def _boltz_bin() -> str:
 # ---------------------------------------------------------------------------
 RFDIFF_REPO = "https://github.com/RosettaCommons/RFdiffusion"
 RFDIFF_COMMIT = "2d0c003df46b9db41d119321f15403dec3716cd9"
-# IPD public weight mirror (see the RFdiffusion README). sha256 left None: the
-# multi-GB checkpoints are verified on download in the executor when a hash is
-# supplied, but we don't hard-pin one we couldn't compute offline.
+# IPD's public weight mirror (see the RFdiffusion README). HTTPS, not HTTP:
+# these are ~480 MB of model parameters that get loaded and executed, and the
+# comment that used to sit here claimed they were "verified on download in the
+# executor when a hash is supplied" while no verification code existed at either
+# download site. Plain HTTP with no integrity check is how a truncated transfer
+# becomes a checkpoint that loads and quietly produces different structures.
 RFDIFF_WEIGHTS: dict[str, str] = {
-    "Base_ckpt.pt": "http://files.ipd.uw.edu/pub/RFdiffusion/6f5902ac237024bdd0c176cb93063dc4/Base_ckpt.pt",
-    "Complex_base_ckpt.pt": "http://files.ipd.uw.edu/pub/RFdiffusion/e29311f6f1bf1af907f9ef9f44b8328b/Complex_base_ckpt.pt",
+    "Base_ckpt.pt": "https://files.ipd.uw.edu/pub/RFdiffusion/6f5902ac237024bdd0c176cb93063dc4/Base_ckpt.pt",
+    "Complex_base_ckpt.pt": "https://files.ipd.uw.edu/pub/RFdiffusion/e29311f6f1bf1af907f9ef9f44b8328b/Complex_base_ckpt.pt",
+}
+
+#: sha256 of each checkpoint, or None where one has not been established yet.
+#:
+#: Both download sites now hash what they fetched and log it, and refuse to
+#: proceed when a hash here disagrees. Pinning is therefore a two-step process
+#: on purpose: run once, read the hash out of the run log, paste it here. A
+#: hash invented locally would only certify whatever this machine happened to
+#: download, which is the thing being checked.
+#:
+#: The 32-hex path segment in each URL is IPD's own content digest, so a change
+#: upstream arrives as a new URL rather than as different bytes at the same one.
+#: That makes a silent substitution unlikely; it does not make a truncated or
+#: corrupted transfer detectable, which is what these hashes are for.
+RFDIFF_WEIGHT_SHA256: dict[str, str | None] = {
+    "Base_ckpt.pt": None,
+    "Complex_base_ckpt.pt": None,
 }
 
 PROTEINMPNN_REPO = "https://github.com/dauparas/ProteinMPNN"
