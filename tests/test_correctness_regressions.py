@@ -1132,3 +1132,72 @@ class TestTheConfiguredSeedReachesTheSpec:
         # rfdiff_mpnn also mirrors the bounds into extra_params; they must agree.
         assert spec.extra_params["binder_length_min"] == 60
         assert spec.extra_params["binder_length_max"] == 80
+
+
+# ---------------------------------------------------------------------------
+# 10. A declared config value must reach something
+# ---------------------------------------------------------------------------
+class TestDeclaredConfigValuesAreHonoured:
+    """A knob that turns nothing is a promise the tool does not keep."""
+
+    def test_every_design_parameter_has_a_known_destination(self) -> None:
+        """Adding a parameter must force a decision about where it lands.
+
+        `seed`, `binder_length_min` and `binder_length_max` were all declared,
+        documented, shipped in three example YAMLs, and read by no code. This
+        fails when a new parameter appears, so the next one cannot join them.
+        """
+        from bindsight.config import DesignParams
+
+        spec_bound = {"n_trajectories", "binder_length_min", "binder_length_max", "seed"}
+        routed_elsewhere = {"designer", "gpu_type", "prescreen_top_k"}
+        assert set(DesignParams.model_fields) == spec_bound | routed_elsewhere, (
+            "a design parameter was added or removed; say where it reaches the job"
+        )
+
+    def test_the_configured_bars_move_failures_aside_rather_than_dropping_them(
+        self, tmp_path: Path
+    ) -> None:
+        import yaml
+
+        from bindsight.cli import _split_on_thresholds
+
+        run = tmp_path / "run"
+        validate_dir = run / "validate"
+        validate_dir.mkdir(parents=True)
+        (run / "config.yaml").write_text(
+            yaml.safe_dump({"params": {"validate": {"apply_thresholds": True}}}),
+            encoding="utf-8",
+        )
+        df = pd.DataFrame(
+            [
+                {"binder_id": "a", "passes_thresholds": "pass", "threshold_reason": "ok"},
+                {"binder_id": "b", "passes_thresholds": "fail", "threshold_reason": "iptm low"},
+                {"binder_id": "c", "passes_thresholds": "unassessed", "threshold_reason": "n/m"},
+            ]
+        )
+        kept = _split_on_thresholds(df, run, validate_dir)
+        assert list(kept["binder_id"]) == ["a", "c"], "unmeasured designs must not be excluded"
+
+        aside = validate_dir / "excluded_by_thresholds.parquet"
+        assert aside.exists(), "excluded designs must be written somewhere, not deleted"
+        excluded = pd.read_parquet(aside)
+        assert list(excluded["binder_id"]) == ["b"]
+        assert excluded.iloc[0]["threshold_reason"] == "iptm low", "the reason must travel with it"
+
+    def test_the_bars_stay_descriptive_when_the_flag_is_unset(self, tmp_path: Path) -> None:
+        """The default must keep every design in the table, as it always has."""
+        from bindsight.cli import _split_on_thresholds
+
+        run = tmp_path / "run"
+        validate_dir = run / "validate"
+        validate_dir.mkdir(parents=True)
+        df = pd.DataFrame(
+            [
+                {"binder_id": "a", "passes_thresholds": "pass"},
+                {"binder_id": "b", "passes_thresholds": "fail"},
+            ]
+        )
+        kept = _split_on_thresholds(df, run, validate_dir)
+        assert list(kept["binder_id"]) == ["a", "b"]
+        assert not (validate_dir / "excluded_by_thresholds.parquet").exists()

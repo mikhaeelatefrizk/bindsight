@@ -264,10 +264,12 @@ class ValidateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     validator: Literal["boltz2", "chai1r", "af2_ig"] = "boltz2"
-    # Quality bars applied to validated binders. ``apply_thresholds`` is False by
-    # default so existing runs keep every row and the columns stay descriptive;
-    # set it True to have ``bindsight validate`` mark rows that fail. Either way
-    # the pass/fail is recorded per row rather than silently dropping designs.
+    # Quality bars applied to validated binders. Every row is annotated with
+    # ``passes_thresholds`` and a reason regardless of the flag — the bars are
+    # descriptive by default. ``apply_thresholds`` additionally moves failing
+    # designs out of ``validated.parquet`` and into
+    # ``excluded_by_thresholds.parquet`` beside it, reasons attached, so they are
+    # set aside rather than silently dropped.
     iptm_threshold: float = Field(0.65, ge=0.0, le=1.0)
     pae_interaction_threshold: float = Field(8.0, ge=0.0)
     apply_thresholds: bool = False
@@ -324,7 +326,12 @@ class RunConfig(BaseModel):
     inputs: InputsConfig
     params: StageParams
     backend: Literal["colab", "modal", "kaggle", "local_docker", "mock"] = "colab"
-    cheap_profile: bool = False
+    # Declared but not consumed by any stage. An example config described it as
+    # dropping to a T4 with fewer trajectories; the T4 is now the only GPU the
+    # Kaggle runner asks for, and nothing has ever read the flag. It is kept so
+    # existing run configs still load, and described accurately rather than
+    # advertising behaviour that does not exist.
+    cheap_profile: bool = Field(False, description="Reserved. No stage currently reads this.")
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> RunConfig:

@@ -1289,6 +1289,83 @@ def _structure_pdb_b64(structure_path: Path) -> str | None:
     return base64.b64encode(structure_path.read_bytes()).decode()
 
 
+def _validate_params(run_dir: Path) -> Any:
+    """Read the run's validation parameters, falling back to the defaults.
+
+    Args:
+        run_dir: the run directory, which holds the effective ``config.yaml``.
+
+    Only the ``params.validate`` section is parsed, not the whole ``RunConfig``.
+    Validating the entire document would make an unrelated schema change — a new
+    required field, a renamed input — silently revert the thresholds to their
+    defaults on every existing run, which is the same class of quiet fallback
+    these helpers exist to remove. The values actually used are still validated,
+    because the section is parsed into :class:`ValidateParams`.
+
+    Returns:
+        The :class:`~bindsight.config.ValidateParams` the run was configured
+        with. A malformed config must not cost the caller its metrics, so an
+        unreadable file is a warning and the defaults are used.
+    """
+    from bindsight.config import ValidateParams
+
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return ValidateParams()
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        return ValidateParams(**(params.get("validate") or {}))
+    except Exception as e:  # a malformed config must not lose the metrics
+        LOG_CLI.warning("could not read %s (%s); using default thresholds", cfg_path, e)
+        return ValidateParams()
+
+
+def _split_on_thresholds(df: Any, run_dir: Path, validate_dir: Path) -> Any:
+    """Honour ``apply_thresholds`` by setting failing designs aside, not deleting them.
+
+    The flag was declared in the config, shipped in an example YAML, and read by
+    no code, so a user who asked for the quality bars to be enforced got a table
+    in which every design still appeared. Its own comment claimed it changed what
+    ``bindsight validate`` records, while the annotation ran unconditionally —
+    the flag had no behaviour to describe.
+
+    It is honoured now, and nothing is destroyed to do it. Rows that fail move to
+    ``excluded_by_thresholds.parquet`` beside the table they left, each carrying
+    the reason it failed, and the count is printed. A design that vanishes with
+    no recorded reason is precisely the invisible filter this pipeline exists not
+    to have; a design moved to a named file with its reason attached is not one.
+
+    Designs whose metrics were never measured are kept. A bar a design was not
+    scored against cannot be a bar it failed.
+
+    Args:
+        df: the annotated validation table.
+        run_dir: the run directory, for its configuration.
+        validate_dir: where to write the excluded rows.
+
+    Returns:
+        The table to keep — unchanged unless ``apply_thresholds`` is set.
+    """
+    params = _validate_params(run_dir)
+    if not getattr(params, "apply_thresholds", False) or df.empty:
+        return df
+
+    failing = df["passes_thresholds"] == "fail"
+    if not bool(failing.any()):
+        return df
+
+    excluded = df[failing]
+    excluded.to_parquet(validate_dir / "excluded_by_thresholds.parquet", index=False)
+    console.print(
+        f"[yellow]apply_thresholds:[/yellow] {len(excluded)} of {len(df)} designs "
+        f"failed the configured bars and were written to "
+        f"{validate_dir / 'excluded_by_thresholds.parquet'} with their reasons."
+    )
+    return df[~failing].reset_index(drop=True)
+
+
 def _mark_thresholds(df: Any, run_dir: Path) -> Any:
     """Annotate each validated design against the configured quality bars.
 
@@ -1305,15 +1382,7 @@ def _mark_thresholds(df: Any, run_dir: Path) -> Any:
     """
     import pandas as pd
 
-    from bindsight.config import RunConfig, ValidateParams
-
-    params = ValidateParams()
-    cfg_path = run_dir / "config.yaml"
-    if cfg_path.exists():
-        try:
-            params = RunConfig.from_yaml(cfg_path).params.validate_
-        except Exception as e:  # a malformed config must not lose the metrics
-            LOG_CLI.warning("could not read %s (%s); using default thresholds", cfg_path, e)
+    params = _validate_params(run_dir)
 
     if df.empty:
         df["passes_thresholds"] = pd.Series(dtype="object")
@@ -1548,6 +1617,7 @@ def _finalize_validate(run_dir: Path) -> int:
     ]
     df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=cols)
     df = _mark_thresholds(df, run_dir)
+    df = _split_on_thresholds(df, run_dir, validate_dir)
     df.to_parquet(validate_dir / "validated.parquet", index=False)
     return len(df)
 

@@ -82,4 +82,4 @@ params:
 # Runtime
 # ---------------------------------------------------------------------------
 backend: modal          # GPU backend: colab | modal | kaggle | local_docker | mock
-cheap_profile: false    # If true, drops to T4 / fewer trajectories
+cheap_profile: false    # Reserved; no stage reads this yet
