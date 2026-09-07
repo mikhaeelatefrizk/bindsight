@@ -10,6 +10,12 @@ discovery module — the same reason the disposition list is duplicated in
 
 These are inherent limits of expression-based discovery, not bugs: bindsight
 surfaces them rather than hiding them, consistent with its failure-honest design.
+
+They are also worded for *any* two-condition contrast, because they are stamped
+into every run manifest and every report. One of them used to be written purely
+in tumour vocabulary, so a drug-versus-vehicle experiment came back carrying a
+note about tumour purity — a limitation that is real and general, described in a
+domain the run was not in.
 """
 
 from __future__ import annotations
@@ -29,13 +35,17 @@ DISCOVERY_LIMITATIONS: tuple[tuple[str, str], ...] = (
         "immunohistochemistry, or the Human Protein Atlas) before committing design effort.",
     ),
     (
-        "Bulk expression can originate from non-tumour cells",
-        "Bulk tumour-vs-normal differential expression cannot tell whether a transcript "
-        "comes from tumour cells or from infiltrating immune and stromal cells. High "
-        "apparent over-expression can reflect tumour-purity / cell-composition "
-        "differences between the tumour and normal samples rather than a tumour-intrinsic "
-        "target. Single-cell or deconvolution evidence is needed to establish "
-        "tumour-cell-intrinsic expression (planned for v1.0).",
+        "Bulk expression cannot attribute a transcript to a cell type",
+        "A bulk contrast measures the average over whatever cells each sample "
+        "contained. It cannot tell whether a transcript rose because the cells of "
+        "interest express more of it, or because the two arms hold different "
+        "mixtures of cells. Apparent over-expression can therefore reflect "
+        "composition rather than biology: in a tumour-versus-normal contrast that "
+        "is tumour purity and immune or stromal infiltration; in a treated-versus-"
+        "untreated contrast it is a shift in which cells survived or proliferated; "
+        "between two tissues it is simply that they are made of different cells. "
+        "Single-cell data or deconvolution is what establishes cell-intrinsic "
+        "expression, and neither is implemented (planned for v1.0).",
     ),
 )
 
