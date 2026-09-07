@@ -111,11 +111,11 @@ def _default_text_encoding(encoding: str) -> Iterator[None]:
             kwargs.setdefault("errors", "replace")
         return real_open(file, mode, *args, **kwargs)
 
-    builtins.open = _open  # type: ignore[assignment]
+    builtins.open = _open
     try:
         yield
     finally:
-        builtins.open = real_open  # type: ignore[assignment]
+        builtins.open = real_open
 
 
 class KaggleRunner:
