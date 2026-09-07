@@ -150,6 +150,107 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   section describes the implementation; and the claim that the CLI and Snakemake
   front-ends produce identical artifacts is retracted.
 
+### Fixed — the GPU never ran the code you were testing
+
+- **Every Kaggle run this project made installed the repository's default
+  branch.** `BINDSIGHT_GIT` carried no ref and no caller ever set one, so
+  `pip install git+<repo>` resolved to `main` regardless of what was checked
+  out. A corrected ERBB2 designer benchmark was launched against a branch whose
+  fixes existed only locally, ran an hour on a T4, and returned pre-fix
+  `binder_0_seq0` binder ids — the exact defect it was launched to show fixed.
+  Nothing in the run said which code it had installed.
+- A git ref narrows that and does not close it: a branch resolves on the GPU, at
+  pip time, to whatever it points at then, and an unpushed commit cannot be named
+  at all. `bindsight/runners/source_wheel.py` now builds a wheel from the working
+  tree and the kernel installs that. bindsight is pure Python, so the wheel is
+  400 KB and travels inside the kernel script. The benchmark does this by
+  default; `--install-from-git` opts out and says what it costs.
+- **The design cache key covers which bindsight runs.** Had the mistaken run
+  succeeded and cached, a later run of the fixed code would have been handed the
+  unfixed result under the same key.
+- **`results.json` records `bindsight_source`**, so an artifact names its own
+  code rather than "the default branch at some past moment".
+
+### Fixed — a finished run destroyed by its own bookkeeping
+
+- **A log file killed an hour of GPU quota.** The Kaggle client writes the kernel
+  log with the interpreter's locale encoding. Kernel output carries micromamba's
+  progress glyphs, so on a default Windows install the write raised
+  `UnicodeEncodeError` *after* the GPU work was done. The log is not the result:
+  text writes now default to UTF-8 for the duration of the download, and a
+  failure is a warning rather than the end of the run.
+- **That empty run then overwrote twenty binders' worth of measurements** with
+  dashes, while `binders/` still held the structures those measurements
+  described. A summary recording no designs is now refused when the existing one
+  records some, and is written to `results.failed.json` instead.
+- The benchmark writes to a staging directory, so a failure cannot reach the
+  committed artifacts at all.
+
+### Fixed — the model checkpoints were unverified
+
+- RFdiffusion's two checkpoints, about 480 MB of parameters that get loaded and
+  executed, were fetched over **plain HTTP with no integrity check**, under a
+  comment claiming they are "verified on download in the executor when a hash is
+  supplied". No verification code existed at either download site. Both now hash
+  every checkpoint, log the digest, and refuse a pinned mismatch; both use HTTPS.
+  Hashing is unconditional because that is how a pin gets established — the first
+  run publishes the digest into its own log.
+
+### Fixed — bindsight is not a cancer tool, and now a test says so
+
+- Every test, example and committed run used TCGA tumour-versus-normal, so the
+  generality was asserted and never exercised. `tests/test_non_cancer_cohort.py`
+  drives the documented path on a drug-versus-vehicle experiment paired within
+  donor. It **failed on first run**: every manifest and report carried a caveat
+  titled "Bulk expression can originate from non-tumour cells". The limitation is
+  entirely general — a bulk contrast cannot say whether a transcript rose because
+  the cells express more of it or because the arms hold different mixtures — and
+  only the wording was oncological. It now states the general case and names the
+  tumour-purity, treatment-selection and different-tissue instances as examples.
+- The README states what the pipeline accepts, and which three parts are
+  domain-specific: the optional GDC download, the rediscovery benchmark, and the
+  human reference resources behind the safety gate.
+
+### Fixed — claims that contradicted the tables beneath them
+
+- **`.streamlit/config.toml` named the Hugging Face Space as covered** by its
+  theme and its `gatherUsageStats = false`. The Space is a separate repository
+  whose Dockerfile copied only `requirements.txt`, `src/` and `examples/`, so the
+  file never arrived and neither setting ever applied to the hosted demo. That
+  Dockerfile is now version-controlled at `.huggingface/Dockerfile`, copies the
+  config, and is uploaded by the sync workflow.
+- **ARCHITECTURE section 6 printed an invented Snakefile** — an `export_crate`
+  rule that does not exist, every script misnamed, `deg` and `manifest` missing.
+  Replaced with the real seven-rule DAG. The missing export rule is also the
+  concrete reason the CLI and Snakemake paths are not interchangeable.
+- **Section 7 was titled "verified"** above rows saying *not implemented*. It now
+  carries a Status column, and three rows were wrong: Chai-1r cannot run on any
+  free GPU, BoltzGen had never executed, and the surfaceome is 4,801 accessions.
+- **Risk 7 claimed the approach "predictably finds known antigens."** The rebuilt
+  study measures 1 of 17 at rank 20, interval 0.01 to 0.27.
+- The README offered Colab, Modal and Kaggle as peers, and `bindsight run` told
+  users to "run on Colab/Modal". Both now name the one backend that runs
+  headlessly and free.
+- **Pinning the accelerator to a T4 left `KaggleRunner` defaulting to P100**, so
+  every Kaggle estimate applied a 3.0x slowdown where 4.0x was right,
+  under-quoting by a quarter for a card no run would be given.
+
+### Added — tests that pin the claims to the artifacts
+
+- `tests/test_published_numbers_match_artifacts.py` reads the study and designer
+  figures out of their `results.json` and requires every document that states
+  them to match. The withdrawn headline was asserted on six surfaces at once;
+  correcting one at a time is how a repository publishes two results.
+- Writing it found the centrepiece table labelling a row `all` while counting 17
+  of 22 pairs, with the printed question "Of every scored pair". The row now
+  names the tier.
+- `tests/test_requirements_mirror.py` fails when `requirements.txt` and the
+  pyproject extras disagree. The file had already drifted both ways: it omitted
+  `openpyxl`, without which the SURFY workbook cannot be parsed and discovery
+  silently yields nothing, and carried `gql` and `seaborn`, which nothing
+  imports. `pydantic-settings` was mandatory in the conda environment for
+  nothing.
+
 ### Removed
 
 

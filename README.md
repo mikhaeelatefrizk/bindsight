@@ -126,12 +126,40 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
                                        with full PROV-O provenance
 ```
 
+### What it needs, and what it is not limited to
+
+The pipeline takes a **counts matrix** and a **sample design table** naming a
+two-level factor, and contrasts those two levels. Nothing on that path knows
+about cancer. `tumor` and `normal` are values you supply, not values the code
+expects: `tests/test_non_cancer_cohort.py` drives the whole documented path on a
+drug-versus-vehicle experiment paired within donor, with no oncology vocabulary
+anywhere, and asserts that none leaks into the provenance manifest.
+
+Three parts *are* domain-specific, and they are separable:
+
+- **The optional `inputs.download` block** fetches a cohort from NIH/GDC, so it
+  knows TCGA's sample type names. Point `inputs.counts` and `inputs.design` at
+  your own files and it never runs.
+- **The rediscovery benchmark** scores recovery of known tumour antigens. It is
+  an evaluation harness for the ranker, not part of a run.
+- **The safety gate** compares candidates against GTEx normal-tissue baselines.
+  That is a human resource, and so are the SURFY surfaceome, the UniProt
+  membrane extension and SURFACE-Bind's site inventory.
+
+So the honest scope is **any human bulk RNA-seq contrast between two
+conditions** — disease versus healthy, treated versus untreated, responder
+versus non-responder, one tissue versus another. Non-human cohorts would need
+substitutes for four reference resources, none of which is wired in.
+
 ## Who it's for
 
 - **Translational researchers** who want a free, reproducible "data → designed binder" pipeline.
 - **Clinical biologists** who need an audit trail back from a binder to the patient cohort.
 - **Method developers** who want a held-out evaluation harness (rediscovery of known antigens) to benchmark new designers/validators.
 - **Pharma early-discovery teams** who want an open comparator they can extend with proprietary designers via the plugin interface.
+- **Anyone with a two-condition human RNA-seq experiment** — the cancer framing
+  throughout this document reflects where it has been validated, not what it
+  accepts.
 
 ## What's distinctive
 
