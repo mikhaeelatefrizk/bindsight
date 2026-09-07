@@ -52,24 +52,32 @@ publishes the scratch size, while the environment build needs roughly 60 GB.
 
 ---
 
-## 3. The corrected designer benchmark — start here
-
-This is the run that matters most. The committed benchmark was produced with
-ProteinMPNN redesigning the target chain as well as the binder, so its ipTM
-figures are disclaimed and uninterpretable. This re-run supersedes them.
+## 3. The designer benchmark
 
 One target, ERBB2 domain IV, the clinically validated trastuzumab epitope:
 
 ```bash
-python benchmarks/run_designer_benchmark.py --backend kaggle --trajectories 10
+python benchmarks/run_designer_benchmark.py --backend kaggle --trajectories 10 --designers rfdiff_mpnn --targets ERBB2
 ```
 
 Budget: roughly **1 GPU-hour**, about 3% of the weekly allowance. Most of the
-wall-clock is the environment build, not the science.
+wall-clock is the environment build, not the science. Restrict to
+`rfdiff_mpnn`: the other two designers need more than 16 GB against a full
+receptor and will fail after burning several minutes each.
 
-When it finishes, the committed benchmark is replaced by figures produced under
-the corrected protocol, and the caveat currently attached to every mention of
-those numbers can be removed.
+**The GPU runs the code you have, and that is not free.** Remote backends
+pip-install bindsight, and for this project's whole history that meant
+`git+<repo>` with no ref — so every Kaggle run installed the default branch,
+whatever was checked out locally. A benchmark launched to validate a fix ran the
+unfixed code and said nothing about it; that is exactly how a "corrected"
+re-run came back carrying pre-fix binder ids. The harness now builds a wheel
+from your working tree and embeds it in the kernel, and `results.json` records
+`bindsight_source` so the artifact names its own code. `--install-from-git` opts
+out, and the log says what that costs.
+
+The committed run is the one this produces: 20 designs, best ipTM 0.88, 40%
+success@0.65, on a T4. Every design carries a target chain byte-identical to the
+native domain IV, which is checked before the results are promoted.
 
 ---
 
@@ -83,14 +91,24 @@ design half.
 Clear-cell kidney is the best cohort for it. CA9 ranks first of 291 candidates
 there, so the top-ranked target is a real, strongly over-expressed antigen.
 
+`runs/join/config.yaml` is committed for this, pointing at the study cohort so
+the differential-expression cache hits, and carrying `top_n: 2` because the
+chain is demonstrated by one binder and the second target only shows the join is
+not a special case.
+
 ```bash
-cp -r runs/study/kirc runs/join
-python -m bindsight.cli design runs/join --backend kaggle --trajectories 10
+python -m bindsight.cli discover runs/join/config.yaml --out runs/join
+python -m bindsight.cli design runs/join --backend kaggle
 python -m bindsight.cli validate runs/join
 python -m bindsight.cli rank runs/join
 python -m bindsight.cli report runs/join --format html
 python -m bindsight.cli export runs/join --out runs/join.crate.zip
 ```
+
+Two targets at ten trajectories is roughly **2 GPU-hours**. Each target is a
+separate kernel that rebuilds both micromamba environments, so budget about 90
+minutes of wall-clock per target and expect the build, not the science, to
+dominate.
 
 **Check the cost before launching.** Twenty targets at ten trajectories is about
 10 GPU-hours, a third of the weekly allowance. Add `--dry-run` to the design
@@ -113,8 +131,8 @@ The allowance renews weekly. Nothing is lost when it runs out:
 
 - **Design results are cached** by a key covering the target, its structure
   content, the epitope, the design ranges, the trajectory count, the seed, the
-  designer commits and the backend. Re-running skips whatever already completed
-  and only pays for what did not.
+  designer commits, the backend, and which bindsight will run. Re-running skips
+  whatever already completed and only pays for what did not.
 - **Differential expression is cached** separately, so nothing on the discovery
   side ever re-runs.
 - Simply re-issue the same command after the reset. It resumes.
@@ -124,13 +142,18 @@ The backend is part of the design cache key deliberately. Without it, a run on
 run would silently return the mock's synthetic numbers wearing a real result's
 label.
 
+So is the identity of the bindsight that will execute — the embedded wheel's
+content hash, or failing that the git ref. Without it, a run of fixed code would
+be handed the unfixed run's cached result, which is the same failure one step
+further along.
+
 ---
 
 ## 6. What is verified, and what is not
 
 | Component | Status |
 |---|---|
-| RFdiffusion, ProteinMPNN, Boltz-2 on a T4 | Ready; the committed run used this stack under a since-corrected protocol |
+| RFdiffusion, ProteinMPNN, Boltz-2 on a T4 | **Verified.** The committed run used this stack under the corrected protocol, from a wheel built out of the working tree; all 20 designs hold the target chain fixed |
 | AlphaFold initial-guess | Prepared; PyRosetta is credential-free for non-commercial use, submodule clone fixed |
 | BindCraft, BoltzGen | Prepared for reduced targets only; both need more memory than 16 GB for a full receptor |
 | Chai-1r | **Cannot run on any free GPU.** It requires bfloat16, which needs an Ampere card or newer. Verifying it means renting roughly an hour of an L4. |
