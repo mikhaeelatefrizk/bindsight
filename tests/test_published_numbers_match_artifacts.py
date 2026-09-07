@@ -212,6 +212,47 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
         text = _doc("docs/results.md")
         assert model in text, f"docs/results.md does not name the {model} the run used"
 
+    def test_no_surface_still_promises_the_correction_in_the_future_tense(
+        self, bench: dict
+    ) -> None:
+        """Once the corrected run is the committed artifact, a promise is stale.
+
+        The retraction check elsewhere matches keywords, and "supersed" is
+        satisfied by a promise as readily as by a retraction. So the README
+        carried "these figures ... will be superseded by a corrected re-run"
+        long after the corrected re-run had landed and been committed: a
+        sentence that passes a grep and misleads a reader, sitting a few
+        hundred lines below the corrected figures it contradicted.
+
+        Tense is the whole difference between disclosing a correction and
+        deferring one. This deactivates itself while the artifact is still the
+        pre-fix run, when the promise would be true.
+        """
+        if bench.get("bindsight_version", "") in {"0.2.0"}:
+            pytest.skip("the corrected run is not the committed artifact yet")
+        promise = re.compile(
+            r"will be (?:superseded|replaced|withdrawn|corrected)"
+            r"|(?:pending|awaiting) (?:a|the) (?:corrected )?re-?run",
+            re.IGNORECASE,
+        )
+        surfaces = (
+            *self.SURFACES,
+            "ARCHITECTURE.md",
+            "paper/paper.md",
+            "paper/validation/manuscript.md",
+            "benchmarks/designer_benchmark/RESULTS.md",
+            "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
+        )
+        for rel in surfaces:
+            doc = REPO / rel
+            if not doc.is_file():
+                continue
+            found = promise.search(doc.read_text(encoding="utf-8"))
+            assert found is None, (
+                f"{rel} still defers the correction to the future ({found.group(0)!r}), "
+                "but the committed artifact is already the corrected run"
+            )
+
     def test_a_superseded_protocol_is_disclosed_wherever_its_numbers_appear(
         self, bench: dict
     ) -> None:
