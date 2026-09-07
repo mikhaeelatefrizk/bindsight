@@ -205,7 +205,8 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
     def test_the_gpu_is_named_consistently(self, bench: dict) -> None:
         """The card a result was produced on is part of the result."""
         gpu = bench["gpu"]
-        assert gpu and "mock" not in gpu.lower()
+        assert gpu
+        assert "mock" not in gpu.lower()
         # "Tesla T4-16GB (Kaggle free)" -> the docs say "T4"; "Tesla P100-..." -> "P100".
         model = gpu.split()[1].split("-")[0]
         text = _doc("docs/results.md")
