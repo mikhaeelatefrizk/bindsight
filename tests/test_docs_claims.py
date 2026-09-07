@@ -59,11 +59,26 @@ RETRACTED_NOVELTY_CLAIM = re.compile(r"first open[- ]source pipeline", re.IGNORE
 PRIORITY_CLAIM = re.compile(r"first open[- ]source", re.IGNORECASE)
 NOVELTY_HEDGES = ("as far as we are aware", "to our knowledge")
 
-# The designer-benchmark caveat: the ProteinMPNN flag that was missing, and the
-# words that mark the figures as pre-fix.
+# The designer benchmark. These constants used to enforce a caveat: the figures
+# were produced with ProteinMPNN redesigning the target chain, so every document
+# quoting them had to say so. A corrected re-run on a T4 has since superseded
+# them, so what has to be enforced is the opposite — the documents must quote the
+# corrected figures, and must not present the withdrawn ones as current.
 MPNN_CHAIN_FLAG = "--pdb_path_chains"
-PRE_FIX_MARKER = re.compile(r"pre-?fix|pre-v0\.2\.1|predates?", re.IGNORECASE)
-BINDER_FIGURES = re.compile(r"0\.84|50\s?%")
+#: The corrected figures. Any document that publishes the binder result states
+#: at least one of them.
+BINDER_FIGURES = re.compile(r"0\.88|40\s?%")
+#: The withdrawn ones. Permitted only in a sentence that retracts them.
+WITHDRAWN_BINDER_FIGURES = re.compile(r"0\.84|50\s?%\s*success|50%")
+RETRACTION_WORDS = (
+    "withdraw",
+    "supersed",
+    "earlier run",
+    "superseded",
+    "corrected",
+    "no longer",
+    "previous",
+)
 
 # --- The documents ------------------------------------------------------------
 
@@ -252,21 +267,44 @@ def test_readme_headline_hedges_the_priority_claim() -> None:
 @pytest.mark.parametrize("rel", BINDER_FIGURE_DOCS)
 def test_binder_figures_are_quoted_in_these_documents(rel: str) -> None:
     """Pins the list below to documents that really do publish the figures."""
-    assert BINDER_FIGURES.search(_read(rel)), f"{rel} no longer quotes 0.84 / 50%"
+    assert BINDER_FIGURES.search(_read(rel)), f"{rel} no longer quotes 0.88 / 40%"
 
 
 @pytest.mark.parametrize("rel", BINDER_FIGURE_DOCS)
-def test_binder_figures_carry_the_pre_fix_protocol_caveat(rel: str) -> None:
-    """ipTM 0.84 / 50% success@0.65 predate the ProteinMPNN target-chain fix.
+def test_the_withdrawn_figures_are_never_presented_as_current(rel: str) -> None:
+    """ipTM 0.84 and 50% success@0.65 came from the pre-fix protocol.
 
-    That run redesigned the ERBB2 target chain along with the binder, so the
-    numbers are provisional. Anywhere they are published, the caveat has to be
-    published with them.
+    That run invoked ProteinMPNN without ``--pdb_path_chains``, so it redesigned
+    the ERBB2 target chain along with the binder: the designs were optimised
+    against a partly-invented surface and then scored against the native one. A
+    corrected re-run on a T4 supersedes them.
+
+    These tests used to enforce the caveat. Now they enforce the retraction: the
+    old numbers may appear only in a sentence that withdraws them, because a
+    document that prints both sets without saying which is current publishes two
+    results.
     """
     text = _read(rel)
-    assert MPNN_CHAIN_FLAG in text, f"{rel} quotes the figures without naming the defect"
-    assert PRE_FIX_MARKER.search(text), f"{rel} does not say the figures predate the fix"
-    assert "provisional" in text, f"{rel} does not mark the figures provisional"
+    for match in WITHDRAWN_BINDER_FIGURES.finditer(text):
+        window = text[max(0, match.start() - 500) : match.end() + 500].lower()
+        assert any(word in window for word in RETRACTION_WORDS), (
+            f"{rel} prints a withdrawn binder figure at offset {match.start()} "
+            "without retracting it"
+        )
+
+
+@pytest.mark.parametrize("rel", BINDER_FIGURE_DOCS)
+def test_the_corrected_protocol_is_named_where_the_figures_appear(rel: str) -> None:
+    """The claim that makes the new figures trustworthy must travel with them.
+
+    "The target was held fixed" is the whole difference between this run and the
+    superseded one, and it is checkable: every design carries a target chain
+    byte-identical to the native domain IV.
+    """
+    text = _read(rel)
+    assert MPNN_CHAIN_FLAG in text or "target chain" in text.lower(), (
+        f"{rel} quotes the binder figures without saying the target was held fixed"
+    )
 
 
 # --- Release metadata coherence -----------------------------------------------

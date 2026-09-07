@@ -25,7 +25,7 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 **New here?** → [Documentation site](https://mikhaeelatefrizk.github.io/bindsight/) · [What is bindsight?](https://mikhaeelatefrizk.github.io/bindsight/what-is-bindsight/) (5-min read) · [How to use it](https://mikhaeelatefrizk.github.io/bindsight/how-to-use/) · [Use cases](https://mikhaeelatefrizk.github.io/bindsight/use-cases/) · [Designing on Colab](https://mikhaeelatefrizk.github.io/bindsight/colab-design-howto/)
 
-**Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — the fifteen-cohort rediscovery study, and 20 de novo ERBB2 binders (best ipTM 0.84, pre-fix protocol — see the caveat above) with their Boltz-2 predicted complexes.
+**Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — the fifteen-cohort rediscovery study, and 20 de novo ERBB2 binders (best ipTM 0.88, 40% success@0.65, corrected protocol) with their Boltz-2 predicted complexes.
 
 ---
 

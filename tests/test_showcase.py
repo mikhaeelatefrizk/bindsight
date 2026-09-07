@@ -130,23 +130,57 @@ def test_headline_stats_are_derived_not_hardcoded() -> None:
 # ---------------------------------------------------------------------------
 # Designer benchmark
 # ---------------------------------------------------------------------------
+def _committed_arm() -> dict:
+    """The scored arm from the committed benchmark artifact.
+
+    Read rather than hardcoded. These tests exist to catch a loader that
+    silently returns defaults instead of the committed numbers, and pinning the
+    figures themselves would only mean editing this file after every re-run —
+    which is the drift the artifact-matching tests exist to prevent.
+    """
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "benchmarks/designer_benchmark/results.json"
+    if not path.is_file():
+        pytest.skip("designer benchmark artifact not present")
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    arms = [a for a in summary["designers"] if a.get("n_designs")]
+    assert arms, "the committed benchmark records no arm with any designs"
+    return arms[0]
+
+
 def test_designer_benchmark_loads_real_designs() -> None:
-    """Pins the designer-benchmark claim: 20 real binders, not mock output."""
+    """The loader reports the committed run, not mock output or defaults."""
+    arm = _committed_arm()
     d = showcase.load_designer_benchmark()
     assert d is not None
     assert d.is_mock is False
-    assert d.n_designs == 20
     assert d.validator == "boltz2"
-    assert d.success_rate == pytest.approx(0.5)
+    assert d.n_designs == arm["n_designs"]
+    assert d.success_rate == pytest.approx(arm["success_rate"])
+    # A real GPU run, not a stub: twenty designs is what the protocol produces
+    # at ten trajectories, and a loader returning zero would pass a looser check.
+    assert d.n_designs >= 20
 
 
 def test_designer_best_iptm_and_structure() -> None:
     """The best design carries a real predicted complex and a sequence."""
+    import json
+    from pathlib import Path
+
     d = showcase.load_designer_benchmark()
     assert d is not None
     best = d.best
     assert best is not None
-    assert best.iptm == pytest.approx(0.84, abs=0.005)
+
+    metrics = Path(__file__).resolve().parents[1] / (
+        "benchmarks/designer_benchmark/binders/metrics.jsonl"
+    )
+    rows = [json.loads(ln) for ln in metrics.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    expected = max(r["iptm"] for r in rows if r.get("iptm") is not None)
+    assert best.iptm == pytest.approx(expected, abs=1e-6)
+
     assert best.complex_cif is not None
     assert best.complex_cif.is_file()
     assert best.sequence

@@ -548,7 +548,25 @@ def _render_md(summary: dict[str, Any]) -> str:
         f"- Backend: `{summary['backend']}` · validator: `{summary['validator']}` · "
         f"trajectories/target: {summary['n_trajectories']}"
     )
-    a(f"- Targets: {', '.join(summary['targets'])}\n")
+    a(f"- Targets: {', '.join(summary['targets'])}")
+    if summary.get("gpu"):
+        a(f"- GPU: `{summary['gpu']}`")
+    if summary.get("bindsight_source"):
+        # Which bindsight actually ran. Remote backends pip-install it, so the
+        # code that produced a result is not necessarily the code that submitted
+        # the job — a benchmark launched to validate a fix once ran the unfixed
+        # code because the kernel installed the repository's default branch.
+        a(f"- Code: {summary['bindsight_source']}")
+    if not summary["is_mock"]:
+        a(
+            "\n> **The target chain was held fixed.** ProteinMPNN is invoked with\n"
+            "> `--pdb_path_chains` so it redesigns the binder only. A superseded run\n"
+            "> omitted that flag, rewrote the target as well, and therefore optimised\n"
+            "> its designs against a partly-invented surface before scoring them\n"
+            "> against the native one; its figures are withdrawn. Every design here\n"
+            "> carries a target chain byte-identical to the prepared structure."
+        )
+    a("")
 
     a(
         "| designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | "

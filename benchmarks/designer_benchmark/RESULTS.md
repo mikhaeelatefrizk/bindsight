@@ -3,6 +3,15 @@
 - Generated: `2026-09-07T06:05:26+00:00` · bindsight `0.2.2`
 - Backend: `kaggle` · validator: `boltz2` · trajectories/target: 10
 - Targets: ERBB2
+- GPU: `Tesla T4-16GB (Kaggle free)`
+- Code: working-tree wheel bindsight-0.2.2-py3-none-any.whl
+
+> **The target chain was held fixed.** ProteinMPNN is invoked with
+> `--pdb_path_chains` so it redesigns the binder only. A superseded run
+> omitted that flag, rewrote the target as well, and therefore optimised
+> its designs against a partly-invented surface before scoring them
+> against the native one; its figures are withdrawn. Every design here
+> carries a target chain byte-identical to the prepared structure.
 
 | designer | designs | mean ipTM | median ipTM | mean PAE-int | mean affinity | success@0.65 | est. cost (USD) | GPU-h |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|

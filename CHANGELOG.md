@@ -658,7 +658,12 @@ already claimed to do, and corrects claims the evidence did not support.
 - The designer benchmark now ships a **real result**, not an empty template:
   RFdiffusion → ProteinMPNN → Boltz-2, run on a **free Kaggle Tesla P100**, produced
   **20 binders** against ERBB2 extracellular domain IV (the trastuzumab epitope) —
-  mean ipTM 0.59, best 0.84, 50 % pass ipTM ≥ 0.65 — at $0. The designs (real Boltz-2-predicted complexes + FASTA),
+  mean ipTM 0.59, best 0.84, 50 % pass ipTM ≥ 0.65 — at $0.
+  **Those three figures are withdrawn.** That run invoked ProteinMPNN without
+  `--pdb_path_chains`, so it redesigned the target chain as well as the binder;
+  a corrected re-run on a T4 supersedes it with best ipTM 0.88, mean 0.51 and
+  40 % success. This entry is left as the record of what v0.2.0 shipped.
+  The designs (real Boltz-2-predicted complexes + FASTA),
   per-design metrics, `results.json`, and a populated `RESULTS.md` live in
   `benchmarks/designer_benchmark/`. New `prepare_erbb2_target.py` (extracts the
   domain-IV target from the AlphaFold model) and `score_run.py` (aggregates a returned
