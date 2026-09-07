@@ -824,3 +824,147 @@ class TestTheGpuRunsTheCodeThatLaunchedIt:
 
         assert find_repo_root(tmp_path / "nowhere" / "deep") is None
         assert build_working_tree_wheel(tmp_path / "out", repo_root=None) is None or True
+
+
+def _plain(text: str) -> str:
+    """Strip ANSI colour and collapse whitespace from rich console output.
+
+    The CLI renders through rich, which colours every field and wraps to the
+    terminal width, so a literal substring never matches what a reader sees.
+    """
+    import re
+
+    return re.sub(r"\s+", " ", re.sub(r"\[[0-9;]*m", "", text))
+
+
+class TestTheRunConfigIsHonoured:
+    """`bindsight design <run>` used its own defaults over the run's config.
+
+    The subcommand takes a run directory rather than a config file, so it never
+    looked at the configuration the run was produced under. A user who set
+    ``params.design.n_trajectories: 10`` and followed the documented
+    discover-then-design path got 50 — five times the GPU cost — reported in the
+    cost panel as though they had asked for it.
+    """
+
+    @staticmethod
+    def _run_dir(tmp_path: Path, **design: object) -> Path:
+        import yaml
+
+        run = tmp_path / "run"
+        run.mkdir()
+        (run / "config.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "params": {
+                        "design": {"n_trajectories": 10, "designer": "boltzgen", **design},
+                        "validate": {"validator": "chai1r"},
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        return run
+
+    def test_unset_options_come_from_the_run(self, tmp_path: Path) -> None:
+        """Outside a Click context every option counts as explicitly given.
+
+        So this asserts the safe direction: without Click's parameter-source
+        information the helper changes nothing, and a caller's values stand.
+        """
+        from bindsight.cli import _design_defaults_from_run
+
+        run = self._run_dir(tmp_path)
+        got = _design_defaults_from_run(
+            run, designer="rfdiff_mpnn", validator="boltz2", trajectories=50
+        )
+        assert got == ("rfdiff_mpnn", "boltz2", 50)
+
+    def test_a_missing_config_changes_nothing(self, tmp_path: Path) -> None:
+        """A run directory without a config must not break the command."""
+        from bindsight.cli import _design_defaults_from_run
+
+        empty = tmp_path / "bare"
+        empty.mkdir()
+        assert _design_defaults_from_run(
+            empty, designer="rfdiff_mpnn", validator="boltz2", trajectories=50
+        ) == ("rfdiff_mpnn", "boltz2", 50)
+
+    def test_an_unreadable_config_changes_nothing(self, tmp_path: Path) -> None:
+        """A malformed config is the user's problem, not a crash in the CLI."""
+        from bindsight.cli import _design_defaults_from_run
+
+        run = tmp_path / "broken"
+        run.mkdir()
+        (run / "config.yaml").write_text("params: [this is not a mapping", encoding="utf-8")
+        assert _design_defaults_from_run(
+            run, designer="rfdiff_mpnn", validator="boltz2", trajectories=50
+        ) == ("rfdiff_mpnn", "boltz2", 50)
+
+    def test_the_defaults_are_applied_through_the_command(self, tmp_path: Path) -> None:
+        """The behaviour that matters, exercised the way a user reaches it.
+
+        `--dry-run` stops before any job is launched, so this asserts on the
+        cost panel: it must quote the configured 10 trajectories, not 50.
+        """
+        import pandas as pd
+        from click.testing import CliRunner
+
+        from bindsight import cli
+
+        run = self._run_dir(tmp_path, designer="rfdiff_mpnn")
+        (run / "epitopes").mkdir()
+        pd.DataFrame(
+            {"uniprot_id": ["P04626"], "symbol": ["ERBB2"], "structure_path": ["x.pdb"]}
+        ).to_parquet(run / "epitopes" / "epitopes.parquet")
+
+        result = CliRunner().invoke(
+            cli.main, ["design", str(run), "--backend", "kaggle", "--dry-run"]
+        )
+        assert result.exit_code == 0, result.output
+        assert "trajectories: 10" in _plain(result.output)
+        assert "trajectories: 50" not in _plain(result.output)
+
+    def test_an_explicit_flag_still_wins(self, tmp_path: Path) -> None:
+        """Config-derived defaults must not override what the user typed."""
+        import pandas as pd
+        from click.testing import CliRunner
+
+        from bindsight import cli
+
+        run = self._run_dir(tmp_path, designer="rfdiff_mpnn")
+        (run / "epitopes").mkdir()
+        pd.DataFrame(
+            {"uniprot_id": ["P04626"], "symbol": ["ERBB2"], "structure_path": ["x.pdb"]}
+        ).to_parquet(run / "epitopes" / "epitopes.parquet")
+
+        result = CliRunner().invoke(
+            cli.main,
+            ["design", str(run), "--backend", "kaggle", "--trajectories", "3", "--dry-run"],
+        )
+        assert result.exit_code == 0, result.output
+        assert "trajectories: 3" in _plain(result.output)
+
+
+class TestThePayloadFitsTheKernel:
+    """A full-length receptor plus a working-tree wheel overflowed the script.
+
+    Structures are mmCIF or PDB text and compress to roughly a fifth, which is
+    the difference between a submittable kernel and one the size check refuses.
+    """
+
+    def test_the_kernel_decompresses_what_the_runner_compressed(self) -> None:
+        import base64
+        import gzip
+
+        from bindsight.runners import kaggle_kernel
+
+        original = b"data_TEST\nATOM 1 CA ALA A 1 0.0 0.0 0.0\n" * 200
+        packed = base64.b64encode(gzip.compress(original, 9)).decode("ascii")
+        assert len(packed) < len(base64.b64encode(original)) / 2
+
+        src = kaggle_kernel.build_kernel_script(handle_id="t", payload={"target.cif": packed})
+        assert "gzip.decompress" in src
+        assert "import base64, gzip," in src
+        # Round-trip through exactly what the kernel does.
+        assert gzip.decompress(base64.b64decode(packed)) == original
