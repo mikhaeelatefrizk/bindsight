@@ -201,7 +201,9 @@ def _external_inputs(run: Path) -> list[tuple[str, Path]]:
     The manifest already records every stage input by path and by sha256, so it
     is the authoritative list. Anything it names that resolves outside the run
     is carried in under ``inputs/``, keeping its basename so the recorded digest
-    still identifies it.
+    still identifies it. A ``provenance.json`` sitting beside a carried-in input
+    comes too: it is the cohort's own record of how the sample set was
+    assembled, and no stage declares it as an input.
 
     Args:
         run: the run directory.
@@ -245,6 +247,22 @@ def _external_inputs(run: Path) -> list[tuple[str, Path]]:
                 arcname = f"inputs/{stage.get('name', 'stage')}-{src.name}"
             taken.add(arcname)
             out.append((arcname, src))
+
+    # The cohort's own provenance document travels with the cohort. It records
+    # how the sample set was assembled — the GDC project, the workflow, the
+    # retrieval date, the cases requested against those actually obtained —
+    # which is what lets a reader rebuild the cohort rather than merely read it.
+    # It is not a stage input, so nothing in the manifest points at it.
+    for cohort_dir in dict.fromkeys(src.parent for _, src in list(out)):
+        doc = cohort_dir / "provenance.json"
+        if not doc.is_file() or doc.resolve() in seen:
+            continue
+        seen.add(doc.resolve())
+        arcname = "inputs/provenance.json"
+        if arcname in taken:
+            arcname = f"inputs/{cohort_dir.name}-provenance.json"
+        taken.add(arcname)
+        out.append((arcname, doc))
     return out
 
 

@@ -134,9 +134,12 @@ def joined_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
         result = runner.invoke(cli.main, ["discover", str(config), "--out", str(out)])
         assert result.exit_code == 0, result.output
 
-        # The cohort files the crate must carry sit beside the run.
-        for name in ("counts.tsv", "design.tsv", "provenance.json"):
-            (out / name).write_bytes((src / name).read_bytes())
+        # The cohort deliberately stays where the config points, outside the run
+        # directory, because that is where real cohorts live. This fixture used
+        # to copy it in so the crate's allowlist could see it — which meant the
+        # crate test verified its own setup step rather than the exporter, and
+        # passed for months while real exports shipped with no cohort at all.
+        # The exporter now resolves the inputs the manifest records.
 
         for args in (
             ["design", str(out), "--backend", "mock", "--trajectories", "2"],
@@ -205,11 +208,18 @@ class TestCrateReachesThePatients:
         return zipfile.ZipFile(joined_run.parent / "run.crate.zip")
 
     def test_crate_carries_the_cohort(self, joined_run: Path) -> None:
-        """A crate that stops at the DEG table documents an analysis, not its origin."""
+        """A crate that stops at the DEG table documents an analysis, not its origin.
+
+        The cohort lives outside the run directory, as configured, so this is
+        only satisfied by the exporter resolving what the manifest recorded.
+        """
         names = set(self._crate(joined_run).namelist())
-        for required in ("design.tsv", "provenance.json", "run_manifest.jsonld"):
+        assert "run_manifest.jsonld" in names
+        for required in ("inputs/design.tsv", "inputs/provenance.json"):
             assert required in names, f"crate omits {required}"
-        assert any(n.startswith("counts.tsv") for n in names), "crate omits the counts matrix"
+        assert any(n.startswith("inputs/counts.tsv") for n in names), (
+            "crate omits the counts matrix, so it carries no patients"
+        )
 
     def test_the_walk_reaches_patient_barcodes(self, joined_run: Path) -> None:
         """From a ranked binder to the patients, using only what the crate carries."""
@@ -221,11 +231,11 @@ class TestCrateReachesThePatients:
         target = str(ranking.iloc[0]["target_uniprot"])
         assert target
 
-        cohort = json.loads(crate.read("provenance.json"))
+        cohort = json.loads(crate.read("inputs/provenance.json"))
         barcodes = {s["case_barcode"] for s in cohort["samples"]}
         assert barcodes, "the crate carries no patient barcodes"
         # The design table ties those barcodes to the samples the contrast used.
-        design = pd.read_csv(io.BytesIO(crate.read("design.tsv")), sep="\t")
+        design = pd.read_csv(io.BytesIO(crate.read("inputs/design.tsv")), sep="\t")
         assert set(design["case_barcode"]) <= barcodes
 
 
