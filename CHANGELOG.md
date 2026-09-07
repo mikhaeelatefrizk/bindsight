@@ -8,7 +8,151 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Withdrawn — the rediscovery headline
+
+- **ERBB2 at rank 4, and recall@5 of 33%, are withdrawn.** The breast cohort behind
+  them was stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes
+  the PAM50 centroid classifier is built on, so the tumour arm was selected partly
+  by expression of the gene then reported as discovered. The denominator of three
+  was separately chosen after seeing which antigens proved over-expressed. Two
+  errors that compound. Every surface that asserted the figure now retracts it:
+  the README, the docs site, the landing page, the JOSS paper, the bioRxiv draft,
+  the validation manuscript, and the social preview image — which said
+  "ERBB2 — rediscovered, rank 4" and is the card anyone saw when the repository
+  link was shared.
+
+### Added — a rediscovery study that is not circular
+
+- **Fifteen whole, unstratified TCGA projects**, run as patient-paired contrasts
+  (`~ case_barcode + condition`) against a pre-registered panel of 22
+  antigen-cohort pairs covering 13 antigens. No cohort's definition refers to the
+  antigen being sought. The admissibility rule is stated once and separates two
+  properties that the earlier error conflated: whether a stratifier is derived
+  from the run's own counts, and whether it measures the antigen under test.
+- **Recall at rank 20 is 1 of 17** on approved-agent antigens (95% CI 0.01–0.27),
+  2 of 17 at rank 50, and 3 of 22 across every regulatory tier. Over eight
+  independent antigens it is 0 of 8. The interval, not the point estimate, is the
+  finding at this panel size.
+- **Five antigens surface**: CA9 at rank 1 of 291 in clear-cell kidney, GPC3 at 9
+  of 289 in liver, MET at 10 of 287 in papillary kidney, FOLH1 at 34 of 285 in
+  prostate, STEAP1 at 158 of 285.
+- **Four outcomes are reported separately** rather than merged into one rate: an
+  antigen the surfaceome reference does not contain, one a stated filter excluded,
+  one the ranking placed low, and one whose lookup failed are four different
+  findings. Every non-surfaced pair carries a counterfactual rank saying which.
+- **Every rank is published with the size of the list it sits in**, every rate with
+  its numerator, denominator and interval, and recall at five cutoffs rather than
+  one. The old page printed "rank 4" and "recall@5 = 33%" without either.
+- The honest discussion: thirteen of seventeen approved-tier antigens are simply
+  not significantly over-expressed in an unstratified bulk contrast. Their agents
+  are licensed, so the antigens are real. That is a limit of the signal, not of
+  the ranking, and it is what the stratified analysis was concealing.
+
+### Fixed — defects that produced plausible-but-wrong output
+
+- **Binder ids collided across targets.** Every target produced `binder_0_seq0`,
+  so per-binder validation output overwrote itself on disk and
+  `validated.parquet` carried duplicate keys. `binder_id` is the key the whole
+  provenance claim is walked by. Ids now carry the target accession.
+- **The affinity field was wrong twice.** Chai-1's pTM and AF2's binder pLDDT were
+  written into `affinity_pred_value` and weighted at 0.30 as though they were
+  affinities, double-counting structure confidence; and the ranker treated the
+  field as higher-is-better when Boltz-2 reports a log(IC50)-like value where
+  lower is stronger, so the composite promoted the weakest designs. Both fixed,
+  and the ranking math now has numeric assertions — it previously had only
+  ordinal ones, which is why this was invisible.
+- **Validators scored the wrong target.** Binders designed against a trimmed
+  extracellular region were scored against the full-length receptor.
+- **The safety gate failed open.** An unmeasured GTEx answer compared False
+  against the ceiling and was published as having cleared a gate that never ran.
+- **`mean_epitope_plddt` was always null**, because the stored run-relative path
+  was never resolved.
+- **The idempotency guarantee was not implemented.** The cache key was computed
+  and used only as a directory name; every rerun resubmitted. It is now consulted,
+  covers the target structure's content, records hit or miss in the manifest, and
+  includes the backend — without which a `--backend mock` run and a later real one
+  shared a cache entry, so the real run would return synthetic numbers wearing a
+  real result's label.
+- **`bindsight validate` ran no validator.** `--revalidate` now dispatches the
+  chosen validator against existing designs, which is what makes cross-validator
+  agreement reachable without redesigning.
+- **BoltzGen could never have executed.** bindsight built
+  `boltzgen design --target ...`; upstream has no `design` subcommand and none of
+  those flags. It now emits a design-spec YAML and calls `boltzgen run`, converts
+  author residue numbering to the canonical indexing BoltzGen actually reads, and
+  passes `--use_kernels false` because its Triton kernels need compute capability
+  8.0 and every free-tier GPU is older.
+- **The Kaggle kernel was heading for an unusable GPU.** `enable_gpu` alone gets
+  Kaggle's default P100, which their own docs now say cannot run current PyTorch;
+  the failure surfaces hours in, as CUDA reports available and the first kernel
+  launch dies. The accelerator is pinned to a T4 and the kernel exits immediately
+  if compute capability is below 7.5.
+- **The Modal image could not run the designer** it exists to run: it installed
+  bindsight from PyPI, where it does not exist, on a base with no CUDA.
+- **dl_binder_design was cloned without its `silent_tools` submodule**, so the AF2
+  initial-guess validator failed on import.
+
+### Fixed — the provenance chain, which had never been demonstrated
+
+- **Only `bindsight run` wrote provenance past `discover`.** The README Quickstart
+  uses the individual subcommands, so following the documented path produced a
+  manifest that stopped exactly where the design half begins. Design, validate,
+  rank, report and export now each record themselves, idempotently by stage name.
+- **The exported crate broke at the patient end.** It omitted `counts.tsv.gz`,
+  `design.tsv` and `provenance.json` — the only artifacts carrying TCGA case and
+  sample barcodes. A crate that stops at the DEG table documents an analysis, not
+  its origin.
+- **The mock runner could not exercise the invariant it exists to guard**, emitting
+  a fixed pair of binder ids with `target_uniprot="MOCK"` for every target. It now
+  namespaces by target, as the real executor does.
+- Verified end to end on the real clear-cell kidney cohort: forty binders across
+  twenty targets, all ids unique, the top-ranked resolving to CA9, and the crate
+  carrying all seventy-two patient barcodes. `tests/test_join_end_to_end.py`
+  drives the same path in CI.
+
+### Changed — what the pipeline actually filters on
+
+- **The enrichment cut now runs after the surfaceome filter, not before.** It
+  previously took the top 300 significant genes from the whole genome and filtered
+  to surface proteins afterwards, so surface antigens competed against every gene
+  for those slots: in bladder cancer, 4,418 genes were significant, 300 reached
+  enrichment, and 24 were surface proteins. NECTIN4 — an approved-drug target for
+  that exact indication, over-expressed at log2fc 1.52 — ranked 259th of 2,104
+  surface proteins and was still excluded. The ordering was forced, not careless:
+  the filter needed UniProt accessions that only existed after enrichment. A
+  vendored Ensembl-to-accession map removes that dependency, and filtering first
+  costs nothing. Shortlists grew from roughly 40 candidates to roughly 295.
+- **The surfaceome reference is extended** with UniProt's curated cell-membrane
+  annotations: 1,915 further accessions, from 2,886 to 4,801. CA9 measures a log2
+  fold change of 9.58 in clear-cell kidney — the largest effect in the panel — and
+  was unreachable at any expression level because its accession was absent. So was
+  STEAP1. The extension is additive, every entry records its source, and
+  `use_extended_surfaceome=False` reproduces a SURFY-only run exactly.
+- **Differential expression is cached** on the content of its inputs and every
+  parameter. It dominates every run — over ten minutes for 32 matched pairs — and
+  a downstream change previously forced hours of identical recomputation.
+  Re-running fifteen cohorts against the new surfaceome took eight minutes rather
+  than ten hours.
+- **`iptm_threshold` and `pae_interaction_threshold` are applied.** They were
+  declared, shipped in both example configs, and read by no code, so a user who
+  tightened either was silently ignored. Designs are now annotated with
+  `passes_thresholds` and a reason, and never dropped: a design vanishing without
+  a recorded reason is the class of invisible filter this release exists to remove.
+- **`enrich_top_k` is a declared parameter** rather than a module constant, so the
+  most consequential filter in discovery lands in the run manifest.
+- **The DESeq2 worker count is configurable.** Its default of every core is right
+  on a server and hostile on a laptop running a multi-hour cohort sweep.
+- The readiness table and ARCHITECTURE now match the code: `bindsight validate`
+  materialises rather than validates unless `--revalidate` is passed; only the
+  Kaggle backend is verified, with Modal prepared-but-unexecuted and Colab an
+  interactive on-ramp that cannot be a reproducibility path because Google's API
+  does not permit launching a free-tier notebook from a CLI; the idempotency
+  section describes the implementation; and the claim that the CLI and Snakemake
+  front-ends produce identical artifacts is retracted.
+
 ### Removed
+
+
 
 - The Streamlit Community Cloud mirror (`bindsight.streamlit.app`) is no longer a
   supported deployment; the Hugging Face Space is the single hosted demo. The
