@@ -549,3 +549,107 @@ def test_gtex_safe_target_surfaces(tmp_path: Path, fixtures_dir: Path) -> None:
     erbb2 = cands[cands["uniprot_id"] == "P04626"].iloc[0]
     assert float(erbb2["max_vital_tissue_tpm"]) == pytest.approx(47.78, rel=1e-2)
     assert bool(erbb2["high_normal_tissue_expression"]) is False
+
+
+def test_an_unreachable_open_targets_is_not_a_clean_safety_record(
+    tmp_path: Path, fixtures_dir: Path
+) -> None:
+    """A safety-event count that was never measured must not clear the safety gate.
+
+    The count defaults to zero when the lookup returns nothing, so a rate limit
+    or a network blip promoted every affected gene to "no known safety events"
+    and it sailed through a filter built to exclude exactly that. The GTEx gate
+    beside it was already fixed not to do this; this one still did.
+
+    The disposition must say which happened. Reporting it as ``fails_safety``
+    would publish a network outage as a negative result about the gene.
+    """
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.require_tractable_modality = []
+    out = tmp_path / "out"
+
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=_FakeOpenTargets({}),  # every lookup -> no record
+            alphafolddb_client=_FakeAlphaFoldDB({"P04626": struct}),
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    assert set(tax["disposition"]).issubset(set(TAXONOMY_DISPOSITIONS))
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "safety_unassessed"
+    assert disp["ENSG00000141736"] != "surfaced", "an unmeasured gene must not clear the gate"
+    assert disp["ENSG00000141736"] != "fails_safety", "it failed nothing; it was never measured"
+
+    cands = pd.read_parquet(out / "targets" / "candidates.parquet")
+    assert "P04626" not in set(cands.get("uniprot_id", []))
+
+
+def test_switching_the_gate_off_withholds_nothing_on_its_account(
+    tmp_path: Path, fixtures_dir: Path
+) -> None:
+    """A gate the user disabled claims nothing, so it must not withhold either."""
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.require_tractable_modality = []
+    cfg.params.target_discovery.use_open_targets = False
+    out = tmp_path / "out"
+
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=_FakeOpenTargets({}),
+            alphafolddb_client=_FakeAlphaFoldDB({"P04626": struct}),
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "surfaced"
+
+
+def test_the_loosening_must_be_asked_for_explicitly(tmp_path: Path, fixtures_dir: Path) -> None:
+    """Accepting unmeasured candidates is available, but never the default.
+
+    The demo relies on this, because it is expected to run with no network at
+    all. Stating it in the config is the point: the loosening is visible to
+    anyone reading the run's own configuration rather than hidden in a default.
+    """
+    cfg = _cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.require_tractable_modality = []
+    assert cfg.params.target_discovery.open_targets_require_measured is True, (
+        "the safe setting must be what a config gets without asking"
+    )
+    cfg.params.target_discovery.open_targets_require_measured = False
+    out = tmp_path / "out"
+
+    struct = tmp_path / "s.cif"
+    struct.write_text("# cif\n")
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_single_erbb2_deg(),
+    ):
+        discover_pipeline.run(
+            cfg,
+            out_dir=out,
+            open_targets_client=_FakeOpenTargets({}),
+            alphafolddb_client=_FakeAlphaFoldDB({"P04626": struct}),
+            surfy=frozenset({"P04626"}),
+        )
+
+    tax = pd.read_parquet(out / "taxonomy" / "failure_taxonomy.parquet")
+    disp = dict(zip(tax["gene_id"], tax["disposition"], strict=True))
+    assert disp["ENSG00000141736"] == "surfaced"

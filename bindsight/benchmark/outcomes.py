@@ -104,6 +104,10 @@ GATE_EXPLANATIONS: dict[str, str] = {
     "structure_not_queried": "past the structure-fetch cap; no lookup was attempted",
     "high_normal_tissue_expression": "over the vital-tissue expression ceiling",
     "normal_tissue_unassessed": "no normal-tissue measurement, so the safety gate could not clear it",
+    "safety_unassessed": (
+        "no Open Targets record, so its safety-event count is unknown rather "
+        "than zero and the gate could not clear it"
+    ),
     "no_extracellular_domain": "no annotated extracellular domain to bind",
     "low_confidence_structure": "predicted structure too disordered",
     "no_alphafold_model": "no AlphaFold model available",

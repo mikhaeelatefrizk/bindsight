@@ -575,6 +575,11 @@ def _do_discover(
                     "tractable_modalities": ";".join(modalities),
                     "open_targets_status": ot_status,
                     "n_safety_events": ev.safety_event_count if ev else 0,
+                    # Whether that count is a measurement or a default. Without
+                    # this, a gene whose Open Targets lookup errored carries 0
+                    # and sails through a filter meant to exclude genes with
+                    # known safety events. Silence is not zero.
+                    "safety_events_measured": ev is not None,
                 }
             )
 
@@ -622,9 +627,30 @@ def _do_discover(
         LOG.info("tractability filter (%s): %d → %d", sorted(wanted), before, len(candidates))
 
     # 5. Safety filter (optional).
+    #
+    # An unreachable Open Targets is not a clean bill of health. The count
+    # defaults to zero when the lookup returns nothing, so before this a rate
+    # limit or a network blip promoted every affected gene to "no known safety
+    # events" — the same fail-open the GTEx gate beside it was fixed not to do.
+    # When the gate is switched off entirely the count claims nothing either
+    # way, so nothing is withheld on its account.
     if not candidates.empty:
         before = len(candidates)
-        candidates = candidates[candidates["n_safety_events"] <= p.max_safety_events].copy()
+        within = candidates["n_safety_events"] <= p.max_safety_events
+        gate_claims = p.use_open_targets and p.open_targets_require_measured
+        if gate_claims and "safety_events_measured" in candidates.columns:
+            measured = candidates["safety_events_measured"].fillna(False).astype(bool)
+            withheld = int((~measured).sum())
+            if withheld:
+                LOG.warning(
+                    "safety gate: %d candidate(s) withheld because Open Targets "
+                    "returned no record, so their safety-event count is unknown "
+                    "rather than zero",
+                    withheld,
+                )
+            candidates = candidates[within & measured].copy()
+        else:
+            candidates = candidates[within].copy()
         LOG.info(
             "safety filter (≤%d events): %d → %d", p.max_safety_events, before, len(candidates)
         )
@@ -863,6 +889,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "not_surfaceome",
     "fails_tractability",
     "fails_safety",
+    "safety_unassessed",
     "high_normal_tissue_expression",
     "normal_tissue_unassessed",
     "no_extracellular_domain",
@@ -940,11 +967,25 @@ def _build_taxonomy(
             if m.strip()
         }
         tract = surf and (not wanted or bool(wanted & mods))
-        safe = tract and (int(getattr(r, "n_safety_events", 0) or 0) <= p.max_safety_events)
-        d = reach.setdefault(gid, {"u": False, "surf": False, "tract": False, "safe": False})
+        # A gene whose safety count was never measured has not passed the gate;
+        # it was never put to it. Old taxonomies carry no such column, and a
+        # disabled gate claims nothing, so both default to measured.
+        safety_measured = (not (p.use_open_targets and p.open_targets_require_measured)) or bool(
+            getattr(r, "safety_events_measured", True)
+        )
+        safe = (
+            tract
+            and safety_measured
+            and (int(getattr(r, "n_safety_events", 0) or 0) <= p.max_safety_events)
+        )
+        d = reach.setdefault(
+            gid,
+            {"u": False, "surf": False, "tract": False, "safe": False, "safety_measured": False},
+        )
         d["u"] |= has_u
         d["surf"] |= surf
         d["tract"] |= tract
+        d["safety_measured"] |= tract and safety_measured
         d["safe"] |= safe
 
     cand_gids: set[str] = set()
@@ -1023,7 +1064,16 @@ def _build_taxonomy(
             else:
                 disp = "not_top_n"
         elif gid in enriched_gene_ids:
-            d = reach.get(gid, {"u": False, "surf": False, "tract": False, "safe": False})
+            d = reach.get(
+                gid,
+                {
+                    "u": False,
+                    "surf": False,
+                    "tract": False,
+                    "safe": False,
+                    "safety_measured": False,
+                },
+            )
             if not d["u"]:
                 disp = (
                     "uniprot_lookup_failed"
@@ -1034,6 +1084,11 @@ def _build_taxonomy(
                 disp = "not_surfaceome"
             elif wanted and not d["tract"]:
                 disp = "fails_tractability"
+            elif not d["safety_measured"]:
+                # Withheld for want of an answer, not for failing one. Reporting
+                # this as fails_safety would publish a network outage as a
+                # negative result about the gene.
+                disp = "safety_unassessed"
             else:
                 disp = "fails_safety"
         elif not significant:

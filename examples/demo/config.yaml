@@ -39,6 +39,12 @@ params:
     require_surfy: true
     surfy_allow_offline_fallback: true   # attempt full SURFY; fall back if offline
     use_open_targets: true               # genuine discovery across the surfaceome
+    # The demo is expected to run offline, where Open Targets is unreachable
+    # and every safety-event count is unknown. A real run withholds those
+    # candidates; the demo accepts them so it still shows a full pipeline
+    # without a network. This is a deliberate loosening, stated here rather
+    # than hidden in a default.
+    open_targets_require_measured: false
     require_tractable_modality: []       # don't pre-filter modality in the demo
     max_safety_events: 100
     require_surface_bind_site: false

@@ -138,6 +138,15 @@ class TargetDiscoveryParams(BaseModel):
     # accept unmeasured candidates, which is a deliberate loosening.
     gtex_require_measured: bool = True
 
+    # The same contract for Open Targets. ``n_safety_events`` defaults to zero
+    # when a lookup returns nothing, so an unreachable API would otherwise
+    # promote every affected gene to "no known safety events" and pass it
+    # through a filter built to exclude exactly that. Withhold instead, and
+    # record the disposition as ``safety_unassessed`` rather than
+    # ``fails_safety`` — a network outage is not a finding about the gene. Set
+    # False to accept unmeasured candidates, which is a deliberate loosening.
+    open_targets_require_measured: bool = True
+
     # Structure-confidence (disorder) filter — AlphaFold pLDDT (0-100). pLDDT is
     # always computed and surfaced (mean_plddt column); this only gates carry-
     # forward. 0 disables the gate (default). A typical disorder threshold is
