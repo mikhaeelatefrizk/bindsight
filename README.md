@@ -139,7 +139,7 @@ The bridge between them — *"this gene is up in disease, low in healthy tissue,
 |---|---|---|
 | Input | Target structure | RNA-seq counts |
 | Provenance | PDB + maybe a log | PROV-O JSON-LD + RO-Crate, audit trail to patient cohort |
-| Hardware | HPC assumed | CPU laptop + offload to free Colab / Modal / Kaggle |
+| Hardware | HPC assumed | CPU laptop + offload to a free Kaggle T4 (the verified path; see [runner status](#runner-and-plugin-status)) |
 | Cost-awareness | None | `--dry-run` estimates GPU $ before running |
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
 | Citability | Code dump | DOI per release, JSON-Schema-validated outputs, JOSS-style |
@@ -158,13 +158,13 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 | **`bindsight report --format streamlit`** — interactive dashboard for one run | ✅ ready | `bindsight report runs/x --format streamlit` |
 | **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
-| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ verified | `bindsight design runs/x --backend kaggle` |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ runs end to end | `bindsight design runs/x --backend kaggle` |
 | **`bindsight design`** — BindCraft / BoltzGen / Chai-1r / AF2-IG designers and validators | ⚠️ implemented, not yet executed | see [runner and plugin status](#runner-and-plugin-status) |
 | **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight validate --revalidate`** — run a *different* validator against binders that already exist, without redesigning | ✅ ready | `bindsight validate runs/x --validator chai1r --revalidate --backend kaggle` |
 | **`bindsight benchmark`** — score rediscovery of the held-out known antigens (recall@k) | ✅ ready | `bindsight benchmark runs/x --known-antigens benchmarks/known.tsv` |
-| **Snakemake front-end** — same pipeline as the CLI, end-to-end | ✅ ready | `snakemake --configfile my.yaml --cores 4` (`pip install -e ".[workflow]"`) |
+| **Snakemake front-end** — the same stage functions, driven as a DAG | ✅ ready, stops before the crate | `snakemake --configfile my.yaml --cores 4` (`pip install -e ".[workflow]"`). There is no `export_crate` rule; run `bindsight export` afterwards |
 | **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
 | **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
 
@@ -179,7 +179,7 @@ them as peers would be misleading. What each one actually is:
 | **local_docker** | For your own GPU | Native and containerised modes; the native mode is what CPU tests exercise. |
 | **Modal** | Prepared, not executed | The paid escape hatch for what free hardware cannot reach. Its image is built to carry the whole design stack, but running it costs money and it has not been run end to end. |
 | **Colab** | Interactive on-ramp only | Google's API does not permit launching a free-tier notebook from a CLI, so this path needs a human with a browser tab open. That is a demo, not a reproducibility path. |
-| **RFdiffusion, ProteinMPNN, Boltz-2** | Verified on free hardware | The committed benchmark run. |
+| **RFdiffusion, ProteinMPNN, Boltz-2** | Runs on free hardware | The committed benchmark ran the whole stack on a free Kaggle GPU. Its ipTM figures are **provisional**: ProteinMPNN ran without `--pdb_path_chains` and redesigned the target chain as well as the binder, so they describe a protocol that has since been corrected. A re-run under the fixed protocol supersedes them. |
 | **AF2 initial-guess** | Buildable free | PyRosetta is credential-free for non-commercial use since 2024. Non-commercial weights. |
 | **BindCraft, BoltzGen** | Reduced-target only on free hardware | Both fit a 16 GB card against a small domain, not a full receptor. BoltzGen's integration was rewritten after its command was found not to exist upstream. |
 | **Chai-1r** | Needs Ampere or newer | It requires bfloat16, which no free-tier GPU has. Verifying it means renting roughly an hour of a modern card. |

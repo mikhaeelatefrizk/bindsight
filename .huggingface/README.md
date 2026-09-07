@@ -86,10 +86,12 @@ W3C PROV-O JSON-LD throughout, with an RO-Crate export.  The individual
 steps are the community's; the join, its defaults and its provenance are
 what bindsight contributes.
 
-The discovery half (PyDESeq2 → SURFY → Open Targets → AlphaFoldDB →
-SURFACE-Bind) runs on this Space's free CPU.  The design half templates
-Colab/Modal GPU jobs (RFdiffusion + ProteinMPNN + Boltz-2) — see the
-Colab recipe in the GitHub repo.
+The discovery half (PyDESeq2 → surfaceome → Open Targets → AlphaFoldDB →
+SURFACE-Bind) runs on this Space's free CPU.  The design half
+(RFdiffusion + ProteinMPNN + Boltz-2) needs a GPU and runs headlessly on a
+free Kaggle T4 — see `benchmarks/RUN_ON_KAGGLE.md` in the GitHub repo.
+Modal is the paid escape hatch, and Colab needs a human with a browser tab
+open, so neither is a reproducibility path.
 
 ## License
 

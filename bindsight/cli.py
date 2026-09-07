@@ -574,8 +574,10 @@ def run(
 
     CPU stages (discover, rank, report, export) always execute. GPU stages
     (design, validate) run only if the corresponding outputs are already
-    present from a previous Colab/Modal session — this command is the
-    single-entry-point version of running each stage in turn.
+    present from a previous GPU session — this command is the
+    single-entry-point version of running each stage in turn. To produce those
+    outputs, run ``bindsight design`` against a GPU backend first; ``--backend
+    kaggle`` is the verified free path.
     """
     _setup_logging(verbose=False)
     from bindsight.config import RunConfig
@@ -611,7 +613,7 @@ def run(
     result = run_full(cfg, out_dir=out_dir)
     summary_lines = [
         f"discover : {'OK' if result.discover_ok else 'partial / failed'}",
-        f"design   : {'OK (artifacts present)' if result.design_ok else 'pending — run on Colab/Modal'}",
+        f"design   : {'OK (artifacts present)' if result.design_ok else 'pending — run: bindsight design <run> --backend kaggle'}",
         f"validate : {'OK (artifacts present)' if result.validate_ok else 'pending — needs design output'}",
         f"rank     : {'OK' if result.rank_ok else 'skipped (no validate output)'}",
         f"report   : {result.report_path}" if result.report_path else "report: not rendered",
