@@ -1,0 +1,475 @@
+[{"stream_name":"stdout","time":0.989387274,"data":"\n"}
+,{"stream_name":"stdout","time":0.989459465,"data":"========== GPU check ==========\n"}
+,{"stream_name":"stdout","time":0.990683249,"data":"[disk @ GPU check] / 1026.8/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1026.8/8062.4 GiB free | /tmp 1026.8/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":1.035965641,"data":"[gpu @ GPU check] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":1.036000275,"data":"Tesla T4, 0, 15360 | peak so far 0 MiB\n"}
+,{"stream_name":"stdout","time":1.03600509,"data":"\n"}
+,{"stream_name":"stdout","time":1.036009122,"data":"+ nvidia-smi --query-gpu=name,memory.total,compute_cap,driver_version --format=csv,noheader || true\n"}
+,{"stream_name":"stdout","time":1.067344218,"data":"Tesla T4, 15360 MiB, 7.5, 580.159.04\n"}
+,{"stream_name":"stdout","time":1.067380773,"data":"Tesla T4, 15360 MiB, 7.5, 580.159.04\n"}
+,{"stream_name":"stdout","time":1.0740621830000001,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":1.110122664,"data":"compute capability 7.5 (need \u003e= 7.5)\n"}
+,{"stream_name":"stdout","time":1.110158869,"data":"\n"}
+,{"stream_name":"stdout","time":1.110163163,"data":"========== install micromamba ==========\n"}
+,{"stream_name":"stdout","time":1.110167474,"data":"[disk @ install micromamba] / 1026.8/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1026.8/8062.4 GiB free | /tmp 1026.8/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":1.144445084,"data":"[gpu @ install micromamba] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":1.1444728610000001,"data":"Tesla T4, 0, 15360 | peak so far 0 MiB\n"}
+,{"stream_name":"stdout","time":1.144756634,"data":"\n"}
+,{"stream_name":"stdout","time":1.1447653,"data":"+ curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C /opt/micromamba bin/micromamba\n"}
+,{"stream_name":"stdout","time":3.758170486,"data":"  (3s, exit=0)\n"}
+,{"stream_name":"stdout","time":3.758198277,"data":"\n"}
+,{"stream_name":"stdout","time":3.7582035,"data":"+ /opt/micromamba/bin/micromamba --version\n"}
+,{"stream_name":"stdout","time":3.7810315169999997,"data":"2.9.0\n"}
+,{"stream_name":"stdout","time":3.782147425,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":3.782165209,"data":"\n"}
+,{"stream_name":"stdout","time":3.782169121,"data":"========== clone RFdiffusion + ProteinMPNN, fetch weights ==========\n"}
+,{"stream_name":"stdout","time":3.782232809,"data":"[disk @ clone RFdiffusion + ProteinMPNN, fetch weights] / 1026.8/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1026.8/8062.4 GiB free | /tmp 1026.8/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":3.818858035,"data":"[gpu @ clone RFdiffusion + ProteinMPNN, fetch weights] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":3.8189004029999998,"data":"Tesla T4, 0, 15360 | peak so far 0 MiB\n"}
+,{"stream_name":"stdout","time":3.819100165,"data":"\n"}
+,{"stream_name":"stdout","time":3.819108224,"data":"+ git clone -q https://github.com/RosettaCommons/RFdiffusion /opt/tools/RFdiffusion\n"}
+,{"stream_name":"stdout","time":5.155617499,"data":"  (1s, exit=0)\n"}
+,{"stream_name":"stdout","time":5.155677138,"data":"\n"}
+,{"stream_name":"stdout","time":5.155683826,"data":"+ git -C /opt/tools/RFdiffusion checkout -q 2d0c003df46b9db41d119321f15403dec3716cd9\n"}
+,{"stream_name":"stdout","time":5.235917126,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":5.236178003,"data":"\n"}
+,{"stream_name":"stdout","time":5.236192004,"data":"+ wget -q 'https://files.ipd.uw.edu/pub/RFdiffusion/6f5902ac237024bdd0c176cb93063dc4/Base_ckpt.pt' -O '/opt/tools/RFdiffusion/models/Base_ckpt.pt'\n"}
+,{"stream_name":"stdout","time":7.5032357229999995,"data":"  (2s, exit=0)\n"}
+,{"stream_name":"stdout","time":8.825319235,"data":"checkpoint Base_ckpt.pt: 483616107 bytes sha256=0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca\n"}
+,{"stream_name":"stdout","time":8.825354198,"data":"\n"}
+,{"stream_name":"stdout","time":8.825358905,"data":"+ wget -q 'https://files.ipd.uw.edu/pub/RFdiffusion/e29311f6f1bf1af907f9ef9f44b8328b/Complex_base_ckpt.pt' -O '/opt/tools/RFdiffusion/models/Complex_base_ckpt.pt'\n"}
+,{"stream_name":"stdout","time":12.32245971,"data":"  (3s, exit=0)\n"}
+,{"stream_name":"stdout","time":13.646976437,"data":"checkpoint Complex_base_ckpt.pt: 483619179 bytes sha256=76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc\n"}
+,{"stream_name":"stdout","time":13.647012663,"data":"\n"}
+,{"stream_name":"stdout","time":13.647017505,"data":"+ git clone -q https://github.com/dauparas/ProteinMPNN /opt/tools/ProteinMPNN\n"}
+,{"stream_name":"stdout","time":18.853310242,"data":"  (5s, exit=0)\n"}
+,{"stream_name":"stdout","time":18.853345181,"data":"\n"}
+,{"stream_name":"stdout","time":18.853351365,"data":"+ git -C /opt/tools/ProteinMPNN checkout -q 8907e6671bfbfc92303b5f79c4b5e6ce47cdef57\n"}
+,{"stream_name":"stdout","time":19.235090247,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":19.235115314,"data":"\n"}
+,{"stream_name":"stdout","time":19.235121942,"data":"========== build se3 env (RFdiffusion: py3.9 / torch1.12+cu113 â€” covers sm_75) ==========\n"}
+,{"stream_name":"stdout","time":19.235128688,"data":"[disk @ build se3 env (RFdiffusion: py3.9 / torch1.12+cu113 â€” covers sm_75)] / 1025.7/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1025.7/8062.4 GiB free | /tmp 1025.7/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":19.272792286,"data":"[gpu @ build se3 env (RFdiffusion: py3.9 / torch1.12+cu113 â€” covers sm_75)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":19.2728268,"data":"Tesla T4, 0, 15360 | peak so far 0 MiB\n"}
+,{"stream_name":"stdout","time":19.27283263,"data":"\n"}
+,{"stream_name":"stdout","time":19.272837569,"data":"+ /opt/micromamba/bin/micromamba create -y -p /opt/mamba/envs/se3 -c conda-forge python=3.9 pip\n"}
+,{"stream_name":"stdout","time":19.384002405,"data":"Fetch Shard Index for conda-forge/linux-64                                                      ⧖ Starting\n"}
+,{"stream_name":"stdout","time":19.644204262,"data":"Fetch Shard Index for conda-forge/linux-64                                                ✔ Done (0.3 sec)\n"}
+,{"stream_name":"stdout","time":19.644236973,"data":"Fetch Shard Index for conda-forge/noarch                                                        ⧖ Starting\n"}
+,{"stream_name":"stdout","time":19.743139542,"data":"Fetch Shard Index for conda-forge/noarch                                                  ✔ Done (0.1 sec)\n"}
+,{"stream_name":"stdout","time":19.743168651,"data":"Fetching and Parsing Packages' Shards                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":23.101261736,"data":"Fetching and Parsing Packages' Shards                                                     ✔ Done (3.4 sec)\n"}
+,{"stream_name":"stdout","time":23.310230115,"data":"\n"}
+,{"stream_name":"stdout","time":23.310276463,"data":"Resolving Environment                                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":23.527935845000002,"data":"Resolving Environment                                                                     ✔ Done (0.2 sec)\n"}
+,{"stream_name":"stdout","time":23.528328627,"data":"\n"}
+,{"stream_name":"stdout","time":23.528363564,"data":"Transaction\n"}
+,{"stream_name":"stdout","time":23.528375882,"data":"\n"}
+,{"stream_name":"stdout","time":23.52837939,"data":"  Prefix: /opt/mamba/envs/se3\n"}
+,{"stream_name":"stdout","time":23.528382136,"data":"\n"}
+,{"stream_name":"stdout","time":23.528384673,"data":"  Updating specs:\n"}
+,{"stream_name":"stdout","time":23.528387334,"data":"\n"}
+,{"stream_name":"stdout","time":23.528390979,"data":"   - python=3.9\n"}
+,{"stream_name":"stdout","time":23.528418785,"data":"   - pip\n"}
+,{"stream_name":"stdout","time":23.528423852,"data":"\n"}
+,{"stream_name":"stdout","time":23.528428426,"data":"\n"}
+,{"stream_name":"stdout","time":23.549946628,"data":"  Package               Version  Build                 Channel          Size\n"}
+,{"stream_name":"stdout","time":23.549981242,"data":"──────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stderr","time":23.549923041,"data":"warning  libmamba Security Warning: This transaction includes executing package scripts (pre/post-link/unlink) if present. These scripts can contain arbitrary code. Please ensure you trust the package sources.\n"}
+,{"stream_name":"stdout","time":23.550019792,"data":"  Install:\n"}
+,{"stream_name":"stdout","time":23.550039964,"data":"──────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":23.550048983,"data":"\n"}
+,{"stream_name":"stdout","time":23.550053985,"data":"  + _openmp_mutex           4.5  20_gnu                conda-forge      29kB\n"}
+,{"stream_name":"stdout","time":23.550059807,"data":"  + bzip2                 1.0.8  hda65f42_10           conda-forge     258kB\n"}
+,{"stream_name":"stdout","time":23.55006469,"data":"  + ca-certificates   2026.7.22  hbd8a1cb_0            conda-forge     132kB\n"}
+,{"stream_name":"stdout","time":23.550068875,"data":"  + icu                    78.3  py310h44b86e0_2       conda-forge      14MB\n"}
+,{"stream_name":"stdout","time":23.550072858,"data":"  + ld_impl_linux-64     2.46.1  default_hbd61a6d_102  conda-forge     745kB\n"}
+,{"stream_name":"stdout","time":23.55007678,"data":"  + libexpat              2.8.1  hecca717_1            conda-forge      78kB\n"}
+,{"stream_name":"stdout","time":23.55008074,"data":"  + libffi                3.7.0  h81df57d_1            conda-forge      68kB\n"}
+,{"stream_name":"stdout","time":23.550084745,"data":"  + libgcc               16.2.0  ha9f2e26_4            conda-forge       1MB\n"}
+,{"stream_name":"stdout","time":23.550088899,"data":"  + libgomp              16.2.0  he0feb66_4            conda-forge     640kB\n"}
+,{"stream_name":"stdout","time":23.550099891,"data":"  + liblzma               5.8.3  hb03c661_1            conda-forge     113kB\n"}
+,{"stream_name":"stdout","time":23.550102899,"data":"  + libnsl                2.0.1  hb9d3cd8_1            conda-forge      34kB\n"}
+,{"stream_name":"stdout","time":23.550105649,"data":"  + libsqlite            3.53.4  h13e7031_1            conda-forge     974kB\n"}
+,{"stream_name":"stdout","time":23.55010831,"data":"  + libstdcxx            16.2.0  h934c35e_4            conda-forge       7MB\n"}
+,{"stream_name":"stdout","time":23.550111001,"data":"  + libuuid              2.42.3  hcfc3c73_0            conda-forge      40kB\n"}
+,{"stream_name":"stdout","time":23.550113728,"data":"  + libxcrypt            4.4.38  h280c20c_0            conda-forge     102kB\n"}
+,{"stream_name":"stdout","time":23.550127895,"data":"  + libzlib               1.3.2  h25fd6f3_3            conda-forge      64kB\n"}
+,{"stream_name":"stdout","time":23.550147759,"data":"  + ncurses                 6.6  hdb14827_1            conda-forge     911kB\n"}
+,{"stream_name":"stdout","time":23.550152506,"data":"  + openssl               3.6.4  h781a0a9_0            conda-forge       3MB\n"}
+,{"stream_name":"stdout","time":23.550157127,"data":"  + pip                    25.2  pyh8b19718_0          conda-forge       1MB\n"}
+,{"stream_name":"stdout","time":23.550163976,"data":"  + python               3.9.23  hc30ae73_0_cpython    conda-forge      24MB\n"}
+,{"stream_name":"stdout","time":23.550168498,"data":"  + readline                8.3  hd6e31c0_1            conda-forge     349kB\n"}
+,{"stream_name":"stdout","time":23.55017242,"data":"  + setuptools           80.9.0  pyhff2d567_0          conda-forge     749kB\n"}
+,{"stream_name":"stdout","time":23.550176463,"data":"  + tk                   8.6.13  noxft_h1df4ec4_4      conda-forge       4MB\n"}
+,{"stream_name":"stdout","time":23.550180324,"data":"  + tzdata                2026c  h151e31d_0            conda-forge     119kB\n"}
+,{"stream_name":"stdout","time":23.550184347,"data":"  + wheel                0.45.1  pyhd8ed1ab_1          conda-forge      63kB\n"}
+,{"stream_name":"stdout","time":23.550188329,"data":"  + zstd                  1.5.7  hb78ec9c_7            conda-forge     601kB\n"}
+,{"stream_name":"stdout","time":23.550192389,"data":"\n"}
+,{"stream_name":"stdout","time":23.550195987,"data":"  Summary:\n"}
+,{"stream_name":"stdout","time":23.550199731,"data":"\n"}
+,{"stream_name":"stdout","time":23.550203312,"data":"  Install: 26 packages\n"}
+,{"stream_name":"stdout","time":23.5502072,"data":"\n"}
+,{"stream_name":"stdout","time":23.550212907,"data":"  Total download: 60MB\n"}
+,{"stream_name":"stdout","time":23.550226991,"data":"\n"}
+,{"stream_name":"stdout","time":23.550230612,"data":"──────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":23.550248554,"data":"\n"}
+,{"stream_name":"stdout","time":23.550252725,"data":"\n"}
+,{"stream_name":"stdout","time":23.55622817,"data":"\n"}
+,{"stream_name":"stdout","time":23.556250065,"data":"Transaction starting\n"}
+,{"stream_name":"stdout","time":24.643513038000002,"data":"Linking libzlib-1.3.2-h25fd6f3_3\n"}
+,{"stream_name":"stdout","time":24.644551633,"data":"Linking libgomp-16.2.0-he0feb66_4\n"}
+,{"stream_name":"stdout","time":24.645658075,"data":"Linking zstd-1.5.7-hb78ec9c_7\n"}
+,{"stream_name":"stdout","time":24.648164194,"data":"Linking _openmp_mutex-4.5-20_gnu\n"}
+,{"stream_name":"stdout","time":24.654005614,"data":"Linking ld_impl_linux-64-2.46.1-default_hbd61a6d_102\n"}
+,{"stream_name":"stdout","time":24.677498511,"data":"Linking libgcc-16.2.0-ha9f2e26_4\n"}
+,{"stream_name":"stdout","time":24.679344859,"data":"Linking libstdcxx-16.2.0-h934c35e_4\n"}
+,{"stream_name":"stdout","time":24.68037885,"data":"Linking bzip2-1.0.8-hda65f42_10\n"}
+,{"stream_name":"stdout","time":24.682741621,"data":"Linking libnsl-2.0.1-hb9d3cd8_1\n"}
+,{"stream_name":"stdout","time":24.684280953,"data":"Linking libexpat-2.8.1-hecca717_1\n"}
+,{"stream_name":"stdout","time":24.685095286,"data":"Linking libuuid-2.42.3-hcfc3c73_0\n"}
+,{"stream_name":"stdout","time":24.686939909,"data":"Linking libffi-3.7.0-h81df57d_1\n"}
+,{"stream_name":"stdout","time":24.688504434,"data":"Linking libxcrypt-4.4.38-h280c20c_0\n"}
+,{"stream_name":"stdout","time":24.690519158,"data":"Linking liblzma-5.8.3-hb03c661_1\n"}
+,{"stream_name":"stdout","time":24.691325662,"data":"Linking ncurses-6.6-hdb14827_1\n"}
+,{"stream_name":"stdout","time":26.098927086,"data":"Linking tk-8.6.13-noxft_h1df4ec4_4\n"}
+,{"stream_name":"stdout","time":26.13943132,"data":"Linking icu-78.3-py310h44b86e0_2\n"}
+,{"stream_name":"stdout","time":26.160861727,"data":"Linking readline-8.3-hd6e31c0_1\n"}
+,{"stream_name":"stdout","time":26.163799346,"data":"Linking libsqlite-3.53.4-h13e7031_1\n"}
+,{"stream_name":"stdout","time":26.165237535,"data":"Linking tzdata-2026c-h151e31d_0\n"}
+,{"stream_name":"stdout","time":26.203929288,"data":"Linking ca-certificates-2026.7.22-hbd8a1cb_0\n"}
+,{"stream_name":"stdout","time":26.205071015,"data":"Linking openssl-3.6.4-h781a0a9_0\n"}
+,{"stream_name":"stdout","time":26.247077858,"data":"Linking python-3.9.23-hc30ae73_0_cpython\n"}
+,{"stream_name":"stdout","time":26.528483152,"data":"Linking wheel-0.45.1-pyhd8ed1ab_1\n"}
+,{"stream_name":"stdout","time":26.546363049,"data":"Linking setuptools-80.9.0-pyhff2d567_0\n"}
+,{"stream_name":"stdout","time":26.593489768,"data":"Linking pip-25.2-pyh8b19718_0\n"}
+,{"stream_name":"stdout","time":27.276395113,"data":"\n"}
+,{"stream_name":"stdout","time":27.276446425,"data":"Transaction finished\n"}
+,{"stream_name":"stdout","time":27.276450764,"data":"\n"}
+,{"stream_name":"stdout","time":27.277186491,"data":"\n"}
+,{"stream_name":"stdout","time":27.277201148,"data":"To activate this environment, use:\n"}
+,{"stream_name":"stdout","time":27.277204042,"data":"\n"}
+,{"stream_name":"stdout","time":27.277206312,"data":"    micromamba activate se3\n"}
+,{"stream_name":"stdout","time":27.277212972,"data":"\n"}
+,{"stream_name":"stdout","time":27.277215168,"data":"Or to execute a single command in this environment, use:\n"}
+,{"stream_name":"stdout","time":27.277217638,"data":"\n"}
+,{"stream_name":"stdout","time":27.277219782,"data":"    micromamba run -n se3 mycommand\n"}
+,{"stream_name":"stdout","time":27.277222154,"data":"\n"}
+,{"stream_name":"stdout","time":27.286313315,"data":"  (8s, exit=0)\n"}
+,{"stream_name":"stdout","time":27.286338979,"data":"\n"}
+,{"stream_name":"stdout","time":27.286346012,"data":"+ /opt/micromamba/bin/micromamba install -y -p /opt/mamba/envs/se3 -c conda-forge cudatoolkit=11.3\n"}
+,{"stream_name":"stdout","time":27.619420542,"data":"Using Cached Shard Index for conda-forge/linux-64                                                   ✔ Done\n"}
+,{"stream_name":"stdout","time":27.633272096,"data":"Using Cached Shard Index for conda-forge/noarch                                                     ✔ Done\n"}
+,{"stream_name":"stdout","time":27.633301669,"data":"Fetching and Parsing Packages' Shards                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":27.872960859,"data":"Fetching and Parsing Packages' Shards                                                     ✔ Done (0.2 sec)\n"}
+,{"stream_name":"stdout","time":28.369422312,"data":"\n"}
+,{"stream_name":"stdout","time":28.36945452,"data":"Pinned packages:\n"}
+,{"stream_name":"stdout","time":28.369458724,"data":"\n"}
+,{"stream_name":"stdout","time":28.369463021,"data":"  - python=3.9\n"}
+,{"stream_name":"stdout","time":28.369466439,"data":"\n"}
+,{"stream_name":"stdout","time":28.36946969,"data":"Resolving Environment                                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":28.548753897,"data":"Resolving Environment                                                                     ✔ Done (0.2 sec)\n"}
+,{"stream_name":"stdout","time":28.554829216,"data":"\n"}
+,{"stream_name":"stdout","time":28.554854718,"data":"Transaction\n"}
+,{"stream_name":"stdout","time":28.554860146,"data":"\n"}
+,{"stream_name":"stdout","time":28.554868614,"data":"  Prefix: /opt/mamba/envs/se3\n"}
+,{"stream_name":"stdout","time":28.55487152,"data":"\n"}
+,{"stream_name":"stdout","time":28.554874096,"data":"  Updating specs:\n"}
+,{"stream_name":"stdout","time":28.554876822,"data":"\n"}
+,{"stream_name":"stdout","time":28.554879343,"data":"   - cudatoolkit=11.3\n"}
+,{"stream_name":"stdout","time":28.554882039,"data":"\n"}
+,{"stream_name":"stdout","time":28.554884594,"data":"\n"}
+,{"stream_name":"stdout","time":28.56114501,"data":"  Package         Version  Build        Channel          Size\n"}
+,{"stream_name":"stdout","time":28.561170508,"data":"───────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":28.561179921,"data":"  Install:\n"}
+,{"stream_name":"stderr","time":28.561176721,"data":"warning  libmamba Security Warning: This transaction includes executing package scripts (pre/post-link/unlink) if present. These scripts can contain arbitrary code. Please ensure you trust the package sources.\n"}
+,{"stream_name":"stdout","time":28.561184397,"data":"───────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":28.561198176,"data":"\n"}
+,{"stream_name":"stdout","time":28.56120226,"data":"  + cudatoolkit    11.3.1  hb98b00a_13  conda-forge     633MB\n"}
+,{"stream_name":"stdout","time":28.561206777,"data":"  + libgcc-ng      16.2.0  h69a702a_4   conda-forge      28kB\n"}
+,{"stream_name":"stdout","time":28.561211486,"data":"  + libstdcxx-ng   16.2.0  hdf11a46_4   conda-forge      28kB\n"}
+,{"stream_name":"stdout","time":28.561215862,"data":"\n"}
+,{"stream_name":"stdout","time":28.561220187,"data":"  Summary:\n"}
+,{"stream_name":"stdout","time":28.561224513,"data":"\n"}
+,{"stream_name":"stdout","time":28.561228614,"data":"  Install: 3 packages\n"}
+,{"stream_name":"stdout","time":28.561233176000002,"data":"\n"}
+,{"stream_name":"stdout","time":28.561237465,"data":"  Total download: 633MB\n"}
+,{"stream_name":"stdout","time":28.561242112,"data":"\n"}
+,{"stream_name":"stdout","time":28.561246618,"data":"───────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":28.561252617,"data":"\n"}
+,{"stream_name":"stdout","time":28.561257344,"data":"\n"}
+,{"stream_name":"stdout","time":28.563867671,"data":"\n"}
+,{"stream_name":"stdout","time":28.563885421,"data":"Transaction starting\n"}
+,{"stream_name":"stdout","time":38.293587778,"data":"Linking libgcc-ng-16.2.0-h69a702a_4\n"}
+,{"stream_name":"stdout","time":38.296215781,"data":"Linking libstdcxx-ng-16.2.0-hdf11a46_4\n"}
+,{"stream_name":"stdout","time":38.298519486000004,"data":"Linking cudatoolkit-11.3.1-hb98b00a_13\n"}
+,{"stream_name":"stderr","time":38.321061409,"data":"warning  libmamba Executing post-link script for package 'cudatoolkit'.\n"}
+,{"stream_name":"stdout","time":38.362580132,"data":"By downloading and using the CUDA Toolkit conda packages, you accept the terms and conditions of the CUDA End User License Agreement (EULA): https://docs.nvidia.com/cuda/eula/index.html\n"}
+,{"stream_name":"stdout","time":38.362616338,"data":"\n"}
+,{"stream_name":"stdout","time":38.363546727,"data":"\n"}
+,{"stream_name":"stdout","time":38.363563161,"data":"Transaction finished\n"}
+,{"stream_name":"stdout","time":38.363568363,"data":"\n"}
+,{"stream_name":"stdout","time":38.37186408,"data":"  (11s, exit=0)\n"}
+,{"stream_name":"stdout","time":38.371905952,"data":"\n"}
+,{"stream_name":"stdout","time":38.371926514,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113\n"}
+,{"stream_name":"stdout","time":110.681390841,"data":"  (72s, exit=0)\n"}
+,{"stream_name":"stdout","time":110.681433401,"data":"\n"}
+,{"stream_name":"stdout","time":110.681438329,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input dgl==1.0.2+cu113 -f https://data.dgl.ai/wheels/cu113/repo.html\n"}
+,{"stream_name":"stdout","time":142.074501168,"data":"  (31s, exit=0)\n"}
+,{"stream_name":"stdout","time":142.074542842,"data":"\n"}
+,{"stream_name":"stdout","time":142.074548688,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input 'hydra-core==1.3.2' 'pyrsistent' 'omegaconf' 'icecream' 'scipy' 'numpy\u003c1.24' 'opt_einsum' 'opt_einsum_fx' 'e3nn==0.3.3'\n"}
+,{"stream_name":"stderr","time":145.970510124,"data":"  DEPRECATION: Building 'antlr4-python3-runtime' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'antlr4-python3-runtime'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stdout","time":157.206528229,"data":"  (15s, exit=0)\n"}
+,{"stream_name":"stdout","time":157.206564773,"data":"\n"}
+,{"stream_name":"stdout","time":157.206570896,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input -r /opt/tools/RFdiffusion/env/SE3Transformer/requirements.txt\n"}
+,{"stream_name":"stderr","time":162.306454397,"data":"  DEPRECATION: Building 'dllogger' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'dllogger'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stderr","time":162.548102146,"data":"  DEPRECATION: Building 'promise' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'promise'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stderr","time":162.811934628,"data":"  DEPRECATION: Building 'subprocess32' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'subprocess32'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stderr","time":163.06176113,"data":"  DEPRECATION: Building 'pathtools' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'pathtools'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stdout","time":165.547522884,"data":"  (8s, exit=0)\n"}
+,{"stream_name":"stdout","time":165.547558877,"data":"\n"}
+,{"stream_name":"stdout","time":165.547562929,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input --no-deps /opt/tools/RFdiffusion/env/SE3Transformer\n"}
+,{"stream_name":"stderr","time":166.241944428,"data":"  DEPRECATION: Building 'se3-transformer' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'se3-transformer'. Discussion can be found at https://github.com/pypa/pip/issues/6334\n"}
+,{"stream_name":"stdout","time":166.641897582,"data":"  (1s, exit=0)\n"}
+,{"stream_name":"stdout","time":166.641928692,"data":"\n"}
+,{"stream_name":"stdout","time":166.641933324,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/se3 pip install -q --no-input --no-deps -e /opt/tools/RFdiffusion\n"}
+,{"stream_name":"stderr","time":167.346259743,"data":"  DEPRECATION: Legacy editable install of rfdiffusion==1.1.0 from file:///opt/tools/RFdiffusion (setup.py develop) is deprecated. pip 25.3 will enforce this behaviour change. A possible replacement is to add a pyproject.toml or enable --use-pep517, and use setuptools \u003e= 64. If the resulting installation is not behaving as expected, try using --config-settings editable_mode=compat. Please consult the setuptools documentation for more information. Discussion can be found at https://github.com/pypa/pip/issues/11457\n"}
+,{"stream_name":"stdout","time":170.72490531,"data":"  (4s, exit=0)\n"}
+,{"stream_name":"stdout","time":170.724942059,"data":"\n"}
+,{"stream_name":"stdout","time":170.72495118,"data":"========== write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs) ==========\n"}
+,{"stream_name":"stdout","time":170.724957385,"data":"[disk @ write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs)] / 1017.1/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1017.1/8062.4 GiB free | /tmp 1017.1/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":170.761748907,"data":"[gpu @ write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":170.761782118,"data":"Tesla T4, 0, 15360 | peak so far 0 MiB\n"}
+,{"stream_name":"stdout","time":170.762052545,"data":"\n"}
+,{"stream_name":"stdout","time":170.762064516,"data":"+ /opt/se3_python.sh -c \"import torch, dgl, e3nn; print('se3 torch', torch.__version__, 'dgl', dgl.__version__, 'cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); x=torch.zeros(4,device='cuda'); print('se3 cuda op ok', (x+1).sum().item())\"\n"}
+,{"stream_name":"stdout","time":174.923857488,"data":"se3 torch 1.12.1+cu113 dgl 1.0.2+cu113 cuda True Tesla T4\n"}
+,{"stream_name":"stdout","time":174.923899784,"data":"se3 cuda op ok 4.0\n"}
+,{"stream_name":"stdout","time":175.435797529,"data":"  (5s, exit=0)\n"}
+,{"stream_name":"stdout","time":175.435852261,"data":"\n"}
+,{"stream_name":"stdout","time":175.435857236,"data":"========== build boltz env (Boltz-2 + bindsight: py3.11 / torch2.2+cu118 â€” covers sm_75) ==========\n"}
+,{"stream_name":"stdout","time":175.435860464,"data":"[disk @ build boltz env (Boltz-2 + bindsight: py3.11 / torch2.2+cu118 â€” covers sm_75)] / 1017.1/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1017.1/8062.4 GiB free | /tmp 1017.1/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":175.470883868,"data":"[gpu @ build boltz env (Boltz-2 + bindsight: py3.11 / torch2.2+cu118 â€” covers sm_75)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":175.470924857,"data":"Tesla T4, 0, 15360 | peak so far 13 MiB\n"}
+,{"stream_name":"stdout","time":175.470932809,"data":"\n"}
+,{"stream_name":"stdout","time":175.470935292,"data":"+ /opt/micromamba/bin/micromamba create -y -p /opt/mamba/envs/boltz -c conda-forge python=3.11 pip\n"}
+,{"stream_name":"stdout","time":175.492874843,"data":"Using Cached Shard Index for conda-forge/linux-64                                                   ✔ Done\n"}
+,{"stream_name":"stdout","time":175.507416036,"data":"Using Cached Shard Index for conda-forge/noarch                                                     ✔ Done\n"}
+,{"stream_name":"stdout","time":175.507437933,"data":"Fetching and Parsing Packages' Shards                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":175.664771428,"data":"Fetching and Parsing Packages' Shards                                                     ✔ Done (0.2 sec)\n"}
+,{"stream_name":"stdout","time":175.865233001,"data":"\n"}
+,{"stream_name":"stdout","time":175.865272238,"data":"Resolving Environment                                                                           ⧖ Starting\n"}
+,{"stream_name":"stdout","time":176.047605928,"data":"Resolving Environment                                                                     ✔ Done (0.2 sec)\n"}
+,{"stream_name":"stdout","time":176.048063786,"data":"\n"}
+,{"stream_name":"stdout","time":176.048073563,"data":"Transaction\n"}
+,{"stream_name":"stdout","time":176.04807866,"data":"\n"}
+,{"stream_name":"stdout","time":176.048082296,"data":"  Prefix: /opt/mamba/envs/boltz\n"}
+,{"stream_name":"stdout","time":176.048085953,"data":"\n"}
+,{"stream_name":"stdout","time":176.048089455,"data":"  Updating specs:\n"}
+,{"stream_name":"stdout","time":176.048093855,"data":"\n"}
+,{"stream_name":"stdout","time":176.048097586,"data":"   - python=3.11\n"}
+,{"stream_name":"stdout","time":176.048102143,"data":"   - pip\n"}
+,{"stream_name":"stdout","time":176.048105807,"data":"\n"}
+,{"stream_name":"stdout","time":176.048109819,"data":"\n"}
+,{"stream_name":"stdout","time":176.119169394,"data":"  Package               Version  Build                 Channel           Size\n"}
+,{"stream_name":"stdout","time":176.11920107,"data":"───────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":176.119208759,"data":"  Install:\n"}
+,{"stream_name":"stdout","time":176.119212585,"data":"───────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":176.119217992,"data":"\n"}
+,{"stream_name":"stdout","time":176.119221185,"data":"  + _openmp_mutex           4.5  20_gnu                conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119247362,"data":"  + bzip2                 1.0.8  hda65f42_10           conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119250433,"data":"  + ca-certificates   2026.7.22  hbd8a1cb_0            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119252808,"data":"  + icu                    78.3  py310h44b86e0_2       conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119255084,"data":"  + ld_impl_linux-64     2.46.1  default_hbd61a6d_102  conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119257595,"data":"  + libexpat              2.8.1  hecca717_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119259953,"data":"  + libffi                3.7.0  h81df57d_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.1192624,"data":"  + libgcc               16.2.0  ha9f2e26_4            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119264754,"data":"  + libgomp              16.2.0  he0feb66_4            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119267296,"data":"  + liblzma               5.8.3  hb03c661_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119269559,"data":"  + libnsl                2.0.1  hb9d3cd8_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119271886,"data":"  + libpython           3.11.16  h0c77377_2_cpython    conda-forge        8MB\n"}
+,{"stream_name":"stdout","time":176.119274135,"data":"  + libsqlite            3.53.4  h13e7031_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.11927639,"data":"  + libstdcxx            16.2.0  h934c35e_4            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119278652,"data":"  + libuuid              2.42.3  hcfc3c73_0            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119281008,"data":"  + libxcrypt            4.4.38  h280c20c_0            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119283264,"data":"  + libzlib               1.3.2  h25fd6f3_3            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119285527,"data":"  + ncurses                 6.6  hdb14827_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119287814,"data":"  + openssl               3.6.4  h781a0a9_0            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119326583,"data":"  + packaging              26.3  pyhc364b38_0          conda-forge      116kB\n"}
+,{"stream_name":"stdout","time":176.119335398,"data":"  + pip                  26.2.1  pyh8b19718_0          conda-forge        1MB\n"}
+,{"stream_name":"stdout","time":176.119339781,"data":"  + python              3.11.16  h5f976f7_2_cpython    conda-forge       23MB\n"}
+,{"stream_name":"stdout","time":176.119343503,"data":"  + readline                8.3  hd6e31c0_1            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.11934698,"data":"  + setuptools           84.0.0  pyh332efcf_0          conda-forge      524kB\n"}
+,{"stream_name":"stdout","time":176.119351089,"data":"  + tk                   8.6.13  noxft_h1df4ec4_4      conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119355038,"data":"  + tzdata                2026c  h151e31d_0            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119358869,"data":"  + wheel                0.48.0  pyhd8ed1ab_0          conda-forge       35kB\n"}
+,{"stream_name":"stdout","time":176.119362396,"data":"  + zstd                  1.5.7  hb78ec9c_7            conda-forge     Cached\n"}
+,{"stream_name":"stdout","time":176.119370858,"data":"\n"}
+,{"stream_name":"stdout","time":176.119375769,"data":"  Summary:\n"}
+,{"stream_name":"stdout","time":176.119382934,"data":"\n"}
+,{"stream_name":"stdout","time":176.119385382,"data":"  Install: 28 packages\n"}
+,{"stream_name":"stdout","time":176.119387635,"data":"\n"}
+,{"stream_name":"stdout","time":176.119389767,"data":"  Total download: 33MB\n"}
+,{"stream_name":"stdout","time":176.119391962,"data":"\n"}
+,{"stream_name":"stdout","time":176.119394227,"data":"───────────────────────────────────────────────────────────────────────────────\n"}
+,{"stream_name":"stdout","time":176.119396927,"data":"\n"}
+,{"stream_name":"stdout","time":176.119399077,"data":"\n"}
+,{"stream_name":"stderr","time":176.119169092,"data":"warning  libmamba Security Warning: This transaction includes executing package scripts (pre/post-link/unlink) if present. These scripts can contain arbitrary code. Please ensure you trust the package sources.\n"}
+,{"stream_name":"stdout","time":176.11953271,"data":"\n"}
+,{"stream_name":"stdout","time":176.119547852,"data":"Transaction starting\n"}
+,{"stream_name":"stdout","time":176.83164283,"data":"Linking libzlib-1.3.2-h25fd6f3_3\n"}
+,{"stream_name":"stdout","time":176.832663694,"data":"Linking libgomp-16.2.0-he0feb66_4\n"}
+,{"stream_name":"stdout","time":176.833705647,"data":"Linking zstd-1.5.7-hb78ec9c_7\n"}
+,{"stream_name":"stdout","time":176.836077377,"data":"Linking _openmp_mutex-4.5-20_gnu\n"}
+,{"stream_name":"stdout","time":176.841729122,"data":"Linking ld_impl_linux-64-2.46.1-default_hbd61a6d_102\n"}
+,{"stream_name":"stdout","time":176.865270976,"data":"Linking libgcc-16.2.0-ha9f2e26_4\n"}
+,{"stream_name":"stdout","time":176.866981957,"data":"Linking bzip2-1.0.8-hda65f42_10\n"}
+,{"stream_name":"stdout","time":176.869314018,"data":"Linking libnsl-2.0.1-hb9d3cd8_1\n"}
+,{"stream_name":"stdout","time":176.870964131,"data":"Linking libexpat-2.8.1-hecca717_1\n"}
+,{"stream_name":"stdout","time":176.871937857,"data":"Linking libffi-3.7.0-h81df57d_1\n"}
+,{"stream_name":"stdout","time":176.873554289,"data":"Linking liblzma-5.8.3-hb03c661_1\n"}
+,{"stream_name":"stdout","time":176.874364691,"data":"Linking ncurses-6.6-hdb14827_1\n"}
+,{"stream_name":"stdout","time":178.25874996,"data":"Linking tk-8.6.13-noxft_h1df4ec4_4\n"}
+,{"stream_name":"stdout","time":178.299711448,"data":"Linking libstdcxx-16.2.0-h934c35e_4\n"}
+,{"stream_name":"stdout","time":178.300875852,"data":"Linking libuuid-2.42.3-hcfc3c73_0\n"}
+,{"stream_name":"stdout","time":178.302713311,"data":"Linking libxcrypt-4.4.38-h280c20c_0\n"}
+,{"stream_name":"stdout","time":178.304624508,"data":"Linking readline-8.3-hd6e31c0_1\n"}
+,{"stream_name":"stdout","time":178.307337651,"data":"Linking icu-78.3-py310h44b86e0_2\n"}
+,{"stream_name":"stdout","time":178.327911035,"data":"Linking libpython-3.11.16-h0c77377_2_cpython\n"}
+,{"stream_name":"stdout","time":178.439152985,"data":"Linking libsqlite-3.53.4-h13e7031_1\n"}
+,{"stream_name":"stdout","time":178.440350733,"data":"Linking tzdata-2026c-h151e31d_0\n"}
+,{"stream_name":"stdout","time":178.478638312,"data":"Linking ca-certificates-2026.7.22-hbd8a1cb_0\n"}
+,{"stream_name":"stdout","time":178.479603777,"data":"Linking openssl-3.6.4-h781a0a9_0\n"}
+,{"stream_name":"stdout","time":178.520123509,"data":"Linking python-3.11.16-h5f976f7_2_cpython\n"}
+,{"stream_name":"stdout","time":178.794473087,"data":"Linking packaging-26.3-pyhc364b38_0\n"}
+,{"stream_name":"stdout","time":178.804562803,"data":"Linking setuptools-84.0.0-pyh332efcf_0\n"}
+,{"stream_name":"stdout","time":178.835110537,"data":"Linking wheel-0.48.0-pyhd8ed1ab_0\n"}
+,{"stream_name":"stdout","time":178.837785559,"data":"Linking pip-26.2.1-pyh8b19718_0\n"}
+,{"stream_name":"stdout","time":179.442708678,"data":"\n"}
+,{"stream_name":"stdout","time":179.442743278,"data":"Transaction finished\n"}
+,{"stream_name":"stdout","time":179.442759991,"data":"\n"}
+,{"stream_name":"stdout","time":179.443477269,"data":"\n"}
+,{"stream_name":"stdout","time":179.443489595,"data":"To activate this environment, use:\n"}
+,{"stream_name":"stdout","time":179.443498635,"data":"\n"}
+,{"stream_name":"stdout","time":179.443501177,"data":"    micromamba activate boltz\n"}
+,{"stream_name":"stdout","time":179.443503512,"data":"\n"}
+,{"stream_name":"stdout","time":179.443505784,"data":"Or to execute a single command in this environment, use:\n"}
+,{"stream_name":"stdout","time":179.443508315,"data":"\n"}
+,{"stream_name":"stdout","time":179.44351047,"data":"    micromamba run -n boltz mycommand\n"}
+,{"stream_name":"stdout","time":179.443512731,"data":"\n"}
+,{"stream_name":"stdout","time":179.451246528,"data":"  (4s, exit=0)\n"}
+,{"stream_name":"stdout","time":179.451266868,"data":"\n"}
+,{"stream_name":"stdout","time":179.451271009,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz pip install -q --no-input torch==2.2.2 --index-url https://download.pytorch.org/whl/cu118\n"}
+,{"stream_name":"stdout","time":288.863604184,"data":"  (109s, exit=0)\n"}
+,{"stream_name":"stdout","time":288.863647789,"data":"\n"}
+,{"stream_name":"stdout","time":288.86365477,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz pip install -q --no-input 'boltz\u003e=2.0,\u003c3.0' biopython\n"}
+,{"stream_name":"stdout","time":343.317388705,"data":"  (54s, exit=0)\n"}
+,{"stream_name":"stdout","time":343.317440073,"data":"bindsight install source: embedded wheel\n"}
+,{"stream_name":"stdout","time":343.320188192,"data":"  wheel bytes: 418547\n"}
+,{"stream_name":"stdout","time":343.320205728,"data":"\n"}
+,{"stream_name":"stdout","time":343.320211336,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz pip install -q --no-input '/tmp/bindsight-0.2.2-py3-none-any.whl'\n"}
+,{"stream_name":"stdout","time":348.923127551,"data":"  (6s, exit=0)\n"}
+,{"stream_name":"stdout","time":348.923166387,"data":"\n"}
+,{"stream_name":"stdout","time":348.923173498,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz python -c \"import bindsight; print('bindsight', bindsight.__version__, 'from', bindsight.__file__)\"\n"}
+,{"stream_name":"stdout","time":349.02495224,"data":"bindsight 0.2.2 from /opt/mamba/envs/boltz/lib/python3.11/site-packages/bindsight/__init__.py\n"}
+,{"stream_name":"stdout","time":349.034992979,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":349.035015172,"data":"\n"}
+,{"stream_name":"stdout","time":349.035021354,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz python -c \"import torch; print('boltz torch', torch.__version__, 'cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); x=torch.zeros(4,device='cuda'); print('boltz cuda op ok', (x+1).sum().item())\"\n"}
+,{"stream_name":"stdout","time":351.301640439,"data":"boltz torch 2.2.2+cu118 cuda True Tesla T4\n"}
+,{"stream_name":"stdout","time":351.301683533,"data":"boltz cuda op ok 4.0\n"}
+,{"stream_name":"stdout","time":351.837830414,"data":"  (3s, exit=0)\n"}
+,{"stream_name":"stdout","time":351.837911366,"data":"\n"}
+,{"stream_name":"stdout","time":351.837923797,"data":"========== patch Boltz-2 precision for non-bf16 GPUs (T4 is sm_75; bf16 needs sm_80+) ==========\n"}
+,{"stream_name":"stdout","time":351.838106596,"data":"[disk @ patch Boltz-2 precision for non-bf16 GPUs (T4 is sm_75; bf16 needs sm_80+)] / 1007.9/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1007.9/8062.4 GiB free | /tmp 1007.9/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":351.879611946,"data":"[gpu @ patch Boltz-2 precision for non-bf16 GPUs (T4 is sm_75; bf16 needs sm_80+)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":351.879644322,"data":"Tesla T4, 0, 15360 | peak so far 13 MiB\n"}
+,{"stream_name":"stdout","time":351.882592611,"data":"patched /opt/mamba/envs/boltz/lib/python3.11/site-packages/boltz/main.py -\u003e precision=32\n"}
+,{"stream_name":"stdout","time":351.882609823,"data":"\n"}
+,{"stream_name":"stdout","time":351.88261392,"data":"========== materialise spec + target structure (embedded base64) ==========\n"}
+,{"stream_name":"stdout","time":351.882682028,"data":"[disk @ materialise spec + target structure (embedded base64)] / 1007.9/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1007.9/8062.4 GiB free | /tmp 1007.9/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":351.916855179,"data":"[gpu @ materialise spec + target structure (embedded base64)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":351.916881799,"data":"Tesla T4, 0, 15360 | peak so far 13 MiB\n"}
+,{"stream_name":"stdout","time":351.918608918,"data":"  wrote spec.json 690 bytes\n"}
+,{"stream_name":"stdout","time":351.921553893,"data":"  wrote target.cif 415603 bytes\n"}
+,{"stream_name":"stdout","time":351.921627873,"data":"  spec: {\n"}
+,{"stream_name":"stdout","time":351.921636161,"data":"  \"target_uniprot\": \"Q16790\",\n"}
+,{"stream_name":"stdout","time":351.921640924,"data":"  \"target_structure_path\": \"runs\\\\join\\\\structures\\\\AF-Q16790-F1-model_v6.cif\",\n"}
+,{"stream_name":"stdout","time":351.921646472,"data":"  \"epitope_chain\": \"A\",\n"}
+,{"stream_name":"stdout","time":351.921650144,"data":"  \"epitope_residues\": [],\n"}
+,{"stream_name":"stdout","time":351.921654031,"data":"  \"design_ranges\": [\n"}
+,{"stream_name":"stdout","time":351.921657977,"data":"    [\n"}
+,{"stream_name":"stdout","time":351.921661658,"data":"      38,\n"}
+,{"stream_name":"stdout","time":351.921665799,"data":"      414\n"}
+,{"stream_name":"stdout","time":351.921669736,"data":"    ]\n"}
+,{"stream_name":"stdout","time":351.92167404,"data":"  ],\n"}
+,{"stream_name":"stdout","time":351.921678379,"data":"  \"binder_length_min\": 50,\n"}
+,{"stream_name":"stdout","time":351.921682498,"data":"  \"binder_length_max\": 100,\n"}
+,{"stream_name":"stdout","time":351.921686791,"data":"  \"n_trajectories\": 10,\n"}
+,{"stream_name":"stdout","time":351.921690934,"data":"  \"seed\": 42,\n"}
+,{"stream_name":"stdout","time":351.921695822,"data":"  \"extra_params\": {\n"}
+,{"stream_name":"stdout","time":351.921700215,"data":"    \"designer\": \"rfdiff_mpnn\",\n"}
+,{"stream_name":"stdout","time":351.921704022,"data":"    \"designer_version\": \"0.1.0\",\n"}
+,{"stream_name":"stdout","time":351.921707968,"data":"   \n"}
+,{"stream_name":"stdout","time":351.921711657,"data":"\n"}
+,{"stream_name":"stdout","time":351.921715646,"data":"========== run job_exec (RFdiffusion -\u003e ProteinMPNN under se3; Boltz-2 + orchestration under boltz) ==========\n"}
+,{"stream_name":"stdout","time":351.921780831,"data":"[disk @ run job_exec (RFdiffusion -\u003e ProteinMPNN under se3; Boltz-2 + orchestration under boltz)] / 1007.9/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 1007.9/8062.4 GiB free | /tmp 1007.9/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":351.955857993,"data":"[gpu @ run job_exec (RFdiffusion -\u003e ProteinMPNN under se3; Boltz-2 + orchestration under boltz)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":351.955891469,"data":"Tesla T4, 0, 15360 | peak so far 13 MiB\n"}
+,{"stream_name":"stdout","time":351.955896223,"data":"\n"}
+,{"stream_name":"stdout","time":351.955900064,"data":"+ /opt/micromamba/bin/micromamba run -p /opt/mamba/envs/boltz python -m bindsight.runners.job_exec /tmp/spec/spec.json /tmp/88b50dfa5817.tar.gz\n"}
+,{"stream_name":"stderr","time":352.620906568,"data":"job: mode=design_and_validate designer=rfdiff_mpnn validator=boltz2 target=Q16790\n"}
+,{"stream_name":"stderr","time":354.987754381,"data":"checkpoint Base_ckpt.pt: 483616107 bytes sha256=0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca\n"}
+,{"stream_name":"stderr","time":357.032642901,"data":"checkpoint Complex_base_ckpt.pt: 483619179 bytes sha256=76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc\n"}
+,{"stream_name":"stderr","time":357.035072909,"data":"designing against 1 extracellular range(s) of chain A: [(38, 414)]\n"}
+,{"stream_name":"stderr","time":357.036803329,"data":"designing against 1 extracellular range(s) of chain A: [(38, 414)]\n"}
+,{"stream_name":"stderr","time":357.038950692,"data":"exec: /opt/se3_python.sh /opt/tools/RFdiffusion/scripts/run_inference.py inference.input_pdb=/tmp/88b50dfa5817_work/target.pdb inference.output_prefix=/tmp/88b50dfa5817_work/rfdiff_out/binder inference.num_designs=10 contigmap.contigs=[A38-414/0 50-100]\n"}
+,{"stream_name":"stderr","time":5606.468471501,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_0.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_0 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5615.173494457,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_1.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_1 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5623.72241188,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_2.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_2 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5632.105352958,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_3.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_3 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5640.734051838,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_4.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_4 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5649.519004439,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_5.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_5 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5658.2637964,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_6.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_6 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5666.726214962,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_7.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_7 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5675.328437079,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_8.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_8 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5683.768287088,"data":"exec: /opt/se3_python.sh /opt/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /tmp/88b50dfa5817_work/rfdiff_out/binder_9.pdb --pdb_path_chains B --out_folder /tmp/88b50dfa5817_work/mpnn_out/binder_9 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42\n"}
+,{"stream_name":"stderr","time":5692.34102305,"data":"designer produced 20 designs\n"}
+,{"stream_name":"stderr","time":5692.342831539,"data":"designing against 1 extracellular range(s) of chain A: [(38, 414)]\n"}
+,{"stream_name":"stderr","time":5692.345809019,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_0_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_0_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":6268.385788923,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_0_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_0_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":6561.95266245,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_1_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_1_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":6832.506386166,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_1_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_1_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":7109.854616066,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_2_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_2_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":7393.118834251,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_2_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_2_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":7685.746795386,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_3_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_3_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":7976.408734563,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_3_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_3_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":8262.431591972,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_4_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_4_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":8571.816102022,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_4_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_4_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":8872.227940599,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_5_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_5_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":9171.227458495,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_5_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_5_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":9474.525909268,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_6_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_6_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":9752.473693652,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_6_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_6_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":10013.292556384,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_7_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_7_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":10312.908220058,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_7_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_7_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":10610.198546837,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_8_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_8_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":10871.226656033,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_8_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_8_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":11150.003685026,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_9_seq0.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_9_seq0 --use_msa_server\n"}
+,{"stream_name":"stderr","time":11428.045940772,"data":"exec: boltz predict /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_9_seq1.yaml --out_dir /tmp/88b50dfa5817_work/boltz_out/Q16790_binder_9_seq1 --use_msa_server\n"}
+,{"stream_name":"stderr","time":11706.382940902,"data":"wrote /tmp/88b50dfa5817.tar.gz\n"}
+,{"stream_name":"stdout","time":11706.440248882,"data":"  (11354s, exit=0)\n"}
+,{"stream_name":"stdout","time":11706.440280535,"data":"\n"}
+,{"stream_name":"stdout","time":11706.440285822,"data":"========== stage tarball to /kaggle/working (keep the output volume lean) ==========\n"}
+,{"stream_name":"stdout","time":11706.440636126,"data":"[disk @ stage tarball to /kaggle/working (keep the output volume lean)] / 999.8/8062.4 GiB free | /kaggle/working 19.5/19.5 GiB free | /opt 999.8/8062.4 GiB free | /tmp 999.8/8062.4 GiB free\n"}
+,{"stream_name":"stdout","time":11706.474743613,"data":"[gpu @ stage tarball to /kaggle/working (keep the output volume lean)] Tesla T4, 0, 15360\n"}
+,{"stream_name":"stdout","time":11706.474777205,"data":"Tesla T4, 0, 15360 | peak so far 14859 MiB\n"}
+,{"stream_name":"stdout","time":11706.474918438,"data":"\n"}
+,{"stream_name":"stdout","time":11706.474928646,"data":"+ cp /tmp/88b50dfa5817.tar.gz /kaggle/working/88b50dfa5817.tar.gz\n"}
+,{"stream_name":"stdout","time":11706.523552357,"data":"  (0s, exit=0)\n"}
+,{"stream_name":"stdout","time":11706.52359307,"data":"\n"}
+,{"stream_name":"stdout","time":11706.523600432,"data":"DONE -\u003e /kaggle/working/88b50dfa5817.tar.gz (16.88 MB)\n"}
+,{"stream_name":"stderr","time":11709.116827987,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":11709.116858254,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":11709.552174032,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":11709.552205205,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":11711.561348986,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":11713.006343655,"data":"[NbConvertApp] Writing 1010515 bytes to __results__.html\n"}
+]

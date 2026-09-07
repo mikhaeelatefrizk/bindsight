@@ -87,9 +87,18 @@ The Kaggle GPU this kernel requests is a single **T4 (16 GB)**. Per the VRAM tab
 
 | designer | min VRAM | fits a free 16 GB GPU? |
 |---|---:|---|
-| `rfdiff_mpnn` | ~16 GB | ✅ yes — this is the free arm |
-| `boltzgen` | ~24 GB | ❌ no — needs an A100-class (paid) GPU |
-| `bindcraft` | ≥32 GB | ❌ no — needs ≥32 GB (paid) |
+| `rfdiff_mpnn` | **14.9 GB measured** | ✅ yes — this is the free arm, with ~500 MiB to spare |
+| `boltzgen` | ~24 GB (estimate) | ❌ no — needs an A100-class (paid) GPU |
+| `bindcraft` | ≥32 GB (estimate) | ❌ no — needs ≥32 GB (paid) |
+
+The `rfdiff_mpnn` figure is a measurement, not an estimate: **14,859 MiB of
+15,360 — 97% of the card** — sampled every five seconds through a complete run
+against a 377-residue extracellular domain. The kernel log is committed at
+[`benchmarks/gpu_capacity/`](../gpu_capacity/), with what was measured and what
+it does not license you to assume. The short version: the free arm fits, but
+barely, and attention memory grows with target length, so a larger domain
+should be expected to exhaust the card rather than merely run slower. The other
+two rows remain estimates — nothing has run them.
 
 The full three-way comparison needs a bigger GPU: run `boltzgen` / `bindcraft` via
 `--backend modal` (or local Docker with an A100-class card) using the prebuilt image —
