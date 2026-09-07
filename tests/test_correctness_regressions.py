@@ -119,9 +119,18 @@ class TestAffinityDirection:
             ]
         )
         ranked = rank_validated(validated, candidates).set_index("binder_id")
-        # Equal log2fc, so min-max gives both 0.5; the penalty is what separates them.
-        assert ranked.loc["clean", "score_evidence"] == pytest.approx(0.5)
-        assert ranked.loc["risky", "score_evidence"] == pytest.approx(0.5 / 4.0)
+        clean = ranked.loc["clean", "score_evidence"]
+        risky = ranked.loc["risky", "score_evidence"]
+        # The documented claim is the ratio: each event divides the evidence down,
+        # so three events leave a quarter. Asserting the ratio rather than two
+        # absolute values keeps this pinned to the penalty rather than to whatever
+        # the fold-change scale happens to be.
+        assert risky == pytest.approx(clean / 4.0)
+        # Equal log2fc at the table maximum is full evidence. This was 0.5 while
+        # the component used min-max, which mapped a constant series to its
+        # neutral midpoint; it is 1.0 now that the floor is an absolute zero.
+        assert clean == pytest.approx(1.0)
+        assert risky == pytest.approx(0.25)
 
 
 # ---------------------------------------------------------------------------
@@ -1426,3 +1435,81 @@ class TestUnscoredRowsSortLast:
     def test_ranks_are_dense_and_start_at_one(self) -> None:
         ranked = rank_validated(self._frame())
         assert list(ranked["rank"]) == [1, 2, 3]
+
+
+# ---------------------------------------------------------------------------
+# 15. Evidence is scored on an absolute floor, not against the table's minimum
+# ---------------------------------------------------------------------------
+class TestEvidenceHasAnAbsoluteFloor:
+    """Min-max scored a 304-fold over-expressed antigen as zero evidence.
+
+    log2 fold change is a per-target value, so a two-target run carries two
+    distinct values and min-max maps them onto exactly {0.0, 1.0} however close
+    together they are. On the first real two-target run CA9 (764x) and CD70
+    (304x) came out 1.0 and 0.0, and the full 0.25 evidence weight swung on a
+    log2fc difference of 1.33 — enough to rank CD70 binders with an ipTM of 0.95
+    and a 3.3 A interface below CA9 binders at 0.83 and 11.7 A.
+
+    A log2 fold change of zero is a real zero point. Anchoring there keeps the
+    ordering while making the magnitude mean something.
+    """
+
+    @staticmethod
+    def _ranked(*log2fc: float) -> pd.DataFrame:
+        validated = pd.DataFrame(
+            [{"binder_id": f"b{i}", "target_uniprot": f"P{i}"} for i in range(len(log2fc))]
+        )
+        candidates = pd.DataFrame(
+            [{"uniprot_id": f"P{i}", "log2fc": v} for i, v in enumerate(log2fc)]
+        )
+        return rank_validated(validated, candidates).set_index("binder_id")
+
+    def test_a_strongly_over_expressed_target_never_scores_zero(self) -> None:
+        """The exact numbers from the run that exposed this."""
+        ranked = self._ranked(9.5779, 8.2457)
+        assert ranked.loc["b0", "score_evidence"] == pytest.approx(1.0)
+        assert ranked.loc["b1", "score_evidence"] == pytest.approx(8.2457 / 9.5779, rel=1e-6)
+        assert ranked.loc["b1", "score_evidence"] > 0.8, (
+            "a 304-fold over-expressed antigen must not be scored as no evidence"
+        )
+
+    def test_the_gap_is_proportional_to_the_difference(self) -> None:
+        """Min-max gave the same 0-to-1 swing whatever the gap was; this must not."""
+        near = self._ranked(10.0, 9.5)
+        far = self._ranked(10.0, 1.0)
+        near_gap = near.loc["b0", "score_evidence"] - near.loc["b1", "score_evidence"]
+        far_gap = far.loc["b0", "score_evidence"] - far.loc["b1", "score_evidence"]
+        assert far_gap > near_gap * 5, "the score ignores how far apart the targets are"
+
+    def test_ordering_is_preserved(self) -> None:
+        ranked = self._ranked(2.0, 6.0, 4.0)
+        scores = [ranked.loc[f"b{i}", "score_evidence"] for i in range(3)]
+        assert scores[1] > scores[2] > scores[0]
+
+    def test_a_down_regulated_target_carries_no_evidence(self) -> None:
+        """This component asks for tumour-selective evidence; a fall is not that."""
+        ranked = self._ranked(5.0, -3.0)
+        assert ranked.loc["b1", "score_evidence"] == pytest.approx(0.0)
+
+    def test_a_table_with_nothing_over_expressed_scores_zero_throughout(self) -> None:
+        ranked = self._ranked(-1.0, -4.0)
+        assert ranked.loc["b0", "score_evidence"] == pytest.approx(0.0)
+        assert ranked.loc["b1", "score_evidence"] == pytest.approx(0.0)
+
+    def test_a_missing_fold_change_stays_missing(self) -> None:
+        """A metric that was never measured is excluded, not scored as zero."""
+        validated = pd.DataFrame(
+            [
+                {"binder_id": "known", "target_uniprot": "P0"},
+                {"binder_id": "unknown", "target_uniprot": "P1"},
+            ]
+        )
+        candidates = pd.DataFrame(
+            [
+                {"uniprot_id": "P0", "log2fc": 6.0},
+                {"uniprot_id": "P1", "log2fc": float("nan")},
+            ]
+        )
+        ranked = rank_validated(validated, candidates).set_index("binder_id")
+        assert pd.isna(ranked.loc["unknown", "score_evidence"])
+        assert ranked.loc["known", "score_evidence"] == pytest.approx(1.0)

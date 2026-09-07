@@ -130,7 +130,8 @@ def rank_validated(
     for col, w in component_cols:
         if col in df.columns:
             mask = df[col].notna()
-            composite = composite.add(df[col].fillna(0.0) * w, fill_value=0.0)
+            column = pd.to_numeric(df[col], errors="coerce").astype(float)
+            composite = composite.add(column.fillna(0.0) * w, fill_value=0.0)
             weight_sum = weight_sum + (mask.astype(float) * w)
     df["score"] = composite / weight_sum.replace(0.0, pd.NA)
 
@@ -149,8 +150,50 @@ def _developability_score(sequence: object) -> float:
     return d.developability_score if d is not None else float("nan")
 
 
+def _fold_change_score(log2fc: pd.Series) -> pd.Series:
+    """Scale log2 fold change to [0, 1] against an absolute floor of zero.
+
+    Min-max normalisation is scale-free: it maps the smallest value in the table
+    to 0 and the largest to 1 regardless of how far apart they actually are. For
+    a per-binder metric across forty rows that is harmless. For log2 fold change
+    it is not, because the value is per *target*, so a two-target run has two
+    distinct values and min-max maps them onto exactly {0.0, 1.0}.
+
+    That is what happened on the first real two-target run. CA9 was
+    over-expressed 764-fold and CD70 304-fold; both are enormous, and min-max
+    scored the second one zero. The full 0.25 evidence weight swung on a log2fc
+    difference of 1.33, which pushed CD70 binders with an ipTM of 0.95 and a
+    3.3 A interface below CA9 binders at 0.83 and 11.7 A. The ranking was being
+    driven by an artefact of normalisation rather than by evidence.
+
+    Anchoring the floor at zero fixes it without inventing a scale. A log2 fold
+    change of zero *is* an absolute zero point: no differential expression, no
+    evidence. The top of the range stays relative to the run, which is what
+    makes this a ranking rather than an absolute score, but nothing that is
+    genuinely over-expressed can be scored as though it were not.
+
+    Down-regulated targets score zero rather than negative: this component asks
+    how strong the tumour-selective evidence is, and a gene expressed less in
+    tumour has none.
+
+    Args:
+        log2fc: per-row log2 fold change, possibly with missing values.
+
+    Returns:
+        A [0, 1] series, NaN preserved.
+    """
+    values = pd.to_numeric(log2fc, errors="coerce")
+    if values.isna().all():
+        return values
+    top = values.max(skipna=True)
+    if pd.isna(top) or top <= 0:
+        # Nothing in the table is over-expressed, so nothing carries evidence.
+        return values.where(values.isna(), 0.0)
+    return (values.clip(lower=0.0) / top).where(values.notna())
+
+
 def _evidence_score(df: pd.DataFrame) -> pd.Series:
-    """Normalised log2FC scaled by a vital-tissue specificity penalty.
+    """log2FC on an absolute scale, cut by a vital-tissue specificity penalty.
 
     ``n_safety_events`` counts the normal tissues where the target is expressed
     above the configured safety ceiling (see ``bindsight.targets.gtex``). Each
@@ -164,7 +207,7 @@ def _evidence_score(df: pd.DataFrame) -> pd.Series:
     """
     if "log2fc" not in df.columns:
         return pd.Series([float("nan")] * len(df), index=df.index)
-    score = _minmax(df["log2fc"])
+    score = _fold_change_score(df["log2fc"])
     if "n_safety_events" in df.columns:
         events = pd.to_numeric(df["n_safety_events"], errors="coerce").fillna(0.0).clip(lower=0.0)
         score = score * (1.0 / (1.0 + events))
