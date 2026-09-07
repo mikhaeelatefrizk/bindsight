@@ -61,6 +61,8 @@ _force_utf8_io()
 
 LOG_CLI = logging.getLogger(__name__)
 
+from bindsight.provenance import append as provenance  # noqa: E402
+
 # Rich console; legacy-windows mode off so box-drawing chars work after the
 # UTF-8 reconfigure above.
 console = Console(force_terminal=True, legacy_windows=False, soft_wrap=False)
@@ -276,6 +278,22 @@ def design(
             )
         )
         sys.exit(2)
+    provenance.record(
+        run_dir,
+        name="design",
+        tool=f"bindsight.design.{designer}",
+        outputs={
+            "design_metrics": run_dir / "design" / "metrics.jsonl",
+            "design_results": run_dir / "design" / "results.tar.gz",
+        },
+        params={
+            "designer": designer,
+            "validator": validator,
+            "backend": backend,
+            "n_trajectories": trajectories,
+        },
+        notes=f"{launched} target(s) designed on the {backend} backend",
+    )
     console.print(
         Panel(
             f"[green]Design complete for {launched} target(s).[/green]\n"
@@ -380,6 +398,14 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
     # materialise those into validate/validated.parquet (+ per-binder dirs).
     n = _finalize_validate(run_dir)
     validated = run_dir / "validate" / "validated.parquet"
+    provenance.record(
+        run_dir,
+        name="validate",
+        tool=f"bindsight.validate.{validator}",
+        outputs={"validated": validated},
+        params={"validator": validator, "backend": backend, "revalidate": revalidate},
+        notes=f"{n} design(s) materialised into validated.parquet",
+    )
     if n > 0:
         console.print(
             Panel(
@@ -428,6 +454,12 @@ def rank(run_dir: Path) -> None:
             )
         )
         sys.exit(2)
+    provenance.record(
+        run_dir,
+        name="rank",
+        tool="bindsight.rank",
+        outputs={"ranking": out},
+    )
     console.print(
         Panel(
             f"[green]Ranking written.[/green]\n[bold]Output:[/bold] {out}",
@@ -468,6 +500,13 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
         from bindsight.report import render_run
 
         out_path = render_run(run_dir)
+        provenance.record(
+            run_dir,
+            name="report",
+            tool="bindsight.report",
+            outputs={"report_html": out_path},
+            params={"format": fmt, "include_binders": include_binders},
+        )
         console.print(
             Panel(
                 f"[green]Report rendered.[/green]\n[bold]Open:[/bold] {out_path}",
@@ -613,6 +652,13 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     from bindsight.export import export_ro_crate
 
     out = export_ro_crate(run_dir, out_path)
+    provenance.record(
+        run_dir,
+        name="export",
+        tool="bindsight.export",
+        outputs={"crate": out},
+        params={"format": fmt},
+    )
     console.print(
         Panel(
             f"[green]RO-Crate written.[/green]\n[bold]File:[/bold] {out}\n\n"

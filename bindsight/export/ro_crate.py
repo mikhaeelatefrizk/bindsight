@@ -80,6 +80,15 @@ def export_ro_crate(
 #: Single files, in canonical order.
 _PIPELINE_FILES = (
     "config.yaml",
+    # The cohort itself. These are the only artifacts carrying TCGA case and
+    # sample barcodes, so without them an exported crate cannot answer the one
+    # question the provenance chain exists to answer: which patients did this
+    # binder come from? A crate that stops at the DEG table documents an
+    # analysis, not its origin.
+    "counts.tsv.gz",
+    "counts.tsv",
+    "design.tsv",
+    "provenance.json",
     "deg/results.parquet",
     "targets/candidates.parquet",
     "epitopes/epitopes.parquet",

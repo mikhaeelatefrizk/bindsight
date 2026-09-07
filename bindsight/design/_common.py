@@ -23,6 +23,18 @@ from bindsight.runners.protocol import GPURunner
 LOG = logging.getLogger(__name__)
 
 
+def _with_backend(cache_key: str, backend: str) -> str:
+    """Fold the backend into a cache key.
+
+    Two runs that differ only in where they executed are not the same work: one
+    may be synthetic. Mixing them is the difference between a real result and a
+    mock's canned numbers wearing a real result's label.
+    """
+    import hashlib
+
+    return hashlib.sha256(f"{cache_key}|backend={backend}".encode()).hexdigest()
+
+
 def submit_via_runner(
     spec: DesignSpec,
     runner: GPURunner,
@@ -39,6 +51,11 @@ def submit_via_runner(
     the spec. Validation-only jobs use it to send binders that already exist, so
     a different validator can be run against them without redesigning.
     """
+    # The backend belongs in the key. Without it, a run on --backend mock and a
+    # run on a real GPU share a cache entry, so a later real run silently returns
+    # the mock's synthetic tarball and reports it as a genuine result. The
+    # designer's commit is already folded in by the caller; the runner is not.
+    cache_key = _with_backend(cache_key, getattr(runner, "name", "unknown"))
     spec_dir = Path(f"_bindsight_spec_{cache_key[:8]}")
     spec_dir.mkdir(parents=True, exist_ok=True)
     if payload_dir is not None and Path(payload_dir).is_dir():
