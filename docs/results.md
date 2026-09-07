@@ -98,24 +98,29 @@ CA9 (Q16790) and STEAP1 (Q9UHE8) are absent from the SURFY surfaceome list — v
 
 ## The binders it actually designed
 
-A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla P100-16GB (Kaggle free)`, validator `boltz2`, bindsight `0.2.0`, 2026-06-25.
+A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (Kaggle free)`, validator `boltz2`, bindsight `0.2.2`, 2026-09-07.
 
-!!! warning "Provisional — these figures predate the target-chain fix"
+!!! success "The target was held fixed, and that is checked"
 
-    This run invoked ProteinMPNN without `--pdb_path_chains`, so the sequence
-    designer was free to rewrite the antigen as well as the binder: the binders
-    were optimised against a partly-invented ERBB2 surface and then scored against
-    the native one. The measurements below are honest — they simply measure a
-    mis-configured protocol, so treat them as provisional. Fixed in v0.2.1; these
-    numbers will be superseded by a corrected re-run.
+    An earlier run invoked ProteinMPNN without `--pdb_path_chains`, so the
+    sequence designer rewrote the antigen as well as the binder: those binders
+    were optimised against a partly-invented ERBB2 surface and then scored
+    against the native one. Its figures — best ipTM 0.84, 50% success — are
+    withdrawn.
 
-**Target:** ERBB2 domain IV (UniProt P04626, residues 511-652; trastuzumab epitope)
+    The run below uses the corrected protocol, and every design carries a
+    target chain byte-identical to the native 142-residue domain IV. The
+    corrected mean ipTM is *lower* than the superseded one, 0.51 against 0.59,
+    which is what you would expect once designs stop being scored against a
+    surface they helped invent. The best single design is better: 0.88.
+
+**Target:** ERBB2
 
 <div class="bs-stats">
 <div class="bs-stat"><div class="v">20</div><div class="k">designs</div><div class="d">RFdiffusion → ProteinMPNN → Boltz-2</div></div>
-<div class="bs-stat"><div class="v">0.84</div><div class="k">best ipTM</div><div class="d">design binder_2_seq1</div></div>
-<div class="bs-stat"><div class="v">50%</div><div class="k">success @ ipTM 0.65</div><div class="d">standard criterion</div></div>
-<div class="bs-stat"><div class="v">13.7 Å</div><div class="k">mean PAE-int</div><div class="d">lower is more confident</div></div>
+<div class="bs-stat"><div class="v">0.88</div><div class="k">best ipTM</div><div class="d">design P04626_binder_0_seq1</div></div>
+<div class="bs-stat"><div class="v">40%</div><div class="k">success @ ipTM 0.65</div><div class="d">standard criterion</div></div>
+<div class="bs-stat"><div class="v">15.6 Å</div><div class="k">mean PAE-int</div><div class="d">lower is more confident</div></div>
 </div>
 
 The real Boltz-2 predicted complex behind every ipTM below is committed
@@ -124,26 +129,26 @@ alongside its metrics. Rotate them in 3-D on the
 
 | design | ipTM | PAE-int (Å) | developability | length | instability |
 |---|--:|--:|--:|--:|--:|
-| `binder_2_seq1` | 0.840 | 7.5 | 0.47 | 86 | 68.8 |
-| `binder_4_seq1` | 0.783 | 8.8 | 0.81 | 74 | 37.2 |
-| `binder_2_seq0` | 0.776 | 8.8 | 0.56 | 86 | 37.2 |
-| `binder_7_seq0` | 0.748 | 11.1 | 0.67 | 50 | 30.1 |
-| `binder_1_seq1` | 0.742 | 8.2 | 0.53 | 80 | 77.5 |
-| `binder_6_seq1` | 0.741 | 10.3 | 0.53 | 62 | 35.3 |
-| `binder_8_seq1` | 0.741 | 10.5 | 0.69 | 85 | 44.3 |
-| `binder_9_seq1` | 0.727 | 9.9 | 0.89 | 60 | 31.6 |
-| `binder_5_seq1` | 0.689 | 11.1 | 0.78 | 85 | 40.1 |
-| `binder_0_seq0` | 0.688 | 10.5 | 0.58 | 91 | 52.2 |
-| `binder_3_seq1` | 0.638 | 11.7 | 0.93 | 52 | 33.7 |
-| `binder_3_seq0` | 0.592 | 12.3 | 0.54 | 52 | 99.5 |
-| `binder_7_seq1` | 0.566 | 14.4 | 0.65 | 50 | 30.4 |
-| `binder_8_seq0` | 0.490 | 18.3 | 0.45 | 85 | 56.1 |
-| `binder_6_seq0` | 0.488 | 15.4 | 0.57 | 62 | 45.0 |
-| `binder_1_seq0` | 0.465 | 16.5 | 0.57 | 80 | 68.1 |
-| `binder_5_seq0` | 0.307 | 20.6 | 0.80 | 85 | 34.5 |
-| `binder_4_seq0` | 0.244 | 22.5 | 0.74 | 74 | 45.2 |
-| `binder_0_seq1` | 0.233 | 22.3 | 0.63 | 91 | 20.2 |
-| `binder_9_seq0` | 0.201 | 22.9 | 0.61 | 60 | 81.9 |
+| `P04626_binder_0_seq1` | 0.881 | 8.0 | 0.39 | 75 | 113.7 |
+| `P04626_binder_9_seq1` | 0.839 | 8.0 | 0.61 | 89 | 28.9 |
+| `P04626_binder_3_seq0` | 0.785 | 6.9 | 0.69 | 66 | 44.3 |
+| `P04626_binder_4_seq0` | 0.756 | 9.5 | 0.86 | 62 | 37.6 |
+| `P04626_binder_9_seq0` | 0.744 | 9.4 | 0.72 | 89 | 40.1 |
+| `P04626_binder_0_seq0` | 0.712 | 12.8 | 0.75 | 75 | 52.0 |
+| `P04626_binder_1_seq0` | 0.706 | 9.6 | 0.76 | 57 | 45.5 |
+| `P04626_binder_1_seq1` | 0.702 | 10.4 | 0.60 | 57 | 34.9 |
+| `P04626_binder_3_seq1` | 0.636 | 10.9 | 0.53 | 66 | 51.2 |
+| `P04626_binder_2_seq1` | 0.590 | 13.6 | 0.67 | 54 | 47.5 |
+| `P04626_binder_5_seq1` | 0.393 | 18.6 | 0.56 | 73 | 28.0 |
+| `P04626_binder_6_seq1` | 0.384 | 18.2 | 0.41 | 51 | 10.7 |
+| `P04626_binder_7_seq1` | 0.355 | 17.5 | 0.45 | 53 | 27.9 |
+| `P04626_binder_6_seq0` | 0.344 | 20.0 | 0.94 | 51 | -16.8 |
+| `P04626_binder_8_seq1` | 0.340 | 20.5 | 0.79 | 80 | 56.6 |
+| `P04626_binder_4_seq1` | 0.250 | 22.2 | 0.77 | 62 | -1.1 |
+| `P04626_binder_7_seq0` | 0.215 | 22.4 | 0.43 | 53 | 11.8 |
+| `P04626_binder_2_seq0` | 0.210 | 23.2 | 0.79 | 54 | 35.4 |
+| `P04626_binder_8_seq0` | 0.188 | 24.1 | 0.53 | 80 | -0.2 |
+| `P04626_binder_5_seq0` | 0.125 | 25.6 | 0.59 | 73 | 30.6 |
 
 ## Reproduce it
 

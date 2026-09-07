@@ -397,10 +397,19 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
   a six-cohort version whose ERBB2-at-rank-4 headline is withdrawn: its breast
   cohort was stratified by a PAM50 call, and ERBB2 is one of the PAM50 genes.
 
-- [x] Designer benchmark — `rfdiff_mpnn` arm run for real: 20 ERBB2 domain-IV binders on a free Kaggle P100 (best ipTM 0.84, 50% success@0.65; real folded Boltz-2 complexes committed), artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **Pre-v0.2.1 protocol** — ProteinMPNN ran without `--pdb_path_chains` and redesigned the target chain, so these figures are provisional pending a corrected re-run. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
+- [x] Designer benchmark — `rfdiff_mpnn` arm run for real under the corrected
+  protocol: 20 ERBB2 domain-IV binders on a free Kaggle T4, best ipTM 0.88,
+  mean 0.51, 40% success@0.65, with the real folded Boltz-2 complexes committed.
+  Artifacts in `benchmarks/designer_benchmark/RESULTS.md`. The target chain was
+  held fixed, and that is verified rather than asserted: all 20 designs carry a
+  chain byte-identical to the native 142-residue domain IV. A superseded run on
+  a P100 reported best ipTM 0.84 and 50% success; it invoked ProteinMPNN without
+  `--pdb_path_chains`, so it redesigned the target as well as the binder, and
+  its higher mean is an artefact of scoring designs against a surface they
+  helped invent. BindCraft / BoltzGen arms need ≥24–32 GB GPUs (pending)
 - [x] Negative-result taxonomy on full DEG list (`taxonomy/failure_taxonomy.parquet`, exhaustive per-gene disposition)
 - [ ] single-cell RNA-seq input + async Modal submission
-- [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free P100); no preprint deposited yet
+- [x] **Milestone:** `v0.2.0` — first real de novo binders (ERBB2 on a free GPU); no preprint deposited yet
 
 ### Phase 5 — Coverage and community (post-preprint, ongoing)
 - v0.3: ESMFold fallback; fpocket fallback; scRNA-seq input via scanpy markers; BoltzGen as primary; live async Modal/Colab submission

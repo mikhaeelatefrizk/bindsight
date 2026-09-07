@@ -107,8 +107,8 @@ def main() -> int:
 
     facts = [
         ("CA9", "surfaced, rank 1 of 291"),
-        ("0.84", "best ipTM, free GPU"),
-        ("50%", "success @ ipTM 0.65"),
+        ("0.88", "best ipTM, free GPU"),
+        ("40%", "success @ ipTM 0.65"),
         ("AGPL-3.0", "open + citable"),
     ]
     for i, (value, label) in enumerate(facts):

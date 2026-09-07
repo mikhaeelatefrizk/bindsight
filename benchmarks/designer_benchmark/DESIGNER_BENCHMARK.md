@@ -8,19 +8,21 @@ quality (ipTM, PAE-interaction, predicted affinity, success rate) and GPU cost.
 This is the designer half of the v0.2 validation. The harness is real and
 runnable; the numbers come from a real GPU run. The **first real result** —
 RFdiffusion + ProteinMPNN against ERBB2 domain IV (the trastuzumab epitope), on
-Kaggle's free P100 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs,
-mean ipTM 0.59, 50% success@0.65), with the real Boltz-2-predicted complexes
-(`binders/*_complex.cif`) and the raw metrics in `results.json`.
+Kaggle's free T4 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs, best
+ipTM 0.88, mean 0.51, 40% success@0.65), with the real Boltz-2-predicted
+complexes (`binders/*_complex.cif`) and the raw metrics in `results.json`.
 
-> ⚠️ **The committed result predates the ProteinMPNN target-chain fix released in
-> v0.2.1.** It was produced without `--pdb_path_chains`, so ProteinMPNN redesigned
-> the ERBB2 target chain as well as the binder: the designs were optimised against
-> a partly-invented HER2 surface and then scored against the native one. The
-> metrics are genuine Boltz-2 output and reproduce exactly — the protocol was
-> mis-set, not the measurement — but they are **provisional** and a corrected
-> re-run will supersede them. Any new run following the steps below uses the fixed
-> invocation and is not affected. See [`RESULTS.md`](RESULTS.md) for the full
-> statement.
+> ✅ **The committed result uses the corrected ProteinMPNN protocol, and the
+> target chain is verified rather than assumed.** All 20 designs carry a target
+> chain byte-identical to the native 142-residue domain IV, so the sequence
+> designer rewrote only the binder.
+>
+> A superseded run on a P100 reported mean ipTM 0.59 and 50% success@0.65. It
+> was produced without `--pdb_path_chains`, so ProteinMPNN redesigned the ERBB2
+> target chain as well as the binder, and its designs were optimised against a
+> partly-invented HER2 surface and then scored against the native one. Its
+> higher mean is an artefact of that, which is why the corrected mean is lower
+> while the best single design is better. Those figures are withdrawn.
 
 > **Free-GPU quickstart ($0):** to reproduce or extend it on a Kaggle free GPU,
 > follow [`RUN_FREE_GPU.md`](RUN_FREE_GPU.md). The steps below are the
@@ -127,7 +129,7 @@ provenance.
   The primary metric for protein binders.
 - **PAE-interaction** — predicted aligned error across the interface (lower = better);
   comes from Boltz-2's full-PAE output (the saved `pae_*.npz`, not the confidence
-  JSON); the committed Kaggle result reports it (mean 13.7 Å across the 20 designs).
+  JSON); the committed Kaggle result reports it (mean 15.6 Å across the 20 designs).
 - **predicted affinity** — Boltz-2 `affinity_pred_value`. **Ligand-only**: Boltz-2 does
   not predict protein–protein affinity, so it is blank for protein binders.
 - **success@0.65** — fraction of designs with ipTM ≥ 0.65 (standard de novo criterion).

@@ -8,8 +8,10 @@
   TCGA projects (CA9 surfaced at rank 1 of 291), with its rank and outcome-class
   figures.
 - ``benchmarks/designer_benchmark/`` — 20 real ERBB2 binders designed on a free
-  Kaggle P100, each with the actual Boltz-2 predicted complex ``.cif``,
-  per-design metrics, developability descriptors, and ESM-2 embedding coords.
+  Kaggle T4, each with the actual Boltz-2 predicted complex ``.cif``, per-design
+  metrics, developability descriptors, and ESM-2 embedding coords. The run used
+  the corrected ProteinMPNN protocol, and every design carries a target chain
+  byte-identical to the native domain IV.
 
 Until now none of it was reachable from the web app, so a visitor saw a Demo
 button and had to take the science on faith. This module is the single source

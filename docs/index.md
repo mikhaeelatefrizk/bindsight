@@ -39,24 +39,24 @@ hide:
 
 <div class="bs-stats" markdown="0">
   <div class="bs-stat">
-    <div class="v">rank 1</div>
+    <div class="v">1 of 291</div>
     <div class="k">CA9 surfaced</div>
-    <div class="d">from real TCGA-BRCA RNA-seq, HER2-enriched subtype</div>
+    <div class="d">clear-cell kidney, whole unstratified TCGA-KIRC cohort</div>
   </div>
   <div class="bs-stat">
-    <div class="v">0.84</div>
+    <div class="v">0.88</div>
     <div class="k">best ipTM</div>
-    <div class="d">20 de novo ERBB2 binders on a free Kaggle P100</div>
+    <div class="d">20 de novo ERBB2 binders on a free Kaggle T4</div>
   </div>
   <div class="bs-stat">
-    <div class="v">50%</div>
+    <div class="v">40%</div>
     <div class="k">success @ ipTM 0.65</div>
-    <div class="d">validated with Boltz-2</div>
+    <div class="d">8 of 20, validated with Boltz-2</div>
   </div>
   <div class="bs-stat">
-    <div class="v">2/2</div>
-    <div class="k">consistency check</div>
-    <div class="d">antigens with no measured over-expression stay out of the top 20</div>
+    <div class="v">1 of 17</div>
+    <div class="k">recall @ rank 20</div>
+    <div class="d">approved-agent antigens, 95% CI 0.01–0.27</div>
   </div>
 </div>
 
@@ -64,20 +64,25 @@ Those numbers are not illustrative — they come from runs whose inputs, outputs
 and provenance are committed in the repository. **[See exactly how they were
 produced](results.md).**
 
-!!! warning "Read the binder numbers as provisional"
-    The ipTM figures above come from a real Boltz-2 run whose metrics reproduce
-    exactly, but the run predates the ProteinMPNN target-chain fix shipped in
-    v0.2.1: ProteinMPNN was invoked without `--pdb_path_chains`, so it redesigned
-    the HER2 target chain as well as the binder. The designs were therefore
-    optimised against a partly-invented target surface and scored against the
-    native one. A corrected re-run will supersede them.
+!!! success "These figures come from the corrected protocol"
+    An earlier run invoked ProteinMPNN without `--pdb_path_chains`, so it
+    redesigned the HER2 target chain as well as the binder, and its numbers
+    (best ipTM 0.84, 50% success) are withdrawn. The run above holds the target
+    fixed, and that is checked rather than asserted: all 20 designs carry a
+    target chain byte-identical to the native 142-residue domain IV. The
+    corrected mean ipTM is *lower* — 0.51 against 0.59 — which is what you would
+    expect once designs stop being scored against a surface they helped invent.
 
-!!! note "What 2/2 does and does not show"
-    Antigens that fail the over-expression rule (FDR&nbsp;<&nbsp;0.05,
-    log2fc&nbsp;≥&nbsp;1.0) are excluded from candidacy **by construction**, so
-    finding them outside the top 20 confirms the rule is applied as documented.
-    It is an internal consistency check, not a measurement of how well the
-    ranking discriminates between real over-expression and clinical fame.
+!!! note "What 1 of 17 does and does not show"
+    That is the recall of clinically approved antigens across a pre-registered
+    panel of 22 antigen-cohort pairs over fifteen whole, unstratified TCGA
+    projects. The interval, not the point estimate, is the finding at this panel
+    size. Thirteen of the seventeen are simply not significantly over-expressed
+    in an unstratified bulk contrast; their agents are licensed, so the antigens
+    are real, and that is a limit of the signal rather than of the ranking. An
+    earlier six-cohort version reported ERBB2 at rank 4 and recall@5 of 33%; it
+    is withdrawn, because its breast cohort was stratified by a PAM50 subtype
+    call and ERBB2 is one of the fifty genes that classifier is built from.
 
 ## How it works
 
@@ -93,9 +98,10 @@ produced](results.md).**
   <div class="s">Provenance<small>PROV-O · RO-Crate</small></div>
 </div>
 
-Amber stages need a GPU and are offloaded to Colab, Kaggle, Modal or your own
-Docker host. Everything else runs on a CPU laptop — and in your browser on the
-hosted app.
+Amber stages need a GPU. A free Kaggle T4 is the verified route, and the one the
+committed benchmark used; Modal is the paid escape hatch, Colab needs you present
+with a browser tab open, and local Docker works if you have your own card.
+Everything else runs on a CPU laptop, and in your browser on the hosted app.
 
 ## Try it, three ways
 

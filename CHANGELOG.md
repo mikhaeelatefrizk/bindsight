@@ -8,6 +8,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added — the designer benchmark, re-run under the corrected protocol
+
+- **20 de novo ERBB2 binders on a free Kaggle T4**, superseding the run whose
+  figures this release had been disclaiming. Best ipTM **0.88**, mean 0.51,
+  median 0.49, mean PAE-interaction 15.6 Å, **40%** success@0.65 (8 of 20),
+  validated with Boltz-2 2.0.1, one GPU-hour, $0.
+- **The target chain is verified, not asserted.** All 20 designs carry a target
+  chain byte-identical to the native 142-residue ERBB2 domain IV, checked by
+  comparing every design's chains against the prepared structure. That is the
+  direct evidence the `--pdb_path_chains` fix works on real hardware, which no
+  previous run could provide.
+- **The superseded figures are withdrawn**: best ipTM 0.84, mean 0.59, 50%
+  success@0.65, on a P100. That run redesigned the target as well as the binder,
+  so its designs were optimised against a partly-invented surface and then
+  scored against the native one. The corrected mean is *lower* — 0.51 against
+  0.59 — which is what that artefact predicts, while the best single design is
+  better. Every surface that quoted the old numbers now quotes the new ones, and
+  `tests/test_published_numbers_match_artifacts.py` fails if any drifts.
+- The run installed a wheel built from the working tree, so `results.json`
+  records `bindsight_source` and the result names its own code. Binder ids carry
+  the target accession (`P04626_binder_0_seq1`), which is the id-collision fix
+  demonstrated end to end rather than only in tests.
+- Developability descriptors and ESM-2 embedding coordinates were regenerated
+  for the new binders. They are derived by separate scripts, so staging alone
+  would have left them describing designs that no longer exist.
+
 ### Withdrawn — the rediscovery headline
 
 - **ERBB2 at rank 4, and recall@5 of 33%, are withdrawn.** The breast cohort behind

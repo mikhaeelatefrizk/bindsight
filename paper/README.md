@@ -189,9 +189,10 @@ To stay honest:
 - **GPU half: partially executed.** This bullet described v0.1.0, when the
   GPU stages were templated notebooks that had never been run. That is no
   longer accurate. The `rfdiff_mpnn` + `boltz2` path has since been executed
-  end-to-end on a free Kaggle P100 and produced the 20 committed ERBB2
-  binders. The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG) remain
-  mock-tested only and have still never been run on real hardware. The
+  end-to-end on a free Kaggle T4, under the corrected ProteinMPNN protocol,
+  and produced the 20 committed ERBB2 binders (best ipTM 0.88, 40%
+  success@0.65). The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG)
+  remain mock-tested only and have still never been run on real hardware. The
   manuscripts in this directory were written before that run and understate
   what has been executed.
 - **Rediscovery study: done (discovery half).** A companion report

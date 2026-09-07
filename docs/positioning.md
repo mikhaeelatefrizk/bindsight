@@ -55,10 +55,10 @@ reproducible.
 
 ## Roadmap
 
-- **v0.2.2 (now)** — discovery half end-to-end on CPU; design + validation **demonstrated on a free GPU**
-  (bindsight's first real ERBB2 binders — see the designer benchmark, whose figures predate the
-  ProteinMPNN target-chain fix in this release and will be superseded by a corrected re-run);
-  multi-page web UI live.
+- **v0.2.2 (now)** — discovery half end-to-end on CPU; design + validation
+  **demonstrated on a free Kaggle T4** under the corrected ProteinMPNN protocol:
+  20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65, every one carrying
+  a target chain byte-identical to the native domain IV. Multi-page web UI live.
 - **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
   fully wired; scRNA-seq input.
 - **v1.0.0** — JOSS submission + validation paper. The rediscovery study is
