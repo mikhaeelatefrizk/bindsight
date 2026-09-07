@@ -80,6 +80,36 @@ class TestClopperPearson:
         assert st.clopper_pearson_interval(0, 10).low == 0.0
         assert st.clopper_pearson_interval(10, 10).high == 1.0
 
+    def test_matches_the_textbook_interval(self) -> None:
+        """2 of 10 at 95% is a published worked example: (0.0252, 0.5561)."""
+        cp = st.clopper_pearson_interval(2, 10)
+        assert cp.low == pytest.approx(0.0252107263, abs=1e-9)
+        assert cp.high == pytest.approx(0.5560954623, abs=1e-9)
+
+    def test_each_tail_carries_exactly_half_of_alpha(self) -> None:
+        """The defining property, and the one "wider than Wilson" cannot pin.
+
+        Clopper-Pearson inverts the binomial test: the lower bound is the p at
+        which observing this many or more successes has probability alpha/2, and
+        the upper bound the p at which observing this many or fewer does. Putting
+        the whole of alpha in one tail still yields an interval that is wider
+        than Wilson and looks entirely reasonable, while under-covering — so the
+        identity has to be asserted rather than a comparison.
+        """
+        from scipy import stats as sps
+
+        successes, trials, confidence = 3, 20, 0.95
+        cp = st.clopper_pearson_interval(successes, trials, confidence=confidence)
+        half_alpha = (1.0 - confidence) / 2
+        assert sps.binom.sf(successes - 1, trials, cp.low) == pytest.approx(half_alpha, abs=1e-9)
+        assert sps.binom.cdf(successes, trials, cp.high) == pytest.approx(half_alpha, abs=1e-9)
+
+    def test_a_tighter_confidence_narrows_both_bounds(self) -> None:
+        wide = st.clopper_pearson_interval(3, 20, confidence=0.99)
+        narrow = st.clopper_pearson_interval(3, 20, confidence=0.80)
+        assert wide.low < narrow.low
+        assert wide.high > narrow.high
+
 
 class TestClusterBootstrap:
     """One antigen in four cohorts is one piece of evidence, not four."""
@@ -130,6 +160,41 @@ class TestClusterBootstrap:
         with pytest.raises(ValueError, match="no clusters"):
             st.cluster_bootstrap_interval({})
 
+    def test_it_resamples_antigens_and_not_outcomes(self) -> None:
+        """The entire reason this function exists, and it was unpinned.
+
+        Resampling the flat list of outcomes instead of the antigen clusters
+        still produces an interval wider than Wilson, so the comparison above
+        cannot tell the two apart. A panel split into one antigen that hits
+        everywhere and one that misses everywhere can.
+
+        Drawing two antigens with replacement gives all-hits, all-misses, or one
+        of each — so the estimate is 1.0, 0.0 or 0.5 and the interval spans the
+        unit interval. Resampling twenty individual outcomes at a rate of one
+        half concentrates near 0.5 and returns roughly (0.3, 0.7): a confident
+        claim manufactured out of correlation the panel does not have.
+        """
+        split = st.cluster_bootstrap_interval(
+            {"A": [True] * 10, "B": [False] * 10}, n_boot=4000, seed=1
+        )
+        assert split.point == pytest.approx(0.5)
+        assert split.low == 0.0
+        assert split.high == 1.0
+
+    def test_a_cluster_travels_whole(self) -> None:
+        """An antigen brings all of its cohorts, so its weight is its size.
+
+        With a three-cohort antigen and a one-cohort antigen, two draws can only
+        ever yield 6/6, 3/4 or 0/2. A rate of one half or one quarter is not
+        reachable, and seeing one would mean cohorts had been drawn individually.
+        """
+        reachable = {0.0, 0.75, 1.0}
+        i = st.cluster_bootstrap_interval(
+            {"A": [True, True, True], "B": [False]}, n_boot=4000, seed=5
+        )
+        assert i.low in reachable, f"{i.low} is unreachable when clusters travel whole"
+        assert i.high in reachable, f"{i.high} is unreachable when clusters travel whole"
+
 
 class TestUniformRankNull:
     def test_p_is_rank_over_the_eligible_set(self) -> None:
@@ -166,6 +231,20 @@ class TestDecoyNull:
         beaten_by_none = st.decoy_null_p(1, list(range(2, 102)))
         beaten_by_half = st.decoy_null_p(51, list(range(1, 101)))
         assert beaten_by_none < beaten_by_half
+
+    def test_a_tied_decoy_counts_as_at_least_as_good(self) -> None:
+        """Ties are common: gated-out decoys pile up at the same rank.
+
+        Counting only decoys that strictly beat the antigen discards exactly the
+        draws that say the result was unremarkable, which biases every p-value
+        downward. Three decoys all tied with the antigen is the clearest case
+        there is — the evidence is worthless and p must say so.
+        """
+        assert st.decoy_null_p(5, [5, 5, 5]) == 1.0
+        # Contrast: decoys that all rank worse leave the add-one floor.
+        assert st.decoy_null_p(5, [6, 7, 8]) == pytest.approx(0.25)
+        # One tie is one decoy that did as well.
+        assert st.decoy_null_p(5, [5, 6, 7]) == pytest.approx(0.5)
 
     def test_requires_decoys(self) -> None:
         with pytest.raises(ValueError, match="at least one decoy"):
