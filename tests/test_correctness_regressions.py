@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pandas as pd
@@ -968,3 +969,166 @@ class TestThePayloadFitsTheKernel:
         assert "import base64, gzip," in src
         # Round-trip through exactly what the kernel does.
         assert gzip.decompress(base64.b64decode(packed)) == original
+
+
+# ---------------------------------------------------------------------------
+# 8. The cache key must cover everything that changes the answer
+# ---------------------------------------------------------------------------
+class TestTheCacheKeyCoversTheValidator:
+    """Two validators sharing a cache entry is a wrong answer that looks right."""
+
+    @staticmethod
+    def _spec(structure: Path, **extra: Any) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        return DesignSpec(
+            target_uniprot="Q16790",
+            target_structure_path=str(structure),
+            epitope_chain="A",
+            epitope_residues=[1, 2, 3],
+            design_ranges=[(38, 414)],
+            n_trajectories=10,
+            seed=0,
+            extra_params={"designer": "rfdiff_mpnn", **extra},
+        )
+
+    def test_two_validators_do_not_share_a_cache_entry(self, tmp_path: Path) -> None:
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        boltz = make_cache_key(self._spec(structure, validator="boltz2"))
+        chai = make_cache_key(self._spec(structure, validator="chai1r"))
+        assert boltz != chai, (
+            "the executor runs whichever validator extra_params names, so sharing "
+            "a key makes the second run report the first run's numbers"
+        )
+
+    def test_a_prescreen_changes_the_cache_key(self, tmp_path: Path) -> None:
+        """The screen drops designs before validation, so it changes the result."""
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        every = make_cache_key(self._spec(structure, validator="boltz2"))
+        screened = make_cache_key(self._spec(structure, validator="boltz2", prescreen_top_k=5))
+        assert every != screened
+
+    def test_bookkeeping_added_after_the_key_does_not_disturb_it(self, tmp_path: Path) -> None:
+        """target_structure_name is set after the key is computed; it must not matter."""
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        plain = make_cache_key(self._spec(structure, validator="boltz2"))
+        named = make_cache_key(
+            self._spec(structure, validator="boltz2", target_structure_name="target.cif")
+        )
+        assert plain == named
+
+
+# ---------------------------------------------------------------------------
+# 9. A configured seed must reach the GPU
+# ---------------------------------------------------------------------------
+class TestTheConfiguredSeedReachesTheSpec:
+    """`params.design.seed` was declared, documented, and read by no code.
+
+    Decoding the payload of a live Kaggle kernel launched from a config carrying
+    ``seed: 42`` showed the spec on the GPU carried seed 0. The seed is in the
+    cache key and in the manifest, so the artifact described a run that never
+    happened and could not be reproduced from the config filed beside it.
+    """
+
+    @staticmethod
+    def _run(tmp_path: Path, **design: Any) -> Path:
+        import pandas as pd
+        import yaml
+
+        run = tmp_path / "run"
+        (run / "epitopes").mkdir(parents=True)
+        structure = _write_pdb(run / "target.pdb", n=10)
+        pd.DataFrame(
+            [
+                {
+                    "uniprot_id": "Q16790",
+                    "structure_path": str(structure),
+                    "chain": "A",
+                    "residues": [1, 2, 3],
+                    "design_ranges": [[38, 414]],
+                }
+            ]
+        ).to_parquet(run / "epitopes" / "epitopes.parquet")
+        (run / "config.yaml").write_text(
+            yaml.safe_dump({"params": {"design": design}}), encoding="utf-8"
+        )
+        return run
+
+    def test_the_configured_seed_is_read(self, tmp_path: Path) -> None:
+        from bindsight.cli import _design_spec_params_from_run
+
+        run = self._run(tmp_path, seed=42)
+        assert _design_spec_params_from_run(run)[0] == 42
+
+    def test_configured_binder_lengths_are_read(self, tmp_path: Path) -> None:
+        from bindsight.cli import _design_spec_params_from_run
+
+        run = self._run(tmp_path, binder_length_min=60, binder_length_max=80)
+        assert _design_spec_params_from_run(run)[1:] == (60, 80)
+
+    def test_a_run_without_a_config_falls_back_to_the_spec_defaults(self, tmp_path: Path) -> None:
+        from bindsight.cli import _design_spec_params_from_run
+        from bindsight.design.protocol import DesignSpec
+
+        run = tmp_path / "bare"
+        run.mkdir()
+        fields = DesignSpec.model_fields
+        assert _design_spec_params_from_run(run) == (
+            fields["seed"].default,
+            fields["binder_length_min"].default,
+            fields["binder_length_max"].default,
+        )
+
+    def test_the_seed_reaches_the_spec_the_designer_is_given(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End to end through _launch_design: the payload must carry seed 42."""
+        import tarfile
+
+        from bindsight import plugins
+        from bindsight.cli import _launch_design
+        from bindsight.design.rfdiff_mpnn import RFdiffMPNNDesigner
+
+        run = self._run(tmp_path, seed=42, binder_length_min=60, binder_length_max=80)
+        archive = tmp_path / "results.tar.gz"
+        metrics = tmp_path / "metrics.jsonl"
+        metrics.write_text(json.dumps({"binder_id": "b0", "iptm": 0.7}) + "\n")
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(metrics, arcname="metrics.jsonl")
+
+        seen: list[Any] = []
+
+        class _Capturing:
+            name = "rfdiff_mpnn"
+
+            def __init__(self) -> None:
+                self.inner = RFdiffMPNNDesigner()
+
+            def make_spec(self, **kw: Any) -> Any:
+                return self.inner.make_spec(**kw)
+
+            def submit(self, spec: Any, runner: Any) -> Any:
+                seen.append(spec)
+                return SimpleNamespace(
+                    results_archive_path=str(archive),
+                    metrics_jsonl_path=str(metrics),
+                )
+
+        monkeypatch.setattr(plugins, "get_designer", lambda name: _Capturing())
+        monkeypatch.setattr(plugins, "get_runner", lambda *a, **k: object())
+        launched = _launch_design(
+            run, backend="mock", designer="rfdiff_mpnn", validator="boltz2", trajectories=10
+        )
+        assert launched == 1
+        spec = seen[0]
+        assert spec.seed == 42, "the configured seed never reached the design job"
+        assert (spec.binder_length_min, spec.binder_length_max) == (60, 80)
+        # rfdiff_mpnn also mirrors the bounds into extra_params; they must agree.
+        assert spec.extra_params["binder_length_min"] == 60
+        assert spec.extra_params["binder_length_max"] == 80

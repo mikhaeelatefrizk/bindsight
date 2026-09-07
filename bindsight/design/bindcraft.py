@@ -41,6 +41,8 @@ class BindCraftDesigner:
         design_ranges: list[tuple[int, int]] | None = None,
         n_trajectories: int = 10,
         seed: int = 0,
+        binder_length_min: int = 50,
+        binder_length_max: int = 100,
     ) -> DesignSpec:
         """Build a DesignSpec carrying the BindCraft parameters."""
         return DesignSpec(
@@ -51,6 +53,8 @@ class BindCraftDesigner:
             design_ranges=list(design_ranges or []),
             n_trajectories=n_trajectories,
             seed=seed,
+            binder_length_min=binder_length_min,
+            binder_length_max=binder_length_max,
             extra_params={
                 "designer": self.name,
                 "designer_version": self.version,

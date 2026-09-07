@@ -41,12 +41,26 @@ LOG = logging.getLogger(__name__)
 _MAX_KERNEL_BYTES = 900_000
 
 
+#: Consecutive failed polls tolerated before a wait is abandoned.
+#:
+#: At the default 30-second interval this rides out roughly ten minutes of
+#: network trouble. The cost of being wrong in each direction is asymmetric: a
+#: needless retry costs one HTTPS request, while giving up too early abandons a
+#: kernel that keeps consuming a fixed weekly GPU quota with nothing waiting on
+#: its result.
+_POLL_FAILURE_LIMIT = 20
+
+
+class KaggleUnavailable(RuntimeError):
+    """The Kaggle client is not installed — a condition no retry can heal."""
+
+
 def _require_kaggle() -> Any:
     """Import + authenticate the Kaggle API, with a clear error if missing."""
     try:
         from kaggle.api.kaggle_api_extended import KaggleApi
     except ImportError as e:
-        raise RuntimeError(
+        raise KaggleUnavailable(
             'Kaggle runner needs the "runners" extra: pip install -e ".[runners]" '
             "and Kaggle credentials (~/.kaggle/access_token or ~/.kaggle/kaggle.json)."
         ) from e
@@ -144,6 +158,31 @@ class KaggleRunner:
         # because it is the code that launched the run rather than whatever the
         # branch resolves to when pip runs on the GPU.
         self.bindsight_wheel = Path(bindsight_wheel) if bindsight_wheel else None
+        # Authenticated client, created on first use. See :meth:`_api`.
+        self._api_client: Any = None
+
+    def _api(self) -> Any:
+        """Return the authenticated Kaggle client, authenticating once.
+
+        ``authenticate()`` is not local: it introspects the access token over
+        HTTPS. Calling it on every poll made a job's whole lifetime a chain of
+        network round trips, any one of which could end the job — a single
+        dropped TLS handshake mid-poll raised ``SSLError`` out of :meth:`fetch`
+        and abandoned a kernel that went on to finish on Kaggle with nobody
+        waiting for its output. Authenticating once removes both the repeated
+        cost and that failure mode.
+        """
+        if self._api_client is None:
+            self._api_client = _require_kaggle()
+        return self._api_client
+
+    def _reset_api(self) -> None:
+        """Drop the cached client so the next call re-authenticates.
+
+        Used after a failed poll: if the failure was a stale or revoked session
+        rather than a transient blip, reauthenticating is what recovers it.
+        """
+        self._api_client = None
 
     def estimate_cost(self, spec_size: int) -> CostEstimate:
         """Estimate cost (free tier — $0, but queue/quota limited)."""
@@ -163,7 +202,7 @@ class KaggleRunner:
         kernel builds RFdiffusion's legacy env + the Boltz-2 env on the GPU before
         running :mod:`bindsight.runners.job_exec` across them.
         """
-        api = _require_kaggle()
+        api = self._api()
         results_dir.mkdir(parents=True, exist_ok=True)
         handle_id = uuid.uuid4().hex[:12]
         user = self.username or api.config_values.get("username", "user")
@@ -237,21 +276,72 @@ class KaggleRunner:
 
     def poll(self, handle: JobHandle) -> JobStatus:
         """Query the kernel's run status."""
-        api = _require_kaggle()
+        api = self._api()
         status = api.kernels_status(handle.id)
         name = _status_name(status)
         return JobStatus(handle=handle, state=_STATE_MAP.get(name, "running"), log_tail=name)
 
+    def _await_terminal(self, handle: JobHandle) -> JobStatus:
+        """Poll until the kernel reaches a terminal state, surviving network blips.
+
+        A poll is a network call, and networks fail transiently. Treating one
+        such failure as fatal is wrong twice over: the kernel keeps running on
+        Kaggle with nothing waiting for it, and the GPU hours it burns come out
+        of a fixed weekly quota that cannot be refunded. This is not
+        hypothetical — a dropped TLS handshake during a routine poll ended the
+        client for a design job that was two and a half hours into a T4.
+
+        So a failed poll means "unknown, ask again". Only a sustained outage of
+        ``_POLL_FAILURE_LIMIT`` consecutive failures ends the wait, and the last
+        error is chained so the cause survives. A missing Kaggle client is
+        re-raised at once, because no amount of retrying installs a package.
+
+        Args:
+            handle: the job to wait on.
+
+        Returns:
+            The terminal :class:`JobStatus` (succeeded, failed or cancelled).
+
+        Raises:
+            KaggleUnavailable: the Kaggle client is not installed.
+            RuntimeError: polling failed ``_POLL_FAILURE_LIMIT`` times running.
+        """
+        failures = 0
+        while True:
+            try:
+                st = self.poll(handle)
+            except KaggleUnavailable:
+                raise
+            except Exception as e:
+                failures += 1
+                if failures >= _POLL_FAILURE_LIMIT:
+                    raise RuntimeError(
+                        f"kaggle kernel {handle.id}: {failures} consecutive poll "
+                        "failures. The kernel may still be running on Kaggle; "
+                        "rerun to reattach to it rather than resubmitting."
+                    ) from e
+                LOG.warning(
+                    "kaggle: poll %d/%d for %s failed (%s); retrying in %ds",
+                    failures,
+                    _POLL_FAILURE_LIMIT,
+                    handle.id,
+                    e,
+                    self.poll_interval_s,
+                )
+                self._reset_api()
+                time.sleep(self.poll_interval_s)
+                continue
+            failures = 0
+            if st.state in {"succeeded", "failed", "cancelled"}:
+                return st
+            time.sleep(self.poll_interval_s)
+
     def fetch(self, handle: JobHandle) -> Path:
         """Block until the kernel completes; download the results tarball."""
-        api = _require_kaggle()
+        api = self._api()
         results_dir = Path(getattr(handle, "results_dir", "."))
         handle_id = getattr(handle, "handle_id", "")
-        while True:
-            st = self.poll(handle)
-            if st.state in {"succeeded", "failed", "cancelled"}:
-                break
-            time.sleep(self.poll_interval_s)
+        st = self._await_terminal(handle)
         if st.state != "succeeded":
             raise RuntimeError(f"kaggle kernel {handle.id} finished in state {st.state}")
         self._download_output(api, handle.id, results_dir)

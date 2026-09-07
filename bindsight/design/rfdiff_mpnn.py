@@ -47,6 +47,8 @@ class RFdiffMPNNDesigner:
         design_ranges: list[tuple[int, int]] | None = None,
         n_trajectories: int = 50,
         seed: int = 0,
+        binder_length_min: int = 50,
+        binder_length_max: int = 100,
     ) -> DesignSpec:
         """Build a DesignSpec carrying the RFdiff+MPNN parameters."""
         return DesignSpec(
@@ -57,13 +59,15 @@ class RFdiffMPNNDesigner:
             design_ranges=list(design_ranges or []),
             n_trajectories=n_trajectories,
             seed=seed,
+            binder_length_min=binder_length_min,
+            binder_length_max=binder_length_max,
             extra_params={
                 "designer": self.name,
                 "designer_version": self.version,
                 "rfdiff_commit": DEFAULT_RFDIFF_COMMIT,
                 "proteinmpnn_commit": DEFAULT_PROTEINMPNN_COMMIT,
-                "binder_length_min": 50,
-                "binder_length_max": 100,
+                "binder_length_min": binder_length_min,
+                "binder_length_max": binder_length_max,
             },
         )
 

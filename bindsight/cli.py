@@ -1080,6 +1080,60 @@ def _design_defaults_from_run(
     return designer, validator, trajectories
 
 
+def _design_spec_params_from_run(run_dir: Path) -> tuple[int, int, int]:
+    """Read the design parameters a run was configured with, for its spec.
+
+    Unlike :func:`_design_defaults_from_run`, none of these are command-line
+    options, so there is no flag to defer to — the configuration is the only
+    source. They were nonetheless not read at all: every job was built with
+    ``make_spec``'s own defaults, so a run whose ``config.yaml`` recorded
+    ``seed: 42`` shipped a spec carrying seed 0 to the GPU. That was verified by
+    decoding the payload of a kernel launched from exactly such a config.
+
+    A silently ignored seed is worse than an inconvenient one. The seed is part
+    of the cache key and part of the manifest, so the artifact claimed to
+    describe a run that had not happened, and the run could never be reproduced
+    from the configuration filed beside it.
+
+    Args:
+        run_dir: the run directory, which holds the effective ``config.yaml``.
+
+    Returns:
+        ``(seed, binder_length_min, binder_length_max)``, falling back to the
+        DesignSpec defaults wherever the configuration is silent or unreadable.
+    """
+    import logging
+
+    from bindsight.design.protocol import DesignSpec
+
+    log = logging.getLogger(__name__)
+    fields = DesignSpec.model_fields
+    seed = int(fields["seed"].default)
+    lo = int(fields["binder_length_min"].default)
+    hi = int(fields["binder_length_max"].default)
+
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return seed, lo, hi
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        design_params = params.get("design") or {}
+    except Exception as e:  # pragma: no cover - a malformed config is the user's
+        log.warning("could not read %s (%s); using DesignSpec defaults", cfg_path, e)
+        return seed, lo, hi
+
+    if design_params.get("seed") is not None:
+        seed = int(design_params["seed"])
+    if design_params.get("binder_length_min") is not None:
+        lo = int(design_params["binder_length_min"])
+    if design_params.get("binder_length_max") is not None:
+        hi = int(design_params["binder_length_max"])
+    log.info("design spec from %s: seed=%d binder_length=%d-%d", cfg_path, seed, lo, hi)
+    return seed, lo, hi
+
+
 def _working_tree_wheel(backend: str, run_dir: Path) -> Path | None:
     """Build a wheel of this checkout for a remote backend to install.
 
@@ -1400,6 +1454,7 @@ def _launch_design(
     targets = _top_targets(run_dir)
     if not targets:
         return 0
+    seed, binder_length_min, binder_length_max = _design_spec_params_from_run(run_dir)
     plugin = get_designer(designer)
     runner = get_runner(
         backend,
@@ -1421,6 +1476,9 @@ def _launch_design(
             epitope_chain=t["chain"],
             design_ranges=t["design_ranges"],
             n_trajectories=trajectories,
+            seed=seed,
+            binder_length_min=binder_length_min,
+            binder_length_max=binder_length_max,
         )
         extra: dict[str, str | int | float | bool] = {
             **spec.extra_params,

@@ -18,7 +18,7 @@ import tarfile
 from pathlib import Path
 
 from bindsight.design.protocol import DesignResult, DesignSpec
-from bindsight.runners.protocol import GPURunner
+from bindsight.runners.protocol import GPURunner, JobHandle
 
 LOG = logging.getLogger(__name__)
 
@@ -87,6 +87,96 @@ def _with_backend(cache_key: str, backend: str, code: str = "") -> str:
     return hashlib.sha256(bits.encode()).hexdigest()
 
 
+def _record_handle(handle_path: Path, handle: object) -> None:
+    """Persist a launched job's handle, without ever failing the job to do it.
+
+    Recording happens *after* the remote job is launched, which makes this the
+    one place where raising would destroy exactly what it exists to protect: the
+    run would abort with a kernel already consuming quota and no record of how
+    to reach it. So every failure here is a warning. A runner whose handle
+    cannot be serialised simply loses reattachability, which is where the tool
+    stood before this existed.
+
+    Args:
+        handle_path: where to write the record.
+        handle: the handle returned by ``runner.submit``.
+    """
+    try:
+        handle_path.parent.mkdir(parents=True, exist_ok=True)
+        dump = getattr(handle, "model_dump_json", None)
+        if dump is None:
+            LOG.warning(
+                "runner returned a %s rather than a JobHandle, so this job cannot "
+                "be reattached to if the client dies",
+                type(handle).__name__,
+            )
+            return
+        handle_path.write_text(dump(indent=2))
+    except (OSError, TypeError, ValueError) as e:
+        LOG.warning(
+            "could not record the job handle at %s (%s); a crashed wait will not "
+            "be able to reattach to this job",
+            handle_path,
+            e,
+        )
+
+
+def _recorded_handle(handle_path: Path, runner: GPURunner) -> JobHandle | None:
+    """Return a still-live job recorded by an earlier client, if there is one.
+
+    A remote job outlives the process that launched it. When the client dies
+    mid-wait — a dropped connection, a closed laptop, a killed terminal — the
+    kernel keeps running and keeps spending a fixed weekly GPU quota, but
+    nothing is left that knows how to collect its output. Resubmitting is the
+    obvious response and the wrong one: it pays for the same work twice and
+    orphans the first job for good. This is the recovery path, and it is why
+    :func:`submit_via_runner` records the handle before it starts waiting.
+
+    A job that ended badly is not reattachable, so its record is cleared and the
+    caller submits afresh. But a job whose state cannot be *determined* is
+    reattached anyway: the cost of waiting on a job that turns out to be dead is
+    one more poll, while the cost of resubmitting a job that is actually alive is
+    hours of quota. :meth:`fetch` retries through transient failures, so the
+    reattached wait recovers on its own once the network does.
+
+    Args:
+        handle_path: where the handle was recorded.
+        runner: the runner to ask about the job's state.
+
+    Returns:
+        The handle to reattach to, or None if the caller should submit.
+    """
+    if not handle_path.is_file():
+        return None
+    try:
+        handle = JobHandle.model_validate_json(handle_path.read_text())
+    except (OSError, ValueError) as e:
+        LOG.warning("ignoring unreadable job record %s (%s)", handle_path, e)
+        return None
+    try:
+        state = runner.poll(handle).state
+    except Exception as e:
+        LOG.warning(
+            "could not determine the state of recorded job %s (%s); reattaching "
+            "rather than resubmitting, because a duplicate submission would "
+            "spend GPU quota on work that may already be running.",
+            handle.id,
+            e,
+        )
+        return handle
+    if state in {"queued", "running", "succeeded"}:
+        LOG.info(
+            "reattaching to %s job %s (state=%s) instead of resubmitting",
+            handle.backend,
+            handle.id,
+            state,
+        )
+        return handle
+    LOG.info("recorded job %s ended in state %s; submitting a new one", handle.id, state)
+    handle_path.unlink(missing_ok=True)
+    return None
+
+
 def submit_via_runner(
     spec: DesignSpec,
     runner: GPURunner,
@@ -151,8 +241,16 @@ def submit_via_runner(
             cache_status="hit",
         )
 
+    # Record the handle before waiting on it. A remote job outlives its client,
+    # so without this a crashed wait leaves a running kernel that nothing can
+    # collect, and the rerun pays for the same GPU hours again. See
+    # :func:`_recorded_handle`.
+    handle_path = results_dir / "handle.json"
     try:
-        handle = runner.submit(spec_path, results_dir=Path("./runs/_design"))
+        handle = _recorded_handle(handle_path, runner)
+        if handle is None:
+            handle = runner.submit(spec_path, results_dir=Path("./runs/_design"))
+            _record_handle(handle_path, handle)
         archive_path = runner.fetch(handle)
     finally:
         shutil.rmtree(spec_dir, ignore_errors=True)
@@ -190,13 +288,30 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
         LOG.warning("could not extract %s from %s: %s", member, tar_path, e)
 
 
+#: ``extra_params`` entries that change the result, and so belong in the key.
+#:
+#: Deliberately not the whole dict. ``target_structure_name`` is added *after*
+#: the key is computed, so hashing everything would make the key depend on
+#: bookkeeping rather than on the work. These are the entries the remote
+#: executor actually acts on: which validator scores the designs, and whether an
+#: ESM-2 prescreen drops some before they are scored at all.
+_RESULT_AFFECTING_PARAMS = ("validator", "prescreen_top_k")
+
+
 def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:
     """SHA-256 over the deterministic inputs to a design job.
 
     Covers the target (accession *and* structure content), the epitope, the
-    design ranges, the binder length bounds, the trajectory count, the seed, and
-    whatever the caller adds via ``extra`` (the designer's pinned commit and
-    resolved parameters). Two jobs sharing a key are the same work.
+    design ranges, the binder length bounds, the trajectory count, the seed, the
+    result-affecting ``extra_params``, and whatever the caller adds via ``extra``
+    (the designer's pinned commit and resolved parameters). Two jobs sharing a
+    key are the same work.
+
+    The validator belongs here for the same reason the backend does. The remote
+    executor runs whichever validator ``extra_params`` names, so without it a run
+    validated by Boltz-2 and a run validated by Chai-1r shared a cache entry, and
+    the second silently returned the first's numbers under the other validator's
+    name — a wrong answer that looks entirely plausible.
     """
     import hashlib
 
@@ -218,6 +333,7 @@ def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:
             str(spec.binder_length_max),
             str(spec.n_trajectories),
             str(spec.seed),
+            *(f"{k}={spec.extra_params.get(k)}" for k in _RESULT_AFFECTING_PARAMS),
             *extra,
         ]
     )
