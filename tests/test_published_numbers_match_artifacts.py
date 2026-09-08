@@ -330,3 +330,88 @@ class TestTheSuccessRateNeverAppearsBare:
         arms = [d for d in bench["designers"] if d.get("n_designs")]
         assert arms
         return arms[0]
+
+
+class TestTheDerivedFiguresMatchTheArtifact:
+    """The headline four were pinned; everything derived from them was not.
+
+    mean ipTM, mean PAE-interaction and the interval bounds are quoted across
+    five surfaces as bare literals. A re-run that moves them leaves half of each
+    sentence stale, which is worse than a wholly stale sentence because the
+    correct half lends the wrong half its authority.
+    """
+
+    SURFACES = (
+        "README.md",
+        "ARCHITECTURE.md",
+        "docs/index.md",
+        "docs/results.md",
+        "docs/positioning.md",
+        "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
+    )
+
+    @staticmethod
+    def _arm(bench: dict) -> dict:
+        return next(d for d in bench["designers"] if d.get("n_designs"))
+
+    def test_every_quoted_mean_iptm_is_the_artifact_value(self, bench: dict) -> None:
+        """`mean 0.51` and `mean **ipTM 0.51**` must both track results.json."""
+        expected = f"{self._arm(bench)['mean_iptm']:.2f}"
+        pattern = re.compile(r"mean\s+(?:\*\*)?(?:ipTM\s+)?(?:\*\*)?(\d\.\d{2})")
+        seen = 0
+        for rel in self.SURFACES:
+            path = REPO / rel
+            if not path.is_file():
+                continue
+            for line in path.read_text(encoding="utf-8").splitlines():
+                low = line.lower()
+                if "superseded" in low or "withdraw" in low or "earlier" in low:
+                    continue  # the retracted 0.59 is allowed to say 0.59
+                for match in pattern.finditer(line):
+                    seen += 1
+                    assert match.group(1) == expected, (
+                        f"{rel} states mean {match.group(1)}; the artifact says {expected}"
+                    )
+        assert seen, "no surface quotes a mean ipTM; this guard is checking nothing"
+
+    def test_every_quoted_pae_is_the_artifact_value(self, bench: dict) -> None:
+        expected = f"{self._arm(bench)['mean_pae_interaction']:.1f}"
+        pattern = re.compile(r"mean PAE[- ]interaction\s+(\d+\.\d)")
+        seen = 0
+        for rel in self.SURFACES:
+            path = REPO / rel
+            if not path.is_file():
+                continue
+            for match in pattern.finditer(path.read_text(encoding="utf-8")):
+                seen += 1
+                assert match.group(1) == expected, (
+                    f"{rel} states mean PAE-interaction {match.group(1)}; "
+                    f"the artifact says {expected}"
+                )
+        assert seen, "no surface quotes a mean PAE-interaction"
+
+    def test_every_quoted_interval_is_the_artifact_interval(self, bench: dict) -> None:
+        """The bounds were unpinned while the rate they qualify was pinned."""
+        arm = self._arm(bench)
+        expected = f"{arm['success_ci_low'] * 100:.0f}\u2013{arm['success_ci_high'] * 100:.0f}%"
+        pattern = re.compile(r"95% CI (\d{1,3}\u2013\d{1,3}%)")
+        seen = 0
+        for rel in self.SURFACES:
+            path = REPO / rel
+            if not path.is_file():
+                continue
+            for match in pattern.finditer(path.read_text(encoding="utf-8")):
+                if match.group(1).startswith("0"):
+                    continue  # study intervals like "0.01-0.27" are a different figure
+                seen += 1
+                assert match.group(1) == expected, (
+                    f"{rel} states 95% CI {match.group(1)}; the artifact says {expected}"
+                )
+        assert seen, "no surface quotes the designer interval"
+
+    def test_the_interval_is_clustered_not_binomial(self, bench: dict) -> None:
+        """A guard against silently reverting to the narrower estimator."""
+        arm = self._arm(bench)
+        assert arm["success_ci_method"].startswith("cluster-bootstrap")
+        assert arm["success_ci_low"] < arm["success_ci_independent_low"]
+        assert arm["success_ci_high"] > arm["success_ci_independent_high"]
