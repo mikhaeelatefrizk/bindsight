@@ -328,3 +328,86 @@ def test_licence_agrees_across_pyproject_citation_and_zenodo() -> None:
     assert pyproject == "AGPL-3.0-or-later"
     assert citation == pyproject
     assert zenodo == pyproject
+
+
+# ---------------------------------------------------------------------------
+# The manuscripts must not out-claim the README
+# ---------------------------------------------------------------------------
+#: Backends the README states have not been run end to end, with the words it
+#: uses to say so. A manuscript may name them; it may not present them as
+#: demonstrated.
+UNEXECUTED_BACKENDS = ("Modal", "Colab")
+
+#: Words that turn a mention into a disclosure rather than a claim.
+_HEDGES = (
+    "not been run",
+    "not executed",
+    "not yet",
+    "prepared",
+    "demonstration",
+    "demo",
+    "needs a human",
+    "does not permit",
+    "cannot",
+    "implemented but",
+)
+
+MANUSCRIPTS = ("paper/paper.md", "paper/validation/manuscript.md")
+
+
+@pytest.mark.parametrize("rel", MANUSCRIPTS)
+@pytest.mark.parametrize("backend", UNEXECUTED_BACKENDS)
+def test_no_manuscript_presents_an_unexecuted_backend_as_demonstrated(
+    rel: str, backend: str
+) -> None:
+    """paper.md claimed the GPU half runs end-to-end on Colab, Modal and Docker.
+
+    The README calls Modal "Prepared, not executed" and Colab "a demo, not a
+    reproducibility path". Both documents shipped, contradicting each other,
+    and nothing compared them — a reviewer reading the pair is the first person
+    who would have.
+    """
+    path = ROOT / rel
+    if not path.is_file():
+        pytest.skip(f"{rel} not present")
+    text = path.read_text(encoding="utf-8")
+    # Scoped to the paragraph, not a character window: a qualification belongs
+    # to the sentence it qualifies, and a fixed radius either clips a hedge that
+    # is genuinely present or reaches into unrelated prose.
+    for para in re.split(r"\n\s*\n", text):
+        low = para.lower()
+        if backend.lower() not in low or not re.search(r"end[- ]to[- ]end", low):
+            continue
+        assert any(h in low for h in _HEDGES), (
+            f"{rel} presents {backend} as running end to end, but the README "
+            f"states it has not been run that way. Paragraph:\n{para[:400]}"
+        )
+
+
+def test_the_readme_still_marks_those_backends_unexecuted() -> None:
+    """If a backend is genuinely demonstrated, this pair of tests must be revised
+    together rather than the manuscript quietly getting ahead of the evidence."""
+    readme = _read("README.md").lower()
+    assert "prepared, not executed" in readme
+    assert "not a reproducibility path" in readme
+
+
+def test_the_stated_test_count_does_not_exceed_the_suite() -> None:
+    """The manuscript claimed 635 tests against a suite of 784 functions.
+
+    Stated as a floor rather than an exact count, so adding tests does not make
+    the paper wrong, and checked against a static count of test functions —
+    which is a lower bound on collected cases, so a claim that passes here is
+    true of the real suite too.
+    """
+    text = _read("paper/paper.md")
+    match = re.search(r"over (\d[\d,]*) unit and integration tests", text)
+    assert match, "paper.md no longer states a test count in the expected form"
+    claimed = int(match.group(1).replace(",", ""))
+    functions = sum(
+        len(re.findall(r"^\s*(?:async )?def test_", p.read_text(encoding="utf-8"), re.M))
+        for p in (ROOT / "tests").glob("*.py")
+    )
+    assert claimed <= functions, (
+        f"paper.md claims over {claimed} tests; only {functions} test functions exist"
+    )
