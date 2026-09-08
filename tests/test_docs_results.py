@@ -69,16 +69,40 @@ def test_glossary_covers_core_terms() -> None:
 
 
 def test_page_reports_the_published_numbers() -> None:
-    """The public page states the same results the tests pin elsewhere."""
+    """The public page states the same results the tests pin elsewhere.
+
+    This asserted 0.84 and 50% under a comment calling them "the designer
+    benchmark's committed figures". They are the *withdrawn* ones, from the run
+    that redesigned the target chain. It never asserted the current 0.88 or
+    40%, so the generator could have dropped the corrected block entirely and
+    this test would still have passed — it was pinning the retraction sentence
+    while claiming to pin the results.
+    """
+    import json
+
     text = GENERATED.read_text(encoding="utf-8")
     # The best-ranked antigen, always printed with the list it was ranked within.
     assert "CA9" in text
     assert "rank **1 of 291**" in text
-    # The designer benchmark's committed figures.
-    assert "0.84" in text
-    assert "50%" in text
     # The retracted circular claim must not reappear on the public page.
     assert "rank 4" not in text
+
+    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+    if not artifact.is_file():
+        pytest.skip("designer benchmark artifact not present")
+    arm = next(
+        a
+        for a in json.loads(artifact.read_text(encoding="utf-8"))["designers"]
+        if a.get("n_designs")
+    )
+    # The current figures, read from the artifact rather than written here, so a
+    # re-run that moves them fails this test instead of silently disagreeing.
+    assert f"{arm['success_rate'] * 100:.0f}%" in text
+    assert f"{arm['mean_iptm']:.2f}" in text
+    low, high = arm["success_ci_low"], arm["success_ci_high"]
+    assert f"{low * 100:.0f}–{high * 100:.0f}%" in text, (
+        "the page states a success rate with no interval beside it"
+    )
 
 
 def test_referenced_figures_exist() -> None:

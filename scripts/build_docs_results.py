@@ -21,6 +21,7 @@ from __future__ import annotations
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 from bindsight.report import showcase, theme
 
@@ -65,6 +66,18 @@ def build_glossary() -> str:
         lines.append(f": {definition}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _mean_iptm(d: Any) -> str:
+    """Mean ipTM from the artifact, so the prose cannot outlive the run."""
+    value = d.mean_iptm
+    return f"{value:.2f}" if value is not None else "unavailable"
+
+
+def _best_iptm(d: Any) -> str:
+    """Best ipTM from the artifact, for the same reason."""
+    best = d.best
+    return f"{best.iptm:.2f}" if best is not None and best.iptm is not None else "unavailable"
 
 
 def _fmt(value: object, spec: str = "") -> str:
@@ -231,9 +244,10 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
         "",
         "    The run below uses the corrected protocol, and every design carries a",
         "    target chain byte-identical to the native 142-residue domain IV. The",
-        "    corrected mean ipTM is *lower* than the superseded one, 0.51 against 0.59,",
-        "    which is what you would expect once designs stop being scored against a",
-        "    surface they helped invent. The best single design is better: 0.88.",
+        f"    corrected mean ipTM is *lower* than the superseded one, {_mean_iptm(d)}",
+        "    against 0.59, which is what you would expect once designs stop being",
+        "    scored against a surface they helped invent. The best single design is",
+        f"    better: {_best_iptm(d)}.",
         "",
     ]
     if d.targets:
@@ -244,7 +258,13 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
     if best is not None and best.iptm is not None:
         stats.append((f"{best.iptm:.2f}", "best ipTM", f"design {best.binder_id}"))
     if d.success_rate is not None:
-        stats.append((f"{d.success_rate * 100:.0f}%", "success @ ipTM 0.65", "standard criterion"))
+        interval = d.success_interval
+        note = "standard criterion"
+        if interval is not None:
+            # Never a bare rate: the interval is clustered over backbones,
+            # because designs sharing a trajectory are not independent trials.
+            note = f"95% CI {interval[0] * 100:.0f}–{interval[1] * 100:.0f}% over backbones"
+        stats.append((f"{d.success_rate * 100:.0f}%", "success @ ipTM 0.65", note))
     paes = [b.pae_interaction for b in d.binders if b.pae_interaction is not None]
     if paes:
         stats.append((f"{sum(paes) / len(paes):.1f} Å", "mean PAE-int", "lower is more confident"))

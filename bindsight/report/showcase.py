@@ -329,6 +329,31 @@ class DesignerShowcase:
         return None
 
     @property
+    def success_interval(self) -> tuple[float, float] | None:
+        """The reported interval around the success rate, if the artifact has one.
+
+        Clustered over backbones, because designs sharing an RFdiffusion
+        trajectory are not independent trials. A page that prints the rate
+        without it claims a precision twenty designs from ten backbones do not
+        carry.
+        """
+        for d in self.designers:
+            low = _as_float(d.get("success_ci_low"))
+            high = _as_float(d.get("success_ci_high"))
+            if low is not None and high is not None:
+                return (low, high)
+        return None
+
+    @property
+    def mean_iptm(self) -> float | None:
+        """Mean ipTM as the benchmark artifact reports it."""
+        for d in self.designers:
+            value = _as_float(d.get("mean_iptm"))
+            if value is not None:
+                return value
+        return None
+
+    @property
     def n_designs(self) -> int:
         """Total number of designs in the benchmark."""
         return len(self.binders)

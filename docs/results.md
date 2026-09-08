@@ -110,16 +110,17 @@ A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (K
 
     The run below uses the corrected protocol, and every design carries a
     target chain byte-identical to the native 142-residue domain IV. The
-    corrected mean ipTM is *lower* than the superseded one, 0.51 against 0.59,
-    which is what you would expect once designs stop being scored against a
-    surface they helped invent. The best single design is better: 0.88.
+    corrected mean ipTM is *lower* than the superseded one, 0.51
+    against 0.59, which is what you would expect once designs stop being
+    scored against a surface they helped invent. The best single design is
+    better: 0.88.
 
 **Target:** ERBB2
 
 <div class="bs-stats">
 <div class="bs-stat"><div class="v">20</div><div class="k">designs</div><div class="d">RFdiffusion → ProteinMPNN → Boltz-2</div></div>
 <div class="bs-stat"><div class="v">0.88</div><div class="k">best ipTM</div><div class="d">design P04626_binder_0_seq1</div></div>
-<div class="bs-stat"><div class="v">40%</div><div class="k">success @ ipTM 0.65</div><div class="d">standard criterion</div></div>
+<div class="bs-stat"><div class="v">40%</div><div class="k">success @ ipTM 0.65</div><div class="d">95% CI 15–70% over backbones</div></div>
 <div class="bs-stat"><div class="v">15.6 Å</div><div class="k">mean PAE-int</div><div class="d">lower is more confident</div></div>
 </div>
 
