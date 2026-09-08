@@ -641,11 +641,17 @@ def _success_cell(d: dict[str, Any]) -> str:
 
 
 def _backbone_cell(d: dict[str, Any]) -> str:
-    """Backbones that yielded any design over the bar — the independent attempts."""
+    """Backbones that yielded any design over the bar — the independent attempts.
+
+    Deliberately a bare fraction. Rendering it as a percentage put "50%" in a
+    table whose withdrawn predecessor reported 50% success@0.65, which is the
+    figure this benchmark exists to have replaced; a reader skimming the row
+    would have had every reason to think the old number had survived.
+    """
     hit, total = d.get("n_backbones_with_success"), d.get("n_backbones")
     if hit is None or not total:
         return "—"
-    return f"{hit}/{total} = {hit / total:.0%}"
+    return f"{hit}/{total}"
 
 
 def _render_md(summary: dict[str, Any]) -> str:
@@ -679,7 +685,12 @@ def _render_md(summary: dict[str, Any]) -> str:
             "> omitted that flag, rewrote the target as well, and therefore optimised\n"
             "> its designs against a partly-invented surface before scoring them\n"
             "> against the native one; its figures are withdrawn. Every design here\n"
-            "> carries a target chain byte-identical to the prepared structure."
+            "> carries a target chain byte-identical to the prepared structure.\n"
+            ">\n"
+            "> That is checked against the artifacts, not asserted: "
+            "`tests/test_target_chain_artifact.py` reads every committed "
+            "`*_complex.cif` and requires exactly one chain to equal the native "
+            "target in `target/P04626_domain_IV.pdb`."
         )
     a("")
 

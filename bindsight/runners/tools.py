@@ -452,6 +452,44 @@ def chain_sequence_from_pdb(pdb_path: Path, chain: str = "A") -> str:
     return "".join(aa for _, aa in chain_residues_from_pdb(pdb_path, chain))
 
 
+def chain_sequences_from_cif(cif_path: Path) -> dict[str, str]:
+    """Every chain's 1-letter sequence from an mmCIF, keyed by label_asym_id.
+
+    Validator output is mmCIF, so checking what a predicted complex actually
+    contains needs this rather than :func:`chain_sequence_from_pdb`. The check
+    it exists for is whether a designed complex still carries the native target:
+    ProteinMPNN will rewrite every chain it is given, and the difference between
+    a real result and a design scored against a surface it invented is exactly
+    one command-line flag.
+
+    Args:
+        cif_path: an mmCIF file with an ``_atom_site`` loop.
+
+    Returns:
+        chain id -> sequence, residues ordered by ``label_seq_id``. Empty when
+        the file carries no atom records.
+    """
+    from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+
+    data = MMCIF2Dict(str(cif_path))
+    chains = data.get("_atom_site.label_asym_id")
+    comps = data.get("_atom_site.label_comp_id")
+    seq_ids = data.get("_atom_site.label_seq_id")
+    if not chains or not comps or not seq_ids:
+        return {}
+    by_chain: dict[str, dict[int, str]] = {}
+    for chain, comp, seq_id in zip(chains, comps, seq_ids, strict=False):
+        try:
+            index = int(seq_id)
+        except (TypeError, ValueError):  # heteroatoms carry "." here
+            continue
+        by_chain.setdefault(str(chain), {})[index] = _AA3TO1.get(str(comp).upper(), "X")
+    return {
+        chain: "".join(residues[i] for i in sorted(residues))
+        for chain, residues in sorted(by_chain.items())
+    }
+
+
 def pdb_chain_ids(pdb_path: Path) -> list[str]:
     """Chain ids present in a PDB, in first-appearance order (CA atoms)."""
     chains: list[str] = []
