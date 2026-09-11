@@ -1533,6 +1533,22 @@
       "STEAP1"
     ]
   },
+  "null_calibration": {
+    "description": "Cohorts carrying no panel antigen, run to calibrate the nulls and to show where panel antigens land in a cancer that is not theirs. A standing near the off-indication mean is what 'no signal' looks like on this scale.",
+    "projects": [
+      "TCGA-KICH",
+      "TCGA-THCA"
+    ],
+    "shortlist_sizes": {
+      "TCGA-KICH": 290,
+      "TCGA-THCA": 293
+    },
+    "n_scored_pairs": 0,
+    "n_antigen_standings": 21,
+    "mean_standing_off_indication": 0.4605863347133916,
+    "mean_standing_in_own_indication": 0.7414994472773848,
+    "n_own_indication": 22
+  },
   "cohorts_not_yet_run": [],
   "surfaceome_size": 4801
 }

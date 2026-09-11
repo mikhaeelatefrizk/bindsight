@@ -356,6 +356,25 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
                 "indications has no single 'own' cohort to hold fixed.",
                 "",
             ]
+        calib = summary.get("null_calibration")
+        if calib:
+            own = calib.get("mean_standing_in_own_indication")
+            off = calib.get("mean_standing_off_indication")
+            lines += [
+                "**Calibration.** "
+                + ", ".join(str(x).removeprefix("TCGA-") for x in calib.get("projects", []))
+                + " carry no panel antigen and were run to show what no signal "
+                "looks like on this scale. Panel antigens land at a mean standing "
+                f"of **{_fmt(off, 3)}** there — the middle of the eligible "
+                "surfaceome — against "
+                f"**{_fmt(own, 3)}** in their own indication. "
+                f"Neither cohort contributes a scored pair "
+                f"({calib.get('n_scored_pairs')}), because inventing an "
+                "expectation for a cohort chosen for having none is the error "
+                "they exist to avoid.",
+                "",
+            ]
+
         if excluded_missing:
             lines += [
                 f"Excluded, not scored in every cohort: {', '.join(excluded_missing)}. "

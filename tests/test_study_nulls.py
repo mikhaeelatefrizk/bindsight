@@ -280,3 +280,44 @@ class TestTheNullsAreActuallyWiredIn:
         assert spec is not None, "summarise did not run the panel-level specificity null"
         assert spec["n_antigens"] == 2
         assert 0.0 < spec["p_value"] <= 1.0
+
+
+class TestTheCalibrationCohortsFinallyDoSomething:
+    """`NULL_CALIBRATION_PROJECTS` was declared, downloaded, run, scored — and
+    contributed to no reported number. Both cohorts now enter the permutation
+    null as assignments an antigen should not fit, and answer directly the
+    question recall cannot: where does a panel antigen land in a cancer that is
+    not its own?"""
+
+    @pytest.fixture(scope="class")
+    def summary(self) -> dict[str, Any]:
+        path = STUDY / "results.json"
+        if not path.is_file():
+            pytest.skip("study artifact not present")
+        return dict(json.loads(path.read_text(encoding="utf-8")))
+
+    def test_the_calibration_cohorts_are_reported(self, summary: dict[str, Any]) -> None:
+        from bindsight.benchmark import panel as P
+
+        calib = summary.get("null_calibration")
+        assert calib, "the null-calibration cohorts still contribute nothing"
+        assert set(calib["projects"]) <= set(P.NULL_CALIBRATION_PROJECTS)
+        assert calib["n_antigen_standings"] > 0
+
+    def test_no_expectation_is_invented_for_them(self, summary: dict[str, Any]) -> None:
+        """They were chosen for carrying no antigen; scoring one would be a fiction."""
+        assert summary["null_calibration"]["n_scored_pairs"] == 0
+
+    def test_an_antigen_stands_higher_in_its_own_indication(self, summary: dict[str, Any]) -> None:
+        """The calibration's whole point: if these are equal, the ranker is
+        surfacing generic biology rather than the right target."""
+        calib = summary["null_calibration"]
+        assert calib["mean_standing_in_own_indication"] > calib["mean_standing_off_indication"]
+
+    def test_the_report_states_the_comparison(self) -> None:
+        path = STUDY / "RESULTS.md"
+        if not path.is_file():
+            pytest.skip("study report not present")
+        text = path.read_text(encoding="utf-8")
+        assert "Calibration" in text
+        assert "no panel antigen" in text

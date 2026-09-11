@@ -766,7 +766,76 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     specificity = _specificity_null(results, config)
     if specificity is not None:
         summary["specificity_null"] = specificity
+    calibration = _null_calibration(results)
+    if calibration is not None:
+        summary["null_calibration"] = calibration
     return summary
+
+
+def _cognate_projects() -> dict[str, set[str]]:
+    """Antigen symbol -> the projects the panel names as its indication."""
+    cognate: dict[str, set[str]] = {}
+    for entry in P.PANEL:
+        cognate.setdefault(entry.symbol, set()).add(entry.project)
+    return cognate
+
+
+def _null_calibration(results: list[CohortResult]) -> dict[str, Any] | None:
+    """What the pipeline surfaces where no panel antigen is expected.
+
+    ``NULL_CALIBRATION_PROJECTS`` has been declared since the panel was written —
+    "run with no antigen attached, purely to calibrate the null models and audit
+    shortlist composition" — and both cohorts were downloaded, run and scored
+    without contributing to a single reported number.
+
+    They contribute two things now. As cohorts they enter the permutation null
+    as assignments an antigen could receive but should not fit, which is what
+    makes that test a test. And they answer directly the question the recall
+    number cannot: where does a panel antigen land in a cancer it has nothing to
+    do with? If the standing in an antigen's own indication is not clearly
+    better than its standing here, the pipeline is ranking generic biology.
+
+    Args:
+        results: every scored cohort.
+
+    Returns:
+        The comparison and the cohorts it was computed over, or None when
+        neither calibration cohort has been run.
+    """
+    calibration = [r for r in results if r.project in P.NULL_CALIBRATION_PROJECTS]
+    if not calibration:
+        return None
+
+    cognate = _cognate_projects()
+    off_indication = [score for r in calibration for score in r.antigen_scores.values()]
+    own_indication = [
+        score
+        for r in results
+        for symbol, score in r.antigen_scores.items()
+        if r.project in cognate.get(symbol, set())
+    ]
+    if not off_indication:
+        return None
+
+    block: dict[str, Any] = {
+        "description": (
+            "Cohorts carrying no panel antigen, run to calibrate the nulls and to "
+            "show where panel antigens land in a cancer that is not theirs. A "
+            "standing near the off-indication mean is what 'no signal' looks "
+            "like on this scale."
+        ),
+        "projects": [r.project for r in calibration],
+        "shortlist_sizes": {r.project: r.set_sizes.get("n_candidates") for r in calibration},
+        # Must be zero. A scored pair here would mean an expectation was invented
+        # for a cohort chosen precisely because it carries none.
+        "n_scored_pairs": sum(len(r.pairs) for r in calibration),
+        "n_antigen_standings": len(off_indication),
+        "mean_standing_off_indication": sum(off_indication) / len(off_indication),
+    }
+    if own_indication:
+        block["mean_standing_in_own_indication"] = sum(own_indication) / len(own_indication)
+        block["n_own_indication"] = len(own_indication)
+    return block
 
 
 def _adjust_decoy_p(pairs: list[dict[str, Any]]) -> None:
@@ -827,9 +896,7 @@ def _specificity_null(results: list[CohortResult], config: StudyConfig) -> dict[
     # a statistic built from one set of cohorts against one built from another.
     scored_everywhere = set.intersection(*(set(v) for v in by_project.values()))
 
-    cognate: dict[str, set[str]] = {}
-    for entry in P.PANEL:
-        cognate.setdefault(entry.symbol, set()).add(entry.project)
+    cognate = _cognate_projects()
 
     usable = sorted(
         symbol
