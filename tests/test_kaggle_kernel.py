@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import ast
 import base64
+from pathlib import Path
 from types import SimpleNamespace
 
 from bindsight.runners import kaggle, kaggle_kernel, tools
@@ -224,3 +225,90 @@ def test_the_peak_starts_at_zero_and_is_a_mutable_cell() -> None:
     )
     peak = ns["_VRAM_PEAK"]
     assert peak == [0]
+
+
+# ---------------------------------------------------------------------------
+# A validate-only job must not build the designer's environment
+# ---------------------------------------------------------------------------
+class TestTheKernelKnowsWhichJobItIs:
+    """`build_kernel_script` took no mode, so every job built everything.
+
+    Re-scoring binders that already exist never invokes RFdiffusion, yet the
+    kernel still cloned it, downloaded roughly 480 MB of checkpoints, verified
+    them, and built the entire se3 environment — about six minutes and several
+    gigabytes of a weekly GPU quota that does not refund, spent on tools the job
+    does not touch. Step 4's calibration folds are all validate-only, so this
+    pays for itself immediately.
+    """
+
+    @staticmethod
+    def _script(mode: str) -> str:
+        return kaggle_kernel.build_kernel_script(handle_id="t", payload=_payload(), mode=mode)
+
+    def test_both_modes_are_valid_python(self) -> None:
+        """The guard indents a large block; a stray line would break the script."""
+        for mode in ("design_and_validate", "validate_only"):
+            ast.parse(self._script(mode))
+
+    def test_the_mode_reaches_the_kernel(self) -> None:
+        assert "MODE = 'validate_only'" in self._script("validate_only")
+        assert "MODE = 'design_and_validate'" in self._script("design_and_validate")
+
+    def test_the_designer_environment_is_guarded_not_deleted(self) -> None:
+        """Design jobs still need it, so it is skipped at run time, not removed."""
+        script = self._script("validate_only")
+        assert 'if MODE != "validate_only":' in script
+        assert "build se3 env" in script, "the design path must still be there"
+
+    def test_every_designer_step_sits_inside_the_guard(self) -> None:
+        """Indentation is the whole mechanism, so check it rather than trust it."""
+        script = self._script("validate_only")
+        for probe in (
+            'step("clone RFdiffusion',
+            'step("build se3 env',
+            "{MM} create -y -p {SE3}",
+            "RFDIFF_WEIGHTS.items()",
+        ):
+            line = next(ln for ln in script.splitlines() if probe in ln)
+            assert line.startswith("    "), f"not guarded: {line.strip()[:60]}"
+
+    def test_the_validator_environment_is_never_guarded(self) -> None:
+        """Boltz-2 runs in both modes; guarding it would break re-scoring."""
+        script = self._script("validate_only")
+        line = next(ln for ln in script.splitlines() if 'step("build boltz env' in ln)
+        assert not line.startswith(" "), "the validator environment must always build"
+
+    def test_a_validate_only_job_says_what_it_skipped(self) -> None:
+        script = self._script("validate_only")
+        assert "RFdiffusion is not cloned" in script
+
+    def test_the_runner_reads_the_mode_from_the_spec(self, tmp_path: Path) -> None:
+        """The spec is the only place that says which kind of job this is."""
+        import json
+
+        from bindsight.runners.kaggle import KaggleRunner
+
+        captured: dict[str, str] = {}
+
+        def fake_build(**kwargs: object) -> str:
+            captured["mode"] = str(kwargs.get("mode"))
+            return "print('kernel')\n"
+
+        spec_dir = tmp_path / "spec"
+        spec_dir.mkdir()
+        (spec_dir / "spec.json").write_text(
+            json.dumps({"extra_params": {"mode": "validate_only"}}), encoding="utf-8"
+        )
+
+        runner = KaggleRunner()
+        runner._api_client = SimpleNamespace(  # type: ignore[assignment]
+            config_values={"username": "u"},
+            kernels_push=lambda path: None,
+        )
+        original = kaggle_kernel.build_kernel_script
+        kaggle_kernel.build_kernel_script = fake_build  # type: ignore[assignment]
+        try:
+            runner.submit(spec_dir / "spec.json", results_dir=tmp_path / "out")
+        finally:
+            kaggle_kernel.build_kernel_script = original  # type: ignore[assignment]
+        assert captured["mode"] == "validate_only"

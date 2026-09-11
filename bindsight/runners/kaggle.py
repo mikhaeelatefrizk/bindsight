@@ -237,9 +237,28 @@ class KaggleRunner:
                 self.bindsight_ref or "the default branch",
             )
 
+        # Which kind of job this is lives in the spec and nowhere else. A
+        # validate-only run re-scores binders that already exist, so the kernel
+        # must not build the designer's environment: doing so spent roughly six
+        # minutes and several gigabytes of a weekly quota on tools it never
+        # invoked.
+        try:
+            spec_mode = str(
+                (json.loads(spec_path.read_text()).get("extra_params") or {}).get("mode")
+                or "design_and_validate"
+            )
+        except (OSError, ValueError) as e:  # a spec we cannot read is not a mode claim
+            LOG.warning(
+                "could not read the job mode from %s (%s); building the full environment",
+                spec_path,
+                e,
+            )
+            spec_mode = "design_and_validate"
+
         script = kaggle_kernel.build_kernel_script(
             handle_id=handle_id,
             payload=payload,
+            mode=spec_mode,
             bindsight_ref=self.bindsight_ref,
             bindsight_wheel_b64=wheel_b64,
             bindsight_wheel_name=(
