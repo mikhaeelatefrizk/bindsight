@@ -15,6 +15,38 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
+#: What a validator reports when its tool's version cannot be established.
+#:
+#: Deliberately not a version-shaped string. Every parser here used to write a
+#: literal into :attr:`ValidationResult.validator_version` — ``"2.0.1"``,
+#: ``"0.6"``, ``"1.0"`` — regardless of what was installed, which made the one
+#: field that looks like provenance answer from a constant. A reader checking
+#: which model produced a result got a confident wrong answer instead of an
+#: obviously missing one, and no substitute that *looks* like a version fixes
+#: that.
+UNRECORDED_VERSION = "unrecorded"
+
+
+def installed_version(distribution: str) -> str | None:
+    """The installed version of ``distribution``, or ``None`` if it is absent.
+
+    Validators parse output on whatever machine holds the files, which is not
+    always the machine that produced them; ``None`` is the honest answer there,
+    and callers turn it into :data:`UNRECORDED_VERSION`.
+
+    Args:
+        distribution: the installed distribution name, e.g. ``"boltz"``.
+
+    Returns:
+        The version string, or ``None`` when the distribution is not installed.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version(distribution)
+    except PackageNotFoundError:
+        return None
+
 
 class ValidationResult(BaseModel):
     """Per-design validation metrics."""

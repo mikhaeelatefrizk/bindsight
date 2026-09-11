@@ -29,7 +29,11 @@ from bindsight.validate.boltz2 import (
     build_boltz_yaml,
     parse_boltz_output,
 )
-from bindsight.validate.protocol import ValidationResult
+from bindsight.validate.protocol import (
+    UNRECORDED_VERSION,
+    ValidationResult,
+    installed_version,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -702,7 +706,10 @@ def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) 
         # confidence a second time as though it were an orthogonal signal.
         affinity_pred_value=None,
         validator_name="chai1r",
-        validator_version="0.6",
+        # chai_lab is a pip distribution, so the installed version is
+        # readable. CHAI_PIP is still a range, which is why it is read
+        # rather than assumed.
+        validator_version=installed_version("chai_lab") or UNRECORDED_VERSION,
         notes=f"parsed chai scores={'yes' if npz else 'no'}",
     )
 
@@ -730,7 +737,11 @@ def parse_af2ig_output(
         # confidence score, not a binding constant.
         affinity_pred_value=None,
         validator_name="af2_ig",
-        validator_version="1.0",
+        # Cloned from git at a pinned SHA rather than pip-installed, so
+        # there is no distribution to interrogate. The SHA is the better
+        # record anyway: it is content-addressed, so a clone either yields
+        # exactly that tree or fails, and request and receipt coincide.
+        validator_version=f"dl_binder_design@{DL_BINDER_DESIGN_COMMIT}",
         notes="AF2 initial-guess (non-commercial weights)",
     )
 

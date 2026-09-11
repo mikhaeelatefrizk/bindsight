@@ -284,3 +284,75 @@ class TestTheRecordedValidatorVersionIsMeasured:
 
         assert f"boltz=={boltz2.PINNED_BOLTZ2_VERSION}" == tools.BOLTZ_PIP
         assert Boltz2Validator.version == boltz2.PINNED_BOLTZ2_VERSION
+
+    def test_no_parser_writes_a_version_literal(self) -> None:
+        """Boltz-2 was not the only one; it was the only one anyone had run.
+
+        Chai-1r wrote ``"0.6"`` and AF2-IG wrote ``"1.0"`` into every row the
+        same way. Neither has produced a published number — no shipped backend
+        can execute them — so the defect was latent rather than realised, which
+        is not a reason to leave a provenance field answering from a literal.
+        """
+        import ast
+        import inspect
+
+        from bindsight.runners import tools
+        from bindsight.validate import boltz2
+
+        offenders: list[str] = []
+        for module in (tools, boltz2):
+            tree = ast.parse(inspect.getsource(module))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.keyword) or node.arg != "validator_version":
+                    continue
+                if isinstance(node.value, ast.Constant):
+                    offenders.append(f"{module.__name__}:{node.lineno} = {node.value.value!r}")
+        assert not offenders, "validator_version is assigned a literal at " + "; ".join(offenders)
+
+
+class TestEveryValidatorRecordsWhatItRan:
+    """Each parser reports its own tool's provenance, by its own mechanism."""
+
+    def test_chai_reads_the_installed_distribution(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """chai_lab is pip-installed, and CHAI_PIP is still a range."""
+        from bindsight.runners import tools
+
+        monkeypatch.setattr(tools, "installed_version", lambda dist: "0.6.1" if dist else None)
+        row = tools.parse_chai_output(tmp_path, binder_id="b0", target_uniprot="P04626")
+        assert row.validator_version == "0.6.1"
+
+    def test_chai_says_unrecorded_when_absent(self, tmp_path: Path) -> None:
+        from bindsight.runners import tools
+        from bindsight.validate.protocol import UNRECORDED_VERSION
+
+        row = tools.parse_chai_output(tmp_path, binder_id="b0", target_uniprot="P04626")
+        assert row.validator_version == UNRECORDED_VERSION
+
+    def test_af2ig_records_the_pinned_commit(self, tmp_path: Path) -> None:
+        """Cloned from git at a SHA, so there is no distribution to query.
+
+        A SHA is the stronger record regardless: it is content-addressed, so a
+        clone yields exactly that tree or fails.
+        """
+        from bindsight.runners import tools
+
+        row = tools.parse_af2ig_output(
+            tmp_path / "none.sc", binder_id="b0", target_uniprot="P04626"
+        )
+        assert row.validator_version == f"dl_binder_design@{tools.DL_BINDER_DESIGN_COMMIT}"
+        assert len(tools.DL_BINDER_DESIGN_COMMIT) == 40
+
+    def test_the_unrecorded_sentinel_is_not_version_shaped(self) -> None:
+        """It has to be obviously absent, not quietly plausible."""
+        from bindsight.validate.protocol import UNRECORDED_VERSION
+
+        assert not any(ch.isdigit() for ch in UNRECORDED_VERSION)
+
+    def test_the_shared_reader_returns_a_real_version(self) -> None:
+        """Something certainly installed, so the happy path is exercised."""
+        from bindsight.validate.protocol import installed_version
+
+        assert installed_version("pydantic") is not None
+        assert installed_version("a-distribution-that-is-not-installed") is None

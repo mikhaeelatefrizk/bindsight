@@ -37,7 +37,11 @@ from typing import Any
 
 import yaml
 
-from bindsight.validate.protocol import ValidationResult
+from bindsight.validate.protocol import (
+    UNRECORDED_VERSION,
+    ValidationResult,
+    installed_version,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -63,12 +67,7 @@ def installed_boltz_version() -> str | None:
     the case wherever the parser runs outside the GPU environment. Substituting
     the pinned version there would recreate the same fiction one level down.
     """
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        return version("boltz")
-    except PackageNotFoundError:
-        return None
+    return installed_version("boltz")
 
 
 class MissingValidationError(FileNotFoundError):
@@ -165,7 +164,7 @@ def parse_boltz_output(
         affinity_pred_value=affinity_value,
         affinity_probability_binary=affinity_prob,
         validator_name="boltz2",
-        validator_version=installed_boltz_version() or "unrecorded",
+        validator_version=installed_boltz_version() or UNRECORDED_VERSION,
         notes=(
             f"parsed confidence={'yes' if confidence_path else 'no'}, "
             f"affinity={'yes' if affinity_path else 'no'}"
