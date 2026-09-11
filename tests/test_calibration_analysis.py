@@ -91,6 +91,28 @@ class TestTheExactSignFlipTest:
         with pytest.raises(ValueError, match="no pairs"):
             calib.exact_signflip_p([])
 
+    def test_a_p_at_the_floor_is_reported_as_a_floor(self, tmp_path: Path) -> None:
+        """An exact test's p is never zero, and its smallest value is a ceiling on evidence.
+
+        With twenty pairs only the observed assignment and its mirror are as
+        extreme as a perfect separation, so p bottoms out at 2/2**20. Reporting
+        that as "vanishingly significant" would claim more than twenty pairs
+        can carry, which is why the study's decoy null reports its own floor too.
+        """
+        rows: dict[str, float | None] = {}
+        for i in range(20):
+            rows[f"b{i}"] = 0.80 + i * 0.005
+            rows[f"b{i}_scram"] = 0.20 + i * 0.005
+        report = calib.analyse(_metrics(tmp_path / "m.jsonl", rows), committed=None)
+        assert report["exact_signflip_p_floor"] == pytest.approx(2 / 2**20)
+        assert report["exact_signflip_p"] == pytest.approx(report["exact_signflip_p_floor"])
+        assert "floor for 20 pairs" in calib.render(report)
+
+    def test_a_small_p_does_not_render_as_zero(self) -> None:
+        """``{:.5f}`` turns the twenty-pair floor into ``0.00000``."""
+        assert calib._fmt_p(2 / 2**20) == "1.91e-06"
+        assert calib._fmt_p(0.032) == "0.03200"
+
 
 def _metrics(path: Path, rows: dict[str, float | None]) -> Path:
     path.write_text(
@@ -183,6 +205,115 @@ class TestTheThresholdGetsAFalsePositiveRate:
         report = calib.analyse(_metrics(tmp_path / "m.jsonl", rows), committed=None)
         assert report["exact_signflip_p"] > 0.05
         assert report["scramble_pass_rate"] == pytest.approx(report["design_pass_rate"], abs=0.2)
+
+
+class TestTheOperatingPointIsBoundedNotEyeballed:
+    """A sweep is a table to read; an operating point is a decision with a bound.
+
+    The bound used is the interval's upper limit, not the point estimate,
+    because twenty controls resolve a rate to steps of 5% and zero-of-twenty is
+    not a 0% false-positive rate.
+    """
+
+    _SEPARATED = ([0.80 + i * 0.005 for i in range(20)], [0.20 + i * 0.005 for i in range(20)])
+
+    def test_it_picks_the_lowest_threshold_that_clears_the_bound(self) -> None:
+        """Lowest, not highest: raising it further only discards real designs."""
+        designs, scrambles = self._SEPARATED
+        op = calib.operating_point(designs, scrambles, max_fpr=0.25)
+        assert op["reachable"] is True
+        assert op["design_pass_rate"] == pytest.approx(1.0)
+        below = round(op["threshold"] - 0.01, 2)
+        assert calib._fpr(scrambles, below)["upper95"] > 0.25
+
+    def test_it_judges_on_the_upper_bound_not_the_point_estimate(self) -> None:
+        """Zero of twenty passing is not proof of a rate below 16.8%."""
+        designs, scrambles = self._SEPARATED
+        op = calib.operating_point(designs, scrambles, max_fpr=0.25)
+        assert op["false_positive_rate"]["point"] == 0.0
+        assert op["false_positive_rate"]["upper95"] == pytest.approx(0.168, abs=0.001)
+
+    def test_an_unreachable_bound_blames_the_control_set_not_the_designs(self) -> None:
+        """Twenty controls cannot certify 5% however cleanly the arms separate.
+
+        The record has to say that, because "no 5% operating point" read as a
+        statement about the designs is the wrong conclusion entirely.
+        """
+        designs, scrambles = self._SEPARATED
+        op = calib.operating_point(designs, scrambles, max_fpr=0.05)
+        assert op["reachable"] is False
+        assert op["n_controls"] == 20
+        assert op["n_controls_needed"] == 72
+        assert "threshold" not in op
+
+    def test_controls_needed_is_the_smallest_n_that_actually_works(self) -> None:
+        """Checked against the interval it has to satisfy, not against itself."""
+        from bindsight.benchmark.statistics import clopper_pearson_interval
+
+        for max_fpr in (0.25, 0.10, 0.05, 0.02):
+            n = calib.controls_needed_for(max_fpr)
+            assert clopper_pearson_interval(0, n).high <= max_fpr
+            assert clopper_pearson_interval(0, n - 1).high > max_fpr
+
+    def test_a_meaningless_bound_is_refused(self) -> None:
+        for bad in (0.0, 1.0, -0.1, 1.5):
+            with pytest.raises(ValueError, match="max_fpr"):
+                calib.controls_needed_for(bad)
+
+    def test_reachable_is_not_the_same_as_useful(self) -> None:
+        """Controls scoring above the designs still admit a threshold: 1.00.
+
+        It excludes every control, and every design with them. That is a real
+        answer — the metric does not separate — and it has to surface as a
+        design pass rate of zero rather than as a missing operating point,
+        because "no operating point" and "an operating point that keeps
+        nothing" are different findings.
+        """
+        designs, _ = self._SEPARATED
+        op = calib.operating_point(designs, [0.99] * 20, max_fpr=0.25)
+        assert op["reachable"] is True
+        assert op["design_pass_rate"] == 0.0
+
+    def test_the_report_carries_both_bounds(self, tmp_path: Path) -> None:
+        rows: dict[str, float | None] = {}
+        for i in range(20):
+            rows[f"b{i}"] = 0.80 + i * 0.005
+            rows[f"b{i}_scram"] = 0.20 + i * 0.005
+        report = calib.analyse(_metrics(tmp_path / "m.jsonl", rows), committed=None)
+        assert [op["max_fpr"] for op in report["operating_points"]] == [0.25, 0.05]
+        # An unreachable bound is kept, not filtered out; dropping it would make
+        # the report silently omit the limit the run actually hit.
+        assert any(not op["reachable"] for op in report["operating_points"])
+
+
+class TestTheReadmePowerTableIsTheRealOne:
+    """The README states what twenty controls can and cannot establish.
+
+    It decides the next experiment's size, so it is recomputed here rather than
+    trusted. A table of numbers in prose drifts the moment anything under it
+    moves — a changed confidence level would leave it quietly wrong.
+    """
+
+    _README = Path(__file__).resolve().parents[1] / "benchmarks" / "calibration" / "README.md"
+
+    def test_every_row_matches_the_interval_it_claims(self) -> None:
+        import re
+
+        from bindsight.benchmark.statistics import clopper_pearson_interval
+
+        text = self._README.read_text(encoding="utf-8")
+        rows = re.findall(r"^\| (\d+) \| ([\d.]+)% \|$", text, re.M)
+        assert len(rows) >= 4, "the power table is missing from the README"
+        for n_str, claimed in rows:
+            actual = clopper_pearson_interval(0, int(n_str)).high * 100
+            assert actual == pytest.approx(float(claimed), abs=0.05), (
+                f"README says {claimed}% for {n_str} controls; it is {actual:.2f}%"
+            )
+
+    def test_the_seventy_two_the_readme_plans_around_is_derived(self) -> None:
+        """The stated next experiment is sized off this number."""
+        assert calib.controls_needed_for(0.05) == 72
+        assert "72" in self._README.read_text(encoding="utf-8")
 
 
 class TestRefoldDriftIsLabelledForWhatItIs:

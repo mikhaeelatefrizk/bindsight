@@ -133,6 +133,108 @@ def _rate_at(values: list[float], threshold: float) -> float:
     return sum(v >= threshold for v in values) / len(values)
 
 
+def _fpr(scrambles: list[float], threshold: float) -> dict[str, Any]:
+    """False-positive rate at ``threshold``, with an exact interval.
+
+    Twenty scrambles resolve a rate to steps of 5%, so the point estimate is
+    the least interesting number here: zero of twenty is not a 0% false-positive
+    rate, it is a rate whose 95% upper bound is 16.8%. Reporting the point
+    alone would read as a much stronger claim than twenty draws can support.
+
+    Clopper-Pearson comes from :mod:`bindsight.benchmark.statistics` rather than
+    being written again here — it is the interval the rest of the project
+    reports, and a second implementation is a second thing to get wrong.
+    """
+    from bindsight.benchmark.statistics import clopper_pearson_interval
+
+    passing = sum(v >= threshold for v in scrambles)
+    interval = clopper_pearson_interval(passing, len(scrambles))
+    return {
+        "threshold": threshold,
+        "n_passing": passing,
+        "n": len(scrambles),
+        "point": interval.point,
+        "upper95": interval.high,
+    }
+
+
+def operating_point(
+    designs: list[float],
+    scrambles: list[float],
+    *,
+    max_fpr: float,
+    grid: tuple[float, ...] = tuple(i / 100 for i in range(101)),
+) -> dict[str, Any]:
+    """Lowest threshold whose scramble false-positive rate is at most ``max_fpr``.
+
+    Lowest, not highest: raising a threshold past the point where it does its job
+    only discards real designs. The bound used is the interval's **upper** limit,
+    not the point estimate, so a threshold is not accepted on the strength of a
+    rate twenty draws cannot actually establish.
+
+    Args:
+        designs: design scores.
+        scrambles: scores of the composition-matched controls.
+        max_fpr: the largest acceptable upper bound on the false-positive rate.
+        grid: candidate thresholds, ascending.
+
+    Returns:
+        A record that always names ``max_fpr`` and whether it was
+        ``reachable``. When it was not, the record carries how many controls
+        *would* reach it instead of a threshold — an unreachable bound is a
+        statement about the size of the control set, not about the designs, and
+        reporting it as a missing threshold would blame the wrong thing.
+    """
+    for threshold in sorted(grid):
+        fpr = _fpr(scrambles, threshold)
+        if fpr["upper95"] <= max_fpr:
+            return {
+                "max_fpr": max_fpr,
+                "reachable": True,
+                "threshold": threshold,
+                "false_positive_rate": fpr,
+                "design_pass_rate": _rate_at(designs, threshold),
+            }
+    return {
+        "max_fpr": max_fpr,
+        "reachable": False,
+        "n_controls": len(scrambles),
+        "best_attainable_upper95": _fpr(scrambles, max(grid))["upper95"],
+        "n_controls_needed": controls_needed_for(max_fpr),
+    }
+
+
+def controls_needed_for(max_fpr: float, *, confidence: float = 0.95) -> int:
+    """How many controls a false-positive bound of ``max_fpr`` requires.
+
+    Even a control set where *nothing* passes cannot prove an arbitrarily small
+    rate: with none of ``n`` passing, the Clopper-Pearson upper limit is
+    ``1 - (alpha/2)**(1/n)``, which is about 17% at twenty and does not reach 5%
+    until seventy-two. So a threshold cannot be certified below that no matter
+    how cleanly the arms separate, and the ceiling is a property of the
+    experiment's size rather than of its result.
+
+    This is the honest answer to "why is there no 5% operating point": not
+    because the designs failed, but because twenty controls cannot establish one.
+
+    Args:
+        max_fpr: the desired upper bound on the false-positive rate.
+        confidence: the interval's confidence level.
+
+    Returns:
+        The smallest ``n`` whose zero-passing upper limit is at or below
+        ``max_fpr``.
+
+    Raises:
+        ValueError: If ``max_fpr`` is not strictly between 0 and 1.
+    """
+    if not 0.0 < max_fpr < 1.0:
+        raise ValueError(f"max_fpr must be in (0, 1); got {max_fpr}")
+    alpha = 1.0 - confidence
+    # 1 - (alpha/2)**(1/n) <= max_fpr, solved for n and rounded up.
+    return math.ceil(math.log(alpha / 2) / math.log(1.0 - max_fpr))
+
+
 def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
     """Compare each design against its own scramble. Returns the report as a dict."""
     scored = _load(metrics)
@@ -164,8 +266,21 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
         "n_designs_above_scramble": sum(x > 0 for x in diffs),
         "exact_signflip_p": p,
         "n_permutations": n_perm,
+        # The smallest p this many pairs can produce: only the observed sign
+        # assignment and its mirror are as extreme as a perfect separation. A
+        # p at the floor means "as low as twenty pairs can go", not "vanishing",
+        # and the study's decoy null reports its own floor for the same reason.
+        "exact_signflip_p_floor": 2 / n_perm,
         "design_pass_rate": _rate_at(designs, DEFAULT_IPTM_SUCCESS),
         "scramble_pass_rate": _rate_at(scrambles, DEFAULT_IPTM_SUCCESS),
+        "false_positive_rate_at_threshold": _fpr(scrambles, DEFAULT_IPTM_SUCCESS),
+        # Two bounds rather than one: 0.25 is a threshold that mostly works,
+        # 0.05 is one that can carry a published success rate. Reporting both
+        # shows what the shipped 0.65 buys and what it would cost to do better.
+        "operating_points": [
+            operating_point(designs, scrambles, max_fpr=0.25),
+            operating_point(designs, scrambles, max_fpr=0.05),
+        ],
         "sweep": [
             {
                 "threshold": t,
@@ -200,6 +315,15 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
     return report
 
 
+def _fmt_p(p: float) -> str:
+    """A p-value that stays readable when it is very small.
+
+    ``{:.5f}`` renders the twenty-pair floor of 1.9e-06 as ``0.00000``, which
+    reads as zero. No p from an exact test is zero.
+    """
+    return f"{p:.2e}" if 0 < p < 1e-4 else f"{p:.5f}"
+
+
 def render(report: dict[str, Any]) -> str:
     """The report as Markdown."""
     d, s = report["designs"], report["scrambles"]
@@ -225,7 +349,14 @@ def render(report: dict[str, Any]) -> str:
         "own scramble.",
         "",
         f"Exact paired sign-flip test over all {report['n_permutations']:,} assignments: "
-        f"**p = {report['exact_signflip_p']:.5f}**.",
+        f"**p = {_fmt_p(report['exact_signflip_p'])}**"
+        + (
+            f" — the floor for {report['n_pairs']} pairs, "
+            f"so this is as low as this many pairs can go."
+            if report["exact_signflip_p"] <= report["exact_signflip_p_floor"]
+            else f" (floor for {report['n_pairs']} pairs: "
+            f"{_fmt_p(report['exact_signflip_p_floor'])})."
+        ),
         "",
         f"## At the threshold the project ships ({t})",
         "",
@@ -240,6 +371,45 @@ def render(report: dict[str, Any]) -> str:
         f"| {r['threshold']:.2f} | {r['designs']:.0%} | {r['scrambles']:.0%} |"
         for r in report["sweep"]
     ]
+
+    fpr = report["false_positive_rate_at_threshold"]
+    lines += [
+        "",
+        f"{fpr['n_passing']} of {fpr['n']} scrambles clear {t}. With {fpr['n']} controls "
+        f"that is an exact 95% upper bound of **{fpr['upper95']:.1%}** — not "
+        f"{fpr['point']:.0%}, which is what the count alone would suggest.",
+        "",
+        "## Operating point",
+        "",
+        "The lowest threshold whose false-positive **upper bound** clears each "
+        "target. Judged on the bound rather than the count, so a threshold is "
+        "never accepted on the strength of a rate this many controls cannot "
+        "establish.",
+        "",
+    ]
+    for op in report["operating_points"]:
+        if op["reachable"]:
+            keeps = op["design_pass_rate"]
+            line = (
+                f"- **≤{op['max_fpr']:.0%} false positives → threshold "
+                f"{op['threshold']:.2f}**, keeping {keeps:.0%} of designs "
+                f"(bound {op['false_positive_rate']['upper95']:.1%})."
+            )
+            if keeps == 0.0:
+                line += (
+                    " That threshold keeps nothing: the only way to exclude the "
+                    "controls is to exclude the designs with them, which means "
+                    "the metric is not separating them."
+                )
+            lines.append(line)
+        else:
+            lines.append(
+                f"- **≤{op['max_fpr']:.0%} false positives: not established by this run.** "
+                f"{op['n_controls']} controls cannot certify a rate below "
+                f"{op['best_attainable_upper95']:.1%} however cleanly the arms separate; "
+                f"{op['n_controls_needed']} would be needed. This is a limit of the "
+                "control set's size, not a statement about the designs."
+            )
 
     if "refold_drift" in report:
         drift = report["refold_drift"]

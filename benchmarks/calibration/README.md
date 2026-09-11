@@ -33,6 +33,35 @@ which is the entire content of the design.
 The third outcome is the one worth naming in advance, because it is the easiest
 to report as the second.
 
+### Addendum: how small a rate twenty controls can establish
+
+Added while the first job was still running, from the interval arithmetic rather
+than from any result — so it is a statement about the experiment's size, and
+could have been worked out before it was launched.
+
+A control set where *nothing* passes still cannot prove an arbitrarily small
+false-positive rate. With none of `n` passing, the exact 95% upper limit is
+`1 - 0.025**(1/n)`:
+
+| controls | upper bound on the false-positive rate |
+|---|---|
+| 20 | 16.8% |
+| 36 | 9.7% |
+| 72 | 5.0% |
+| 368 | 1.0% |
+
+So **twenty controls cannot certify a threshold below about 17%**, however
+cleanly the two arms separate. The analysis reports the operating point at a
+bound twenty controls *can* support, and for the tighter one reports how many
+controls would be needed rather than a threshold — because an unreachable bound
+is a fact about the control set, not about the designs, and reporting it as a
+missing threshold would blame the wrong thing.
+
+This is the concrete next experiment: more scrambles. The shuffle is random, so
+each design yields as many independent controls as wanted, all
+composition-matched. Four per design is eighty controls — past the seventy-two
+needed for a 5% bound — at roughly 2.2 minutes a fold.
+
 ## Why the two arms are folded in one job
 
 The first submission staged scrambles alone, to be compared against the
