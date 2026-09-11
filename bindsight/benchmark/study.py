@@ -103,6 +103,11 @@ class CohortResult:
     pairs: list[dict[str, Any]] = field(default_factory=list)
     provenance: dict[str, Any] = field(default_factory=dict)
     stage_status: dict[str, str] = field(default_factory=dict)
+    # Every panel antigen's standing in THIS cohort, whether or not the cohort is
+    # its indication. Symbol -> 1.0 at counterfactual rank 1, falling to 0 at the
+    # bottom of the eligible set. The panel-level specificity null needs each
+    # antigen scored in every cohort, and this is where that matrix comes from.
+    antigen_scores: dict[str, float] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         """Serialisable form."""
@@ -112,6 +117,7 @@ class CohortResult:
             "pairs": self.pairs,
             "provenance": self.provenance,
             "stage_status": self.stage_status,
+            "antigen_scores": self.antigen_scores,
         }
 
 
@@ -247,12 +253,188 @@ def run_cohort(project: str, config: StudyConfig) -> Path:
     return run_dir
 
 
+#: Number of strata per axis for decoy matching, on each of abundance and
+#: dispersion.
+#:
+#: Quintiles, not deciles, and the reason is resolution. An exact within-stratum
+#: tail can be no smaller than ``1 / (1 + pool)``, so the stratum size *is* the
+#: smallest p-value the null can ever report. Measured on the real KIRC cohort,
+#: whose eligible surfaceome is 2,209 genes:
+#:
+#:     deciles   97 cells   median  22 per cell   floor p = 0.046
+#:     quintiles 25 cells   median  76 per cell   floor p = 0.013
+#:
+#: Deciles match more tightly and cannot resolve significance at all — CA9's own
+#: cell held nine other genes, so 0.1 was the best p obtainable for the
+#: strongest signal in the panel. Quintiles keep each cell a fifth of each axis,
+#: which is still a meaningful match, and buy an order of magnitude of
+#: resolution. Every pair reports its own floor so the trade is visible per
+#: antigen rather than assumed.
+_DECOY_STRATA_BINS = 5
+
+
+def _decoy_strata(ordered: Any) -> Any:
+    """Label each eligible gene with its abundance and dispersion stratum.
+
+    A decoy is only a decoy if it could plausibly have been the antigen. The
+    confound the decoy null exists to remove is that abundant, high-dispersion
+    genes reach significance more easily, so a matched decoy must share both.
+
+    ``baseMean`` is DESeq2's abundance. ``lfc_se`` stands in for dispersion: the
+    standard error of the log fold change is a function of dispersion, count
+    depth and sample size, and since abundance is already conditioned on, what
+    remains tracks dispersion. The true fitted dispersion is not written to
+    ``deg/results.parquet``, and re-running DESeq2 across fifteen cohorts to
+    recover it would cost far more than the refinement is worth. This is a proxy
+    and is reported as one.
+
+    Ranks are binned rather than raw values, so a heavily skewed distribution
+    still yields even strata.
+
+    Args:
+        ordered: the eligible ranking, carrying ``baseMean`` and ``lfc_se``.
+
+    Returns:
+        The frame with ``base_mean_decile`` and ``dispersion_decile`` columns.
+        Either is ``-1`` where the underlying column is missing or unusable, which
+        collapses those genes into one stratum rather than dropping them.
+    """
+    import pandas as pd
+
+    out = ordered.copy()
+    for column, label in (("baseMean", "base_mean_decile"), ("lfc_se", "dispersion_decile")):
+        if column not in out.columns:
+            out[label] = -1
+            continue
+        values = pd.to_numeric(out[column], errors="coerce")
+        if values.notna().sum() < _DECOY_STRATA_BINS:
+            out[label] = -1
+            continue
+        binned = pd.qcut(
+            values.rank(method="first"), _DECOY_STRATA_BINS, labels=False, duplicates="drop"
+        )
+        out[label] = binned.fillna(-1).astype(int)
+    return out
+
+
+def _decoy_null_by_gene(
+    ordered: Any,
+    *,
+    gene_ids: set[str],
+    n_decoys: int,
+    seed: int,
+) -> dict[str, dict[str, Any]]:
+    """Decoy-null p-value for each named gene, against its own stratum.
+
+    **This is the null the module calls primary, and until now it had never
+    run.** ``decoy_null_p`` and ``match_decoys`` had no non-test call site, and
+    ``StudyConfig.n_decoys`` was documented as configuring them and read by
+    nothing.
+
+    Scoped to the **counterfactual rank**, not the shortlist rank. That matters:
+    a decoy null over the shortlist would require every decoy to face the same
+    gates as the antigen, and Open Targets is only queried for the top few
+    hundred genes per cohort, so gate parity would need a bulk warm-up over the
+    whole surfaceome. The counterfactual rank is a pure function of the
+    differential-expression table and the surfaceome reference — there are no
+    gates to match — so the comparison is exact and costs nothing.
+
+    Exact, too, in the literal sense. The counterfactual rank is deterministic,
+    so the honest p-value is the true within-stratum tail: of the genes matched
+    to this one on abundance and dispersion, what fraction ranked at least as
+    well. Drawing a thousand samples from a stratum of fifty would only add Monte
+    Carlo noise to a quantity that can be computed. ``n_decoys`` is therefore a
+    cap: a stratum at or below it is used whole and the p-value is exact, and
+    only a larger one is subsampled.
+
+    Args:
+        ordered: the eligible ranking from :func:`outcomes.eligible_ranking`.
+        gene_ids: the genes to compute a p-value for.
+        n_decoys: cap on decoys drawn from one stratum.
+        seed: fixed so a published p-value is reproducible.
+
+    Returns:
+        gene id -> the p-value, the stratum it was taken in, how many decoys
+        were available and used, and whether the tail was exact.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    if ordered.empty or not gene_ids:
+        return out
+
+    labelled = _decoy_strata(ordered)
+    wanted = labelled[labelled["gene_id"].astype(str).isin(gene_ids)]
+    if wanted.empty:
+        return out
+
+    grouped = {
+        key: frame for key, frame in labelled.groupby(["base_mean_decile", "dispersion_decile"])
+    }
+    for row in wanted.itertuples(index=False):
+        gene = str(row.gene_id)
+        stratum = grouped.get((row.base_mean_decile, row.dispersion_decile))
+        if stratum is None:
+            continue
+        pool = stratum[stratum["gene_id"].astype(str) != gene]
+        available = len(pool)
+        if available == 0:
+            # A stratum of one says nothing: there was nothing to compare against.
+            out[gene] = {
+                "p_decoy": None,
+                "p_decoy_floor": None,
+                "decoy_pool_size": 0,
+                "decoy_n_used": 0,
+                "decoy_exact": False,
+                "base_mean_decile": int(row.base_mean_decile),
+                "dispersion_decile": int(row.dispersion_decile),
+            }
+            continue
+
+        exact = available <= n_decoys
+        if exact:
+            ranks = [int(r) for r in pool["counterfactual_rank"]]
+        else:
+            # Too many to enumerate: fall back to the matched sampler, which
+            # draws without replacement while the stratum can supply it.
+            records = [
+                {
+                    "uniprot": str(g),
+                    "base_mean_decile": int(row.base_mean_decile),
+                    "dispersion_decile": int(row.dispersion_decile),
+                    "counterfactual_rank": int(r),
+                }
+                for g, r in zip(pool["gene_id"], pool["counterfactual_rank"], strict=True)
+            ]
+            target = {
+                "uniprot": gene,
+                "base_mean_decile": int(row.base_mean_decile),
+                "dispersion_decile": int(row.dispersion_decile),
+            }
+            drawn = S.match_decoys(records, target, n_decoys=n_decoys, seed=seed)
+            ranks = [int(d["counterfactual_rank"]) for d in drawn]
+
+        out[gene] = {
+            "p_decoy": S.decoy_null_p(int(row.counterfactual_rank), ranks),
+            # The smallest p this stratum could ever have produced. Without it a
+            # reader cannot tell a genuine null result from a stratum too thin to
+            # resolve one.
+            "p_decoy_floor": 1 / (1 + len(ranks)),
+            "decoy_pool_size": available,
+            "decoy_n_used": len(ranks),
+            "decoy_exact": exact,
+            "base_mean_decile": int(row.base_mean_decile),
+            "dispersion_decile": int(row.dispersion_decile),
+        }
+    return out
+
+
 def score_cohort(
     project: str,
     run_dir: Path,
     *,
     surfaceome: frozenset[str],
     entries: list[P.AntigenCohort] | None = None,
+    n_decoys: int = StudyConfig.n_decoys,
+    seed: int = StudyConfig.seed,
 ) -> CohortResult:
     """Score every panel antigen for one cohort. Pure: reads tables, writes nothing.
 
@@ -262,6 +444,9 @@ def score_cohort(
         surfaceome: the accessions the pipeline filters on, used to decide
             reachability *before* consulting any pipeline output.
         entries: panel entries for this project; defaults to all of them.
+        n_decoys: cap on decoys drawn from one abundance/dispersion stratum.
+            A stratum at or below it is used whole, making the tail exact.
+        seed: fixed so a published decoy p-value is reproducible.
 
     Returns:
         The cohort's contribution to the study.
@@ -330,6 +515,35 @@ def score_cohort(
             for g, d in zip(taxonomy["gene_id"], taxonomy["disposition"], strict=False)
         }
 
+    # One ranking for the whole cohort, shared by every antigen and by the decoy
+    # null. Building it per gene would re-sort a 4,800-row frame 4,800 times to
+    # produce an ordering that never changes.
+    ordered = O.eligible_ranking(deg, eligible_gene_ids=eligible_gene_ids)
+    decoy_by_gene = _decoy_null_by_gene(
+        ordered,
+        gene_ids={str(entry.ensembl) for entry in entries},
+        n_decoys=n_decoys,
+        seed=seed,
+    )
+
+    # Every panel antigen's standing here, not only this cohort's own. The
+    # ranking already exists, so this is a lookup, and it is what lets the
+    # panel-level null ask whether antigens land in the *right* cancers.
+    rank_of_gene = (
+        {
+            str(g): int(r)
+            for g, r in zip(ordered["gene_id"], ordered["counterfactual_rank"], strict=True)
+        }
+        if not ordered.empty
+        else {}
+    )
+    n_ranked = len(rank_of_gene)
+    antigen_scores = {
+        antigen.symbol: 1.0 - (rank_of_gene[str(antigen.ensembl)] - 1) / n_ranked
+        for antigen in P.PANEL
+        if n_ranked and str(antigen.ensembl) in rank_of_gene
+    }
+
     pairs: list[dict[str, Any]] = []
     for entry in entries:
         reach = P.reachability(entry.uniprot, surfaceome)
@@ -356,6 +570,7 @@ def score_cohort(
             **outcome.as_dict(),
         }
         row.update(counterfactual.as_dict() if counterfactual else {"counterfactual_rank": None})
+        row.update(decoy_by_gene.get(str(entry.ensembl), {"p_decoy": None}))
         row.update(_deg_row(deg, entry.ensembl))
         pairs.append(row)
 
@@ -369,6 +584,7 @@ def score_cohort(
         },
         pairs=pairs,
         stage_status={"deg": "completed", "discover": "completed"},
+        antigen_scores=antigen_scores,
     )
 
 
@@ -545,7 +761,117 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
             p["p_uniform_rank"] = S.uniform_rank_p(cf, n_up)
         else:
             p["p_uniform_rank"] = None
+
+    _adjust_decoy_p(summary["pairs"])
+    specificity = _specificity_null(results, config)
+    if specificity is not None:
+        summary["specificity_null"] = specificity
     return summary
+
+
+def _adjust_decoy_p(pairs: list[dict[str, Any]]) -> None:
+    """Benjamini-Hochberg across the panel's decoy p-values, in place.
+
+    The panel puts roughly twenty hypotheses forward at once, and one nominally
+    significant result among twenty is not news. Every pair carries both its raw
+    p and the panel-adjusted one, so a reader can see the cost of the correction
+    rather than being handed only its output.
+
+    Pairs with no decoy p — a stratum of one, or an antigen never tested — get
+    ``None`` rather than being dropped, so the column is present on every row.
+    """
+    for pair in pairs:
+        pair.setdefault("p_decoy_bh", None)
+    scored = [
+        (index, pair["p_decoy"])
+        for index, pair in enumerate(pairs)
+        if isinstance(pair.get("p_decoy"), float)
+    ]
+    if not scored:
+        return
+    adjusted = S.benjamini_hochberg([value for _, value in scored])
+    for (index, _), q in zip(scored, adjusted, strict=True):
+        pairs[index]["p_decoy_bh"] = q
+
+
+def _specificity_null(results: list[CohortResult], config: StudyConfig) -> dict[str, Any] | None:
+    """Does bindsight put antigens in the *right* cancers?
+
+    The decoy null asks whether an antigen beats matched background inside its
+    own cohort. This asks the panel-level question instead: are antigens ranked
+    better in their own indication than in someone else's, or is the pipeline
+    surfacing generic epithelial biology that happens to contain them? The
+    antigen-to-cohort assignment is permuted and the panel statistic recomputed.
+    No differential expression is re-run, so it is nearly free.
+
+    **Restricted to antigens with exactly one indication in the panel.** The test
+    assigns one cohort per antigen, and ERBB2, EGFR, TACSTD2, MET and CLDN18 each
+    appear in several; giving such an antigen a single "own" cohort would mean
+    choosing one arbitrarily, and averaging its cognate cohorts would compare an
+    average against a single draw. The count of usable antigens is reported so
+    the restriction is visible rather than implied.
+
+    Args:
+        results: every scored cohort, each carrying its antigen scores.
+        config: supplies the permutation count and the seed.
+
+    Returns:
+        The panel statistic, its p-value and what it was computed over, or None
+        when fewer than two antigens qualify.
+    """
+    by_project = {r.project: r.antigen_scores for r in results if r.antigen_scores}
+    if len(by_project) < 2:
+        return None
+
+    # An antigen must be scored in every cohort, or the permutation would compare
+    # a statistic built from one set of cohorts against one built from another.
+    scored_everywhere = set.intersection(*(set(v) for v in by_project.values()))
+
+    cognate: dict[str, set[str]] = {}
+    for entry in P.PANEL:
+        cognate.setdefault(entry.symbol, set()).add(entry.project)
+
+    usable = sorted(
+        symbol
+        for symbol in scored_everywhere
+        if len(cognate.get(symbol, ())) == 1 and next(iter(cognate[symbol])) in by_project
+    )
+    if len(usable) < 2:
+        return None
+
+    scores = {
+        symbol: {project: by_project[project][symbol] for project in by_project}
+        for symbol in usable
+    }
+    observed = sum(scores[s][next(iter(cognate[s]))] for s in usable) / len(usable)
+    p = S.permutation_null_p(
+        observed, scores, n_perm=config.n_permutations, seed=config.seed, higher_is_better=True
+    )
+    return {
+        "description": (
+            "Antigens ranked in their own indication versus a permuted "
+            "assignment. The statistic is the mean standing of each antigen in "
+            "its cohort, where 1.0 is the top of the eligible surfaceome and 0.0 "
+            "the bottom. Restricted to antigens with a single indication in the "
+            "panel, because the test assigns one cohort per antigen."
+        ),
+        "observed": observed,
+        "p_value": p,
+        "n_antigens": len(usable),
+        "n_cohorts": len(by_project),
+        "n_permutations": config.n_permutations,
+        "antigens": usable,
+        "excluded_multi_indication": sorted(
+            s for s in scored_everywhere if len(cognate.get(s, ())) > 1
+        ),
+        # An antigen missing from any cohort's eligible surfaceome cannot enter a
+        # complete matrix. Named rather than silently dropped, because the list
+        # includes CA9 — the strongest signal in the panel — and a reader should
+        # know the specificity result was reached without it.
+        "excluded_not_scored_everywhere": sorted(
+            {symbol for scores_ in by_project.values() for symbol in scores_} - scored_everywhere
+        ),
+    }
 
 
 def _pair_key(pair: dict[str, Any]) -> str:

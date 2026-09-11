@@ -447,6 +447,29 @@ def _legitimate_study_fractions(summary: dict) -> set[tuple[int, int]]:
         # rank, and separates "a gate killed it" from "the ranker buried it".
         if pair.get("counterfactual_rank") and pair.get("n_eligible"):
             legit.add((pair["counterfactual_rank"], pair["n_eligible"]))
+
+    # Counts the null-model section derives from those same pairs: how many
+    # used their whole stratum, how many are nominally significant, and how
+    # many survive the panel correction. Each is a fraction of the scored pairs
+    # and is recomputed here rather than trusted from the prose.
+    scored = [p for p in summary.get("pairs", []) if p.get("p_decoy") is not None]
+    if scored:
+        total = len(scored)
+        legit.add((sum(1 for p in scored if p.get("decoy_exact")), total))
+        legit.add((sum(1 for p in scored if float(p["p_decoy"]) < 0.05), total))
+        legit.add(
+            (
+                sum(
+                    1
+                    for p in scored
+                    if isinstance(p.get("p_decoy_bh"), float) and p["p_decoy_bh"] < 0.05
+                ),
+                total,
+            )
+        )
+    spec = summary.get("specificity_null") or {}
+    if spec.get("n_antigens"):
+        legit.add((spec["n_antigens"], spec["n_cohorts"]))
     return legit
 
 

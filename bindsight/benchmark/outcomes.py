@@ -56,6 +56,7 @@ __all__ = [
     "OutcomeClass",
     "classify",
     "counterfactual_rank",
+    "eligible_ranking",
 ]
 
 OutcomeClass = Literal["not_reachable", "gated_out", "ranked", "infrastructure"]
@@ -317,6 +318,64 @@ class CounterfactualRank:
         }
 
 
+def eligible_ranking(
+    deg: Any,
+    *,
+    eligible_gene_ids: set[str],
+    score_column: str = "pi_score",
+) -> Any:
+    """Order the eligible surfaceome by combined score, best first.
+
+    Factored out of :func:`counterfactual_rank` because the decoy null needs
+    every eligible gene's rank, not one. Calling that function per gene re-sorted
+    the whole frame each time — on a real cohort that is roughly 4,800 sorts of a
+    4,800-row table, to produce an ordering that never changes.
+
+    Ranking is over **all** eligible genes with no sign restriction, for the
+    reason :func:`counterfactual_rank` gives: restricting to up-regulated genes
+    leaves the value undefined for exactly the lineage-antigen cases it exists to
+    adjudicate.
+
+    Args:
+        deg: the differential-expression table, carrying ``gene_id``, ``log2fc``
+            and the score column. The score is computed from ``padj`` if absent.
+        eligible_gene_ids: gene ids whose accession is in the surfaceome. These,
+            and only these, could ever have been candidates.
+        score_column: the combined ranking score.
+
+    Returns:
+        A frame ordered best-first with a 1-based ``counterfactual_rank``
+        column, or an empty frame when nothing is eligible.
+
+    Raises:
+        ValueError: If the table lacks the columns needed to rank at all.
+    """
+    import numpy as np
+    import pandas as pd
+
+    if not isinstance(deg, pd.DataFrame):  # pragma: no cover - defensive
+        raise ValueError("deg must be a pandas DataFrame")
+    for required in ("gene_id", "log2fc"):
+        if required not in deg.columns:
+            raise ValueError(f"differential-expression table is missing {required!r}")
+
+    eligible = deg[deg["gene_id"].astype(str).isin(eligible_gene_ids)].copy()
+    if eligible.empty:
+        return eligible
+
+    if score_column not in eligible.columns:
+        if "padj" not in eligible.columns:
+            raise ValueError(f"cannot compute {score_column!r}: the table has no 'padj' column")
+        padj = eligible["padj"].astype(float).fillna(1.0).clip(lower=1e-300)
+        eligible[score_column] = eligible["log2fc"].astype(float) * -np.log10(padj)
+
+    ordered = eligible.sort_values(
+        by=[score_column, "gene_id"], ascending=[False, True]
+    ).reset_index(drop=True)
+    ordered["counterfactual_rank"] = ordered.index + 1
+    return ordered
+
+
 def counterfactual_rank(
     deg: Any,
     *,
@@ -347,28 +406,11 @@ def counterfactual_rank(
     Raises:
         ValueError: If the table lacks the columns needed to rank at all.
     """
-    import numpy as np
     import pandas as pd
 
-    if not isinstance(deg, pd.DataFrame):  # pragma: no cover - defensive
-        raise ValueError("deg must be a pandas DataFrame")
-    for required in ("gene_id", "log2fc"):
-        if required not in deg.columns:
-            raise ValueError(f"differential-expression table is missing {required!r}")
-
-    eligible = deg[deg["gene_id"].astype(str).isin(eligible_gene_ids)].copy()
-    if eligible.empty:
+    ordered = eligible_ranking(deg, eligible_gene_ids=eligible_gene_ids, score_column=score_column)
+    if ordered.empty:
         return None
-
-    if score_column not in eligible.columns:
-        if "padj" not in eligible.columns:
-            raise ValueError(f"cannot compute {score_column!r}: the table has no 'padj' column")
-        padj = eligible["padj"].astype(float).fillna(1.0).clip(lower=1e-300)
-        eligible[score_column] = eligible["log2fc"].astype(float) * -np.log10(padj)
-
-    ordered = eligible.sort_values(
-        by=[score_column, "gene_id"], ascending=[False, True]
-    ).reset_index(drop=True)
     match = ordered.index[ordered["gene_id"].astype(str) == str(target_gene_id)]
     if len(match) == 0:
         return None

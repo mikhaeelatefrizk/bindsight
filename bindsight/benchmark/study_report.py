@@ -229,6 +229,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         if infra.get("pairs"):
             lines += [f"Affected: {', '.join(infra['pairs'])}", ""]
 
+    lines += _render_nulls(summary)
     lines += _render_pairs(summary.get("pairs", []))
     lines += _render_set_sizes(summary.get("set_sizes_by_cohort", {}))
     lines += _render_excluded()
@@ -259,6 +260,113 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _render_nulls(summary: dict[str, Any]) -> list[str]:
+    """The null models, which the human-readable report carried none of.
+
+    Until now this page published three interval estimators and no null-model
+    p-value of any kind. The module's own docstring calls the decoy null "the
+    primary null" and it had never run; the only null that did run, the uniform
+    rank, is the one the module calls the weakest, and its output never left
+    results.json.
+    """
+    pairs = [p for p in summary.get("pairs", []) if p.get("p_decoy") is not None]
+    spec = summary.get("specificity_null")
+    if not pairs and not spec:
+        return []
+
+    lines = ["## Null models", ""]
+
+    if pairs:
+        exact = sum(1 for p in pairs if p.get("decoy_exact"))
+        lines += [
+            "### Decoy null — the primary one",
+            "",
+            "Each antigen is compared against the genes matched to it on abundance "
+            "and dispersion quintile, drawn from the same eligible surfaceome and "
+            "ranked by the same counterfactual score. The question it answers: "
+            "would a gene that merely *looks* like this antigen have ranked as "
+            "well?",
+            "",
+            "Taken over the **counterfactual** rank rather than the shortlist "
+            "rank, so no gate has to be matched and the tail is computed exactly "
+            "rather than sampled — "
+            f"{exact} of {len(pairs)} pairs used their whole stratum.",
+            "",
+            "**`floor` is the smallest p the stratum could have produced.** A p "
+            "equal to its floor means no decoy beat the antigen and the stratum "
+            "had no finer resolution to offer; it is not the same statement as a "
+            "p of that size drawn from a large pool.",
+            "",
+            "| antigen | cohort | counterfactual rank | p | BH | floor | decoys |",
+            "|---|---|--:|--:|--:|--:|--:|",
+        ]
+        for pair in sorted(pairs, key=lambda p: float(p["p_decoy"])):
+            lines.append(
+                f"| **{pair['symbol']}** | {str(pair['project']).removeprefix('TCGA-')} "
+                f"| {pair.get('counterfactual_rank')} "
+                f"| {_fmt(pair['p_decoy'], 4)} "
+                f"| {_fmt(pair.get('p_decoy_bh'), 3)} "
+                f"| {_fmt(pair.get('p_decoy_floor'), 4)} "
+                f"| {pair.get('decoy_pool_size')} |"
+            )
+        nominal = [p for p in pairs if float(p["p_decoy"]) < 0.05]
+        survivors = [
+            p for p in pairs if isinstance(p.get("p_decoy_bh"), float) and p["p_decoy_bh"] < 0.05
+        ]
+        lines += [
+            "",
+            f"**{len(nominal)} of {len(pairs)} pairs are nominally significant at 0.05"
+            + (f" ({', '.join(sorted(p['symbol'] for p in nominal))})" if nominal else "")
+            + f", and {len(survivors)} survive Benjamini-Hochberg across the panel.**",
+            "",
+        ]
+        if nominal and not survivors:
+            lines += [
+                "That is the finding, and it is a negative one: against background "
+                "matched on abundance and dispersion, no antigen in this panel is "
+                "distinguishable once the panel is corrected for its own size. "
+                "Reporting the three nominal hits without the correction would be "
+                "the error this column exists to prevent.",
+                "",
+            ]
+
+    if spec:
+        lines += [
+            "### Indication-specificity null",
+            "",
+            str(spec.get("description", "")),
+            "",
+            f"- Observed mean standing: **{_fmt(spec.get('observed'), 3)}** "
+            "(1.0 is the top of the eligible surfaceome, 0.0 the bottom)",
+            f"- p = **{_fmt(spec.get('p_value'), 4)}** over "
+            f"{spec.get('n_permutations')} permutations",
+            f"- Computed over {spec.get('n_antigens')} antigens "
+            f"and {spec.get('n_cohorts')} cohorts: "
+            f"{', '.join(spec.get('antigens', []))}",
+            "",
+        ]
+        excluded_multi = spec.get("excluded_multi_indication") or []
+        excluded_missing = spec.get("excluded_not_scored_everywhere") or []
+        if excluded_multi:
+            lines += [
+                f"Excluded, several indications each: {', '.join(excluded_multi)}. "
+                "The test assigns one cohort per antigen, so an antigen with four "
+                "indications has no single 'own' cohort to hold fixed.",
+                "",
+            ]
+        if excluded_missing:
+            lines += [
+                f"Excluded, not scored in every cohort: {', '.join(excluded_missing)}. "
+                "A complete matrix is required, or the observed statistic and the "
+                "permuted one would be built from different sets of cohorts. This "
+                "list includes CA9, the strongest single signal in the panel, so "
+                "the specificity result is reached without it.",
+                "",
+            ]
+
+    return lines
 
 
 def _render_pairs(pairs: list[dict[str, Any]]) -> list[str]:

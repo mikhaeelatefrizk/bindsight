@@ -106,7 +106,15 @@ def score_all(config: ST.StudyConfig) -> dict[str, Any]:
     for project in P.projects_in_panel():
         run_dir = Path(config.out_dir) / project.removeprefix("TCGA-").lower()
         try:
-            results.append(ST.score_cohort(project, run_dir, surfaceome=surfaceome))
+            results.append(
+                ST.score_cohort(
+                    project,
+                    run_dir,
+                    surfaceome=surfaceome,
+                    n_decoys=config.n_decoys,
+                    seed=config.seed,
+                )
+            )
         except FileNotFoundError:
             missing.append(project)
     if missing:

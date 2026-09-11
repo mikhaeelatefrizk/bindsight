@@ -64,6 +64,57 @@ One cohort per antigen, so the trials are independent. This is the interval to q
 
 **0**. A lookup that errored or never ran is not a negative result. This count must be zero in anything published; any pair here invalidates itself and must be re-run.
 
+## Null models
+
+### Decoy null — the primary one
+
+Each antigen is compared against the genes matched to it on abundance and dispersion quintile, drawn from the same eligible surfaceome and ranked by the same counterfactual score. The question it answers: would a gene that merely *looks* like this antigen have ranked as well?
+
+Taken over the **counterfactual** rank rather than the shortlist rank, so no gate has to be matched and the tail is computed exactly rather than sampled — 22 of 22 pairs used their whole stratum.
+
+**`floor` is the smallest p the stratum could have produced.** A p equal to its floor means no decoy beat the antigen and the stratum had no finer resolution to offer; it is not the same statement as a p of that size drawn from a large pool.
+
+| antigen | cohort | counterfactual rank | p | BH | floor | decoys |
+|---|---|--:|--:|--:|--:|--:|
+| **MET** | KIRP | 7 | 0.0048 | 0.106 | 0.0048 | 206 |
+| **GPC3** | LIHC | 6 | 0.0270 | 0.237 | 0.0270 | 36 |
+| **CA9** | KIRC | 1 | 0.0323 | 0.237 | 0.0323 | 30 |
+| **FOLH1** | PRAD | 24 | 0.0769 | 0.423 | 0.0385 | 25 |
+| **MET** | LUAD | 429 | 0.1528 | 0.456 | 0.0139 | 71 |
+| **ERBB2** | LUAD | 508 | 0.1784 | 0.456 | 0.0047 | 212 |
+| **ERBB2** | BRCA | 263 | 0.1818 | 0.456 | 0.0182 | 54 |
+| **EGFR** | LUAD | 844 | 0.1944 | 0.456 | 0.0139 | 71 |
+| **EGFR** | HNSC | 278 | 0.2115 | 0.456 | 0.0096 | 103 |
+| **EGFR** | LUSC | 385 | 0.2239 | 0.456 | 0.0149 | 66 |
+| **ERBB2** | STAD | 633 | 0.2281 | 0.456 | 0.0175 | 56 |
+| **TACSTD2** | LUAD | 757 | 0.2598 | 0.476 | 0.0079 | 126 |
+| **ERBB2** | UCEC | 545 | 0.3049 | 0.503 | 0.0045 | 222 |
+| **STEAP1** | PRAD | 151 | 0.3200 | 0.503 | 0.0400 | 24 |
+| **NECTIN4** | BLCA | 259 | 0.3469 | 0.509 | 0.0204 | 48 |
+| **CEACAM5** | COAD | 972 | 0.4400 | 0.605 | 0.0400 | 24 |
+| **TACSTD2** | BRCA | 754 | 0.5227 | 0.676 | 0.0227 | 43 |
+| **CLDN18** | STAD | 1109 | 0.5690 | 0.691 | 0.0172 | 57 |
+| **FGFR2** | STAD | 1367 | 0.5965 | 0.691 | 0.0175 | 56 |
+| **FOLR1** | UCEC | 379 | 0.7143 | 0.757 | 0.0714 | 13 |
+| **CLDN18** | ESCA | 1362 | 0.7222 | 0.757 | 0.0278 | 35 |
+| **EGFR** | COAD | 1547 | 0.8898 | 0.890 | 0.0042 | 235 |
+
+**3 of 22 pairs are nominally significant at 0.05 (CA9, GPC3, MET), and 0 survive Benjamini-Hochberg across the panel.**
+
+That is the finding, and it is a negative one: against background matched on abundance and dispersion, no antigen in this panel is distinguishable once the panel is corrected for its own size. Reporting the three nominal hits without the correction would be the error this column exists to prevent.
+
+### Indication-specificity null
+
+Antigens ranked in their own indication versus a permuted assignment. The statistic is the mean standing of each antigen in its cohort, where 1.0 is the top of the eligible surfaceome and 0.0 the bottom. Restricted to antigens with a single indication in the panel, because the test assigns one cohort per antigen.
+
+- Observed mean standing: **0.817** (1.0 is the top of the eligible surfaceome, 0.0 the bottom)
+- p = **7.00e-04** over 10000 permutations
+- Computed over 5 antigens and 15 cohorts: FGFR2, FOLH1, FOLR1, GPC3, NECTIN4
+
+Excluded, several indications each: CLDN18, EGFR, ERBB2, MET, TACSTD2. The test assigns one cohort per antigen, so an antigen with four indications has no single 'own' cohort to hold fixed.
+
+Excluded, not scored in every cohort: CA9, CEACAM5, STEAP1. A complete matrix is required, or the observed statistic and the permuted one would be built from different sets of cohorts. This list includes CA9, the strongest single signal in the panel, so the specificity result is reached without it.
+
 ## Results by outcome class
 
 ### Reached the shortlist (5)
