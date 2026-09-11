@@ -450,8 +450,12 @@ for name, b64 in PAYLOAD.items():
     # The payload is gzipped: structures are text and shrink to about a fifth,
     # which is what keeps the script under Kaggle's size limit once a
     # working-tree wheel is embedded alongside them.
-    (spec_dir / name).write_bytes(gzip.decompress(base64.b64decode(b64)))
-    print("  wrote", name, (spec_dir / name).stat().st_size, "bytes")
+    dest = spec_dir / name
+    if not dest.resolve().is_relative_to(spec_dir.resolve()):
+        raise SystemExit(f"payload entry escapes the spec directory: {name}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(gzip.decompress(base64.b64decode(b64)))
+    print("  wrote", name, dest.stat().st_size, "bytes")
 print("  spec:", (spec_dir / "spec.json").read_text()[:400])
 
 step("run job_exec (RFdiffusion -> ProteinMPNN under se3; Boltz-2 + orchestration under boltz)")

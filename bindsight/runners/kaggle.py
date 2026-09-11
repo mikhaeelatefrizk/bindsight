@@ -214,9 +214,18 @@ class KaggleRunner:
         # compressed. Without this, that structure plus the working-tree wheel
         # pushes the kernel script past its size ceiling, and the run cannot be
         # submitted at all.
+        # Walked recursively, keyed by path relative to the spec dir. This used
+        # to be `iterdir()` filtered to files, which silently skipped the
+        # `design/` subdirectory `submit_via_runner` fills for a validate-only
+        # job — so every re-scoring run on this backend shipped the spec and the
+        # target and none of the binders it was asked to score, and found out on
+        # the GPU.
+        spec_root = spec_path.parent
         payload = {
-            f.name: base64.b64encode(gzip.compress(f.read_bytes(), 9)).decode("ascii")
-            for f in sorted(spec_path.parent.iterdir())
+            f.relative_to(spec_root).as_posix(): base64.b64encode(
+                gzip.compress(f.read_bytes(), 9)
+            ).decode("ascii")
+            for f in sorted(spec_root.rglob("*"))
             if f.is_file()
         }
         wheel_b64: str | None = None

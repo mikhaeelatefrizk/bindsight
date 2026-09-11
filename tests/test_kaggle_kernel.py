@@ -312,3 +312,76 @@ class TestTheKernelKnowsWhichJobItIs:
         finally:
             kaggle_kernel.build_kernel_script = original  # type: ignore[assignment]
         assert captured["mode"] == "validate_only"
+
+
+class TestTheWholeSpecDirectoryTravels:
+    """A validate-only job shipped the spec, the target, and none of the binders.
+
+    `submit` built its payload with `iterdir()` filtered to files, so the
+    `design/` subdirectory that `submit_via_runner` fills for a re-scoring job
+    was silently skipped. The kernel then reached `load_existing_designs`, found
+    nothing, and failed — after the environment build had already been charged
+    to the quota. Every `--revalidate` run on this backend had this defect.
+    """
+
+    @staticmethod
+    def _spec_dir(tmp_path: Path) -> Path:
+        spec = tmp_path / "spec"
+        (spec / "design").mkdir(parents=True)
+        (spec / "spec.json").write_text('{"extra_params": {"mode": "validate_only"}}')
+        (spec / "target.pdb").write_text("ATOM\n")
+        (spec / "design" / "b0.fasta").write_text(">b0\nACDE\n")
+        (spec / "design" / "b0.pdb").write_text("ATOM\n")
+        return spec
+
+    def _submit_payload(self, tmp_path: Path) -> dict[str, str]:
+        from bindsight.runners.kaggle import KaggleRunner
+
+        captured: dict[str, dict[str, str]] = {}
+
+        def fake_build(**kwargs: object) -> str:
+            captured["payload"] = dict(kwargs["payload"])  # type: ignore[arg-type]
+            return "print('kernel')\n"
+
+        spec = self._spec_dir(tmp_path)
+        runner = KaggleRunner()
+        runner._api_client = SimpleNamespace(  # type: ignore[assignment]
+            config_values={"username": "u"}, kernels_push=lambda path: None
+        )
+        original = kaggle_kernel.build_kernel_script
+        kaggle_kernel.build_kernel_script = fake_build  # type: ignore[assignment]
+        try:
+            runner.submit(spec / "spec.json", results_dir=tmp_path / "out")
+        finally:
+            kaggle_kernel.build_kernel_script = original  # type: ignore[assignment]
+        return captured["payload"]
+
+    def test_the_staged_designs_reach_the_payload(self, tmp_path: Path) -> None:
+        payload = self._submit_payload(tmp_path)
+        assert "design/b0.fasta" in payload, "the binders never left the machine"
+        assert "design/b0.pdb" in payload
+
+    def test_the_spec_and_target_still_travel(self, tmp_path: Path) -> None:
+        payload = self._submit_payload(tmp_path)
+        assert {"spec.json", "target.pdb"} <= set(payload)
+
+    def test_nested_keys_are_relative_posix_paths(self, tmp_path: Path) -> None:
+        """The kernel joins these onto its spec dir, so a Windows separator or an
+        absolute path would write somewhere it should not."""
+        payload = self._submit_payload(tmp_path)
+        for key in payload:
+            assert "\\" not in key
+            assert not key.startswith("/")
+
+    def test_the_kernel_creates_the_directories_it_writes_into(self) -> None:
+        script = kaggle_kernel.build_kernel_script(
+            handle_id="t", payload={"design/b0.fasta": "eJw="}, mode="validate_only"
+        )
+        assert "dest.parent.mkdir(parents=True, exist_ok=True)" in script
+
+    def test_the_kernel_refuses_a_key_that_escapes_the_spec_directory(self) -> None:
+        """The keys are generated here, but a payload write is still a file write."""
+        script = kaggle_kernel.build_kernel_script(
+            handle_id="t", payload={"design/b0.fasta": "eJw="}, mode="validate_only"
+        )
+        assert "escapes the spec directory" in script
