@@ -368,7 +368,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 3. **Model output instability across versions** — pin commit SHA + weights hash + CUDA in containers; document that exact reproducibility requires the same digest.
 4. **Compute cost** — 5 targets × 50 trajectories ≈ 5–10 A100-hours ≈ $20–40 on Modal. Mitigation: the `--cheap` profile, **shipped**: RFdiffusion+ProteinMPNN, `n_trajectories=10`, costed against a T4, and an ESM-2 pre-screen that keeps the 5 most representative designs per target before validation (`bindsight/design/prescreen.py`, applied inside `runners/job_exec.run_job` between design and validation — the only point where dropping a design saves GPU). On the demo config against Modal this takes the `--dry-run` estimate from ~$27.89 (A100) to ~$4.26 (T4). The pre-screen is off unless `params.design.prescreen_top_k` is set, degrades to validating everything if the optional `embed` extra is absent, and records what it screened out.
 5. **SURFACE-Bind coverage gaps** — roughly 2,800 proteins against a shipped surfaceome of 4,801 (SURFY's 2,886 unioned with a UniProt cell-membrane extension). Extending the surfaceome widened this gap rather than closing it: more proteins are now reachable by expression than have a known targetable site. Mitigation: graceful drop tagged `no_surfacebind_entry`, which is recorded rather than silent. The fpocket fallback that would close it is not implemented.
-6. **Designer choice will age.** Mitigation: plugin interface; ship RFdiff+MPNN default, BindCraft and BoltzGen as flags; benchmark all three in the paper.
+6. **Designer choice will age.** Mitigation: a plugin interface, with RFdiff+MPNN as the shipped default and BindCraft and BoltzGen wired behind flags. Only the first is executable: no shipped backend builds an environment the other two can run in, so the three-way benchmark is deferred, not delivered.
 7. **Disease specificity is hard, and the signal is weaker than this section used to claim.** "Up in cancer, low in vital tissue" does *not* predictably find known antigens. Measured against a pre-registered panel over fifteen unstratified TCGA projects, recall at rank 20 is 1 of 17 on approved-agent antigens (95% CI 0.01 to 0.27) and 0 of 8 over independent antigens. Thirteen of seventeen are not significantly over-expressed in a bulk tumour-versus-normal contrast at all. Their agents are licensed, so the antigens are real; the limit is in the signal, not the ranking. The earlier claim survived because the headline cohort was stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes that classifier is built from. Layering scRNA-seq, co-expression and immunopeptidomics is the plausible route to a stronger signal, and none of it is implemented.
 8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + Zenodo + GitHub stars is a real moat for academic users.
 9. **PyDESeq2 ≠ DESeq2 numerically.** Documented in `bindsight/deg/pydeseq2_runner.py`. There is no R bridge: users who need exact DESeq2/edgeR numbers must run those tools themselves and feed the resulting DEG table in.
@@ -395,10 +395,19 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 - [x] `bindsight discover` end-to-end on a real TCGA cohort
 - [x] `epitopes/` SURFACE-Bind targetable-site lookup — reads a vendored data tree (user-supplied; no public API) and focuses design on real sites; whole-surface fallback when the data isn't vendored
 
-### Phase 2 — GPU design half ✅ done
+### Phase 2 — GPU design half ✅ done for the shipped stack
+
+The default designer and validator run end to end on free hardware. The
+alternative plugins are wired and dispatched but have no environment on any
+backend, so they are listed unchecked rather than folded into the tick above.
+
 - [x] `runners/` (Colab, Modal, Kaggle, local-Docker, mock) over one executor (`job_exec`)
-- [x] `design/` RFdiffusion+ProteinMPNN (+ BindCraft, BoltzGen)
-- [x] `validate/` Boltz-2 (+ Chai-1r, AF2-IG)
+- [x] `design/` RFdiffusion+ProteinMPNN — run end to end on a free Kaggle T4
+- [ ] `design/` BindCraft, BoltzGen — dispatched by the executor, but no backend
+      builds an environment they can run in
+- [x] `validate/` Boltz-2 — run end to end on a free Kaggle T4
+- [ ] `validate/` Chai-1r, AF2-IG — same gap; Chai-1r additionally needs bfloat16,
+      which no free-tier GPU has
 - [x] `rank/` multi-objective scoring
 - [x] End-to-end `bindsight run` + Snakemake DAG
 - [x] Mocked-runner CI for the GPU half

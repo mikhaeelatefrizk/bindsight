@@ -411,3 +411,47 @@ def test_the_stated_test_count_does_not_exceed_the_suite() -> None:
     assert claimed <= functions, (
         f"paper.md claims over {claimed} tests; only {functions} test functions exist"
     )
+
+
+#: Designers and validators that no shipped backend can execute. The README's
+#: runner-and-plugin table is the authority; these must never be ticked off as
+#: delivered elsewhere.
+UNEXECUTED_PLUGINS = ("BindCraft", "BoltzGen", "Chai-1r", "AF2-IG")
+
+
+@pytest.mark.parametrize("plugin", UNEXECUTED_PLUGINS)
+def test_no_completed_checklist_item_claims_an_unexecuted_plugin(plugin: str) -> None:
+    """`- [x] design/ RFdiffusion+ProteinMPNN (+ BindCraft, BoltzGen)` read as
+    delivered while the same document's table said those two had never run.
+
+    A checklist is the fastest thing in a design document to scan and the
+    easiest to leave behind, so the tick is the claim that matters.
+    """
+    # A tick about a plugin's *licence* or citation is not a delivery claim, and
+    # confirming BindCraft's licence is genuinely done.
+    not_about_running = ("licen", "cite", "citation", "attribut")
+    for line in _read("ARCHITECTURE.md").splitlines():
+        low = line.lower()
+        if not line.lstrip().startswith("- [x]"):
+            continue
+        if any(word in low for word in not_about_running):
+            continue
+        assert plugin.lower() not in low, (
+            f"ARCHITECTURE.md ticks off {plugin}, which no backend can run:\n{line}"
+        )
+
+
+def test_the_three_way_benchmark_is_not_claimed_as_a_mitigation_in_place() -> None:
+    """It was written as a mitigation already taken; it is deferred work.
+
+    BindCraft and BoltzGen have never executed, so a benchmark comparing all
+    three designers cannot have been run.
+    """
+    text = _read("ARCHITECTURE.md").lower()
+    assert "benchmark all three in the paper" not in text
+
+
+def test_the_readme_still_marks_those_plugins_unexecuted() -> None:
+    """The anchor for the two tests above: if this changes, revise them together."""
+    readme = _read("README.md")
+    assert "implemented, not yet executed" in readme or "not runnable" in readme
