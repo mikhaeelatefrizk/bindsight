@@ -415,3 +415,110 @@ class TestTheDerivedFiguresMatchTheArtifact:
         assert arm["success_ci_method"].startswith("cluster-bootstrap")
         assert arm["success_ci_low"] < arm["success_ci_independent_low"]
         assert arm["success_ci_high"] > arm["success_ci_independent_high"]
+
+
+def _legitimate_study_fractions(summary: dict) -> set[tuple[int, int]]:
+    """Every (numerator, denominator) the study artifact actually supports.
+
+    Recall at every cutoff and tier, the de-duplicated antigen interval, the
+    tier sensitivity headline, and each ranked pair's rank within its shortlist.
+    A fraction outside this set, stated in a study context, is a figure the
+    artifact does not contain.
+    """
+    legit: set[tuple[int, int]] = set()
+    for block in summary.get("recall_cascade", {}).values():
+        for entry in (block.get("at_k") or {}).values():
+            w = entry["wilson"]
+            legit.add((w["numerator"], w["denominator"]))
+    for key in ("primary_interval", "tier_sensitivity"):
+        node = summary.get(key) or {}
+        w = node.get("wilson") or node.get("headline")
+        if w:
+            legit.add((w["numerator"], w["denominator"]))
+        # The tier sensitivity carries its own per-cutoff block, which the
+        # documents quote alongside the headline.
+        for entry in (node.get("at_k") or {}).values():
+            legit.add((entry["numerator"], entry["denominator"]))
+    for pair in summary.get("pairs", []):
+        if pair.get("outcome_class") == "ranked" and pair.get("shortlist_size"):
+            legit.add((pair["rank"], pair["shortlist_size"]))
+        # The counterfactual rank — where the antigen sits among the eligible
+        # surfaceome with every gate removed — is published beside the shortlist
+        # rank, and separates "a gate killed it" from "the ranker buried it".
+        if pair.get("counterfactual_rank") and pair.get("n_eligible"):
+            legit.add((pair["counterfactual_rank"], pair["n_eligible"]))
+    return legit
+
+
+class TestEverySurfaceStatesOnlyTheArtifactsStudyFigures:
+    """The study numbers were pinned in one document and restated in five others.
+
+    `TestTheValidationManuscriptMatchesTheArtifact` checks
+    paper/validation/manuscript.md and nothing else, while README.md,
+    ARCHITECTURE.md, paper/paper.md, docs/index.md and docs/what-is-bindsight.md
+    all restate the same figures unchecked — the six-surface drift that class's
+    own docstring says it exists to prevent.
+
+    Requiring every surface to state every figure would be wrong: a README does
+    not enumerate ranked pairs. The checkable property is the other direction —
+    a surface may say less than the artifact, but nothing it does say may be a
+    figure the artifact lacks.
+    """
+
+    SURFACES = (
+        "README.md",
+        "ARCHITECTURE.md",
+        "paper/paper.md",
+        "paper/validation/manuscript.md",
+        "docs/index.md",
+        "docs/what-is-bindsight.md",
+        "benchmarks/study/RESULTS.md",
+    )
+
+    #: A fraction only counts as a study claim if the sentence is about one.
+    _CONTEXT = re.compile(r"recall|antigen|approved|tier|shortlist|surfac|rank", re.I)
+    #: A trial phase ("phase 2/3") is not a recall figure, and the drug-name
+    #: column shares a row with the ranks.
+    _FRACTION = re.compile(r"(?<!phase )\b(\d{1,3})\s*(?:of|/)\s*(\d{1,4})\b", re.I)
+    _RETRACTED = ("withdraw", "supersed", "retract", "earlier", "no longer", "replaces")
+
+    @pytest.mark.parametrize("rel", SURFACES)
+    def test_no_surface_states_a_study_fraction_the_artifact_lacks(
+        self, summary: dict, rel: str
+    ) -> None:
+        path = REPO / rel
+        if not path.is_file():
+            pytest.skip(f"{rel} not present")
+        legit = _legitimate_study_fractions(summary)
+        checked = 0
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not self._CONTEXT.search(line):
+                continue
+            for match in self._FRACTION.finditer(line):
+                # Scoped to the fraction, not the line. A sentence that retracts
+                # one figure while stating current ones is common, and skipping
+                # the whole line on a word as ordinary as "earlier" left
+                # ARCHITECTURE.md's live recall figures unchecked.
+                near = line[max(0, match.start() - 90) : match.end() + 90].lower()
+                if any(word in near for word in self._RETRACTED):
+                    continue  # a retraction may quote the figure it retracts
+                found = (int(match.group(1)), int(match.group(2)))
+                if found[1] < 2:  # "1 of 1" style prose, not a study figure
+                    continue
+                checked += 1
+                assert found in legit, (
+                    f"{rel} states {found[0]} of {found[1]} in a study context; "
+                    f"benchmarks/study/results.json contains no such figure"
+                )
+        # Only docs/index.md legitimately states no study fraction. Exempting a
+        # file that does state them would let it quietly stop, which is how a
+        # scan-based guard decays into checking nothing.
+        assert checked or rel == "docs/index.md", (
+            f"{rel} states no study fraction; this guard is checking nothing there"
+        )
+
+    def test_the_guard_covers_more_than_the_manuscript(self) -> None:
+        """The drift this replaces was exactly 'only one document was checked'."""
+        assert len(self.SURFACES) >= 6
+        assert "paper/validation/manuscript.md" in self.SURFACES
+        assert "README.md" in self.SURFACES
