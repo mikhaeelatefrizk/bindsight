@@ -129,6 +129,16 @@ def main(argv: list[str] | None = None) -> int:
     """Stage the scrambled control set. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=REPO / "runs" / "calibration")
+    parser.add_argument(
+        "--with-originals",
+        action="store_true",
+        help=(
+            "stage each design's own sequence alongside its scramble, so both are "
+            "folded in one job. The committed design scores come from a different "
+            "kernel run, and a control folded in a different session is not the "
+            "same control."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if not NATIVE_TARGET.is_file():
@@ -153,16 +163,30 @@ def main(argv: list[str] | None = None) -> int:
         scratch = staged / f"{parent}_backbone.tmp.pdb"
         scratch.write_text(backbone_text, encoding="utf-8")
 
-        scrambled = _scramble(designed, rng)
-        binder_id = f"{parent}_scram"
-        tools.write_designed_backbone(
-            scratch, staged / f"{binder_id}.pdb", chain="A", sequence=scrambled
-        )
-        scratch.unlink()
-        (staged / f"{binder_id}.fasta").write_text(f">{binder_id}\n{scrambled}\n", encoding="utf-8")
-        written += 1
+        def emit(binder_id: str, sequence: str, *, _scratch: Path = scratch) -> None:
+            """Write one sequence and its carrier structure into the staging set."""
+            tools.write_designed_backbone(
+                _scratch, staged / f"{binder_id}.pdb", chain="A", sequence=sequence
+            )
+            (staged / f"{binder_id}.fasta").write_text(
+                f">{binder_id}\n{sequence}\n", encoding="utf-8"
+            )
 
-    print(f"staged {written} scrambled control(s) in {staged}")
+        emit(f"{parent}_scram", _scramble(designed, rng))
+        written += 1
+        if args.with_originals:
+            # The design itself, folded in the same job as its own scramble.
+            # Without this the comparison spans two kernel runs, and any
+            # difference between those runs is confounded with the difference
+            # being measured. It is also the determinism check: these twenty
+            # sequences already have committed ipTM values, so refolding them
+            # measures run-to-run spread on sequences of exactly this kind.
+            emit(parent, designed)
+            written += 1
+        scratch.unlink()
+
+    kind = "sequence(s)" if args.with_originals else "scrambled control(s)"
+    print(f"staged {written} {kind} in {staged}")
     print(f"target: {NATIVE_TARGET.name} ({len(native)} residues)")
     return 0
 
