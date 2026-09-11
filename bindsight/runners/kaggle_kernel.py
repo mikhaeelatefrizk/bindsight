@@ -402,6 +402,11 @@ if MODE != "validate_only":
 
 else:
     step("skip the se3 environment (validate_only: no designer runs)")
+    # There is no se3 interpreter to point at, so the name stays bound to None
+    # rather than going undefined: everything the design branch defines is read
+    # again further down, and a name that exists in only one branch turns a
+    # skipped step into a NameError at the end of a paid job.
+    wrapper = None
     print("MODE=validate_only: RFdiffusion is not cloned, its checkpoints are "
           "not fetched, and the se3 environment is not built.", flush=True)
 
@@ -409,6 +414,13 @@ step("build boltz env (Boltz-2 + bindsight: py3.11 / torch2.2+cu118 — covers s
 sh(f"{MM} create -y -p {BOLTZ} -c conda-forge python=3.11 pip")
 sh(f"{MM} run -p {BOLTZ} pip install -q --no-input {BOLTZ_TORCH} --index-url {BOLTZ_TORCH_INDEX}")
 sh(f"{MM} run -p {BOLTZ} pip install -q --no-input '{BOLTZ_PIP}' biopython")
+# What the validator actually resolved to, recorded in the run log. The install
+# above is quiet, so no run before this one recorded the version of the tool
+# that produced its confidence numbers — the pin said what was asked for, and
+# nothing said what arrived. A pin is a request; this is the receipt.
+sh(f"{MM} run -p {BOLTZ} python -c \""
+   "from importlib.metadata import version; "
+   "print('boltz version', version('boltz'))\"")
 print("bindsight install source:", INSTALL_SOURCE, flush=True)
 if BINDSIGHT_WHEEL_B64:
     # Install the exact tree that launched this run. Pinning a branch name would
@@ -460,10 +472,12 @@ print("  spec:", (spec_dir / "spec.json").read_text()[:400])
 
 step("run job_exec (RFdiffusion -> ProteinMPNN under se3; Boltz-2 + orchestration under boltz)")
 out_tmp = f"/tmp/{HANDLE_ID}.tar.gz"
-job_env = {
-    "BINDSIGHT_TOOLS_ROOT": TOOLS,
-    "BINDSIGHT_DESIGN_PYTHON": wrapper,
-}
+job_env = {"BINDSIGHT_TOOLS_ROOT": TOOLS}
+if wrapper is not None:
+    # Left unset for validate_only, where bindsight falls back to the boltz
+    # environment's own interpreter. Exporting a path that was never built
+    # would dress a step this mode deliberately skips as an exec failure.
+    job_env["BINDSIGHT_DESIGN_PYTHON"] = wrapper
 sh(f"{MM} run -p {BOLTZ} python -m bindsight.runners.job_exec "
    f"{spec_dir}/spec.json {out_tmp}", env=job_env)
 

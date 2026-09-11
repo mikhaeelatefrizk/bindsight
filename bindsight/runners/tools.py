@@ -24,7 +24,11 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from bindsight.validate.boltz2 import build_boltz_yaml, parse_boltz_output
+from bindsight.validate.boltz2 import (
+    PINNED_BOLTZ2_VERSION,
+    build_boltz_yaml,
+    parse_boltz_output,
+)
 from bindsight.validate.protocol import ValidationResult
 
 LOG = logging.getLogger(__name__)
@@ -87,7 +91,26 @@ RFDIFF_WEIGHT_SHA256: dict[str, str | None] = {
 PROTEINMPNN_REPO = "https://github.com/dauparas/ProteinMPNN"
 PROTEINMPNN_COMMIT = "8907e6671bfbfc92303b5f79c4b5e6ce47cdef57"
 
-BOLTZ_PIP = "boltz>=2.0,<3.0"
+#: Pinned exactly, like every other external tool here.
+#:
+#: This was ``boltz>=2.0,<3.0`` — a range — which made Boltz-2 the one tool in
+#: this file free to change between runs. It is also the tool that produces
+#: every confidence number the project publishes, so two runs a month apart
+#: could report ipTM from two different models under one label. The artifacts
+#: could not have told them apart either: ``validator_version`` was a hardcoded
+#: ``"2.0.1"`` written into every metrics row whatever was installed, so the one
+#: field that looked like it recorded this was answering from a constant. It is
+#: read from the environment now. RFdiffusion, ProteinMPNN, BindCraft and
+#: BoltzGen are all pinned to a commit; there was no argument for exempting the
+#: validator, only an oversight.
+#:
+#: 2.0.3 is the version the precision audit in ``benchmarks/calibration``
+#: examined line by line (wheel sha256
+#: 5851dd10c7819d4c011534a4e5c9cc495d95e42e0e1336617a1e9e78d6c4cf12). Raising
+#: this pin invalidates that audit, and — because this file ships inside the
+#: wheel whose hash is folded into the cache key — correctly invalidates every
+#: cached result produced under the old one.
+BOLTZ_PIP = f"boltz=={PINNED_BOLTZ2_VERSION}"
 
 BINDCRAFT_REPO = "https://github.com/martinpacesa/BindCraft"
 BINDCRAFT_COMMIT = "b971db42ba6e091afab63ccb30ae02215150a990"

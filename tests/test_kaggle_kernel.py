@@ -141,6 +141,41 @@ def test_kernel_still_forces_fp32_for_boltz() -> None:
     assert "bf16-mixed" in src
 
 
+class TestTheValidatorIsPinnedAndRecorded:
+    """Every published confidence number comes from Boltz-2, so its version is data.
+
+    The pin was a range, ``boltz>=2.0,<3.0``, while RFdiffusion, ProteinMPNN,
+    BindCraft and BoltzGen were all pinned to exact commits. That made the one
+    tool whose output the project publishes the one tool free to change between
+    runs — and because the install is quiet, no run recorded which version it
+    got. Two runs could report ipTM from two different models under one label
+    with nothing in the artifacts to tell them apart.
+    """
+
+    def test_the_boltz_pin_is_exact(self) -> None:
+        pin = tools.BOLTZ_PIP
+        assert "==" in pin, f"the validator pin is a range, not a version: {pin}"
+        assert not any(op in pin for op in (">=", "<=", ">", "<", "~=", "*")), (
+            f"a range operator survives in the validator pin: {pin}"
+        )
+
+    def test_the_audited_version_is_the_pinned_one(self) -> None:
+        """The precision audit is a claim about one version of one package."""
+        audit = Path(__file__).resolve().parents[1] / "benchmarks" / "calibration" / "PRECISION.md"
+        assert audit.is_file(), "the precision audit the pin's comment cites is missing"
+        pinned = tools.BOLTZ_PIP.split("==", 1)[1]
+        assert f"boltz {pinned}" in audit.read_text(encoding="utf-8"), (
+            f"the pin is {pinned} but the audit does not examine that version; "
+            "raising the pin invalidates the audit and both must move together"
+        )
+
+    def test_the_kernel_records_the_version_it_installed(self) -> None:
+        """A pin is what was asked for. The log has to say what arrived."""
+        src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
+        assert "boltz version" in src
+        assert "importlib.metadata import version" in src
+
+
 # ---------------------------------------------------------------------------
 # VRAM instrumentation: it promised a measurement and delivered a constant
 # ---------------------------------------------------------------------------
@@ -385,3 +420,84 @@ class TestTheWholeSpecDirectoryTravels:
             handle_id="t", payload={"design/b0.fasta": "eJw="}, mode="validate_only"
         )
         assert "escapes the spec directory" in script
+
+
+def _bound_names(nodes: list[ast.stmt]) -> set[str]:
+    """Every name these statements bind, at any nesting depth below them."""
+    bound: set[str] = set()
+    for node in nodes:
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
+                bound.add(sub.id)
+            elif isinstance(sub, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+                bound.add(sub.name)
+            elif isinstance(sub, ast.Import | ast.ImportFrom):
+                for alias in sub.names:
+                    bound.add(alias.asname or alias.name.split(".")[0])
+    return bound
+
+
+class TestValidateOnlySkipsNothingItStillNeeds:
+    """A skipped step must not leave a name the rest of the script reads.
+
+    Guarding the class, not one name. Wrapping the designer setup in
+    ``if MODE != "validate_only":`` moved every name that block defines into a
+    branch, and ``wrapper`` was still read unconditionally two hundred lines
+    later. Python binds names at runtime, so the script imported, built two
+    conda environments, downloaded Boltz-2 and materialised the payload before
+    raising ``NameError`` — about ten minutes of GPU quota to learn that a
+    variable was missing. Nothing in the suite noticed, because the assertions
+    were all substring checks against a script that is never executed here.
+    """
+
+    def _design_branch(self) -> tuple[ast.If, ast.Module]:
+        """The rendered validate-only script and its ``MODE`` guard."""
+        tree = ast.parse(
+            kaggle_kernel.build_kernel_script(
+                handle_id="t", payload={"design/b0.fasta": "eJw="}, mode="validate_only"
+            )
+        )
+        guards = [
+            node
+            for node in tree.body
+            if isinstance(node, ast.If) and "validate_only" in ast.dump(node.test) and node.orelse
+        ]
+        assert len(guards) == 1, f"expected one MODE guard, found {len(guards)}"
+        return guards[0], tree
+
+    def test_no_name_is_defined_only_by_the_branch_validate_only_skips(self) -> None:
+        guard, tree = self._design_branch()
+        design_only = _bound_names(guard.body) - _bound_names(guard.orelse)
+        # Names the module also binds outside the guard are fine: the skipped
+        # branch only rebinds them.
+        elsewhere = _bound_names([n for n in tree.body if n is not guard])
+        design_only -= elsewhere
+
+        body_ids = {id(n) for n in ast.walk(guard) if n not in guard.orelse}
+        read_outside = {
+            sub.id
+            for node in tree.body
+            for sub in ast.walk(node)
+            if isinstance(sub, ast.Name)
+            and isinstance(sub.ctx, ast.Load)
+            and id(sub) not in body_ids
+        }
+
+        leaked = sorted(design_only & read_outside)
+        assert not leaked, (
+            f"validate_only skips the block that defines {leaked}, but the script "
+            "still reads those names — the kernel will raise NameError on the GPU"
+        )
+
+    def test_the_guard_has_teeth(self) -> None:
+        """Reading a design-branch name outside the branch must be caught.
+
+        Without this the test above passes on any script, including one where
+        the guard was silently dropped.
+        """
+        guard, _tree = self._design_branch()
+        assert _bound_names(guard.body) - _bound_names(guard.orelse), (
+            "the design branch binds nothing the else branch does not, so the "
+            "check above has nothing to detect"
+        )
+        assert "wrapper" in _bound_names(guard.body)

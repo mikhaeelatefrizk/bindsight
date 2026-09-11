@@ -8,6 +8,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — the validator's own provenance, found while auditing the fp32 patch
+
+Auditing the one line the Kaggle kernel patches in Boltz-2 meant pinning down
+which Boltz-2 that line was being audited *against*. It turned out nothing knew.
+
+- **`validator_version` was a hardcoded constant.** Every metrics row carried
+  `"2.0.1"` regardless of what was installed, sitting beside genuine
+  measurements in the same line and reading as one of them. It is read from the
+  environment now, and reports `"unrecorded"` — never a plausible-looking
+  version — where Boltz is not importable.
+- **The validator was the only external tool not pinned.** `BOLTZ_PIP` was the
+  range `boltz>=2.0,<3.0` while RFdiffusion, ProteinMPNN, BindCraft and BoltzGen
+  were all pinned to exact commits. The tool that produces every published
+  confidence number was the one free to change between runs. It is now
+  `boltz==2.0.3`, defined once and derived in both places that need it.
+- **The kernel now logs the version it resolved.** The install is quiet, so no
+  run before this recorded what it got. A pin is the request; the log line is
+  the receipt.
+- **The fp32 patch is audited rather than asserted**, in
+  `benchmarks/calibration/PRECISION.md`: one `Trainer`, one `precision=`
+  argument, a value upstream already ships for boltz1, and no dtype branch
+  anywhere on the boltz2 code path. A test fails if the pin moves away from the
+  audited version.
+
+### Fixed — a validate-only job could be served another job's results
+
+- **The cache key did not cover the shipped binders.** A designer run is keyed
+  by what the designer is told to produce; a `validate_only` run produces
+  nothing — the binders travel in the payload, and the spec is identical
+  whichever ones go. Two calibration sets against the same target hashed alike,
+  so the second would have been handed the first's rows: the right number of
+  well-formed metrics for the right target, and wrong. The payload is folded in
+  at the point it is received, so no future caller can forget it.
+- **A `validate_only` kernel referenced a name its skipped branch defined.**
+  Wrapping the designer setup in a mode guard left `wrapper` bound only inside
+  it and read two hundred lines below, so the kernel built both environments and
+  materialised its payload before dying on a `NameError`. The test now parses
+  the generated script and fails on *any* name the skipped branch alone defines.
+
 ### Fixed — what running the documented chain on a real cohort exposed
 
 Driving `discover → design` end to end on the clear-cell kidney cohort found
@@ -52,7 +91,13 @@ with the effective config it writes into every run directory.
 - **20 de novo ERBB2 binders on a free Kaggle T4**, superseding the run whose
   figures this release had been disclaiming. Best ipTM **0.88**, mean 0.51,
   median 0.49, mean PAE-interaction 15.6 Å, **40%** success@0.65 (8 of 20),
-  validated with Boltz-2 2.0.1, one GPU-hour, $0.
+  validated with Boltz-2, one GPU-hour, $0. This entry said "Boltz-2 2.0.1"
+  until that number was checked: it came from a hardcoded constant written into
+  every metrics row, not from the environment, while the installer pinned only
+  `boltz>=2.0,<3.0`. The exact release behind these figures is not recoverable.
+  Both halves are fixed under Unreleased. The ipTM figures themselves are
+  unaffected — they are what Boltz-2 returned; only the label on the model was
+  wrong.
 - **The target chain is verified, not asserted.** All 20 designs carry a target
   chain byte-identical to the native 142-residue ERBB2 domain IV, checked by
   comparing every design's chains against the prepared structure. That is the

@@ -87,6 +87,38 @@ def _with_backend(cache_key: str, backend: str, code: str = "") -> str:
     return hashlib.sha256(bits.encode()).hexdigest()
 
 
+def _with_payload(cache_key: str, payload_dir: Path) -> str:
+    """Fold a shipped ``design/`` directory into a cache key.
+
+    The spec-derived key covers what a *designer* would be told to produce. For
+    a ``validate_only`` job nothing is produced: the binders travel in the
+    payload, and the spec is identical no matter which ones. Two calibration
+    sets — twenty scrambles, and the same twenty plus their originals — hashed
+    to the same key against the same target, so the second would have been
+    served the first's twenty rows and read as the answer to a question it never
+    asked. That is the same failure the validator fold in :func:`make_cache_key`
+    exists to prevent, one level further in.
+
+    Both the relative path and the content of every shipped file are covered:
+    renaming a binder changes which row is which downstream.
+
+    Args:
+        cache_key: the key so far.
+        payload_dir: the local directory shipped as ``design/``.
+
+    Returns:
+        The folded key.
+    """
+    import hashlib
+
+    digest = hashlib.sha256()
+    for path in sorted(p for p in payload_dir.rglob("*") if p.is_file()):
+        digest.update(path.relative_to(payload_dir).as_posix().encode())
+        digest.update(b"\0")
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return hashlib.sha256(f"{cache_key}|payload={digest.hexdigest()}".encode()).hexdigest()
+
+
 def _record_handle(handle_path: Path, handle: object) -> None:
     """Persist a launched job's handle, without ever failing the job to do it.
 
@@ -198,10 +230,18 @@ def submit_via_runner(
     # the mock's synthetic tarball and reports it as a genuine result. The
     # designer's commit is already folded in by the caller; the runner is not.
     cache_key = _with_backend(cache_key, getattr(runner, "name", "unknown"), _code_identity(runner))
+    payload = Path(payload_dir) if payload_dir is not None else None
+    if payload is not None and payload.is_dir():
+        # Folded here rather than by the caller: this is the function the
+        # payload is handed to, so keying it cannot be forgotten by whoever
+        # ships one next. It must precede spec_dir, which is named after the key.
+        cache_key = _with_payload(cache_key, payload)
+    else:
+        payload = None
     spec_dir = Path(f"_bindsight_spec_{cache_key[:8]}")
     spec_dir.mkdir(parents=True, exist_ok=True)
-    if payload_dir is not None and Path(payload_dir).is_dir():
-        shutil.copytree(payload_dir, spec_dir / "design", dirs_exist_ok=True)
+    if payload is not None:
+        shutil.copytree(payload, spec_dir / "design", dirs_exist_ok=True)
 
     # Ship the target structure next to the spec (it is not embedded in the
     # spec). Record the filename in extra_params so the executor can find it.

@@ -41,7 +41,34 @@ from bindsight.validate.protocol import ValidationResult
 
 LOG = logging.getLogger(__name__)
 
-DEFAULT_BOLTZ2_VERSION = "2.0.1"
+#: The Boltz-2 release this project pins, audited and installed.
+#:
+#: Single source of truth: ``bindsight.runners.tools.BOLTZ_PIP`` is built from
+#: it. The dependency runs that way round because ``tools`` already imports this
+#: module.
+PINNED_BOLTZ2_VERSION = "2.0.3"
+
+
+def installed_boltz_version() -> str | None:
+    """The Boltz-2 actually importable here, or ``None`` where there is none.
+
+    ``validator_version`` used to be :data:`PINNED_BOLTZ2_VERSION` written
+    straight into every metrics row, which made it a label rather than a record:
+    the pin was a range, so any 2.x could have produced a number, and the row
+    said ``2.0.1`` regardless. A provenance field that reports a constant is
+    worse than an absent one, because it answers the question wrongly instead of
+    leaving it open.
+
+    Returns ``None`` rather than the pin when Boltz is not installed — which is
+    the case wherever the parser runs outside the GPU environment. Substituting
+    the pinned version there would recreate the same fiction one level down.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("boltz")
+    except PackageNotFoundError:
+        return None
 
 
 class MissingValidationError(FileNotFoundError):
@@ -138,7 +165,7 @@ def parse_boltz_output(
         affinity_pred_value=affinity_value,
         affinity_probability_binary=affinity_prob,
         validator_name="boltz2",
-        validator_version=DEFAULT_BOLTZ2_VERSION,
+        validator_version=installed_boltz_version() or "unrecorded",
         notes=(
             f"parsed confidence={'yes' if confidence_path else 'no'}, "
             f"affinity={'yes' if affinity_path else 'no'}"
@@ -166,7 +193,7 @@ class Boltz2Validator:
     """
 
     name = "boltz2"
-    version = DEFAULT_BOLTZ2_VERSION
+    version = PINNED_BOLTZ2_VERSION
     license_notice = "Boltz-2: MIT (code + weights). Commercial-OK."
 
     def validate(

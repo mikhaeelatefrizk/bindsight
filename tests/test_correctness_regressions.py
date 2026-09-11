@@ -1033,6 +1033,142 @@ class TestTheCacheKeyCoversTheValidator:
         assert plain == named
 
 
+class TestTheCacheKeyCoversTheShippedBinders:
+    """In ``validate_only`` the payload *is* the input, and the spec cannot see it.
+
+    A designer run is keyed by what the designer is told to produce. A
+    validate-only run produces nothing: the binders are shipped in ``design/``,
+    and the spec is byte-identical whichever ones travel. So two different
+    calibration sets against the same target — twenty scrambles, then those
+    twenty plus their originals — hashed to the same key, and the second would
+    have been handed the first's twenty rows and read as its answer. Nothing
+    downstream could have caught it: twenty well-formed metrics rows for the
+    right target is exactly what a correct run looks like.
+    """
+
+    @staticmethod
+    def _spec(structure: Path) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        return DesignSpec(
+            target_uniprot="P04626",
+            target_structure_path=str(structure),
+            epitope_chain="A",
+            epitope_residues=[],
+            design_ranges=[],
+            n_trajectories=1,
+            seed=0,
+            extra_params={"mode": "validate_only", "validator": "boltz2"},
+        )
+
+    def _submit(self, spec: Any, runner: Any, payload: Path) -> Any:
+        from bindsight.design._common import make_cache_key, submit_via_runner
+
+        return submit_via_runner(
+            spec,
+            runner,
+            designer_name="calibration:boltz2",
+            designer_version="1",
+            designer_commit_sha=None,
+            cache_key=make_cache_key(spec),
+            payload_dir=payload,
+        )
+
+    @staticmethod
+    def _archive(tmp_path: Path) -> Path:
+        import tarfile
+
+        rows = tmp_path / "metrics.jsonl"
+        rows.write_text(json.dumps({"binder_id": "b0", "iptm": 0.7}) + "\n")
+        archive = tmp_path / "results.tar.gz"
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(rows, arcname="metrics.jsonl")
+        return archive
+
+    def test_a_different_shipped_set_is_not_a_cache_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        runner = _CountingRunner(self._archive(tmp_path))
+
+        payload = tmp_path / "design"
+        payload.mkdir()
+        (payload / "b0.fasta").write_text(">b0\nMKV\n")
+        first = self._submit(spec, runner, payload)
+        assert runner.submits == 1
+        assert first.cache_status == "miss"
+
+        # The set grows — the same binder plus one more. Same spec, same target.
+        (payload / "b1.fasta").write_text(">b1\nVKM\n")
+        second = self._submit(spec, runner, payload)
+        assert second.cache_status == "miss", (
+            "a larger set of shipped binders was served the smaller set's results"
+        )
+        assert runner.submits == 2
+
+    def test_an_edited_binder_is_not_a_cache_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Same filenames, same count, different sequence: different work."""
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        runner = _CountingRunner(self._archive(tmp_path))
+
+        payload = tmp_path / "design"
+        payload.mkdir()
+        (payload / "b0.fasta").write_text(">b0\nMKV\n")
+        self._submit(spec, runner, payload)
+
+        (payload / "b0.fasta").write_text(">b0\nVKM\n")
+        assert self._submit(spec, runner, payload).cache_status == "miss", (
+            "scoring a different sequence returned the previous sequence's score"
+        )
+
+    def test_an_unchanged_set_is_still_a_cache_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The fold must not defeat the cache it is narrowing.
+
+        Without this, a fold over anything incidental — a mtime, an absolute
+        path, iteration order — would make every rerun pay for the GPU again and
+        the test above would still pass.
+        """
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        runner = _CountingRunner(self._archive(tmp_path))
+
+        payload = tmp_path / "design"
+        (payload / "sub").mkdir(parents=True)
+        (payload / "b0.fasta").write_text(">b0\nMKV\n")
+        (payload / "sub" / "b1.fasta").write_text(">b1\nVKM\n")
+
+        assert self._submit(spec, runner, payload).cache_status == "miss"
+        assert self._submit(spec, runner, payload).cache_status == "hit"
+        assert runner.submits == 1
+
+    def test_a_renamed_binder_is_not_a_cache_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Names are how a metrics row is matched back to a binder downstream."""
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        runner = _CountingRunner(self._archive(tmp_path))
+
+        payload = tmp_path / "design"
+        payload.mkdir()
+        (payload / "b0.fasta").write_text(">b0\nMKV\n")
+        self._submit(spec, runner, payload)
+
+        (payload / "b0.fasta").unlink()
+        (payload / "renamed.fasta").write_text(">b0\nMKV\n")
+        assert self._submit(spec, runner, payload).cache_status == "miss"
+
+
 # ---------------------------------------------------------------------------
 # 9. A configured seed must reach the GPU
 # ---------------------------------------------------------------------------

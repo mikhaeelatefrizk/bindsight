@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import json
 from importlib.metadata import entry_points
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -215,3 +217,70 @@ class TestPluginEntryPoints:
         eps = entry_points(group="bindsight.runners")
         names = {ep.name for ep in eps}
         assert {"colab", "modal", "kaggle", "local_docker", "mock"} <= names
+
+
+class TestTheRecordedValidatorVersionIsMeasured:
+    """``validator_version`` reported a hardcoded ``"2.0.1"`` on every row.
+
+    It sat beside genuine measurements in the same metrics line, so it read as
+    one. It was not: the pin was a range, any 2.x could have produced the
+    number, and the field said 2.0.1 regardless. A provenance field answering
+    from a constant is worse than no field, because a reader checking which
+    model produced a result gets a confident wrong answer instead of an
+    obviously missing one.
+    """
+
+    @staticmethod
+    def _row(tmp_path: Path) -> Any:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        out = tmp_path / "predictions" / "run"
+        out.mkdir(parents=True)
+        (out / "confidence_run_model_0.json").write_text(
+            json.dumps({"iptm": 0.7, "pae_interaction": 5.0})
+        )
+        return parse_boltz_output(output_dir=tmp_path, binder_id="b0", target_uniprot="P04626")
+
+    def test_the_version_comes_from_the_environment(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.validate import boltz2
+
+        monkeypatch.setattr(boltz2, "installed_boltz_version", lambda: "9.9.9")
+        assert self._row(tmp_path).validator_version == "9.9.9"
+
+    def test_an_absent_boltz_is_reported_as_unrecorded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The fallback must not be a plausible version number.
+
+        Substituting the pin when Boltz is not installed would rebuild the
+        original defect: a row that names a version nothing here ever ran.
+        """
+        from bindsight.validate import boltz2
+
+        monkeypatch.setattr(boltz2, "installed_boltz_version", lambda: None)
+        recorded = self._row(tmp_path).validator_version
+        assert recorded == "unrecorded"
+        assert recorded != boltz2.PINNED_BOLTZ2_VERSION
+
+    def test_the_reader_returns_none_rather_than_guessing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from importlib.metadata import PackageNotFoundError
+
+        from bindsight.validate import boltz2
+
+        def _absent(_name: str) -> str:
+            raise PackageNotFoundError("boltz")
+
+        monkeypatch.setattr("importlib.metadata.version", _absent)
+        assert boltz2.installed_boltz_version() is None
+
+    def test_the_pin_is_the_single_source_of_truth(self) -> None:
+        """Two places to edit a version is one place to forget."""
+        from bindsight.runners import tools
+        from bindsight.validate import boltz2
+
+        assert f"boltz=={boltz2.PINNED_BOLTZ2_VERSION}" == tools.BOLTZ_PIP
+        assert Boltz2Validator.version == boltz2.PINNED_BOLTZ2_VERSION
