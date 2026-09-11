@@ -58,9 +58,27 @@ is a fact about the control set, not about the designs, and reporting it as a
 missing threshold would blame the wrong thing.
 
 This is the concrete next experiment: more scrambles. The shuffle is random, so
-each design yields as many independent controls as wanted, all
-composition-matched. Four per design is eighty controls — past the seventy-two
-needed for a 5% bound — at roughly 2.2 minutes a fold.
+each design yields as many controls as wanted, all composition-matched. Four per
+design is eighty, past the seventy-two the table asks for, at roughly 2.2
+minutes a fold.
+
+**But eighty such controls are not eighty independent ones, and the table above
+assumes they are.** Four shuffles of one design share its length and its exact
+composition; they are four draws from the permutation distribution of a single
+sequence, not four draws from the population of composition-matched peptides.
+That makes the set twenty clusters of four, and an interval that assumes
+independence would understate its own width — which is the same error this
+addendum exists to avoid, one level down.
+
+There is no way around it by rearranging: seventy-two *unrelated* controls would
+need seventy-two distinct designs, and there are twenty. So the follow-up has to
+be analysed with a cluster-aware interval over designs —
+`cluster_bootstrap_interval` in `bindsight/benchmark/statistics.py`, which the
+study already uses for exactly this shape — and `controls_needed_for` above,
+being an independence calculation, is a **lower** bound on how many clustered
+controls the same claim would take. How much larger depends on how correlated
+shuffles of one sequence turn out to be, which this run will show and nothing
+here should guess.
 
 ## Why the two arms are folded in one job
 

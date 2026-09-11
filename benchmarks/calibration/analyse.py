@@ -217,13 +217,21 @@ def controls_needed_for(max_fpr: float, *, confidence: float = 0.95) -> int:
     This is the honest answer to "why is there no 5% operating point": not
     because the designs failed, but because twenty controls cannot establish one.
 
+    This assumes the controls are independent, which shuffles of the *same*
+    design are not: four shuffles of one sequence share its length and exact
+    composition, so a set built that way is clusters-of-shuffles rather than
+    independent draws. Against such a set this is a **lower** bound on the count
+    required, and the interval itself has to come from
+    :func:`~bindsight.benchmark.statistics.cluster_bootstrap_interval` instead.
+    See this directory's README.
+
     Args:
         max_fpr: the desired upper bound on the false-positive rate.
         confidence: the interval's confidence level.
 
     Returns:
         The smallest ``n`` whose zero-passing upper limit is at or below
-        ``max_fpr``.
+        ``max_fpr``, assuming independence.
 
     Raises:
         ValueError: If ``max_fpr`` is not strictly between 0 and 1.
