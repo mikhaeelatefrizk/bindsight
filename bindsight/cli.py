@@ -1476,6 +1476,30 @@ def _mark_thresholds(df: Any, run_dir: Path) -> Any:
     return df
 
 
+def _archive_carries_designs(archive: Path) -> bool:
+    """True when a results tarball still contains the designed sequences.
+
+    ``_launch_revalidate`` replaces a target's tarball with whatever the run
+    returns. That is right when the new archive carries the designs back
+    alongside the fresh validator output, and destructive when it does not: the
+    FASTA is the only record of what was designed, since the staged PDBs are
+    byte-identical per backbone, and a second revalidation would then find
+    nothing left to rescore.
+    """
+    import tarfile
+
+    if not archive.is_file():
+        return False
+    try:
+        with tarfile.open(archive, "r:gz") as tf:
+            return any(
+                m.isfile() and m.name.startswith("design/") and m.name.endswith(".fasta")
+                for m in tf.getmembers()
+            )
+    except (OSError, tarfile.TarError):
+        return False
+
+
 def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
     """Run ``validator`` against the binders a previous design step produced.
 
@@ -1544,7 +1568,18 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
                 cache_key=make_cache_key(spec, extra=("validate_only", validator)),
                 payload_dir=staged,
             )
-        shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")
+        # Never trade the designs for a validator's output. See
+        # :func:`_archive_carries_designs`.
+        if _archive_carries_designs(Path(result.results_archive_path)):
+            shutil.copy2(result.results_archive_path, tar_path)
+        else:
+            LOG_CLI.error(
+                "the revalidated archive for %s carries no designs, so copying it "
+                "over %s would destroy the binders it was meant to rescore. Keeping "
+                "the original; the new metrics are still recorded.",
+                t["uniprot"],
+                tar_path,
+            )
         mpath = Path(result.metrics_jsonl_path)
         if mpath.exists():
             metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]
