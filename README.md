@@ -187,7 +187,7 @@ For the full landscape comparison, see [ARCHITECTURE.md](ARCHITECTURE.md#8-compa
 | **`bindsight run`** — full pipeline orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight export`** — RO-Crate zip for Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
 | **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ runs end to end | `bindsight design runs/x --backend kaggle` |
-| **`bindsight design`** — BindCraft / BoltzGen / Chai-1r / AF2-IG designers and validators | ⚠️ implemented, not yet executed | see [runner and plugin status](#runner-and-plugin-status) |
+| **`bindsight design`** — BindCraft / BoltzGen / Chai-1r / AF2-IG designers and validators | ⚠️ wired, but no shipped backend can run them | The executor dispatches to all four, and no backend builds an environment in which that dispatch succeeds. The CLI now refuses the combination locally rather than spending GPU quota discovering it. See [runner and plugin status](#runner-and-plugin-status) |
 | **`bindsight design --dry-run`** — GPU cost estimate for any backend | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics → `validated.parquet` | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight validate --revalidate`** — run a *different* validator against binders that already exist, without redesigning | ✅ ready | `bindsight validate runs/x --validator chai1r --revalidate --backend kaggle` |

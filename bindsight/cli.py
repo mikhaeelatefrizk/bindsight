@@ -231,6 +231,8 @@ def design(
         run_dir, designer=designer, validator=validator, trajectories=trajectories
     )
 
+    _preflight_backend(backend, designer=designer, validator=validator)
+
     epitopes_parquet = run_dir / "epitopes" / "epitopes.parquet"
     n_targets = _count_top_targets(epitopes_parquet)
 
@@ -385,6 +387,9 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
         _print_cost_panel(cost, label=f"validate ({validator}, {n_designs} designs)")
 
     if revalidate:
+        # Revalidation dispatches to the backend just as design does, so the same
+        # refusal applies: --validator chai1r --backend kaggle cannot work.
+        _preflight_backend(backend, validator=validator)
         if backend == "colab":
             console.print(
                 Panel(
@@ -1042,6 +1047,55 @@ def _apply_cheap_profile(cfg: RunConfig) -> None:
             border_style="cyan",
         )
     )
+
+
+def _preflight_backend(backend: str, **plugins: str) -> None:
+    """Refuse a backend/plugin combination the backend cannot run.
+
+    The CLI accepted any designer against any backend and found out remotely.
+    ``--designer bindcraft --backend kaggle`` built the same two-environment
+    kernel every Kaggle job builds, because the kernel takes no designer
+    argument, and failed only after roughly six minutes of environment building
+    had been charged to a weekly GPU quota that does not refund.
+
+    A combination the backend has no environment for is refused here, in about a
+    second, naming what it does provide. A combination the executor would *try*
+    to bootstrap is allowed and announced, because untested is not the same
+    statement as impossible and blocking it would remove a path that may work.
+
+    Args:
+        backend: the runner the job would go to.
+        **plugins: role name -> plugin name, e.g. ``designer="bindcraft"``.
+
+    Raises:
+        SystemExit: with status 2 when any combination is unsupported.
+    """
+    from bindsight.plugins import UNSUPPORTED, UNTESTED, plugin_support
+
+    refusals: list[str] = []
+    for role, name in plugins.items():
+        if not name:
+            continue
+        verdict, why = plugin_support(backend, name)
+        if verdict == UNSUPPORTED:
+            refusals.append(f"[bold]{role} {name}[/bold] — {why}")
+        elif verdict == UNTESTED:
+            console.print(
+                f"[yellow]untested:[/yellow] {why}. Proceeding, but this path has "
+                "not been demonstrated end to end."
+            )
+    if not refusals:
+        return
+    console.print(
+        Panel(
+            "\n\n".join(refusals)
+            + "\n\n[dim]Refused locally so no GPU quota is spent discovering it "
+            "remotely.[/dim]",
+            title=f"{backend}: unsupported combination",
+            border_style="red",
+        )
+    )
+    sys.exit(2)
 
 
 def _design_defaults_from_run(

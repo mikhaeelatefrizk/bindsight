@@ -452,6 +452,19 @@ def test_the_three_way_benchmark_is_not_claimed_as_a_mitigation_in_place() -> No
 
 
 def test_the_readme_still_marks_those_plugins_unexecuted() -> None:
-    """The anchor for the two tests above: if this changes, revise them together."""
+    """The anchor for the two tests above: if this changes, revise them together.
+
+    "implemented, not yet executed" was the original phrasing and was too kind —
+    it implies the plugins would work if someone ran them, when no backend
+    builds an environment in which the dispatch can succeed. Either wording
+    keeps the manuscripts honest, which is what these tests are for.
+    """
     readme = _read("README.md")
-    assert "implemented, not yet executed" in readme or "not runnable" in readme
+    assert any(
+        phrase in readme
+        for phrase in (
+            "implemented, not yet executed",
+            "not runnable",
+            "no shipped backend can run them",
+        )
+    )

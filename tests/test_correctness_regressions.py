@@ -929,7 +929,7 @@ class TestTheRunConfigIsHonoured:
         ).to_parquet(run / "epitopes" / "epitopes.parquet")
 
         result = CliRunner().invoke(
-            cli.main, ["design", str(run), "--backend", "kaggle", "--dry-run"]
+            cli.main, ["design", str(run), "--backend", "mock", "--dry-run"]
         )
         assert result.exit_code == 0, result.output
         assert "trajectories: 10" in _plain(result.output)
@@ -950,7 +950,7 @@ class TestTheRunConfigIsHonoured:
 
         result = CliRunner().invoke(
             cli.main,
-            ["design", str(run), "--backend", "kaggle", "--trajectories", "3", "--dry-run"],
+            ["design", str(run), "--backend", "mock", "--trajectories", "3", "--dry-run"],
         )
         assert result.exit_code == 0, result.output
         assert "trajectories: 3" in _plain(result.output)
