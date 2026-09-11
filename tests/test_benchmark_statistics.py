@@ -9,6 +9,10 @@ whose tests only confirm it does what it does is worth nothing.
 
 from __future__ import annotations
 
+import random
+from typing import Any
+from unittest import mock
+
 import pytest
 
 from bindsight.benchmark import statistics as st
@@ -312,6 +316,64 @@ class TestPermutationNull:
     def test_needs_more_than_one_antigen(self) -> None:
         with pytest.raises(ValueError, match="at least two antigens"):
             st.permutation_null_p(1.0, {"A": {"ca": 1.0}}, n_perm=10)
+
+    def test_every_cohort_can_be_assigned_on_a_non_square_panel(self) -> None:
+        """The real panel is 8 antigens against 15 cohorts, and was never square.
+
+        This sliced the cohort list to the antigen count before shuffling, so it
+        permuted only the alphabetically-first n and could never assign the rest.
+        Seven of fifteen cohorts were unreachable while the observed statistic
+        included them. Every test of it was square, where the slice is a no-op —
+        which is exactly why it survived.
+        """
+        cohorts = [f"c{i}" for i in range(1, 7)]
+        antigens = ["A1", "A2", "A3"]
+        scores = {a: dict.fromkeys(cohorts, 0.0) for a in antigens}
+
+        drawn: set[str] = set()
+        real_sample = random.Random.sample
+
+        def spy(self: random.Random, population: Any, k: int) -> list[Any]:
+            picked = real_sample(self, population, k)
+            drawn.update(picked)
+            return picked
+
+        with mock.patch.object(random.Random, "sample", spy):
+            st.permutation_null_p(0.0, scores, n_perm=300)
+
+        assert drawn == set(cohorts), (
+            f"never assigned: {sorted(set(cohorts) - drawn)}; the null is drawn "
+            "from a smaller world than the observation it is compared against"
+        )
+
+    def test_an_unreachable_cohort_would_manufacture_significance(self) -> None:
+        """The consequence, not just the mechanism.
+
+        One antigen scores well in the *last* cohort alphabetically and nowhere
+        else. If the permutation cannot reach that cohort, no rearrangement ever
+        matches the observed statistic and p collapses to its floor — a
+        confident claim of indication specificity produced entirely by the
+        slice.
+        """
+        cohorts = [f"c{i}" for i in range(1, 7)]
+        antigens = ["A1", "A2", "A3"]
+        scores = {a: dict.fromkeys(cohorts, 0.0) for a in antigens}
+        scores["A1"]["c6"] = 9.0
+        observed = 9.0 / 3
+
+        p = st.permutation_null_p(observed, scores, n_perm=4000)
+        floor = 1 / (1 + 4000)
+        assert p > 20 * floor, (
+            f"p={p} is at the floor, which is what an unreachable cohort produces"
+        )
+        # A1 draws c6 about one time in six, so the honest p is near that.
+        assert 0.10 < p < 0.25, f"p={p} is not the reachable-cohort answer"
+
+    def test_more_antigens_than_cohorts_is_refused(self) -> None:
+        """Distinct cohorts cannot be dealt out of a smaller set."""
+        scores = {a: {"ca": 1.0, "cb": 1.0} for a in ("A", "B", "C")}
+        with pytest.raises(ValueError, match="nothing to draw from"):
+            st.permutation_null_p(1.0, scores, n_perm=10)
 
 
 class TestBenjaminiHochberg:

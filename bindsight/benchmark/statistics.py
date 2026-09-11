@@ -378,9 +378,14 @@ def permutation_null_p(
         seed: fixed for reproducibility.
         higher_is_better: whether a larger statistic is a better result.
 
+    The panel may carry more cohorts than antigens — it does: eight distinct
+    antigens against fifteen TCGA projects — and every cohort must be reachable
+    by the permutation, or the null is drawn from a smaller world than the
+    observation it is compared against.
+
     Raises:
-        ValueError: If fewer than two antigens are supplied, or the score matrix
-            is ragged.
+        ValueError: If fewer than two antigens are supplied, the score matrix is
+            ragged, or there are fewer cohorts than antigens to assign.
     """
     antigens = sorted(scores)
     if len(antigens) < 2:
@@ -393,14 +398,27 @@ def permutation_null_p(
             f"incomplete: {ragged[:5]}"
         )
 
-    # The observed assignment pairs each antigen with its own indication.
+    n = len(antigens)
+    if len(cohorts) < n:
+        raise ValueError(
+            f"{n} antigens cannot be given distinct cohorts drawn from {len(cohorts)}; "
+            "the permutation has nothing to draw from"
+        )
+
+    # The observed assignment pairs each antigen with its own indication, so the
+    # null reassigns antigens to cohorts at random.
+    #
+    # Each antigen draws a distinct cohort from the *whole* panel. This used to
+    # slice `cohorts[:n]` before shuffling, which permuted only the
+    # alphabetically-first n and could never assign the rest: with eight
+    # antigens against fifteen cohorts it silently excluded seven — including
+    # cohorts carrying observed antigens — while the observed statistic included
+    # them. Every test of it was square, where the slice is a no-op.
     rng = random.Random(seed)
     extreme = 0
-    n = len(antigens)
     for _ in range(n_perm):
-        shuffled = cohorts[:n]
-        rng.shuffle(shuffled)
-        stat = sum(scores[a][c] for a, c in zip(antigens, shuffled, strict=False)) / n
+        assigned = rng.sample(cohorts, n)
+        stat = sum(scores[a][c] for a, c in zip(antigens, assigned, strict=True)) / n
         if (stat >= observed) if higher_is_better else (stat <= observed):
             extreme += 1
     return (1 + extreme) / (1 + n_perm)
