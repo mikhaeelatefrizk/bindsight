@@ -400,7 +400,21 @@ def _validate_boltz2(
         yaml_path = boltz_root / f"{d.binder_id}.yaml"
         write_boltz_yaml(yaml_spec, yaml_path)
         out_dir = boltz_root / d.binder_id
-        proc = _run(tools.build_boltz_cmd(yaml_path=yaml_path, out_dir=out_dir))
+        # The configured seed reaches the designer at the top of this module and
+        # stopped there, so the stochastic half of the pipeline — the diffusion
+        # model that produces every published confidence number — ran unseeded.
+        # Derived per binder rather than shared: one seed across every design
+        # would correlate their draws, and each binder's number is read on its
+        # own. Stable across reruns because it comes from the id, not from
+        # enumeration order.
+        proc = _run(
+            tools.build_boltz_cmd(
+                yaml_path=yaml_path,
+                out_dir=out_dir,
+                seed=_binder_seed(int(spec.get("seed", 0)), d.binder_id),
+                diffusion_samples=int(spec.get("extra_params", {}).get("diffusion_samples", 1)),
+            )
+        )
         result = tools.parse_boltz_output(
             output_dir=out_dir,
             binder_id=d.binder_id,
@@ -598,6 +612,28 @@ def _chain_span(pdb_path: Path, chain: str) -> tuple[int, int]:
                 except ValueError:
                     continue
     return (min(nums), max(nums)) if nums else (1, 9999)
+
+
+def _binder_seed(run_seed: int, binder_id: str) -> int:
+    """A per-binder RNG seed, derived from the run's seed and the binder's id.
+
+    Two properties matter. It must be **stable**: the same run seed and the same
+    binder must give the same draw on a rerun, which rules out anything derived
+    from enumeration order or from a counter. And it must **differ per binder**:
+    handing every design the same seed would make their draws share a random
+    state, and these numbers are read one design at a time.
+
+    Args:
+        run_seed: the spec's seed.
+        binder_id: the design's identifier.
+
+    Returns:
+        A non-negative seed inside the 32-bit range Lightning accepts.
+    """
+    import hashlib
+
+    digest = hashlib.sha256(f"{run_seed}:{binder_id}".encode()).digest()
+    return int.from_bytes(digest[:4], "big")
 
 
 def load_existing_designs(work: Path) -> list[Design]:

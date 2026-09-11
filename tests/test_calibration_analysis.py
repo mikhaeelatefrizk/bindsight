@@ -126,6 +126,73 @@ def _metrics(path: Path, rows: dict[str, float | None]) -> Path:
     return path
 
 
+class TestTheNullResultCarriesItsOwnPower:
+    """ "No difference found" and "no difference larger than X" are different claims.
+
+    Only the second is what twenty pairs can support, and a null reported
+    without it reads as the first.
+    """
+
+    def test_it_reports_what_the_run_could_have_detected(self) -> None:
+        rng = random.Random(11)
+        diffs = [rng.gauss(0.03, 0.23) for _ in range(20)]
+        ci = calib.paired_interval(diffs)
+        assert ci["n_pairs"] == 20
+        # The detectable effect scales with spread over root-n.
+        assert ci["min_detectable_difference_80pct"] == pytest.approx(
+            2.8016 * ci["sd"] / 20**0.5, rel=1e-3
+        )
+
+    def test_a_wider_spread_needs_a_bigger_effect(self) -> None:
+        tight = calib.paired_interval([0.05, 0.04, 0.06, 0.05] * 5)
+        loose = calib.paired_interval([0.5, -0.4, 0.6, -0.5] * 5)
+        assert loose["min_detectable_difference_80pct"] > tight["min_detectable_difference_80pct"]
+
+    def test_the_interval_brackets_the_mean(self) -> None:
+        rng = random.Random(5)
+        diffs = [rng.gauss(0.2, 0.1) for _ in range(20)]
+        ci = calib.paired_interval(diffs)
+        assert ci["low"] < ci["mean"] < ci["high"]
+
+    def test_a_clear_effect_excludes_zero_and_a_null_does_not(self) -> None:
+        clear = calib.paired_interval([0.3] * 10 + [0.25] * 10)
+        assert clear["low"] > 0
+        rng = random.Random(2)
+        null = calib.paired_interval([rng.gauss(0.0, 0.25) for _ in range(20)])
+        assert null["low"] < 0 < null["high"]
+
+    def test_it_is_reproducible(self) -> None:
+        """A published interval that moves between runs is not a published interval."""
+        diffs = [0.1, -0.2, 0.3, 0.05, -0.15, 0.4, 0.0, -0.3, 0.2, 0.1]
+        assert calib.paired_interval(diffs) == calib.paired_interval(diffs)
+
+    def test_one_pair_reports_that_it_bounds_nothing(self) -> None:
+        """A single pair has no spread to resample.
+
+        It must say so rather than emit a degenerate zero-width interval, which
+        would read as the most precise result in the file.
+        """
+        ci = calib.paired_interval([0.3])
+        assert ci["estimable"] is False
+        assert "low" not in ci
+        assert "high" not in ci
+
+    def test_no_pairs_at_all_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="no pairs"):
+            calib.paired_interval([])
+
+    def test_the_report_states_the_bound(self, tmp_path: Path) -> None:
+        rows: dict[str, float | None] = {}
+        rng = random.Random(9)
+        for i in range(20):
+            v = rng.uniform(0.2, 0.9)
+            rows[f"b{i}"] = v
+            rows[f"b{i}_scram"] = v + rng.uniform(-0.3, 0.3)
+        text = calib.render(calib.analyse(_metrics(tmp_path / "m.jsonl", rows), committed=None))
+        assert "bootstrap interval on the mean difference" in text
+        assert "bounds any real advantage rather than showing there is none" in text
+
+
 class TestTheComparisonIsPaired:
     def test_each_design_is_matched_to_its_own_scramble(self, tmp_path: Path) -> None:
         m = _metrics(

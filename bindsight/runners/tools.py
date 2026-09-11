@@ -264,11 +264,53 @@ def build_mpnn_cmd(
     ]
 
 
-def build_boltz_cmd(*, yaml_path: Path, out_dir: Path, use_msa_server: bool = True) -> list[str]:
-    """Boltz-2 ``boltz predict`` argv for structure + affinity prediction."""
+def build_boltz_cmd(
+    *,
+    yaml_path: Path,
+    out_dir: Path,
+    use_msa_server: bool = True,
+    seed: int | None = None,
+    diffusion_samples: int = 1,
+) -> list[str]:
+    """Boltz-2 ``boltz predict`` argv for structure + affinity prediction.
+
+    Boltz-2 generates structures by diffusion. Its ``--seed`` defaults to
+    ``None``, which its own help text spells "no seeding", and
+    ``--diffusion_samples`` defaults to 1. Passing neither — which this builder
+    did — makes every reported ipTM a single unseeded draw from a stochastic
+    model, and the project's calibration run measured what that costs: refolding
+    the same twenty sequences moved ipTM by a median of 0.129 and a maximum of
+    0.667, flipped eight of twenty verdicts at the 0.65 threshold, and left the
+    two runs correlated at Spearman 0.07. A number that does not survive its own
+    rerun cannot support a per-design claim.
+
+    The seed makes a run repeatable. It does not make one draw representative —
+    only ``diffusion_samples`` does that, at linear GPU cost — so the two are
+    separate knobs and the caller chooses what to spend.
+
+    Args:
+        yaml_path: the Boltz-2 spec to predict.
+        out_dir: where Boltz-2 writes predictions.
+        use_msa_server: use the hosted MSA server.
+        seed: RNG seed. ``None`` leaves Boltz-2 unseeded, which is only
+            appropriate when drawing deliberately independent samples.
+        diffusion_samples: how many structures to draw per input.
+
+    Returns:
+        The argv list.
+
+    Raises:
+        ValueError: If ``diffusion_samples`` is not positive.
+    """
+    if diffusion_samples < 1:
+        raise ValueError(f"diffusion_samples must be at least 1; got {diffusion_samples}")
     cmd = [_boltz_bin(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
     if use_msa_server:
         cmd.append("--use_msa_server")
+    if seed is not None:
+        cmd += ["--seed", str(seed)]
+    if diffusion_samples != 1:
+        cmd += ["--diffusion_samples", str(diffusion_samples)]
     return cmd
 
 

@@ -182,6 +182,113 @@ def test_run_job_rejects_unknown_validator(mock_run, tmp_path: Path) -> None:
         job_exec.run_job(spec, tmp_path / "w")
 
 
+class TestTheValidatorIsSeeded:
+    """The configured seed reached the designer and stopped there.
+
+    Boltz-2 builds structures by diffusion; its ``--seed`` defaults to ``None``
+    — "no seeding" in its own help — and ``--diffusion_samples`` to 1. So the
+    stochastic half of the pipeline, the half that produces every confidence
+    number the project publishes, ran unseeded and drew once.
+
+    The calibration run measured the cost: refolding the same twenty sequences
+    moved ipTM by a median of 0.129 and a maximum of 0.667, flipped eight of
+    twenty verdicts at the shipped 0.65 threshold, and left the two runs
+    correlated at Spearman 0.07. This is the same defect the suite already
+    records for ``params.design.seed`` — declared, documented, read by no code —
+    one stage further along.
+    """
+
+    @staticmethod
+    def _boltz_calls(calls: list[list[str]]) -> list[list[str]]:
+        return [c for c in calls if c and c[0] == "boltz"]
+
+    def test_every_boltz_call_carries_a_seed(self, mock_run, tmp_path: Path) -> None:
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        job_exec.run_job(_spec(), work, tarball=tmp_path / "results.tar.gz")
+
+        boltz = self._boltz_calls(mock_run)
+        assert boltz, "no boltz invocation to check"
+        for cmd in boltz:
+            assert "--seed" in cmd, "the validator was invoked without a seed"
+
+    def test_each_binder_gets_its_own_seed(self, mock_run, tmp_path: Path) -> None:
+        """One seed across every design would correlate their draws."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        job_exec.run_job(_spec(), work, tarball=tmp_path / "results.tar.gz")
+
+        seeds = [c[c.index("--seed") + 1] for c in self._boltz_calls(mock_run)]
+        assert len(seeds) == len(set(seeds)), f"binders shared a seed: {seeds}"
+
+    def test_the_same_run_seed_reproduces_the_same_binder_seed(self) -> None:
+        """Derived from the id, so a rerun repeats rather than re-rolls."""
+        assert job_exec._binder_seed(0, "b0") == job_exec._binder_seed(0, "b0")
+        assert job_exec._binder_seed(0, "b0") != job_exec._binder_seed(0, "b1")
+        assert job_exec._binder_seed(0, "b0") != job_exec._binder_seed(1, "b0")
+
+    def test_a_binder_seed_is_not_derived_from_enumeration_order(self) -> None:
+        """Order-derived seeds change when a design is added or dropped."""
+        ids = ["z_last", "a_first", "m_middle"]
+        by_id = {i: job_exec._binder_seed(3, i) for i in ids}
+        reordered = {i: job_exec._binder_seed(3, i) for i in reversed(ids)}
+        assert by_id == reordered
+
+    def test_the_seed_stays_inside_the_accepted_range(self) -> None:
+        """Lightning's seed_everything rejects values outside 32 bits."""
+        for binder_id in ("b0", "P04626_binder_19_seq1_scram", "x" * 200):
+            assert 0 <= job_exec._binder_seed(0, binder_id) < 2**32
+
+    def test_the_configured_run_seed_is_what_reaches_the_validator(
+        self, mock_run, tmp_path: Path
+    ) -> None:
+        """A spec seed that changed nothing downstream is the original defect."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        spec = _spec()
+        spec["seed"] = 12345
+        job_exec.run_job(spec, work, tarball=tmp_path / "results.tar.gz")
+
+        seeds = {int(c[c.index("--seed") + 1]) for c in self._boltz_calls(mock_run)}
+        expected = {
+            job_exec._binder_seed(12345, binder_id)
+            for binder_id in (d.stem for d in (work / "design").glob("*.fasta"))
+        }
+        assert seeds == expected, "the validator's seed does not follow the run's seed"
+
+    def test_diffusion_samples_defaults_to_one_and_is_configurable(
+        self, mock_run, tmp_path: Path
+    ) -> None:
+        """Averaging costs GPU time linearly, so it stays the caller's choice."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        job_exec.run_job(_spec(), work, tarball=tmp_path / "r.tar.gz")
+        assert all("--diffusion_samples" not in c for c in self._boltz_calls(mock_run))
+
+        mock_run.clear()
+        work2 = tmp_path / "work2"
+        work2.mkdir()
+        (work2 / "target.pdb").write_text(_TINY_PDB)
+        spec = _spec()
+        spec["extra_params"]["diffusion_samples"] = 5
+        job_exec.run_job(spec, work2, tarball=tmp_path / "r2.tar.gz")
+        for cmd in self._boltz_calls(mock_run):
+            assert cmd[cmd.index("--diffusion_samples") + 1] == "5"
+
+    def test_a_nonsensical_sample_count_is_refused(self) -> None:
+        from bindsight.runners import tools
+
+        for bad in (0, -1):
+            with pytest.raises(ValueError, match="diffusion_samples"):
+                tools.build_boltz_cmd(
+                    yaml_path=Path("x.yaml"), out_dir=Path("o"), diffusion_samples=bad
+                )
+
+
 def test_materialise_target_copies_pdb(tmp_path: Path) -> None:
     spec_dir = tmp_path / "spec"
     spec_dir.mkdir()

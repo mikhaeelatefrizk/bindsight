@@ -112,6 +112,66 @@ def exact_signflip_p(diffs: list[float]) -> tuple[float, int]:
     return extreme / total, total
 
 
+#: Resamples for the paired bootstrap interval, and the seed that fixes it.
+_BOOTSTRAP = 20_000
+_BOOTSTRAP_SEED = 20260912
+
+
+def paired_interval(diffs: list[float], *, confidence: float = 0.95) -> dict[str, float]:
+    """Percentile bootstrap interval for the mean paired difference.
+
+    A p-value says whether an effect was detected. It does not say what effects
+    the run could have detected, and a null result reported without that is
+    unreadable: "no difference found" and "no difference larger than X" are
+    different claims, and only the second is what twenty pairs can support.
+
+    Bootstrapped over pairs rather than assuming normal differences — the
+    differences here are not obviously normal, and the resample costs
+    milliseconds.
+
+    Args:
+        diffs: one difference per pair.
+        confidence: interval confidence level.
+
+    Returns:
+        The mean difference, its interval, and the smallest difference this many
+        pairs would detect at 80% power. A single pair has no spread to
+        resample, so its record says ``estimable: False`` and carries no bounds
+        — the same shape :func:`operating_point` uses for a target it cannot
+        reach, and for the same reason: a missing number must not be reported
+        as a number.
+
+    Raises:
+        ValueError: If there are no pairs at all.
+    """
+    n = len(diffs)
+    if n == 0:
+        raise ValueError("no pairs to summarise")
+    if n < 2:
+        return {"estimable": False, "mean": float(diffs[0]), "n_pairs": n}
+
+    d = np.asarray(diffs, dtype=np.float64)
+    rng = np.random.default_rng(_BOOTSTRAP_SEED)
+    means = d[rng.integers(0, n, size=(_BOOTSTRAP, n))].mean(axis=1)
+    alpha = 1.0 - confidence
+    low, high = (float(x) for x in np.quantile(means, [alpha / 2, 1 - alpha / 2]))
+
+    # Smallest true difference this design detects 80% of the time at a
+    # two-sided 5% level, from the observed spread of the differences.
+    sd = float(d.std(ddof=1))
+    mde = (1.959963985 + 0.841621234) * sd / math.sqrt(n)
+    return {
+        "estimable": True,
+        "mean": float(d.mean()),
+        "low": low,
+        "high": high,
+        "sd": sd,
+        "n_pairs": n,
+        "min_detectable_difference_80pct": mde,
+        "n_resamples": _BOOTSTRAP,
+    }
+
+
 def _describe(values: list[float]) -> dict[str, float]:
     """Summary statistics, or NaNs when there is nothing to summarise."""
     if not values:
@@ -271,6 +331,7 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
         "designs": _describe(designs),
         "scrambles": _describe(scrambles),
         "paired_difference": _describe(diffs),
+        "paired_interval": paired_interval(diffs),
         "n_designs_above_scramble": sum(x > 0 for x in diffs),
         "exact_signflip_p": p,
         "n_permutations": n_perm,
@@ -336,6 +397,7 @@ def render(report: dict[str, Any]) -> str:
     """The report as Markdown."""
     d, s = report["designs"], report["scrambles"]
     diff = report["paired_difference"]
+    ci = report["paired_interval"]
     t = report["threshold"]
     lines = [
         "# What ipTM 0.65 is worth",
@@ -355,6 +417,17 @@ def render(report: dict[str, Any]) -> str:
         f"mean {diff['mean']:+.3f}. "
         f"{report['n_designs_above_scramble']} of {report['n_pairs']} designs beat their "
         "own scramble.",
+        "",
+        (
+            f"95% bootstrap interval on the mean difference: "
+            f"**[{ci['low']:+.3f}, {ci['high']:+.3f}]**. With {ci['n_pairs']} pairs and a "
+            f"spread of {ci['sd']:.3f} between them, the smallest difference this run "
+            f"would catch 80% of the time is "
+            f"**{ci['min_detectable_difference_80pct']:.3f}** — so it bounds any real "
+            "advantage rather than showing there is none."
+            if ci["estimable"]
+            else f"{ci['n_pairs']} pair gives no spread to interval, so this run bounds nothing."
+        ),
         "",
         f"Exact paired sign-flip test over all {report['n_permutations']:,} assignments: "
         f"**p = {_fmt_p(report['exact_signflip_p'])}**"
