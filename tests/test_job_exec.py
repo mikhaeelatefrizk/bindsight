@@ -23,7 +23,16 @@ _TINY_PDB = (
     "ATOM      2  CA  ALA A   2      0.0  0.0  0.0  1.0  0.0           C\n"
     "ATOM      3  CA  GLY A   3      0.0  0.0  0.0  1.0  0.0           C\n"
 )
-_MPNN_FASTA = ">native, score=2.0\nMAG\n>T=0.1, sample=1, score=0.8\nGSHMSLEQKKGADII\n"
+#: The diffused binder chain's length. The stub's FASTA and the stub's backbone
+#: are built from one constant: ProteinMPNN returns a sequence for the chain it
+#: was given, so a 15-residue sequence against a 60-residue chain is a
+#: combination no real run produces, and the executor now refuses it rather than
+#: writing a structure that does not describe the design it is named for.
+_BINDER_LEN = 60
+_DESIGNED_SEQ = ("GSHMSLEQKKGADII" * 4)[:_BINDER_LEN]
+_MPNN_FASTA = (
+    f">native, score=2.0\n{'G' * _BINDER_LEN}\n>T=0.1, sample=1, score=0.8\n{_DESIGNED_SEQ}\n"
+)
 
 #: Chain letters RFdiffusion gives the output complex. The target moves to B and
 #: the diffused binder takes A — deliberately *not* the input target's letter, so
@@ -51,7 +60,7 @@ def _backbone_pdb() -> str:
     lines = [
         _atom_line(i, res, _TARGET_CHAIN, i) for i, res in enumerate(("MET", "ALA", "GLY"), start=1)
     ]
-    lines += [_atom_line(3 + i, "GLY", _BINDER_CHAIN, i) for i in range(1, 61)]
+    lines += [_atom_line(3 + i, "GLY", _BINDER_CHAIN, i) for i in range(1, _BINDER_LEN + 1)]
     return "\n".join(lines) + "\n"
 
 

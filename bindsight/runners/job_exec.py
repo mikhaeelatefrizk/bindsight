@@ -253,7 +253,11 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
         for i, seq in enumerate(seqs):
             binder_id = f"{_binder_id_prefix(spec)}_{backbone.stem}_seq{i}"
             pdb_copy = design_dir / f"{binder_id}.pdb"
-            pdb_copy.write_bytes(backbone.read_bytes())
+            # Write the design, not the backbone it came from. Copying the
+            # backbone verbatim gave every sequence from a trajectory a
+            # byte-identical file under a different name, each carrying the
+            # residues diffusion emitted rather than the ones ProteinMPNN chose.
+            tools.write_designed_backbone(backbone, pdb_copy, chain=binder_chain, sequence=seq)
             (design_dir / f"{binder_id}.fasta").write_text(f">{binder_id}\n{seq}\n")
             designs.append(Design(binder_id=binder_id, sequence=seq, pdb_path=pdb_copy))
     return designs

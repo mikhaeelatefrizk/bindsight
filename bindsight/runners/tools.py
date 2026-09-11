@@ -447,6 +447,68 @@ def chain_residues_from_pdb(pdb_path: Path, chain: str = "A") -> list[tuple[int,
     return residues
 
 
+_AA1TO3: dict[str, str] = {one: three for three, one in _AA3TO1.items()}
+
+
+def write_designed_backbone(backbone: Path, dest: Path, *, chain: str, sequence: str) -> None:
+    """Copy a backbone, rewriting one chain's residues to the designed sequence.
+
+    Every ProteinMPNN sequence for a trajectory used to be staged as a
+    byte-identical copy of the same RFdiffusion backbone. Twenty designs
+    produced twenty files with ten distinct contents, each named for a design
+    whose sequence it did not carry: the residues in it were the ones diffusion
+    happened to emit, and the designed sequence lived only in the sibling FASTA.
+    A reviewer opening ``..._seq0.pdb`` and ``..._seq1.pdb`` found the same file
+    twice.
+
+    Rewriting the residue names is a complete fix here rather than an
+    approximation, because RFdiffusion emits backbone atoms only — N, CA, C and
+    O, verified on the committed output — so there are no side chains to be left
+    inconsistent with the new identities. The coordinates are the design's
+    backbone and the residue names are now the design's sequence.
+
+    Only the binder chain is touched. The target chain is the native structure
+    the binder was designed against, and rewriting it is exactly the defect the
+    ``--pdb_path_chains`` fix exists to prevent.
+
+    Args:
+        backbone: the RFdiffusion output to copy.
+        dest: where to write the design.
+        chain: the binder chain id to rewrite.
+        sequence: the designed one-letter sequence for that chain.
+
+    Raises:
+        ValueError: If the chain is absent, or its residue count does not match
+            the sequence. A mismatch means the file would describe a molecule
+            that was never scored, which is worse than the duplicate it replaces.
+    """
+    lines = backbone.read_text(encoding="utf-8").splitlines(keepends=True)
+
+    order: list[str] = []
+    for line in lines:
+        if line.startswith(("ATOM", "HETATM")) and line[21:22] == chain:
+            residue = line[22:27]
+            if not order or order[-1] != residue:
+                order.append(residue)
+    if not order:
+        raise ValueError(f"{backbone.name}: chain {chain!r} has no residues to rewrite")
+    if len(order) != len(sequence):
+        raise ValueError(
+            f"{backbone.name}: chain {chain!r} has {len(order)} residues but the "
+            f"designed sequence is {len(sequence)}; refusing to write a structure "
+            "that does not describe the design it is named for"
+        )
+    position = {residue: index for index, residue in enumerate(order)}
+
+    out: list[str] = []
+    for line in lines:
+        if line.startswith(("ATOM", "HETATM")) and line[21:22] == chain:
+            three = _AA1TO3.get(sequence[position[line[22:27]]].upper(), "UNK")
+            line = line[:17] + f"{three:<3}" + line[20:]
+        out.append(line)
+    dest.write_text("".join(out), encoding="utf-8")
+
+
 def chain_sequence_from_pdb(pdb_path: Path, chain: str = "A") -> str:
     """Extract a chain's 1-letter sequence from a PDB (CA atoms, in order)."""
     return "".join(aa for _, aa in chain_residues_from_pdb(pdb_path, chain))

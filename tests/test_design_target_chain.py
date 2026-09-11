@@ -51,7 +51,16 @@ _TARGET_END = _TARGET_START + len(_TARGET_SEQ) - 1
 _TARGET_CHAIN_OUT = "B"
 _BINDER_CHAIN_OUT = "A"
 
-_MPNN_FASTA = ">native, score=2.0\nGGG\n>T=0.1, sample=1, score=0.8\nGSHMSLEQKKGADII\n"
+#: The designed binder chain's length. ProteinMPNN returns a sequence for the
+#: chain it was given, so the stub's FASTA and the stub's backbone are built from
+#: one constant. A 15-residue sequence for a 60-residue chain is a combination no
+#: real run produces, and the executor now refuses it rather than writing a
+#: structure that does not describe the design it is named for.
+_BINDER_LEN = 60
+_DESIGNED_SEQ = ("GSHMSLEQKKGADII" * 4)[:_BINDER_LEN]
+_MPNN_FASTA = (
+    f">native, score=2.0\n{'G' * _BINDER_LEN}\n>T=0.1, sample=1, score=0.8\n{_DESIGNED_SEQ}\n"
+)
 
 _THREE = {
     "A": "ALA",
@@ -102,7 +111,10 @@ def _backbone_pdb(target_part: str) -> str:
     """An RFdiffusion output complex: kept target block + poly-glycine binder."""
     target = _chain_pdb(target_part, _TARGET_CHAIN_OUT, start_resi=1)
     binder = _chain_pdb(
-        "G" * 60, _BINDER_CHAIN_OUT, start_resi=1, first_serial=len(target_part) + 1
+        "G" * _BINDER_LEN,
+        _BINDER_CHAIN_OUT,
+        start_resi=1,
+        first_serial=len(target_part) + 1,
     )
     return target + binder
 
@@ -518,3 +530,102 @@ def test_an_accession_with_awkward_characters_still_yields_a_usable_id(
         assert "/" not in d.binder_id
         assert ":" not in d.binder_id
         assert d.pdb_path.is_file(), "the id must be usable as a filename"
+
+
+# ---------------------------------------------------------------------------
+# P5 — the staged PDB must be the design, not the backbone it came from
+# ---------------------------------------------------------------------------
+class TestTheStagedStructureIsTheDesign:
+    """Every sequence from a trajectory was staged as the same backbone.
+
+    Twenty designs produced twenty files with ten distinct contents: each pair
+    sharing a backbone was byte-identical, and each carried the residues
+    diffusion emitted rather than the ones ProteinMPNN chose. The designed
+    sequence lived only in the sibling FASTA, so `..._seq0.pdb` and
+    `..._seq1.pdb` were the same file under two names, each named for a design
+    it did not describe.
+
+    Rewriting residue names is complete rather than approximate here, because
+    RFdiffusion emits backbone atoms only — verified on the committed output —
+    so no side chain is left inconsistent with its new identity.
+    """
+
+    def test_the_binder_chain_becomes_the_designed_sequence(self, tmp_path: Path) -> None:
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(_TARGET_SEQ[:40]))
+        out = tmp_path / "design.pdb"
+
+        tools.write_designed_backbone(
+            backbone, out, chain=_BINDER_CHAIN_OUT, sequence=_DESIGNED_SEQ
+        )
+        assert tools.chain_sequence_from_pdb(out, _BINDER_CHAIN_OUT) == _DESIGNED_SEQ
+
+    def test_the_target_chain_is_left_alone(self, tmp_path: Path) -> None:
+        """Rewriting it is precisely the defect --pdb_path_chains exists to stop."""
+        kept = _TARGET_SEQ[:40]
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(kept))
+        out = tmp_path / "design.pdb"
+
+        tools.write_designed_backbone(
+            backbone, out, chain=_BINDER_CHAIN_OUT, sequence=_DESIGNED_SEQ
+        )
+        assert tools.chain_sequence_from_pdb(out, _TARGET_CHAIN_OUT) == kept
+
+    def test_two_sequences_from_one_backbone_differ(self, tmp_path: Path) -> None:
+        """The defect itself: these were byte-identical files under two names."""
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(_TARGET_SEQ[:40]))
+        first, second = tmp_path / "seq0.pdb", tmp_path / "seq1.pdb"
+
+        tools.write_designed_backbone(
+            backbone, first, chain=_BINDER_CHAIN_OUT, sequence="A" * _BINDER_LEN
+        )
+        tools.write_designed_backbone(
+            backbone, second, chain=_BINDER_CHAIN_OUT, sequence="W" * _BINDER_LEN
+        )
+        assert first.read_bytes() != second.read_bytes()
+
+    def test_the_coordinates_are_preserved(self, tmp_path: Path) -> None:
+        """Only the identities change; the backbone geometry is the design's."""
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(_TARGET_SEQ[:40]))
+        out = tmp_path / "design.pdb"
+
+        tools.write_designed_backbone(
+            backbone, out, chain=_BINDER_CHAIN_OUT, sequence=_DESIGNED_SEQ
+        )
+        before = [ln[30:54] for ln in backbone.read_text().splitlines() if ln.startswith("ATOM")]
+        after = [ln[30:54] for ln in out.read_text().splitlines() if ln.startswith("ATOM")]
+        assert before == after
+
+    def test_a_length_mismatch_is_refused(self, tmp_path: Path) -> None:
+        """Writing it anyway would name a file for a molecule never scored."""
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(_TARGET_SEQ[:40]))
+        with pytest.raises(ValueError, match="does not describe the design"):
+            tools.write_designed_backbone(
+                backbone, tmp_path / "out.pdb", chain=_BINDER_CHAIN_OUT, sequence="ACDEF"
+            )
+
+    def test_an_absent_chain_is_refused(self, tmp_path: Path) -> None:
+        backbone = tmp_path / "binder_0.pdb"
+        backbone.write_text(_backbone_pdb(_TARGET_SEQ[:40]))
+        with pytest.raises(ValueError, match="no residues to rewrite"):
+            tools.write_designed_backbone(
+                backbone, tmp_path / "out.pdb", chain="Z", sequence=_DESIGNED_SEQ
+            )
+
+    def test_the_executor_stages_distinct_designs(self, recorded_run, tmp_path: Path) -> None:
+        """End to end: the run must not produce duplicate structures any more."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_target_pdb())
+
+        designs = job_exec._design_rfdiff_mpnn(_spec(), work, tmp_path / "tools")
+        assert designs
+        for design in designs:
+            staged = tools.chain_sequence_from_pdb(design.pdb_path, _BINDER_CHAIN_OUT)
+            assert staged == design.sequence, (
+                f"{design.pdb_path.name} does not carry the sequence it is named for"
+            )
