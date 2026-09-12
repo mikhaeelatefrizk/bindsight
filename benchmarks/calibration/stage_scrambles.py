@@ -50,6 +50,12 @@ sys.path.insert(0, str(REPO))
 from bindsight.runners import tools  # noqa: E402
 
 BENCH = REPO / "benchmarks" / "designer_benchmark"
+
+#: Defaults, not assumptions. The committed ERBB2 run is the set this control
+#: was first built for; it is not the only set worth controlling. A scramble
+#: control is meaningful for *any* design run — same length, same composition,
+#: order destroyed — so the paths are flags, and a user can calibrate their own
+#: designs rather than only reproduce this benchmark's.
 BINDERS = BENCH / "binders"
 NATIVE_TARGET = BENCH / "target" / "P04626_domain_IV.pdb"
 
@@ -130,6 +136,31 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=REPO / "runs" / "calibration")
     parser.add_argument(
+        "--binders",
+        type=Path,
+        default=BINDERS,
+        help=(
+            "directory of validated complexes (*_complex.cif) to build controls "
+            "from. Defaults to the committed ERBB2 benchmark; point it at any "
+            "design run's binders to calibrate that run instead."
+        ),
+    )
+    parser.add_argument(
+        "--target",
+        type=Path,
+        default=NATIVE_TARGET,
+        help=(
+            "the receptor those complexes were designed against, used to tell "
+            "the binder chain from the target chain by content rather than by "
+            "letter."
+        ),
+    )
+    parser.add_argument(
+        "--target-chain",
+        default="A",
+        help="chain of --target holding the receptor sequence.",
+    )
+    parser.add_argument(
         "--with-originals",
         action="store_true",
         help=(
@@ -141,18 +172,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if not NATIVE_TARGET.is_file():
-        print(f"missing the native target: {NATIVE_TARGET}", file=sys.stderr)
+    target = Path(args.target)
+    if not target.is_file():
+        print(f"missing the target structure: {target}", file=sys.stderr)
         return 1
-    native = tools.chain_sequence_from_pdb(NATIVE_TARGET, "A")
+    native = tools.chain_sequence_from_pdb(target, str(args.target_chain))
+    if not native:
+        print(
+            f"no sequence in chain {args.target_chain} of {target}; the binder "
+            "chain is identified by differing from it, so an empty one would "
+            "make every chain look like a binder",
+            file=sys.stderr,
+        )
+        return 1
 
     staged = Path(args.out) / "design"
     staged.mkdir(parents=True, exist_ok=True)
     rng = random.Random(SEED)
 
-    complexes = sorted(BINDERS.glob("*_complex.cif"))
+    binders = Path(args.binders)
+    complexes = sorted(binders.glob("*_complex.cif"))
     if not complexes:
-        print(f"no committed complexes under {BINDERS}", file=sys.stderr)
+        print(f"no *_complex.cif under {binders}", file=sys.stderr)
         return 1
 
     written = 0
@@ -187,7 +228,8 @@ def main(argv: list[str] | None = None) -> int:
 
     kind = "sequence(s)" if args.with_originals else "scrambled control(s)"
     print(f"staged {written} {kind} in {staged}")
-    print(f"target: {NATIVE_TARGET.name} ({len(native)} residues)")
+    print(f"binders: {binders} ({len(complexes)} complexes)")
+    print(f"target: {target.name} chain {args.target_chain} ({len(native)} residues)")
     return 0
 
 
