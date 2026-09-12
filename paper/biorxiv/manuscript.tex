@@ -61,9 +61,12 @@ tool to run both halves end-to-end and to carry machine-readable provenance
 across the join. The discovery half of the pipeline (differential expression $\to$
 surfaceome filter $\to$ druggability $\to$ AlphaFoldDB structure pull) runs
 on a CPU laptop; the GPU half (RFdiffusion backbone $\to$
-ProteinMPNN sequence $\to$ Boltz-2 validation) executes end-to-end on free
-Google Colab notebooks, paid Modal serverless GPU, local NVIDIA Docker, or
-Kaggle. A public web demo at
+ProteinMPNN sequence $\to$ Boltz-2 validation) runs end-to-end on a free
+Kaggle T4, which is the path the committed binder benchmark used. Paid Modal
+serverless GPU and local NVIDIA Docker are implemented but have not been run
+end to end, and the Colab path needs a human with a browser tab open because
+Google's API does not permit launching a free-tier notebook from a CLI; it is
+a demonstration rather than a reproducibility path. A public web demo at
 \href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}
 runs the full discovery pipeline in any browser without installation. On a real
 TCGA breast-carcinoma cohort (tumor vs.\ adjacent normal, auto-downloaded from
@@ -242,7 +245,8 @@ launched locally via \texttt{bindsight ui} once the package is installed.
   \end{pgfonlayer}
 \end{tikzpicture}
 \caption{\texttt{bindsight} pipeline. CPU stages run on the user's laptop;
-GPU stages run end-to-end on free Colab, paid Modal, local Docker, or Kaggle. All
+GPU stages run end to end on a free Kaggle T4; Modal, local Docker and Colab are
+implemented but have not been run end to end. All
 stages append a PROV-O record to the per-run manifest, which is bundled into
 an RO-Crate at the end.}
 \label{fig:pipeline}

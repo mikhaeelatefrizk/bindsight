@@ -345,14 +345,27 @@ _HEDGES = (
     "not yet",
     "prepared",
     "demonstration",
-    "demo",
+    # Not a bare "demo": the bioRxiv abstract's own paragraph says "A public web
+    # demo", which satisfied the scan while the sentence beside it claimed four
+    # backends run end to end. A hedge has to be the wording that actually
+    # qualifies the claim, not any nearby occurrence of the word.
+    "demonstration rather than",
+    "demo, not",
     "needs a human",
     "does not permit",
     "cannot",
     "implemented but",
 )
 
-MANUSCRIPTS = ("paper/paper.md", "paper/validation/manuscript.md")
+#: Every manuscript that ships. The bioRxiv .tex was missing from this list
+#: while the same module already governed it for licence and priority claims,
+#: and that is exactly where an unhedged four-backend claim survived — in the
+#: abstract, the most-read sentence the project publishes.
+MANUSCRIPTS = (
+    "paper/paper.md",
+    "paper/validation/manuscript.md",
+    "paper/biorxiv/manuscript.tex",
+)
 
 
 @pytest.mark.parametrize("rel", MANUSCRIPTS)
