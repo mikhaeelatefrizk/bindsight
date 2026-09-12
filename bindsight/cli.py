@@ -1292,6 +1292,30 @@ def _working_tree_wheel(backend: str, run_dir: Path) -> Path | None:
     return build_working_tree_wheel(run_dir / "_wheel")
 
 
+def _target_artifact_stem(target: dict[str, Any]) -> str:
+    """Filename stem for one design job's artifacts, unique per epitope site.
+
+    Keyed on the accession alone, a receptor with two qualifying sites had its
+    second job's tarball written over the first's — same name, different
+    binders, no warning — and the reader then found one archive where two jobs
+    had run. Discovery emits one epitopes row per site and each row becomes its
+    own job, so the accession is not the unit of work.
+
+    Mirrors :func:`bindsight.runners.job_exec._binder_id_prefix` deliberately, so
+    an archive's name and the binder ids inside it agree, and a whole-surface
+    job keeps the bare accession it has always had.
+    """
+    from bindsight.runners.job_exec import _binder_id_prefix
+
+    return _binder_id_prefix(
+        {
+            "target_uniprot": target.get("uniprot"),
+            "epitope_residues": target.get("residues") or [],
+            "epitope_chain": target.get("chain") or "A",
+        }
+    )
+
+
 def _top_targets(run_dir: Path) -> list[dict[str, Any]]:
     """Return top-N targets (uniprot, structure_path, chain, residues, ranges) to design.
 
@@ -1642,10 +1666,17 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
     metrics_lines: list[str] = []
     done = 0
     for t in targets:
-        tar_path = targets_dir / f"{t['uniprot']}.tar.gz"
+        # Written under the site-specific stem since the per-site collision was
+        # fixed. Runs made before that carry the bare accession, and they are
+        # still readable: a naming fix must not orphan the archives it renames.
+        tar_path = targets_dir / f"{_target_artifact_stem(t)}.tar.gz"
         if not tar_path.exists():
-            LOG_CLI.warning("no design tarball for %s; skipping", t["uniprot"])
-            continue
+            legacy = targets_dir / f"{t['uniprot']}.tar.gz"
+            if legacy.exists():
+                tar_path = legacy
+            else:
+                LOG_CLI.warning("no design tarball for %s; skipping", t["uniprot"])
+                continue
         with tempfile.TemporaryDirectory() as tmp:
             staged = Path(tmp) / "design"
             staged.mkdir(parents=True, exist_ok=True)
@@ -1763,7 +1794,9 @@ def _launch_design(
             extra["max_parallel_samples"] = int(max_parallel_samples)
         spec = spec.model_copy(update={"extra_params": extra})
         result = plugin.submit(spec, runner)
-        shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")
+        shutil.copy2(
+            result.results_archive_path, targets_dir / f"{_target_artifact_stem(t)}.tar.gz"
+        )
         mpath = Path(result.metrics_jsonl_path)
         if mpath.exists():
             metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]

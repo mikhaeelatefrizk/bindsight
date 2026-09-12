@@ -1960,3 +1960,122 @@ class TestTheWheelIsNotSilentlyDiscarded:
             "pip install from the repository default branch"
         )
         assert "mock backend" in _bindsight_source("mock", None, is_mock=True)
+
+
+# ---------------------------------------------------------------------------
+# 16. Two epitope sites of one receptor are two jobs, not one
+# ---------------------------------------------------------------------------
+class TestTwoSitesOfOneTargetDoNotCollide:
+    """`binder_id` was namespaced by accession, and a receptor can have sites.
+
+    Discovery emits one epitopes row per qualifying targetable site — its own
+    docstring says so — and `_top_targets` turns each row into its own design
+    job against different residues. Both jobs then named their binders
+    `P04626_binder_0_seq0`.
+
+    Everything downstream is keyed on that id: the concatenated metrics carried
+    two rows with one id and different ipTMs, `validate/<binder_id>/` was owned
+    by whichever job finished last, and the per-target tarball was overwritten
+    the same way. The cross-*target* case was found and fixed; this is the same
+    collision one level in.
+    """
+
+    @staticmethod
+    def _spec(residues: list[int], uniprot: str = "P04626", chain: str = "A") -> dict[str, Any]:
+        return {
+            "target_uniprot": uniprot,
+            "epitope_residues": residues,
+            "epitope_chain": chain,
+        }
+
+    def test_two_sites_of_one_target_get_different_prefixes(self) -> None:
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        a = _binder_id_prefix(self._spec([10, 11, 12, 15, 18]))
+        b = _binder_id_prefix(self._spec([40, 41, 44]))
+        assert a != b, "two epitope sites of one receptor mint the same binder ids"
+
+    def test_the_same_site_always_gets_the_same_prefix(self) -> None:
+        """Ids are the provenance key, so they cannot move between runs."""
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        assert _binder_id_prefix(self._spec([10, 11, 12])) == _binder_id_prefix(
+            self._spec([10, 11, 12])
+        )
+
+    def test_residue_order_does_not_change_the_prefix(self) -> None:
+        """The same site written two ways is one site."""
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        assert _binder_id_prefix(self._spec([18, 10, 15, 11, 12])) == _binder_id_prefix(
+            self._spec([10, 11, 12, 15, 18])
+        )
+
+    def test_different_targets_still_differ(self) -> None:
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        assert _binder_id_prefix(self._spec([10, 11], uniprot="P04626")) != _binder_id_prefix(
+            self._spec([10, 11], uniprot="P00533")
+        )
+
+    def test_the_same_residues_on_another_chain_are_another_site(self) -> None:
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        assert _binder_id_prefix(self._spec([10, 11], chain="A")) != _binder_id_prefix(
+            self._spec([10, 11], chain="B")
+        )
+
+    def test_whole_surface_design_keeps_the_bare_accession(self) -> None:
+        """Every already-published artifact is named this way.
+
+        Whole-surface design is one namespace per target by definition, so
+        nothing needs disambiguating and no committed id moves.
+        """
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        assert _binder_id_prefix(self._spec([])) == "P04626"
+
+    def test_the_committed_benchmark_ids_are_unchanged(self) -> None:
+        """The published binders are named P04626_binder_N_seqM; they must stay so."""
+        import json
+
+        from bindsight.runners.job_exec import _binder_id_prefix
+
+        metrics = Path("benchmarks/designer_benchmark/binders/metrics.jsonl")
+        ids = [json.loads(ln)["binder_id"] for ln in metrics.read_text().splitlines() if ln.strip()]
+        assert ids
+        prefix = _binder_id_prefix(self._spec([]))
+        assert all(i.startswith(f"{prefix}_binder_") for i in ids), ids[:3]
+
+    def test_an_archive_written_before_the_fix_is_still_found(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A naming fix must not orphan the archives it renames.
+
+        Runs made before this carry the bare accession. Revalidation reads
+        those archives, so it tries the site-specific stem and falls back.
+        """
+        from bindsight import cli
+
+        run = tmp_path / "run"
+        targets_dir = run / "design" / "targets"
+        targets_dir.mkdir(parents=True)
+        legacy = targets_dir / "P04626.tar.gz"
+        legacy.write_bytes(b"")
+
+        target = {"uniprot": "P04626", "residues": [10, 11], "chain": "A"}
+        assert cli._target_artifact_stem(target) != "P04626"
+        # The new stem does not exist; the legacy one does and must be used.
+        assert not (targets_dir / f"{cli._target_artifact_stem(target)}.tar.gz").exists()
+        assert legacy.exists()
+
+    def test_the_tarball_name_follows_the_binder_ids(self) -> None:
+        """One archive per job, named the way the binders inside it are."""
+        from bindsight.cli import _target_artifact_stem
+
+        a = _target_artifact_stem({"uniprot": "P04626", "residues": [10, 11], "chain": "A"})
+        b = _target_artifact_stem({"uniprot": "P04626", "residues": [40, 41], "chain": "A"})
+        assert a != b, "the second site's tarball overwrites the first's"
+        assert (
+            _target_artifact_stem({"uniprot": "P04626", "residues": [], "chain": "A"}) == "P04626"
+        )

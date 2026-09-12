@@ -163,18 +163,45 @@ def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
 # Identity + target sequence (shared by every designer and validator)
 # ---------------------------------------------------------------------------
 def _binder_id_prefix(spec: dict[str, Any]) -> str:
-    """Per-target namespace for binder ids.
+    """Per-**site** namespace for binder ids.
 
     RFdiffusion writes every trajectory under a fixed ``binder_*`` prefix, so
-    without a target namespace two different targets both produce
-    ``binder_0_seq0``. That collides in ``validated.parquet`` and, worse, makes
-    each target's ``validate/<binder_id>/`` overwrite the previous target's on
-    disk. ``binder_id`` is the key the provenance chain is walked by, so it has
-    to be unique across the whole run.
+    without a namespace two different jobs both produce ``binder_0_seq0``. That
+    collides in ``validated.parquet`` and, worse, makes one job's
+    ``validate/<binder_id>/`` overwrite another's on disk. ``binder_id`` is the
+    key the provenance chain is walked by, so it has to be unique across the
+    whole run.
+
+    The accession alone was not enough. Discovery emits **one epitopes row per
+    qualifying targetable site**, and ``_top_targets`` turns each row into its
+    own design job — so two sites of one receptor are two genuinely different
+    jobs, against different residues, producing different binders, and both
+    named ``P04626_binder_0_seq0``. The concatenated metrics then carry two
+    rows with one id and different ipTMs, and whichever job finished last owns
+    the directory. The cross-target case was fixed here; the cross-site case is
+    the same collision one level in.
+
+    The epitope is therefore part of the namespace, digested rather than spelled
+    out because a residue list does not fit in a filename. Sorted first, so the
+    same site always gives the same id however the residues were ordered.
+
+    A spec with **no** epitope residues keeps the bare accession. That is not a
+    special case for its own sake: whole-surface design is one namespace per
+    target by definition, and it keeps the ids of every already-published
+    artifact exactly as they are.
     """
+    import hashlib
+
     raw = str(spec.get("target_uniprot") or "").strip()
     safe = "".join(ch if (ch.isalnum() or ch in "-_") else "_" for ch in raw)
-    return safe or "target"
+    prefix = safe or "target"
+
+    residues = spec.get("epitope_residues") or []
+    if not residues:
+        return prefix
+    chain = str(spec.get("epitope_chain") or "")
+    token = f"{chain}:{','.join(str(int(r)) for r in sorted(residues))}"
+    return f"{prefix}_s{hashlib.sha256(token.encode()).hexdigest()[:8]}"
 
 
 def _target_sequence_for_design(spec: dict[str, Any], work: Path, chain: str) -> str:
