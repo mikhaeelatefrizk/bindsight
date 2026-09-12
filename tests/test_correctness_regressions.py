@@ -1035,6 +1035,26 @@ class TestTheCacheKeyCoversTheValidator:
         five = make_cache_key(self._spec(structure, validator="boltz2", diffusion_samples=5))
         assert one != five
 
+    def test_the_parallel_batch_size_changes_the_cache_key(self, tmp_path: Path) -> None:
+        """It looks like a performance knob. It is not one.
+
+        The sampler draws noise shaped by the batch, so one seed consumes the
+        RNG stream differently at batch 1 and batch 5 and yields different
+        structures. Two runs differing only in it are each reproducible and not
+        comparable to each other, which is exactly what a shared cache entry
+        would claim they are.
+        """
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        serial = make_cache_key(
+            self._spec(structure, validator="boltz2", diffusion_samples=5, max_parallel_samples=1)
+        )
+        batched = make_cache_key(
+            self._spec(structure, validator="boltz2", diffusion_samples=5, max_parallel_samples=5)
+        )
+        assert serial != batched
+
     def test_the_mode_changes_the_cache_key(self, tmp_path: Path) -> None:
         """A validate-only job runs no designer at all."""
         from bindsight.design._common import make_cache_key

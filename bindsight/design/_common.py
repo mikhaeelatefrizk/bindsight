@@ -339,9 +339,22 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
 #:
 #: ``diffusion_samples`` is here because it changes the reported number, not
 #: just its precision: the validator averages over that many draws, so one draw
-#: and five are different measurements of the same design. ``mode`` is here
-#: because a validate-only job runs no designer at all.
-_RESULT_AFFECTING_PARAMS = ("validator", "prescreen_top_k", "diffusion_samples", "mode")
+#: and five are different measurements of the same design.
+#:
+#: ``max_parallel_samples`` looks like a performance knob and is not one. The
+#: sampler draws noise shaped by the batch, so the same seed consumes the RNG
+#: stream differently at batch 1 and batch 5 and yields different structures.
+#: Two runs differing only in it are reproducible individually and not
+#: comparable to each other.
+#:
+#: ``mode`` is here because a validate-only job runs no designer at all.
+_RESULT_AFFECTING_PARAMS = (
+    "validator",
+    "prescreen_top_k",
+    "diffusion_samples",
+    "max_parallel_samples",
+    "mode",
+)
 
 
 def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:

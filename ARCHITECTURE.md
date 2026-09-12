@@ -167,7 +167,8 @@ over the work itself:
 ```
 sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
        ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed
-       ‖ validator ‖ prescreen_top_k ‖ diffusion_samples ‖ mode ‖ designer_commits)
+       ‖ validator ‖ prescreen_top_k ‖ diffusion_samples ‖ max_parallel_samples
+       ‖ mode ‖ designer_commits)
 ```
 
 then folded with where the work will run, which code will run there, and any
@@ -195,6 +196,9 @@ produced, a wrong answer that looked right:
 - **Diffusion samples.** The validator averages ipTM over that many draws from a
   stochastic model, so one draw and five are different measurements of the same
   design, not the same measurement at different precisions.
+- **Parallel sample batch.** This looks like a performance knob and is not one:
+  the sampler draws noise shaped by the batch, so one seed consumes the RNG
+  stream differently at batch 1 and batch 5 and produces different structures.
 - **Mode.** A `validate_only` job runs no designer at all; it scores binders it
   was handed.
 - **Payload digest** — the content and the relative path of every shipped binder.

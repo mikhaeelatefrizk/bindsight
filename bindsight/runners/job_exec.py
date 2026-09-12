@@ -413,6 +413,9 @@ def _validate_boltz2(
                 out_dir=out_dir,
                 seed=_binder_seed(int(spec.get("seed", 0)), d.binder_id),
                 diffusion_samples=int(spec.get("extra_params", {}).get("diffusion_samples", 1)),
+                max_parallel_samples=int(
+                    spec.get("extra_params", {}).get("max_parallel_samples", 1)
+                ),
             )
         )
         result = tools.parse_boltz_output(
