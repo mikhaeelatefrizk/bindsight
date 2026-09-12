@@ -80,6 +80,56 @@ controls the same claim would take. How much larger depends on how correlated
 shuffles of one sequence turn out to be, which this run will show and nothing
 here should guess.
 
+## What happened: the first row of the table
+
+The first outcome, the one that invalidates the metric. Full numbers in
+`CALIBRATION.md`; the short version:
+
+- **Designs and their own shuffles cleared 0.65 at the same rate: 40% and 40%.**
+- Paired difference +0.030, 13 of 20 designs beating their own shuffle where 10
+  is chance, exact sign-flip p = 0.57.
+- One shuffle scored **0.815** — above nineteen of the twenty designs.
+
+So the headline was withdrawn, as this document said in advance it would have to
+be. Stated precisely, though: the run **bounds** any real advantage at about
+0.14 ipTM (95% CI −0.070 to +0.127). It was not powered to see anything
+smaller, and "no difference found" is not "no difference".
+
+### The refold control was worse, and it named the cause
+
+The same twenty sequences also carry ipTM values from the earlier benchmark run.
+Refolding them here gave **Spearman r = 0.07** — the same sequences, ranked
+almost independently — with a median absolute move of 0.129, a maximum of 0.667,
+and **eight of twenty pass/fail verdicts flipped**. The design published as best
+(0.881) refolded at 0.418.
+
+That is not a subtle effect, and it pointed at a cause rather than at the
+designs. Boltz-2 builds structures by diffusion. Its `--seed` defaults to
+`None` — "no seeding", in its own help text — and `--diffusion_samples` to 1,
+and bindsight passed neither. **Every confidence number this project had
+published was a single unseeded draw from a stochastic model**, and the spread
+of that draw is four times the effect the scramble control was trying to
+measure.
+
+Both are fixed: the seed reaches the validator (derived per binder, so designs
+do not share a random state), every draw is read and averaged rather than the
+best one taken, and `iptm_n_samples` and `iptm_sd` record how many draws a
+number rests on and how far apart they were.
+
+### What is still open
+
+Whether the designs are genuinely no better than their shuffles, or whether the
+metric was simply too noisy to tell, **is not yet decided**. Those are different
+conclusions and this run cannot separate them. The seeded re-run with five
+diffusion draws per binder is what does: averaging five draws cuts the spread by
+√5, which brings the smallest detectable difference from 0.145 down to about
+0.065.
+
+Until that lands, the honest statement is the narrow one: *at the threshold the
+project ships, designs and composition-matched shuffles of themselves are
+indistinguishable, and the measurement was too noisy for that to be evidence
+about the designs.*
+
 ## Why the two arms are folded in one job
 
 The first submission staged scrambles alone, to be compared against the
