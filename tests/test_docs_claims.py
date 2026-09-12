@@ -576,7 +576,7 @@ def test_the_notice_states_the_numbers_that_justify_it() -> None:
     """A withdrawal without its evidence is an assertion like the one it replaces."""
     from bindsight.benchmark.designer_bench import IPTM_CALIBRATION_CAVEAT
 
-    for figure in ("40%", "+0.030", "0.57", "0.815", "0.129"):
+    for figure in ("50%", "30%", "−0.043", "0.40", "0.172", "0.139"):
         assert figure in IPTM_CALIBRATION_CAVEAT, f"the notice omits {figure}"
     assert "benchmarks/calibration" in IPTM_CALIBRATION_CAVEAT
 
@@ -590,9 +590,14 @@ def test_the_notice_matches_the_measured_artifact() -> None:
     results = json.loads(_read("benchmarks/calibration/RESULTS.json"))
     assert f"{results['design_pass_rate']:.0%}" in IPTM_CALIBRATION_CAVEAT
     assert f"{results['scramble_pass_rate']:.0%}" in IPTM_CALIBRATION_CAVEAT
-    assert f"{results['paired_difference']['mean']:+.3f}" in IPTM_CALIBRATION_CAVEAT
+    # Rendered with a typographic minus, so compare on the digits.
+    assert f"{abs(results['paired_difference']['mean']):.3f}" in IPTM_CALIBRATION_CAVEAT
     assert f"{results['exact_signflip_p']:.2f}" in IPTM_CALIBRATION_CAVEAT
-    assert f"{results['scrambles']['max']:.3f}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['refold_drift']['abs_delta']['median']:.3f}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['sampling_noise']['pooled_per_draw_sd']:.3f}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['variance_decomposition']['between_pair_share']:.0%}" in (
+        IPTM_CALIBRATION_CAVEAT
+    )
 
 
 def test_the_report_surfaces_carry_the_withdrawal_too() -> None:

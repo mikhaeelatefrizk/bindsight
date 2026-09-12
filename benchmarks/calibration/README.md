@@ -116,19 +116,49 @@ do not share a random state), every draw is read and averaged rather than the
 best one taken, and `iptm_n_samples` and `iptm_sd` record how many draws a
 number rests on and how far apart they were.
 
-### What is still open
+### The seeded re-run settled it, and not in the designs' favour
 
-Whether the designs are genuinely no better than their shuffles, or whether the
-metric was simply too noisy to tell, **is not yet decided**. Those are different
-conclusions and this run cannot separate them. The seeded re-run with five
-diffusion draws per binder is what does: averaging five draws cuts the spread by
-√5, which brings the smallest detectable difference from 0.145 down to about
-0.065.
+Same forty sequences, now seeded, five diffusion draws each, under a pinned
+`boltz==2.0.3` that the run recorded for itself. `CALIBRATION.md` holds the
+numbers; they are worse for the designs than the first run:
 
-Until that lands, the honest statement is the narrow one: *at the threshold the
-project ships, designs and composition-matched shuffles of themselves are
-indistinguishable, and the measurement was too noisy for that to be evidence
-about the designs.*
+- **designs clearing 0.65: 30%. Scrambles: 50%.** The shuffles pass more often
+  than the designs do.
+- Paired difference **−0.043** (95% CI −0.142 to +0.054); 9 of 20 designs beat
+  their own shuffle, where 10 is chance. Exact sign-flip p = 0.40.
+- Per-draw noise, measured within the job: **0.139**. The design-versus-scramble
+  effect is 0.043, well underneath it.
+
+So the answer to the question left open above is neither "the designs are
+better" nor "we still cannot tell". It is that **five times the sampling effort
+moved the answer slightly against the designs**, and the threshold's
+false-positive rate is now measured at 50% rather than 40%.
+
+### The prediction that failed, and what it taught
+
+This document predicted that averaging five draws would cut the paired spread by
+√5, from 0.145 to about 0.065. **It did not.** The spread went from 0.231 to
+0.230 — unchanged.
+
+That is the most useful number the run produced, because it says where the
+variance actually is. Each arm's standard error is measured directly, so the
+sampling share of the paired variance is exactly `2 × se²`:
+
+| source | share of the paired spread |
+|---|---|
+| the validator resampling the same input | **15%** |
+| real variation from one design/scramble pair to the next | **85%** |
+
+Buying more draws attacks the 15%. The other 85% is a property of the designs
+themselves and no amount of resampling touches it — which means the next
+experiment is **more pairs, not more draws**. Against the irreducible part
+alone, detecting a 0.05 difference at 80% power needs **142 pairs**, however
+many structures each one gets. Twenty pairs cannot see it.
+
+The earlier addendum on control-set size still holds and now has a companion:
+that one bounds the *false-positive rate*, this one bounds the *effect size*,
+and both are limits of how many pairs exist rather than of how hard the GPU
+works.
 
 ## Why the two arms are folded in one job
 

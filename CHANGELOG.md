@@ -19,6 +19,23 @@ different.
 
 The rate is **withdrawn as a measure of design quality**.
 
+**Settled by the seeded re-run.** Repeating the comparison with the designer and
+validator both seeded, five diffusion draws averaged per binder, under a pinned
+`boltz==2.0.3` the run recorded for itself: **shuffles clear 0.65 more often
+than the designs do — 50% against 30%**. The paired difference is −0.043 (95% CI
+−0.142 to +0.054, p = 0.40), and 9 of 20 designs beat their own shuffle where 10
+is chance. Five times the sampling effort moved the answer slightly further
+against the designs.
+
+**The prediction that failed is the useful part.** Averaging five draws was
+expected to cut the paired spread by √5. It did not move it at all: 0.230
+against 0.231. Because each arm's standard error is now measured directly, the
+split is exact — **15%** of the paired variance is the validator resampling the
+same input and **85%** is real variation from one design/scramble pair to the
+next. More draws attack the 15%; only more *pairs* touch the rest. Detecting a
+0.05 difference at 80% power needs 142 pairs however many structures each gets,
+so twenty pairs could never have seen it.
+
 - **Designs and their own shuffles cleared 0.65 at the same rate: 40% and 40%.**
   The paired difference was +0.030 (95% bootstrap CI −0.070 to +0.127), 13 of
   20 designs beat their own shuffle where 10 is chance, and an exact sign-flip

@@ -221,6 +221,62 @@ def paired_interval(diffs: list[float], *, confidence: float = 0.95) -> dict[str
     }
 
 
+def variance_decomposition(
+    paired_sd: float, noise: dict[str, Any] | None, *, targets: tuple[float, ...] = (0.10, 0.05)
+) -> dict[str, Any] | None:
+    """Split the paired spread into sampling noise and real pair-to-pair variation.
+
+    This is what decides which experiment to run next, and the two answers look
+    nothing alike. If the spread between pairs is mostly the validator resampling
+    the same input, more draws per binder buys precision. If it is mostly real
+    differences between one design/scramble pair and another, more draws buy
+    almost nothing and only more **pairs** help.
+
+    The question is answerable because each arm's value is a mean of ``k`` draws
+    whose standard error is measured directly, so the sampling share of the
+    paired variance is ``2 * se**2`` — two arms, independently drawn — and
+    whatever is left over is not sampling noise.
+
+    Args:
+        paired_sd: standard deviation of the per-pair differences.
+        noise: the :func:`sampling_noise` record, or ``None`` for a single-draw
+            run, where the split cannot be made at all.
+        targets: effect sizes to report a required pair count for.
+
+    Returns:
+        The split and the pair counts, or ``None`` when there is no measured
+        noise to subtract.
+    """
+    if not noise or noise.get("standard_error_of_reported_mean") is None:
+        return None
+
+    total = paired_sd**2
+    sampling = 2.0 * float(noise["standard_error_of_reported_mean"]) ** 2
+    between = max(total - sampling, 0.0)
+    if total <= 0:
+        return None
+
+    between_sd = math.sqrt(between)
+    return {
+        "paired_sd": paired_sd,
+        "sampling_variance": sampling,
+        "between_pair_variance": between,
+        "sampling_share": sampling / total,
+        "between_pair_share": between / total,
+        "between_pair_sd": between_sd,
+        # The floor more draws cannot cross: even with the sampling term driven
+        # to zero, this much pair-to-pair spread remains.
+        "pairs_needed": [
+            {
+                "effect": t,
+                # 80% power, two-sided 5%, against the irreducible spread alone.
+                "n_pairs": math.ceil((2.8016 * between_sd / t) ** 2),
+            }
+            for t in targets
+        ],
+    }
+
+
 def _describe(values: list[float]) -> dict[str, float]:
     """Summary statistics, or NaNs when there is nothing to summarise."""
     if not values:
@@ -383,6 +439,9 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
         "paired_difference": _describe(diffs),
         "paired_interval": paired_interval(diffs),
         "sampling_noise": noise,
+        "variance_decomposition": variance_decomposition(
+            paired_interval(diffs).get("sd", 0.0) or 0.0, noise
+        ),
         "n_designs_above_scramble": sum(x > 0 for x in diffs),
         "exact_signflip_p": p,
         "n_permutations": n_perm,
@@ -594,6 +653,29 @@ def render(report: dict[str, Any]) -> str:
                 else "That is larger than the spread of a single design's own draws, so "
                 "the comparison sits above the metric's noise floor."
             ),
+        ]
+
+    split = report.get("variance_decomposition")
+    if split:
+        lines += [
+            "",
+            "### Where the spread actually is",
+            "",
+            f"Of the {split['paired_sd']:.3f} spread between pairs, "
+            f"**{split['sampling_share']:.0%}** is the validator resampling the same "
+            f"input and **{split['between_pair_share']:.0%}** is real variation from one "
+            "design/scramble pair to the next.",
+            "",
+            "That decides the next experiment, and the two answers look nothing "
+            "alike. Drawing more structures per binder attacks only the first "
+            "share; the second is a property of the designs themselves and no "
+            "amount of resampling touches it. Against the irreducible part alone:",
+            "",
+        ]
+        lines += [
+            f"- detecting a {p['effect']:.2f} difference at 80% power needs "
+            f"**{p['n_pairs']} pairs**, however many draws each gets"
+            for p in split["pairs_needed"]
         ]
 
     if "refold_drift" in report:

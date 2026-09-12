@@ -491,6 +491,78 @@ class TestTheMetricsOwnNoiseIsMeasured:
         assert "The metric's own noise" not in calib.render(report)
 
 
+class TestTheVarianceIsAttributed:
+    """Which experiment to run next depends on where the spread lives.
+
+    The five-draw run measured this: averaging five structures per binder left
+    the paired spread at 0.230, against 0.231 with a single draw. Almost
+    unchanged — so the spread is not the validator resampling, and buying more
+    draws would have bought nothing. That is the opposite of the obvious
+    conclusion from the first run, and only the split shows it.
+    """
+
+    @staticmethod
+    def _noise(se: float) -> dict[str, object]:
+        return {
+            "standard_error_of_reported_mean": se,
+            "pooled_per_draw_sd": se * 5**0.5,
+            "draws_per_binder": [5],
+            "n_binders_with_spread": 40,
+        }
+
+    def test_pure_sampling_noise_is_attributed_to_sampling(self) -> None:
+        """Two arms each with standard error se give a paired sd of se*sqrt(2)."""
+        se = 0.1
+        split = calib.variance_decomposition(se * 2**0.5, self._noise(se))
+        assert split["sampling_share"] == pytest.approx(1.0, abs=1e-9)
+        assert split["between_pair_share"] == pytest.approx(0.0, abs=1e-9)
+
+    def test_spread_far_beyond_the_noise_is_attributed_to_the_pairs(self) -> None:
+        split = calib.variance_decomposition(0.5, self._noise(0.01))
+        assert split["between_pair_share"] > 0.99
+
+    def test_the_shares_sum_to_one(self) -> None:
+        split = calib.variance_decomposition(0.23, self._noise(0.0623))
+        assert split["sampling_share"] + split["between_pair_share"] == pytest.approx(1.0)
+
+    def test_noise_larger_than_the_spread_does_not_go_negative(self) -> None:
+        """Sampling estimated above the total is rounding, not anti-variance."""
+        split = calib.variance_decomposition(0.05, self._noise(0.3))
+        assert split["between_pair_variance"] == 0.0
+        assert split["between_pair_share"] == 0.0
+
+    def test_more_pairs_are_required_for_a_smaller_effect(self) -> None:
+        split = calib.variance_decomposition(0.23, self._noise(0.0623))
+        needed = {p["effect"]: p["n_pairs"] for p in split["pairs_needed"]}
+        assert needed[0.05] > needed[0.10]
+        # Quartering the effect quadruples the pairs, as n scales with 1/effect^2.
+        assert needed[0.05] == pytest.approx(needed[0.10] * 4, rel=0.1)
+
+    def test_a_single_draw_run_cannot_be_split(self) -> None:
+        """Nothing measured the noise, so nothing can be subtracted from it."""
+        assert calib.variance_decomposition(0.23, None) is None
+
+    def test_the_report_names_the_experiment_that_would_help(self, tmp_path: Path) -> None:
+        rows: list[dict[str, object]] = []
+        for i in range(20):
+            rows.append(
+                {"binder_id": f"b{i}", "iptm": 0.5 + i * 0.02, "iptm_sd": 0.05, "iptm_n_samples": 5}
+            )
+            rows.append(
+                {
+                    "binder_id": f"b{i}_scram",
+                    "iptm": 0.5 - i * 0.02,
+                    "iptm_sd": 0.05,
+                    "iptm_n_samples": 5,
+                }
+            )
+        m = tmp_path / "m.jsonl"
+        m.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        text = calib.render(calib.analyse(m, committed=None))
+        assert "Where the spread actually is" in text
+        assert "pairs**, however many draws each gets" in text
+
+
 class TestRefoldDriftIsLabelledForWhatItIs:
     def test_drift_is_reported_against_committed_values(self, tmp_path: Path) -> None:
         m = _metrics(tmp_path / "metrics.jsonl", {"b0": 0.80, "b0_scram": 0.30})
