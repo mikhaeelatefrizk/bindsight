@@ -42,6 +42,24 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--staged", type=Path, default=REPO / "runs" / "calibration")
+    parser.add_argument(
+        "--target",
+        type=Path,
+        default=NATIVE_TARGET,
+        help=(
+            "the receptor to fold against. Defaults to the one these binders "
+            "were designed for. Pointing it at a different receptor is the "
+            "specificity control: a design that scores as well against an "
+            "unrelated target is not a binder for either. A spec carries one "
+            "target, so that comparison necessarily spans two jobs — read it "
+            "against the refold drift the analysis reports."
+        ),
+    )
+    parser.add_argument(
+        "--target-uniprot",
+        default=TARGET_UNIPROT,
+        help="accession recorded for the target; change it with --target.",
+    )
     parser.add_argument("--backend", default="kaggle")
     parser.add_argument("--validator", default="boltz2")
     parser.add_argument(
@@ -66,13 +84,14 @@ def main(argv: list[str] | None = None) -> int:
     if not fastas:
         print(f"nothing staged under {staged}", file=sys.stderr)
         return 1
-    if not NATIVE_TARGET.is_file():
-        print(f"missing the native target: {NATIVE_TARGET}", file=sys.stderr)
+    target = Path(args.target)
+    if not target.is_file():
+        print(f"missing the target structure: {target}", file=sys.stderr)
         return 1
 
     spec = DesignSpec(
-        target_uniprot=TARGET_UNIPROT,
-        target_structure_path=str(NATIVE_TARGET),
+        target_uniprot=str(args.target_uniprot),
+        target_structure_path=str(target),
         epitope_chain="A",
         # No hotspots and no ranges: the committed target file *is* domain IV, so
         # the whole chain is the surface these binders were designed against.
@@ -109,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         designer_name=f"calibration:{args.validator}",
         designer_version="1",
         designer_commit_sha=None,
-        cache_key=make_cache_key(spec, extra=("calibration", str(args.validator))),
+        cache_key=make_cache_key(spec, extra=("calibration", str(args.validator), target.name)),
         payload_dir=staged,
     )
     print(f"metrics: {result.metrics_jsonl_path}")
