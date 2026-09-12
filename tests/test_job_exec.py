@@ -287,6 +287,48 @@ class TestTheValidatorIsSeeded:
                 tools.build_boltz_cmd(
                     yaml_path=Path("x.yaml"), out_dir=Path("o"), diffusion_samples=bad
                 )
+            with pytest.raises(ValueError, match="max_parallel_samples"):
+                tools.build_boltz_cmd(
+                    yaml_path=Path("x.yaml"), out_dir=Path("o"), max_parallel_samples=bad
+                )
+
+    def test_extra_samples_are_drawn_sequentially_unless_asked_otherwise(self) -> None:
+        """Boltz-2 batches all of them by default, and the T4 has no room.
+
+        ``--max_parallel_samples`` is documented as "Default is None" and is
+        actually 5, so asking for five draws silently diffuses five at once. The
+        instrumented run peaked at 10,917 MiB of the T4's 15,360 with a *single*
+        draw, so the default would spend a multi-hour job to find out it does
+        not fit.
+        """
+        from bindsight.runners import tools
+
+        cmd = tools.build_boltz_cmd(
+            yaml_path=Path("x.yaml"), out_dir=Path("o"), diffusion_samples=5
+        )
+        assert "--max_parallel_samples" in cmd, (
+            "the parallel batch size is left to Boltz-2's undocumented default"
+        )
+        assert cmd[cmd.index("--max_parallel_samples") + 1] == "1"
+
+    def test_a_caller_with_the_vram_can_still_batch(self) -> None:
+        from bindsight.runners import tools
+
+        cmd = tools.build_boltz_cmd(
+            yaml_path=Path("x.yaml"),
+            out_dir=Path("o"),
+            diffusion_samples=8,
+            max_parallel_samples=4,
+        )
+        assert cmd[cmd.index("--max_parallel_samples") + 1] == "4"
+
+    def test_a_single_draw_adds_no_sampling_flags(self) -> None:
+        """The default path must stay byte-identical to what has always run."""
+        from bindsight.runners import tools
+
+        cmd = tools.build_boltz_cmd(yaml_path=Path("x.yaml"), out_dir=Path("o"))
+        assert "--diffusion_samples" not in cmd
+        assert "--max_parallel_samples" not in cmd
 
 
 def test_materialise_target_copies_pdb(tmp_path: Path) -> None:

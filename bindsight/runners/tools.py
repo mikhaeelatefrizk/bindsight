@@ -271,6 +271,7 @@ def build_boltz_cmd(
     use_msa_server: bool = True,
     seed: int | None = None,
     diffusion_samples: int = 1,
+    max_parallel_samples: int = 1,
 ) -> list[str]:
     """Boltz-2 ``boltz predict`` argv for structure + affinity prediction.
 
@@ -295,15 +296,18 @@ def build_boltz_cmd(
         seed: RNG seed. ``None`` leaves Boltz-2 unseeded, which is only
             appropriate when drawing deliberately independent samples.
         diffusion_samples: how many structures to draw per input.
+        max_parallel_samples: how many of those to diffuse at once.
 
     Returns:
         The argv list.
 
     Raises:
-        ValueError: If ``diffusion_samples`` is not positive.
+        ValueError: If either count is not positive.
     """
     if diffusion_samples < 1:
         raise ValueError(f"diffusion_samples must be at least 1; got {diffusion_samples}")
+    if max_parallel_samples < 1:
+        raise ValueError(f"max_parallel_samples must be at least 1; got {max_parallel_samples}")
     cmd = [_boltz_bin(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
     if use_msa_server:
         cmd.append("--use_msa_server")
@@ -311,6 +315,16 @@ def build_boltz_cmd(
         cmd += ["--seed", str(seed)]
     if diffusion_samples != 1:
         cmd += ["--diffusion_samples", str(diffusion_samples)]
+        # Always explicit, and sequential by default. Boltz-2's own default is
+        # 5 — its ``--max_parallel_samples`` help text says "Default is None"
+        # while the click option says ``default=5`` — so asking for five draws
+        # silently diffuses all five at once. The instrumented run measured a
+        # peak of 10,917 MiB of the T4's 15,360 with a single draw of a
+        # ~230-token complex, leaving about 4 GB of headroom, and this project
+        # targets free-tier cards. Sequential trades wall-clock for not losing
+        # the whole job to an out-of-memory kill hours in; a caller with the
+        # VRAM can raise it.
+        cmd += ["--max_parallel_samples", str(max_parallel_samples)]
     return cmd
 
 
