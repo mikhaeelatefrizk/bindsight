@@ -276,8 +276,16 @@ def design(
         return
 
     _seed, _blo, _bhi = _design_spec_params_from_run(run_dir)
+    _top_k, _samples, _parallel = _validator_params_from_run(run_dir)
     launched = _launch_design(
-        run_dir, backend=backend, designer=designer, validator=validator, trajectories=trajectories
+        run_dir,
+        backend=backend,
+        designer=designer,
+        validator=validator,
+        trajectories=trajectories,
+        prescreen_top_k=_top_k,
+        diffusion_samples=_samples,
+        max_parallel_samples=_parallel,
     )
     if launched == 0:
         console.print(
@@ -1156,6 +1164,53 @@ def _design_defaults_from_run(
     return designer, validator, trajectories
 
 
+def _validator_params_from_run(run_dir: Path) -> tuple[int | None, int, int]:
+    """Validator settings this command has no flag for, read from the run's config.
+
+    ``_design_defaults_from_run`` fills in options that *are* flags, deferring to
+    an explicit one. These three are not flags, so the configuration is their
+    only source — and this command was not reading them, which made them inert
+    on the one path that runs design without ``bindsight run``.
+
+    ``prescreen_top_k`` is the expensive one to lose: ``--cheap`` sets it, and
+    dropping it validates every design instead of the configured few, paying the
+    GPU cost the profile exists to avoid. It is the same defect this command
+    already carries a fix for — a configured value honoured by ``bindsight run``
+    and silently ignored here — one field further along.
+
+    Args:
+        run_dir: the run directory holding the effective ``config.yaml``.
+
+    Returns:
+        ``(prescreen_top_k, diffusion_samples, max_parallel_samples)``, using the
+        schema's own defaults when the file is absent or unreadable.
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return None, 1, 1
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        design_params = params.get("design") or {}
+        validate_params = params.get("validate") or {}
+    except Exception as e:  # pragma: no cover - a malformed config is the user's
+        log.warning("could not read %s (%s); using defaults", cfg_path, e)
+        return None, 1, 1
+
+    top_k = design_params.get("prescreen_top_k")
+    samples = int(validate_params.get("diffusion_samples") or 1)
+    parallel = int(validate_params.get("max_parallel_samples") or 1)
+    if top_k:
+        log.info("using prescreen_top_k=%s from %s", top_k, cfg_path)
+    if samples != 1:
+        log.info("using diffusion_samples=%d from %s", samples, cfg_path)
+    return (int(top_k) if top_k else None), samples, parallel
+
+
 def _design_spec_params_from_run(run_dir: Path) -> tuple[int, int, int]:
     """Read the design parameters a run was configured with, for its spec.
 
@@ -1652,6 +1707,8 @@ def _launch_design(
     validator: str,
     trajectories: int,
     prescreen_top_k: int | None = None,
+    diffusion_samples: int = 1,
+    max_parallel_samples: int = 1,
 ) -> int:
     """Run design+validation for each top target via a headless runner backend.
 
@@ -1698,6 +1755,12 @@ def _launch_design(
         }
         if prescreen_top_k:
             extra["prescreen_top_k"] = int(prescreen_top_k)
+        # Only when asked for. Both default to 1, so a run that does not set
+        # them produces the same spec — and the same cache key — as before.
+        if diffusion_samples and int(diffusion_samples) != 1:
+            extra["diffusion_samples"] = int(diffusion_samples)
+        if max_parallel_samples and int(max_parallel_samples) != 1:
+            extra["max_parallel_samples"] = int(max_parallel_samples)
         spec = spec.model_copy(update={"extra_params": extra})
         result = plugin.submit(spec, runner)
         shutil.copy2(result.results_archive_path, targets_dir / f"{t['uniprot']}.tar.gz")

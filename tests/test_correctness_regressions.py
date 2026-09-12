@@ -1762,3 +1762,123 @@ class TestTheManifestRecordsTheSeed:
         )
         assert params["binder_length_min"] == 55
         assert "binder_length_max" in params
+
+
+# ---------------------------------------------------------------------------
+# 14. The same command, the same defect, one field further along
+# ---------------------------------------------------------------------------
+class TestTheValidatorSettingsReachTheDesignPath:
+    """`bindsight design` read the config for flags and stopped there.
+
+    An earlier fix taught the subcommand to read the run's configuration for the
+    options that *are* command-line flags — designer, validator, trajectories.
+    The ones with no flag were left behind, so `params.design.prescreen_top_k`
+    was honoured by `bindsight run` and silently dropped here.
+
+    That one is expensive to lose. `--cheap` sets it (pinned in
+    tests/test_cheap_profile.py), and without it every design is validated
+    instead of the configured few, paying exactly the GPU cost the profile
+    exists to avoid — quietly, because a run that validates more designs looks
+    like a run that simply had more designs.
+    """
+
+    @staticmethod
+    def _run_dir(tmp_path: Path, **params: object) -> Path:
+        import yaml
+
+        run = tmp_path / "run"
+        run.mkdir()
+        (run / "config.yaml").write_text(yaml.safe_dump({"params": params}), encoding="utf-8")
+        return run
+
+    def test_the_prescreen_size_is_read(self, tmp_path: Path) -> None:
+        from bindsight.cli import _validator_params_from_run
+
+        run = self._run_dir(tmp_path, design={"prescreen_top_k": 5})
+        assert _validator_params_from_run(run)[0] == 5
+
+    def test_the_sample_count_is_read(self, tmp_path: Path) -> None:
+        """Configured but unreachable is the same as absent."""
+        from bindsight.cli import _validator_params_from_run
+
+        run = self._run_dir(tmp_path, validate={"diffusion_samples": 5})
+        assert _validator_params_from_run(run)[1] == 5
+
+    def test_the_parallel_batch_is_read(self, tmp_path: Path) -> None:
+        from bindsight.cli import _validator_params_from_run
+
+        run = self._run_dir(tmp_path, validate={"max_parallel_samples": 3})
+        assert _validator_params_from_run(run)[2] == 3
+
+    def test_an_absent_config_falls_back_to_the_schema_defaults(self, tmp_path: Path) -> None:
+        from bindsight.cli import _validator_params_from_run
+
+        run = tmp_path / "bare"
+        run.mkdir()
+        assert _validator_params_from_run(run) == (None, 1, 1)
+
+    def test_a_malformed_config_does_not_abort_the_command(self, tmp_path: Path) -> None:
+        """The user's YAML is the user's; it must not take the run down."""
+        from bindsight.cli import _validator_params_from_run
+
+        run = tmp_path / "run"
+        run.mkdir()
+        (run / "config.yaml").write_text("params: [not, a, mapping\n", encoding="utf-8")
+        assert _validator_params_from_run(run) == (None, 1, 1)
+
+    def test_the_values_reach_the_launcher_not_just_the_reader(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Reading a setting and passing it on are different things.
+
+        This is the whole defect: the config was parsed and the value was
+        dropped on the floor. A test that only exercises the reader passes with
+        the threading deleted, which is how the original slipped through — so
+        this one drives the real command and inspects what the launcher was
+        handed.
+        """
+        import yaml
+        from click.testing import CliRunner
+
+        from bindsight import cli
+
+        run = tmp_path / "run"
+        run.mkdir()
+        (run / "config.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "params": {
+                        "design": {"prescreen_top_k": 7},
+                        "validate": {"diffusion_samples": 4, "max_parallel_samples": 2},
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        seen: dict[str, Any] = {}
+
+        def _capture(_run_dir: Path, **kwargs: Any) -> int:
+            seen.update(kwargs)
+            return 0
+
+        monkeypatch.setattr(cli, "_launch_design", _capture)
+        CliRunner().invoke(cli.main, ["design", str(run), "--backend", "mock"])
+
+        assert seen.get("prescreen_top_k") == 7, (
+            "the configured prescreen was read and then not passed to the launcher"
+        )
+        assert seen.get("diffusion_samples") == 4
+        assert seen.get("max_parallel_samples") == 2
+
+    def test_the_defaults_keep_the_spec_and_its_key_unchanged(self) -> None:
+        """Both sampling options default to 1, so an unconfigured run is untouched.
+
+        A change that altered every existing cache key would have made every
+        completed job pay for itself again.
+        """
+        from bindsight.config import ValidateParams
+
+        params = ValidateParams()
+        assert params.diffusion_samples == 1
+        assert params.max_parallel_samples == 1

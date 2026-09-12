@@ -273,6 +273,24 @@ class ValidateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     validator: Literal["boltz2", "chai1r", "af2_ig"] = "boltz2"
+
+    # How many structures the validator draws per binder, and how many of those
+    # it diffuses at once.
+    #
+    # Boltz-2 builds structures by diffusion, so one draw is a sample rather
+    # than a measurement. The calibration measured what that costs: refolding
+    # twenty sequences moved ipTM by a median of 0.129 and flipped eight of
+    # twenty verdicts at the threshold below. Averaging k draws cuts that spread
+    # by sqrt(k) and costs GPU time close to linearly, so the default stays 1
+    # and the choice is the user's — but it is now a choice rather than
+    # something only the executor could reach.
+    #
+    # The batch size is not a performance knob: the sampler draws noise shaped
+    # by the batch, so a seed consumes the RNG stream differently at batch 1 and
+    # batch 5. Sequential by default because the free-tier T4 this project
+    # targets peaked at 10,917 MiB of 15,360 on a single draw.
+    diffusion_samples: int = Field(1, ge=1)
+    max_parallel_samples: int = Field(1, ge=1)
     # Quality bars applied to validated binders. Every row is annotated with
     # ``passes_thresholds`` and a reason regardless of the flag — the bars are
     # descriptive by default. ``apply_thresholds`` additionally moves failing
