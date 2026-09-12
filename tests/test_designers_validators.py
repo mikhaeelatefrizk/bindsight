@@ -310,6 +310,90 @@ class TestTheRecordedValidatorVersionIsMeasured:
         assert not offenders, "validator_version is assigned a literal at " + "; ".join(offenders)
 
 
+class TestEveryDiffusionDrawIsCounted:
+    """Boltz ranks its samples best-first, so reading one reported the maximum.
+
+    With ``--diffusion_samples k`` Boltz writes ``model_0..model_{k-1}`` sorted
+    by confidence descending. Taking whichever file ``rglob`` yielded first
+    therefore reported a max over k — an estimate that improves as more samples
+    are bought, with no change to the design being scored. Averaging estimates
+    the distribution's centre; the best draw estimates nothing.
+    """
+
+    @staticmethod
+    def _out(tmp_path: Path, iptms: list[float], paes: list[float] | None = None) -> Path:
+        out = tmp_path / "predictions" / "run"
+        out.mkdir(parents=True)
+        paes = paes if paes is not None else [5.0] * len(iptms)
+        for i, (iptm, pae) in enumerate(zip(iptms, paes, strict=True)):
+            (out / f"confidence_run_model_{i}.json").write_text(
+                json.dumps({"iptm": iptm, "pae_interaction": pae})
+            )
+        return tmp_path
+
+    def test_iptm_is_the_mean_not_the_best_draw(self, tmp_path: Path) -> None:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        # Best-first, as Boltz writes them.
+        root = self._out(tmp_path, [0.90, 0.60, 0.50, 0.40, 0.30])
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm == pytest.approx(0.54)
+        assert row.iptm != pytest.approx(0.90), "reported the best draw, not an estimate"
+
+    def test_the_number_of_draws_is_recorded(self, tmp_path: Path) -> None:
+        """A single draw and an average of five must not look alike."""
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        root = self._out(tmp_path, [0.9, 0.6, 0.5])
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm_n_samples == 3
+        assert "3 sample(s)" in (row.notes or "")
+
+    def test_the_spread_across_draws_is_recorded(self, tmp_path: Path) -> None:
+        """The metric's own noise, measured on one input in one job."""
+        import statistics
+
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        values = [0.90, 0.60, 0.50, 0.40, 0.30]
+        root = self._out(tmp_path, values)
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm_sd == pytest.approx(statistics.stdev(values))
+
+    def test_one_draw_has_no_spread(self, tmp_path: Path) -> None:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        root = self._out(tmp_path, [0.77])
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm == pytest.approx(0.77)
+        assert row.iptm_n_samples == 1
+        assert row.iptm_sd is None, "a single draw cannot have a spread"
+
+    def test_pae_is_averaged_across_draws_too(self, tmp_path: Path) -> None:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        root = self._out(tmp_path, [0.9, 0.5], paes=[4.0, 8.0])
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.pae_interaction == pytest.approx(6.0)
+
+    def test_a_corrupt_draw_does_not_discard_the_others(self, tmp_path: Path) -> None:
+        """One unreadable file must cost one sample, not the whole binder."""
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        root = self._out(tmp_path, [0.8, 0.6])
+        (root / "predictions" / "run" / "confidence_run_model_2.json").write_text("{not json")
+        row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm == pytest.approx(0.7)
+        assert row.iptm_n_samples == 2
+
+    def test_no_output_still_yields_a_row_with_nulls(self, tmp_path: Path) -> None:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        row = parse_boltz_output(output_dir=tmp_path, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm is None
+        assert row.iptm_n_samples is None
+
+
 class TestEveryValidatorRecordsWhatItRan:
     """Each parser reports its own tool's provenance, by its own mechanism."""
 

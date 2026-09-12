@@ -92,6 +92,27 @@ class ValidationResult(BaseModel):
         le=1.0,
         description="Probability the design is a binder vs. a decoy (early-discovery filter).",
     )
+    iptm_n_samples: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "How many independent draws ``iptm`` averages. Boltz-2 builds "
+            "structures by diffusion, so one draw is a sample, not a "
+            "measurement — a reader cannot otherwise tell a single draw from an "
+            "average of five. ``None`` means the run predates this field and "
+            "the count is unknown."
+        ),
+    )
+    iptm_sd: float | None = Field(
+        None,
+        ge=0.0,
+        description=(
+            "Spread of ``iptm`` across those draws, or ``None`` when there was "
+            "only one. This is the metric's own noise, measured on the same "
+            "input in the same job, and it is what any difference between two "
+            "designs has to be larger than to mean anything."
+        ),
+    )
     validator_name: str
     validator_version: str
     notes: str | None = None

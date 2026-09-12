@@ -451,24 +451,29 @@ def _boltz_pae_interaction(out_dir: Path, *, target_len: int, binder_len: int) -
     The PAE matrix is over all residue tokens in chain order (target, then binder),
     so the off-diagonal blocks [target × binder] and [binder × target] are the
     interface PAE — lower means a more confident interface.
-    """
-    npz = next(Path(out_dir).rglob("pae_*.npz"), None)
-    if npz is None:
-        return None
-    try:
-        import numpy as np
 
-        data = np.load(npz)
-        pae = data["pae"] if "pae" in data.files else data[data.files[0]]
-        n = target_len + binder_len
-        if pae.ndim != 2 or pae.shape != (n, n):
-            return None
-        t = target_len
-        inter = np.concatenate([pae[:t, t:].ravel(), pae[t:, :t].ravel()])
-        return float(inter.mean()) if inter.size else None
-    except Exception as e:  # malformed npz must not abort the job
-        LOG.warning("failed to compute PAE-interaction from %s: %s", npz, e)
-        return None
+    Averaged over every diffusion draw, for the same reason ipTM is: Boltz ranks
+    its samples best-first, so taking whichever ``pae_*.npz`` turned up first
+    reported the most confident draw rather than a representative one, and that
+    number would improve with every extra sample bought.
+    """
+    import numpy as np
+
+    values: list[float] = []
+    for npz in sorted(Path(out_dir).rglob("pae_*.npz")):
+        try:
+            data = np.load(npz)
+            pae = data["pae"] if "pae" in data.files else data[data.files[0]]
+            n = target_len + binder_len
+            if pae.ndim != 2 or pae.shape != (n, n):
+                continue
+            t = target_len
+            inter = np.concatenate([pae[:t, t:].ravel(), pae[t:, :t].ravel()])
+            if inter.size:
+                values.append(float(inter.mean()))
+        except Exception as e:  # a malformed npz must not abort the job
+            LOG.warning("failed to compute PAE-interaction from %s: %s", npz, e)
+    return sum(values) / len(values) if values else None
 
 
 def _validate_chai1r(

@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import logging
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -133,20 +134,38 @@ def parse_boltz_output(
     """
     # Boltz writes to <out_dir>/predictions/<name>/confidence_*.json, so search
     # recursively (rglob) rather than only the top level.
-    confidence_path = next(output_dir.rglob("confidence_*.json"), None)
+    #
+    # *Every* one of them, not the first. With --diffusion_samples > 1 Boltz
+    # writes one per draw and ranks them by confidence descending, so
+    # ``model_0`` is the best draw rather than a representative one. Reading
+    # whichever file turned up first therefore reported a maximum over k — an
+    # estimate that improves as more samples are bought, with no change to the
+    # design. Averaging is the estimate of the distribution's centre; the best
+    # draw is not an estimate of anything.
+    confidence_paths = sorted(output_dir.rglob("confidence_*.json"))
     affinity_path = next(output_dir.rglob("affinity_*.json"), None)
 
     iptm = pae_interaction = affinity_value = affinity_prob = None
+    iptm_samples: list[float] = []
+    pae_samples: list[float] = []
 
-    if confidence_path is not None:
+    for path in confidence_paths:
         try:
-            cdata = json.loads(confidence_path.read_text())
-            iptm = _safe_float(cdata.get("iptm"))
-            pae_interaction = _safe_float(
-                cdata.get("pae_interaction") or cdata.get("interface_pae")
-            )
+            cdata = json.loads(path.read_text())
         except (json.JSONDecodeError, OSError) as e:
-            LOG.warning("failed to parse %s: %s", confidence_path, e)
+            LOG.warning("failed to parse %s: %s", path, e)
+            continue
+        value = _safe_float(cdata.get("iptm"))
+        if value is not None:
+            iptm_samples.append(value)
+        pae = _safe_float(cdata.get("pae_interaction") or cdata.get("interface_pae"))
+        if pae is not None:
+            pae_samples.append(pae)
+
+    if iptm_samples:
+        iptm = statistics.fmean(iptm_samples)
+    if pae_samples:
+        pae_interaction = statistics.fmean(pae_samples)
 
     if affinity_path is not None:
         try:
@@ -160,13 +179,15 @@ def parse_boltz_output(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=iptm,
+        iptm_n_samples=len(iptm_samples) or None,
+        iptm_sd=statistics.stdev(iptm_samples) if len(iptm_samples) > 1 else None,
         pae_interaction=pae_interaction,
         affinity_pred_value=affinity_value,
         affinity_probability_binary=affinity_prob,
         validator_name="boltz2",
         validator_version=installed_boltz_version() or UNRECORDED_VERSION,
         notes=(
-            f"parsed confidence={'yes' if confidence_path else 'no'}, "
+            f"parsed confidence={len(confidence_paths)} sample(s), "
             f"affinity={'yes' if affinity_path else 'no'}"
         ),
     )
