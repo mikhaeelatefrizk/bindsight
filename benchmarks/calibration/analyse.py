@@ -426,8 +426,30 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
             if b in before
         ]
         if drift:
+            # Rank correlation, not just the spread. Two runs can move every
+            # value and still agree on which designs are best, which would make
+            # the drift a calibration offset rather than a reordering; if the
+            # ranks disagree too, no per-design claim survives the rerun.
+            # Computed here rather than quoted from memory: this number is
+            # cited in the withdrawal notice, so it has to come out of the
+            # artifact like every other published figure.
+            from scipy import stats
+
+            before_vals = [x["committed"] for x in drift]
+            after_vals = [x["refolded"] for x in drift]
+            spearman = pearson = None
+            if len(drift) > 2:
+                spearman = float(stats.spearmanr(before_vals, after_vals).statistic)
+                pearson = float(stats.pearsonr(before_vals, after_vals).statistic)
             report["refold_drift"] = {
                 "n": len(drift),
+                "spearman_r": spearman,
+                "pearson_r": pearson,
+                "n_verdicts_flipped": sum(
+                    (x["committed"] >= DEFAULT_IPTM_SUCCESS)
+                    != (x["refolded"] >= DEFAULT_IPTM_SUCCESS)
+                    for x in drift
+                ),
                 "note": "run-to-run and version-to-version drift together, not determinism",
                 "abs_delta": _describe([abs(x["delta"]) for x in drift]),
                 "per_binder": drift,
@@ -589,6 +611,16 @@ def render(report: dict[str, Any]) -> str:
             "",
             f"Absolute change: median {a['median']:.3f}, max {a['max']:.3f}.",
         ]
+        if drift.get("spearman_r") is not None:
+            lines += [
+                "",
+                f"The two runs agree on **rank** at Spearman r = "
+                f"{drift['spearman_r']:.3f} (Pearson {drift['pearson_r']:.3f}), and "
+                f"**{drift['n_verdicts_flipped']} of {drift['n']}** pass/fail verdicts "
+                f"at {report['threshold']} differ between them. A drift that preserved "
+                "rank would be an offset; one that does not leaves no per-design claim "
+                "standing.",
+            ]
     return "\n".join(lines) + "\n"
 
 

@@ -84,7 +84,7 @@ control set the answer needs is sized in `benchmarks/calibration/README.md`.
   help spells "no seeding", and `--diffusion_samples` to 1. The calibration
   measured the cost: refolding the same twenty sequences moved ipTM by a median
   of 0.129 and a maximum of 0.667, flipped eight of twenty verdicts at 0.65, and
-  left the two runs correlated at Spearman 0.07. The design published as best
+  left the two runs correlated at Spearman 0.065. The design published as best
   (0.881) refolded at 0.418. This is the defect already recorded for
   `params.design.seed` — declared, documented, read by no code — one stage
   further along: the seed reached the designer and stopped there.

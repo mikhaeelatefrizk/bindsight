@@ -192,7 +192,9 @@
       "sd": 0.2101929678879837
     },
     "n": 20,
+    "n_verdicts_flipped": 8,
     "note": "run-to-run and version-to-version drift together, not determinism",
+    "pearson_r": 0.19321326323718516,
     "per_binder": [
       {
         "binder_id": "P04626_binder_0_seq0",
@@ -314,8 +316,10 @@
         "delta": -0.5431415140628815,
         "refolded": 0.2957487404346466
       }
-    ]
+    ],
+    "spearman_r": 0.06466165413533834
   },
+  "sampling_noise": null,
   "scramble_pass_rate": 0.4,
   "scrambles": {
     "max": 0.814824104309082,

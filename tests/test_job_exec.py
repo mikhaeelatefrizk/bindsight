@@ -193,7 +193,7 @@ class TestTheValidatorIsSeeded:
     The calibration run measured the cost: refolding the same twenty sequences
     moved ipTM by a median of 0.129 and a maximum of 0.667, flipped eight of
     twenty verdicts at the shipped 0.65 threshold, and left the two runs
-    correlated at Spearman 0.07. This is the same defect the suite already
+    correlated at Spearman 0.065. This is the same defect the suite already
     records for ``params.design.seed`` — declared, documented, read by no code —
     one stage further along.
     """

@@ -98,7 +98,7 @@ smaller, and "no difference found" is not "no difference".
 ### The refold control was worse, and it named the cause
 
 The same twenty sequences also carry ipTM values from the earlier benchmark run.
-Refolding them here gave **Spearman r = 0.07** — the same sequences, ranked
+Refolding them here gave **Spearman r = 0.065** — the same sequences, ranked
 almost independently — with a median absolute move of 0.129, a maximum of 0.667,
 and **eight of twenty pass/fail verdicts flipped**. The design published as best
 (0.881) refolded at 0.418.

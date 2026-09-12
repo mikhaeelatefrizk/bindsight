@@ -51,7 +51,9 @@ hide:
   <div class="bs-stat">
     <div class="v">40%</div>
     <div class="k">success @ ipTM 0.65</div>
-    <div class="d">8 of 20, validated with Boltz-2</div>
+    <div class="d">8 of 20 &mdash; withdrawn as a measure of design quality;
+    shuffles of these designs&rsquo; own sequences clear 0.65 at the same
+    rate</div>
   </div>
   <div class="bs-stat">
     <div class="v">1 of 17</div>

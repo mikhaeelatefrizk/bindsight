@@ -473,37 +473,88 @@ def test_the_readme_still_marks_those_plugins_unexecuted() -> None:
 # ---------------------------------------------------------------------------
 # The withdrawn success rate must not travel without its notice
 # ---------------------------------------------------------------------------
-#: Documents that state the designer benchmark's success@0.65 figure.
+#: Directories searched for documents stating the success@0.65 figure.
 #:
-#: The rate is a real Boltz-2 output and is kept rather than deleted — removing
-#: it would hide the finding instead of stating it. But a paired control showed
-#: designs and shuffles of their own sequences clearing it at the same rate, so
-#: it is not a measure of design quality, and a reader meeting the number
-#: without that is misled by omission.
-SUCCESS_RATE_DOCUMENTS: tuple[str, ...] = (
-    "ARCHITECTURE.md",
-    "benchmarks/RUN_ON_KAGGLE.md",
-    "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
-    "benchmarks/designer_benchmark/RESULTS.md",
-    "benchmarks/designer_benchmark/run_t4/RESULTS.md",
-    "CHANGELOG.md",
+#: Discovered, not listed. The first version of this guard was a hand-written
+#: tuple of the files its author remembered, and it missed README.md and
+#: docs/index.md — the two most-read surfaces in the repository, both
+#: publishing the withdrawn rate as a headline. A guard that only checks the
+#: files you thought of protects exactly the files you were already thinking
+#: about.
+#:
+#: The rate itself is a real Boltz-2 output and is kept rather than deleted —
+#: removing it would hide the finding instead of stating it. But a paired
+#: control showed designs and shuffles of their own sequences clearing it at the
+#: same rate, so it is not a measure of design quality, and a reader meeting the
+#: number without that is misled by omission.
+_SEARCH_ROOTS: tuple[str, ...] = (".", "docs", "benchmarks", "paper")
+
+#: Substrings that identify a document stating the rate.
+_SUCCESS_RATE_MARKERS: tuple[str, ...] = ("success@0.65", "success @ ipTM 0.65")
+
+#: Paths excluded from the sweep, each for a stated reason.
+_NOT_PUBLISHED: tuple[str, ...] = (
+    "benchmarks/calibration/",  # the calibration itself; it *is* the withdrawal
+    "runs/",  # run outputs, not shipped prose
+    "site/",  # built output
+    "node_modules/",
 )
+
+
+def _documents_stating_the_success_rate() -> list[str]:
+    """Every shipped Markdown file that states the designer benchmark's rate."""
+    root = Path(__file__).resolve().parents[1]
+    found: set[str] = set()
+    for sub in _SEARCH_ROOTS:
+        base = root / sub
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*.md"):
+            rel = path.relative_to(root).as_posix()
+            if any(skip in rel for skip in _NOT_PUBLISHED):
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if any(marker in text for marker in _SUCCESS_RATE_MARKERS):
+                found.add(rel)
+    return sorted(found)
+
+
+SUCCESS_RATE_DOCUMENTS: tuple[str, ...] = tuple(_documents_stating_the_success_rate())
 
 #: The phrase every one of them must carry.
 WITHDRAWAL_MARKER = "withdrawn as a measure of design quality"
 
 
+def _flat(text: str) -> str:
+    """Collapse whitespace, so a wrapped sentence still matches.
+
+    Markdown decides its own line breaks. A guard that misses the notice
+    because a word moved to the next line reports a document as unprotected
+    when it is protected — and, worse, invites whoever hits it to reword the
+    notice until the substring matches again.
+    """
+    return " ".join(text.split())
+
+
 @pytest.mark.parametrize("rel", SUCCESS_RATE_DOCUMENTS)
 def test_every_document_quoting_the_success_rate_withdraws_it(rel: str) -> None:
-    text = _read(rel)
-    assert "success@0.65" in text or "success rate" in text.lower(), (
-        f"{rel} no longer states the rate; drop it from SUCCESS_RATE_DOCUMENTS "
-        "rather than leaving a guard pointing at nothing"
-    )
-    assert WITHDRAWAL_MARKER in text, (
+    assert WITHDRAWAL_MARKER in _flat(_read(rel)), (
         f"{rel} states the success rate without the withdrawal notice; the rate "
         "is matched exactly by shuffles of the designs' own sequences"
     )
+
+
+def test_the_sweep_actually_finds_the_documents() -> None:
+    """A discovery that finds nothing would make every test above vacuous.
+
+    This is the failure the hand-written list had in a quieter form: it passed
+    while missing the two most-read files in the repository.
+    """
+    assert len(SUCCESS_RATE_DOCUMENTS) >= 5, SUCCESS_RATE_DOCUMENTS
+    for expected in ("README.md", "ARCHITECTURE.md"):
+        assert expected in SUCCESS_RATE_DOCUMENTS, (
+            f"{expected} states the rate but the sweep did not find it"
+        )
 
 
 def test_the_notice_is_one_string_not_a_family_of_paraphrases() -> None:

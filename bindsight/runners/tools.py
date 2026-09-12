@@ -282,7 +282,7 @@ def build_boltz_cmd(
     model, and the project's calibration run measured what that costs: refolding
     the same twenty sequences moved ipTM by a median of 0.129 and a maximum of
     0.667, flipped eight of twenty verdicts at the 0.65 threshold, and left the
-    two runs correlated at Spearman 0.07. A number that does not survive its own
+    two runs correlated at Spearman 0.065. A number that does not survive its own
     rerun cannot support a per-design claim.
 
     The seed makes a run repeatable. It does not make one draw representative —

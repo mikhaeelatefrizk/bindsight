@@ -25,6 +25,8 @@ Binder-design workflows — [BindCraft](https://github.com/martinpacesa/BindCraf
 
 **New here?** → [Documentation site](https://mikhaeelatefrizk.github.io/bindsight/) · [What is bindsight?](https://mikhaeelatefrizk.github.io/bindsight/what-is-bindsight/) (5-min read) · [How to use it](https://mikhaeelatefrizk.github.io/bindsight/how-to-use/) · [Use cases](https://mikhaeelatefrizk.github.io/bindsight/use-cases/) · [Designing on Colab](https://mikhaeelatefrizk.github.io/bindsight/colab-design-howto/)
 
+> ⚠️ **The success rate below is withdrawn as a measure of design quality.** A paired control folded each design alongside a shuffle of its own sequence; both cleared 0.65 at the same rate (40% and 40%, paired difference +0.030, exact sign-flip p = 0.57). The ipTM values are real Boltz-2 outputs — what is withdrawn is the claim that the rate measures the designs. See [the calibration](benchmarks/calibration/README.md).
+
 **Want the evidence first?** → [Real results](https://mikhaeelatefrizk.github.io/bindsight/results/) — the fifteen-cohort rediscovery study, and 20 de novo ERBB2 binders (best ipTM 0.88, 40% success@0.65 — 8/20, 95% CI 15–70% over backbones — corrected protocol) with their Boltz-2 predicted complexes.
 
 ---

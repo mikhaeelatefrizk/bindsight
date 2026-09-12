@@ -43,3 +43,5 @@ The lowest threshold whose false-positive **upper bound** clears each target. Ju
 The same 20 sequences also carry committed ipTM values from an earlier job. Refolding them here gives a bound on how far a number moves between runs — but the earlier job's Boltz-2 version was never recorded (see `PRECISION.md`), so this is run drift and version drift together, not a determinism measurement.
 
 Absolute change: median 0.129, max 0.667.
+
+The two runs agree on **rank** at Spearman r = 0.065 (Pearson 0.193), and **8 of 20** pass/fail verdicts at 0.65 differ between them. A drift that preserved rank would be an offset; one that does not leaves no per-design claim standing.

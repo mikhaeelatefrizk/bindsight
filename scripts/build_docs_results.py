@@ -264,6 +264,10 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
             # Never a bare rate: the interval is clustered over backbones,
             # because designs sharing a trajectory are not independent trials.
             note = f"95% CI {interval[0] * 100:.0f}–{interval[1] * 100:.0f}% over backbones"
+        # The caveat rides on the stat itself. This is the most-read surface the
+        # rate appears on, and a reader who sees only the tile sees the one
+        # thing the calibration showed it does not support.
+        note += " — withdrawn as a measure of design quality"
         stats.append((f"{d.success_rate * 100:.0f}%", "success @ ipTM 0.65", note))
     paes = [b.pae_interaction for b in d.binders if b.pae_interaction is not None]
     if paes:
