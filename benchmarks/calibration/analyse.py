@@ -76,6 +76,55 @@ def _load(path: Path) -> dict[str, float]:
     return rows
 
 
+def _load_rows(path: Path) -> list[dict[str, Any]]:
+    """Every metrics row, whole, for the fields beyond ``iptm``."""
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+
+
+def sampling_noise(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """The metric's own noise, measured inside one job.
+
+    Until the validator drew more than once per binder this could only be
+    inferred from refolding across runs, which confounded sampling noise with
+    whatever else changed between them — and in this project's case that
+    included an unrecorded Boltz-2 version. With ``diffusion_samples > 1`` each
+    binder carries the spread of its own draws, on one input, in one job, under
+    one installed version. Nothing is confounded with anything.
+
+    This is the number every other comparison has to be read against: a
+    difference between two designs smaller than the spread of one design's own
+    draws is not a difference that was observed.
+
+    Args:
+        rows: metrics rows as written by the validator.
+
+    Returns:
+        The pooled per-draw standard deviation and the standard error it implies
+        for a reported mean, or ``None`` when every row is a single draw and
+        there is no spread to pool.
+    """
+    counts = {int(r["iptm_n_samples"]) for r in rows if r.get("iptm_n_samples")}
+    sds = [float(r["iptm_sd"]) for r in rows if r.get("iptm_sd") is not None]
+    if not sds or not counts:
+        return None
+
+    # Pool as a root-mean-square rather than a plain mean: these are standard
+    # deviations, and variances are what average.
+    pooled = math.sqrt(statistics.fmean(s * s for s in sds))
+    k = min(counts)
+    return {
+        "n_binders_with_spread": len(sds),
+        "draws_per_binder": sorted(counts),
+        "pooled_per_draw_sd": pooled,
+        # What the reported mean of k draws is worth.
+        "standard_error_of_reported_mean": pooled / math.sqrt(k) if k else None,
+        "max_single_binder_sd": max(sds),
+        "min_single_binder_sd": min(sds),
+    }
+
+
 def exact_signflip_p(diffs: list[float]) -> tuple[float, int]:
     """Two-sided exact paired permutation p-value over all 2^n sign flips.
 
@@ -324,6 +373,7 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
     scrambles = [s for _, _, s in pairs]
     diffs = [d - s for _, d, s in pairs]
     p, n_perm = exact_signflip_p(diffs)
+    noise = sampling_noise(_load_rows(metrics))
 
     report: dict[str, Any] = {
         "n_pairs": len(pairs),
@@ -332,6 +382,7 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
         "scrambles": _describe(scrambles),
         "paired_difference": _describe(diffs),
         "paired_interval": paired_interval(diffs),
+        "sampling_noise": noise,
         "n_designs_above_scramble": sum(x > 0 for x in diffs),
         "exact_signflip_p": p,
         "n_permutations": n_perm,
@@ -491,6 +542,37 @@ def render(report: dict[str, Any]) -> str:
                 f"{op['n_controls_needed']} would be needed. This is a limit of the "
                 "control set's size, not a statement about the designs."
             )
+
+    noise = report.get("sampling_noise")
+    if noise:
+        k = noise["draws_per_binder"]
+        se = noise["standard_error_of_reported_mean"]
+        effect = abs(report["paired_difference"]["mean"])
+        lines += [
+            "",
+            "## The metric's own noise",
+            "",
+            f"Each binder was folded {k[0] if len(k) == 1 else k} time(s), so every ipTM "
+            "above is a mean of that many diffusion draws and each carries the spread of "
+            "its own draws. Pooled across "
+            f"{noise['n_binders_with_spread']} binders, one draw has a standard deviation "
+            f"of **{noise['pooled_per_draw_sd']:.3f}** "
+            f"(range {noise['min_single_binder_sd']:.3f}–"
+            f"{noise['max_single_binder_sd']:.3f} within a single binder), which puts the "
+            f"standard error of each reported mean at **{se:.3f}**.",
+            "",
+            "Measured inside one job on one input under one installed version, so unlike "
+            "the refold comparison below nothing is confounded with anything.",
+            "",
+            f"The design-versus-scramble effect is {effect:.3f}. "
+            + (
+                "That is smaller than the spread of a single design's own draws, so the "
+                "comparison is being made underneath the metric's noise floor."
+                if effect < noise["pooled_per_draw_sd"]
+                else "That is larger than the spread of a single design's own draws, so "
+                "the comparison sits above the metric's noise floor."
+            ),
+        ]
 
     if "refold_drift" in report:
         drift = report["refold_drift"]

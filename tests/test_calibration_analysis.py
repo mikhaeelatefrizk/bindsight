@@ -383,6 +383,114 @@ class TestTheReadmePowerTableIsTheRealOne:
         assert "72" in self._README.read_text(encoding="utf-8")
 
 
+class TestTheMetricsOwnNoiseIsMeasured:
+    """With more than one draw per binder the noise stops being an inference.
+
+    Before this, the only handle on ipTM's spread was refolding across runs,
+    which mixed sampling noise with everything else that differed between them
+    — in this project's case an unrecorded Boltz-2 version among them. Drawn
+    repeatedly inside one job, on one input, under one installed version,
+    nothing is confounded with anything.
+    """
+
+    @staticmethod
+    def _rows(sd: float, k: int = 5, n: int = 20) -> list[dict[str, object]]:
+        return [
+            {"binder_id": f"b{i}", "iptm": 0.5, "iptm_sd": sd, "iptm_n_samples": k}
+            for i in range(n)
+        ]
+
+    def test_single_draw_runs_have_no_spread_to_report(self) -> None:
+        """The honest answer for every run before the sampling fix."""
+        rows = [{"binder_id": "b0", "iptm": 0.5, "iptm_n_samples": 1}]
+        assert calib.sampling_noise(rows) is None
+
+    def test_rows_predating_the_field_are_not_guessed_at(self) -> None:
+        assert calib.sampling_noise([{"binder_id": "b0", "iptm": 0.5}]) is None
+
+    def test_the_pooled_spread_averages_variances_not_deviations(self) -> None:
+        """Standard deviations do not average; their squares do.
+
+        Pooling them as a plain mean understates the spread whenever the
+        per-binder values differ, which is exactly when pooling matters.
+        """
+        rows = [
+            {"binder_id": "a", "iptm": 0.5, "iptm_sd": 0.10, "iptm_n_samples": 5},
+            {"binder_id": "b", "iptm": 0.5, "iptm_sd": 0.30, "iptm_n_samples": 5},
+        ]
+        noise = calib.sampling_noise(rows)
+        rms = ((0.10**2 + 0.30**2) / 2) ** 0.5
+        assert noise["pooled_per_draw_sd"] == pytest.approx(rms)
+        assert noise["pooled_per_draw_sd"] > (0.10 + 0.30) / 2
+
+    def test_the_standard_error_shrinks_with_the_draw_count(self) -> None:
+        """Averaging k draws is worth sqrt(k), and the report must say so."""
+        one = calib.sampling_noise(self._rows(0.16, k=1))
+        five = calib.sampling_noise(self._rows(0.16, k=5))
+        assert one["standard_error_of_reported_mean"] == pytest.approx(0.16)
+        assert five["standard_error_of_reported_mean"] == pytest.approx(0.16 / 5**0.5)
+
+    def test_mixed_draw_counts_are_reported_not_hidden(self) -> None:
+        """A run that averaged different numbers of draws is not one measurement."""
+        rows = self._rows(0.1, k=5, n=2) + self._rows(0.1, k=3, n=2)
+        noise = calib.sampling_noise(rows)
+        assert noise["draws_per_binder"] == [3, 5]
+
+    def test_the_report_says_when_the_effect_is_under_the_noise_floor(self, tmp_path: Path) -> None:
+        """The whole point: an effect smaller than one input's own spread.
+
+        A difference between two designs smaller than the spread of a single
+        design's repeated draws was not observed, and the report has to say that
+        rather than leaving a reader to compare the two numbers themselves.
+        """
+        rows: list[dict[str, object]] = []
+        for i in range(20):
+            rows.append({"binder_id": f"b{i}", "iptm": 0.60, "iptm_sd": 0.16, "iptm_n_samples": 5})
+            rows.append(
+                {
+                    "binder_id": f"b{i}_scram",
+                    "iptm": 0.57,
+                    "iptm_sd": 0.16,
+                    "iptm_n_samples": 5,
+                }
+            )
+        m = tmp_path / "m.jsonl"
+        m.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        text = calib.render(calib.analyse(m, committed=None))
+        assert "underneath the metric's noise floor" in text
+
+    def test_the_report_says_when_the_effect_clears_it(self, tmp_path: Path) -> None:
+        rows: list[dict[str, object]] = []
+        for i in range(20):
+            rows.append({"binder_id": f"b{i}", "iptm": 0.90, "iptm_sd": 0.02, "iptm_n_samples": 5})
+            rows.append(
+                {
+                    "binder_id": f"b{i}_scram",
+                    "iptm": 0.20,
+                    "iptm_sd": 0.02,
+                    "iptm_n_samples": 5,
+                }
+            )
+        m = tmp_path / "m.jsonl"
+        m.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        text = calib.render(calib.analyse(m, committed=None))
+        assert "above the metric's noise floor" in text
+
+    def test_a_single_draw_run_renders_without_the_section(self, tmp_path: Path) -> None:
+        """The first calibration run has no such data and must still render."""
+        rows = [
+            {"binder_id": "b0", "iptm": 0.8, "iptm_n_samples": 1},
+            {"binder_id": "b0_scram", "iptm": 0.3, "iptm_n_samples": 1},
+            {"binder_id": "b1", "iptm": 0.7, "iptm_n_samples": 1},
+            {"binder_id": "b1_scram", "iptm": 0.2, "iptm_n_samples": 1},
+        ]
+        m = tmp_path / "m.jsonl"
+        m.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        report = calib.analyse(m, committed=None)
+        assert report["sampling_noise"] is None
+        assert "The metric's own noise" not in calib.render(report)
+
+
 class TestRefoldDriftIsLabelledForWhatItIs:
     def test_drift_is_reported_against_committed_values(self, tmp_path: Path) -> None:
         m = _metrics(tmp_path / "metrics.jsonl", {"b0": 0.80, "b0_scram": 0.30})
