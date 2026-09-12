@@ -39,6 +39,37 @@ LOG = logging.getLogger(__name__)
 DEFAULT_DESIGNERS = ("rfdiff_mpnn", "bindcraft", "boltzgen")
 DEFAULT_IPTM_SUCCESS = 0.65
 
+#: Withdrawal notice attached to every rendering of success@0.65.
+#:
+#: The threshold had no citation, so the project measured what it is worth
+#: (``benchmarks/calibration``). The answer is that it does not currently
+#: separate a design from a shuffle of itself, which makes the rate above a
+#: measurement of the pipeline rather than of the designs. The number is not
+#: deleted — it is what Boltz-2 returned, and deleting it would hide the
+#: finding rather than state it — but it must not travel without this.
+#:
+#: One string, referenced by every surface that renders the rate, so the caveat
+#: cannot survive in one place and go stale in another. A test fails if a
+#: document states the rate without it.
+IPTM_CALIBRATION_CAVEAT = (
+    "> **This success rate is withdrawn as a measure of design quality.** "
+    "A paired control folded each of these twenty designs in one job alongside "
+    "a shuffle of its own sequence — same length, same amino-acid composition, "
+    "same target, same validator, same card. Designs and shuffles cleared 0.65 "
+    "at the *same* rate (40% and 40%), the paired difference was +0.030 "
+    "(95% CI −0.070 to +0.127, exact sign-flip p = 0.57), and one shuffle "
+    "scored 0.815 — above nineteen of the twenty designs. The run bounds any "
+    "real advantage at about 0.14 ipTM rather than showing there is none.\n"
+    ">\n"
+    "> A cause was found and fixed: Boltz-2 builds structures by diffusion, and "
+    "the validator was invoked with neither `--seed` nor `--diffusion_samples`, "
+    "so every number here is a single unseeded draw. Refolding the same twenty "
+    "sequences moved ipTM by a median of 0.129 and flipped eight of twenty "
+    "verdicts. The numbers in this table are real outputs; what is withdrawn is "
+    "the claim that they measure the designs. See "
+    "`benchmarks/calibration/README.md`.\n"
+)
+
 # Minimal valid PDB so the mock/dry-run path has a structure to ship without a
 # network fetch. Real GPU runs pass a true AlphaFold/PDB target structure.
 _PLACEHOLDER_PDB = (
@@ -727,4 +758,5 @@ def _render_md(summary: dict[str, Any]) -> str:
         "cannot separate. Cost is the "
         "`bindsight.cost` estimate for the run on the chosen backend.\n"
     )
+    a(IPTM_CALIBRATION_CAVEAT)
     return "\n".join(lines)

@@ -468,3 +468,96 @@ def test_the_readme_still_marks_those_plugins_unexecuted() -> None:
             "no shipped backend can run them",
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# The withdrawn success rate must not travel without its notice
+# ---------------------------------------------------------------------------
+#: Documents that state the designer benchmark's success@0.65 figure.
+#:
+#: The rate is a real Boltz-2 output and is kept rather than deleted — removing
+#: it would hide the finding instead of stating it. But a paired control showed
+#: designs and shuffles of their own sequences clearing it at the same rate, so
+#: it is not a measure of design quality, and a reader meeting the number
+#: without that is misled by omission.
+SUCCESS_RATE_DOCUMENTS: tuple[str, ...] = (
+    "ARCHITECTURE.md",
+    "benchmarks/RUN_ON_KAGGLE.md",
+    "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
+    "benchmarks/designer_benchmark/RESULTS.md",
+    "benchmarks/designer_benchmark/run_t4/RESULTS.md",
+    "CHANGELOG.md",
+)
+
+#: The phrase every one of them must carry.
+WITHDRAWAL_MARKER = "withdrawn as a measure of design quality"
+
+
+@pytest.mark.parametrize("rel", SUCCESS_RATE_DOCUMENTS)
+def test_every_document_quoting_the_success_rate_withdraws_it(rel: str) -> None:
+    text = _read(rel)
+    assert "success@0.65" in text or "success rate" in text.lower(), (
+        f"{rel} no longer states the rate; drop it from SUCCESS_RATE_DOCUMENTS "
+        "rather than leaving a guard pointing at nothing"
+    )
+    assert WITHDRAWAL_MARKER in text, (
+        f"{rel} states the success rate without the withdrawal notice; the rate "
+        "is matched exactly by shuffles of the designs' own sequences"
+    )
+
+
+def test_the_notice_is_one_string_not_a_family_of_paraphrases() -> None:
+    """Every surface renders the same text, so none of them can go stale alone."""
+    from bindsight.benchmark.designer_bench import IPTM_CALIBRATION_CAVEAT
+
+    assert WITHDRAWAL_MARKER in IPTM_CALIBRATION_CAVEAT
+    for rel in (
+        "benchmarks/designer_benchmark/RESULTS.md",
+        "benchmarks/designer_benchmark/run_t4/RESULTS.md",
+    ):
+        assert IPTM_CALIBRATION_CAVEAT.strip() in _read(rel), (
+            f"{rel} paraphrases the notice instead of carrying it verbatim, so "
+            "regenerating the results would produce a diff"
+        )
+
+
+def test_the_notice_states_the_numbers_that_justify_it() -> None:
+    """A withdrawal without its evidence is an assertion like the one it replaces."""
+    from bindsight.benchmark.designer_bench import IPTM_CALIBRATION_CAVEAT
+
+    for figure in ("40%", "+0.030", "0.57", "0.815", "0.129"):
+        assert figure in IPTM_CALIBRATION_CAVEAT, f"the notice omits {figure}"
+    assert "benchmarks/calibration" in IPTM_CALIBRATION_CAVEAT
+
+
+def test_the_notice_matches_the_measured_artifact() -> None:
+    """The quoted figures come from the calibration run, not from memory."""
+    import json
+
+    from bindsight.benchmark.designer_bench import IPTM_CALIBRATION_CAVEAT
+
+    results = json.loads(_read("benchmarks/calibration/RESULTS.json"))
+    assert f"{results['design_pass_rate']:.0%}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['scramble_pass_rate']:.0%}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['paired_difference']['mean']:+.3f}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['exact_signflip_p']:.2f}" in IPTM_CALIBRATION_CAVEAT
+    assert f"{results['scrambles']['max']:.3f}" in IPTM_CALIBRATION_CAVEAT
+
+
+def test_the_report_surfaces_carry_the_withdrawal_too() -> None:
+    """The rendered report is what a reader actually looks at.
+
+    Guarding only the Markdown would leave the number standing unqualified on
+    the one surface most people see, which is the opposite of the point.
+    """
+    import inspect
+
+    from bindsight.report import showcase, webapp
+
+    for module in (showcase, webapp):
+        source = inspect.getsource(module)
+        if "ipTM 0.65" not in source:
+            continue
+        assert "withdrawn" in source.lower(), (
+            f"{module.__name__} renders the success rate without the withdrawal"
+        )

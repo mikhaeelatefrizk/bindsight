@@ -79,6 +79,11 @@ The committed run is the one this produces: 20 designs, best ipTM 0.88, 40%
 success@0.65, on a T4. Every design carries a target chain byte-identical to the
 native domain IV, which is checked before the results are promoted.
 
+> **This success rate is withdrawn as a measure of design quality.** A paired control folded each of these twenty designs in one job alongside a shuffle of its own sequence — same length, same amino-acid composition, same target, same validator, same card. Designs and shuffles cleared 0.65 at the *same* rate (40% and 40%), the paired difference was +0.030 (95% CI −0.070 to +0.127, exact sign-flip p = 0.57), and one shuffle scored 0.815 — above nineteen of the twenty designs. The run bounds any real advantage at about 0.14 ipTM rather than showing there is none.
+>
+> A cause was found and fixed: Boltz-2 builds structures by diffusion, and the validator was invoked with neither `--seed` nor `--diffusion_samples`, so every number here is a single unseeded draw. Refolding the same twenty sequences moved ipTM by a median of 0.129 and flipped eight of twenty verdicts. The numbers in this table are real outputs; what is withdrawn is the claim that they measure the designs. See `benchmarks/calibration/README.md`.
+
+
 ---
 
 ## 4. The complete provenance chain

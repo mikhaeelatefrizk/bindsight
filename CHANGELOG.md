@@ -8,6 +8,52 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Withdrawn — the designer benchmark's success rate is not a design measurement
+
+`DEFAULT_IPTM_SUCCESS = 0.65` carried the headline "40% success@0.65" and
+arrived as a bare constant with no citation, so the project measured what it is
+worth. Each of the twenty committed ERBB2 designs was folded in one job
+alongside a shuffle of its own sequence — same length, same composition, same
+target, same validator, same card, same session, only the residue order
+different.
+
+The rate is **withdrawn as a measure of design quality**.
+
+- **Designs and their own shuffles cleared 0.65 at the same rate: 40% and 40%.**
+  The paired difference was +0.030 (95% bootstrap CI −0.070 to +0.127), 13 of
+  20 designs beat their own shuffle where 10 is chance, and an exact sign-flip
+  test over all 1,048,576 assignments gives p = 0.57. One shuffle scored 0.815,
+  above nineteen of the twenty designs.
+- Stated as what it is: the run **bounds** any real advantage at about 0.14
+  ipTM. It was not powered to see anything smaller, and that is reported
+  alongside the p-value rather than left for a reader to infer.
+- The ipTM values themselves stand — they are what Boltz-2 returned. What is
+  withdrawn is the claim that the rate measures the designs. Every surface that
+  renders it now carries the notice, from one shared string, guarded by a test.
+
+A cause was found in the source and fixed (below). Whether the designs are in
+fact no better, or the metric was too noisy to tell, is not yet decided: a
+seeded re-run with multiple diffusion samples is what settles it, and the full
+control set the answer needs is sized in `benchmarks/calibration/README.md`.
+
+### Fixed — the validator ran unseeded, so every ipTM was a single random draw
+
+- **Boltz-2 was invoked with neither `--seed` nor `--diffusion_samples`.** It
+  builds structures by diffusion; its `--seed` defaults to `None`, which its own
+  help spells "no seeding", and `--diffusion_samples` to 1. The calibration
+  measured the cost: refolding the same twenty sequences moved ipTM by a median
+  of 0.129 and a maximum of 0.667, flipped eight of twenty verdicts at 0.65, and
+  left the two runs correlated at Spearman 0.07. The design published as best
+  (0.881) refolded at 0.418. This is the defect already recorded for
+  `params.design.seed` — declared, documented, read by no code — one stage
+  further along: the seed reached the designer and stopped there.
+- **Reading one confidence file reported the best draw, not an estimate.** Boltz
+  writes one per diffusion sample and ranks them by confidence descending, so
+  raising `--diffusion_samples` would have raised the reported score with no
+  design changing. Every draw is now read and averaged, and `iptm_n_samples`
+  and `iptm_sd` record how many and how far apart — the metric's own noise,
+  measured on one input inside one job.
+
 ### Fixed — the validator's own provenance, found while auditing the fp32 patch
 
 Auditing the one line the Kaggle kernel patches in Boltz-2 meant pinning down

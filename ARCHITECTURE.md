@@ -437,7 +437,13 @@ backend, so they are listed unchecked rather than folded into the tick above.
   protocol: 20 ERBB2 domain-IV binders on a free Kaggle T4, best ipTM 0.88,
   mean 0.51, 40% success@0.65 (8/20, 95% CI 15–70% over backbones), with the real folded Boltz-2 complexes
   committed.
-  Artifacts in `benchmarks/designer_benchmark/RESULTS.md`. The target chain was
+  Artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **That success rate
+  is withdrawn as a measure of design quality**: a paired control folded each
+  design alongside a shuffle of its own sequence, and the two cleared 0.65 at
+  the same rate (40% and 40%, paired difference +0.030, exact sign-flip
+  p = 0.57). The validator was also running unseeded with one diffusion draw
+  per design, which is fixed; see `benchmarks/calibration/README.md`. The
+  target chain was
   held fixed, and that is verified rather than asserted: all 20 designs carry a
   chain byte-identical to the native 142-residue domain IV. A superseded run on
   a P100 reported best ipTM 0.84 and 50% success; it invoked ProteinMPNN without

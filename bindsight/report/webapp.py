@@ -724,7 +724,16 @@ def _page_results() -> None:
         if best is not None and best.iptm is not None:
             cols[1].metric("Best ipTM", f"{best.iptm:.2f}")
         if designer.success_rate is not None:
-            cols[2].metric("Success @ ipTM 0.65", f"{designer.success_rate * 100:.0f}%")
+            cols[2].metric(
+                "Success @ ipTM 0.65",
+                f"{designer.success_rate * 100:.0f}%",
+                help=(
+                    "Withdrawn as a measure of design quality: a paired control "
+                    "found shuffles of these designs' own sequences clearing "
+                    "0.65 at the same rate (40% vs 40%, paired difference "
+                    "+0.030, p = 0.57). See benchmarks/calibration/README.md."
+                ),
+            )
         paes = [b.pae_interaction for b in designer.binders if b.pae_interaction is not None]
         if paes:
             cols[3].metric("Mean PAE-int", f"{sum(paes) / len(paes):.1f} Å")
