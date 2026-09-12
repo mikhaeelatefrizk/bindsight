@@ -203,6 +203,23 @@ def build_ranges_contig_str(
 # ---------------------------------------------------------------------------
 # Command builders (return argv lists; no shell)
 # ---------------------------------------------------------------------------
+#: What a configured seed of 0 becomes for ProteinMPNN.
+#:
+#: Any non-zero constant would do; this one is fixed so that a run seeded 0 is
+#: reproducible rather than merely non-random. It must never itself be 0.
+_MPNN_SEED_FOR_ZERO = 20260912
+
+
+#: Bound on the run seed before it is turned into a design-index block.
+#:
+#: ``design_startnum`` becomes ``seed * num_designs``, and that index is handed
+#: to ``torch.manual_seed``, which requires a value below 2**64. Reducing the
+#: seed first keeps the product small for any seed a user might write. Two run
+#: seeds congruent modulo this share a block; with a million blocks that is not
+#: a collision anyone meets by accident.
+_SEED_BLOCKS = 1_000_000
+
+
 def build_rfdiff_cmd(
     *,
     rfdiff_dir: Path,
@@ -211,9 +228,57 @@ def build_rfdiff_cmd(
     num_designs: int,
     hotspot: str,
     contig: str,
+    seed: int | None = None,
 ) -> list[str]:
-    """RFdiffusion ``scripts/run_inference.py`` argv for binder backbone design."""
-    return [
+    """RFdiffusion ``scripts/run_inference.py`` argv for binder backbone design.
+
+    RFdiffusion is a diffusion model and it is the *first* stochastic stage: the
+    backbones it draws determine the sequences ProteinMPNN writes and therefore
+    every confidence number downstream. At the pinned commit it seeds
+    ``torch``/``numpy``/``random`` only inside ``if conf.inference.deterministic``,
+    and ``config/inference/base.yaml`` ships ``deterministic: False``. This
+    builder passed neither that flag nor anything else, so the backbone
+    generator ran unseeded — the same defect as the unseeded validator, one
+    stage upstream, and the stage that defeats the fix applied downstream: a
+    reproducibly folded sequence is no use when the sequence itself is not
+    reproducible.
+
+    **How the seed is injected.** There is no ``inference.seed``. Upstream does::
+
+        if conf.inference.deterministic:
+            make_deterministic()              # seed 0, once
+        for i_des in range(design_startnum, design_startnum + num_designs):
+            if conf.inference.deterministic:
+                make_deterministic(i_des)     # seed = the design's index
+
+    so the design index *is* the seed, and ``design_startnum`` chooses it. The
+    run's seed therefore selects a block of ``num_designs`` consecutive indices.
+    It is multiplied by ``num_designs`` rather than used directly so that
+    adjacent seeds get **disjoint** blocks: seeds 42 and 43 with ten designs
+    would otherwise share nine of their ten indices and produce nine identical
+    backbones while claiming to be different runs.
+
+    ``design_startnum`` does not leak into the results: the executor names
+    designs by enumeration order, not by RFdiffusion's file numbering.
+
+    Args:
+        rfdiff_dir: the RFdiffusion checkout.
+        input_pdb: the target structure.
+        output_prefix: where RFdiffusion writes its backbones.
+        num_designs: trajectories to draw.
+        hotspot: ``ppi.hotspot_res`` token.
+        contig: ``contigmap.contigs`` token.
+        seed: the run's seed. ``None`` reproduces the previous unseeded
+            behaviour, which is left reachable only so the argv this project
+            already published can still be built.
+
+    Returns:
+        The argv list.
+
+    Raises:
+        ValueError: If ``seed`` is negative.
+    """
+    cmd = [
         _design_python(),
         str(Path(rfdiff_dir) / "scripts" / "run_inference.py"),
         f"inference.input_pdb={input_pdb}",
@@ -222,6 +287,14 @@ def build_rfdiff_cmd(
         f"ppi.hotspot_res={hotspot}",
         f"contigmap.contigs={contig}",
     ]
+    if seed is not None:
+        if seed < 0:
+            raise ValueError(f"seed must not be negative; got {seed}")
+        cmd += [
+            "inference.deterministic=True",
+            f"inference.design_startnum={(seed % _SEED_BLOCKS) * num_designs}",
+        ]
+    return cmd
 
 
 def build_mpnn_cmd(
@@ -260,7 +333,15 @@ def build_mpnn_cmd(
         "--sampling_temp",
         str(sampling_temp),
         "--seed",
-        str(seed),
+        # Never the literal 0. ProteinMPNN documents it as a sentinel — its
+        # argparse help reads "If set to 0 then a random seed will be picked",
+        # and the code is `if args.seed: seed = args.seed else: seed =
+        # np.random.randint(...)`. So the one value that reads as "no offset,
+        # plain default" is the value that silently turns seeding off, and it is
+        # the default of this parameter and of DesignSpec.seed on several paths.
+        # Only the sentinel is substituted, so every non-zero seed keeps the
+        # exact value it has always had and no reproducible run moves.
+        str(seed or _MPNN_SEED_FOR_ZERO),
     ]
 
 

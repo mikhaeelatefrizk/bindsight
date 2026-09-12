@@ -182,6 +182,180 @@ def test_run_job_rejects_unknown_validator(mock_run, tmp_path: Path) -> None:
         job_exec.run_job(spec, tmp_path / "w")
 
 
+class TestTheDesignerIsSeeded:
+    """The backbone generator — the *first* stochastic stage — ran unseeded.
+
+    Fixing the validator's seed was necessary and not sufficient: a
+    reproducibly folded sequence is no use when the sequence itself came from an
+    unseeded draw. RFdiffusion seeds torch/numpy/random only inside
+    ``if conf.inference.deterministic``, and its pinned ``base.yaml`` ships
+    ``deterministic: False`` — verified against commit 2d0c003 upstream, which
+    also confirms there is no ``inference.seed`` key to set.
+
+    Both runs would still have recorded ``"seed": 42`` in the manifest and
+    hashed to the same cache key, so the artifacts asserted sameness the code
+    could not deliver.
+    """
+
+    @staticmethod
+    def _cmd(**kw: object) -> list[str]:
+        from bindsight.runners import tools
+
+        args: dict[str, object] = {
+            "rfdiff_dir": Path("/r"),
+            "input_pdb": Path("t.pdb"),
+            "output_prefix": Path("/o/binder"),
+            "num_designs": 10,
+            "hotspot": "[A1]",
+            "contig": "[X]",
+        }
+        args.update(kw)
+        return tools.build_rfdiff_cmd(**args)  # type: ignore[arg-type]
+
+    def test_a_seeded_run_asks_for_determinism(self) -> None:
+        """Without the flag upstream never calls torch.manual_seed at all."""
+        assert "inference.deterministic=True" in self._cmd(seed=42)
+
+    def test_the_seed_actually_changes_the_draws(self) -> None:
+        """A seed that changes nothing is the defect wearing a fix's clothes.
+
+        There is no ``inference.seed``; the design index is the seed, so the
+        run's seed has to move ``design_startnum``.
+        """
+        a = self._cmd(seed=42)
+        b = self._cmd(seed=43)
+        assert a != b
+        start = "inference.design_startnum="
+        assert [x for x in a if x.startswith(start)] != [x for x in b if x.startswith(start)]
+
+    def test_adjacent_seeds_get_disjoint_index_blocks(self) -> None:
+        """The subtle half: the index is the seed, so blocks must not overlap.
+
+        Passing the seed straight through as ``design_startnum`` would give
+        seeds 42 and 43 the index ranges 42-51 and 43-52 — nine of ten shared,
+        so nine of the ten backbones would be identical between two runs
+        reported as different.
+        """
+        start = "inference.design_startnum="
+
+        def block(seed: int, n: int) -> set[int]:
+            cmd = self._cmd(seed=seed, num_designs=n)
+            base = int(next(x for x in cmd if x.startswith(start)).split("=", 1)[1])
+            return set(range(base, base + n))
+
+        for n in (1, 5, 10, 50):
+            assert not block(42, n) & block(43, n), f"blocks overlap at num_designs={n}"
+
+    def test_the_same_seed_reproduces_the_same_argv(self) -> None:
+        assert self._cmd(seed=7) == self._cmd(seed=7)
+
+    def test_the_index_stays_in_range_for_any_seed_a_user_writes(self) -> None:
+        """The index reaches torch.manual_seed, which rejects values ≥ 2**64."""
+        start = "inference.design_startnum="
+        for seed in (0, 1, 2**31, 2**63, 10**18):
+            cmd = self._cmd(seed=seed, num_designs=1000)
+            value = int(next(x for x in cmd if x.startswith(start)).split("=", 1)[1])
+            assert 0 <= value + 1000 < 2**64
+
+    def test_a_negative_seed_is_refused(self) -> None:
+        """It would become a negative design index, which upstream cannot use."""
+        with pytest.raises(ValueError, match="negative"):
+            self._cmd(seed=-1)
+
+    def test_the_unseeded_form_is_still_reachable(self) -> None:
+        """Only so the argv this project already published can be rebuilt."""
+        cmd = self._cmd()
+        assert not [x for x in cmd if x.startswith("inference.deterministic")]
+        assert not [x for x in cmd if x.startswith("inference.design_startnum")]
+
+    def test_the_run_seed_reaches_the_designer(self, mock_run, tmp_path: Path) -> None:
+        """End to end: the configured seed must leave the spec and arrive here."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        spec = _spec()
+        spec["seed"] = 42
+        job_exec.run_job(spec, work, tarball=tmp_path / "r.tar.gz")
+
+        rf = [c for c in mock_run if any("run_inference.py" in a for a in c)]
+        assert rf, "RFdiffusion was never invoked"
+        for cmd in rf:
+            assert "inference.deterministic=True" in cmd, "the designer ran unseeded"
+            start = next(a for a in cmd if a.startswith("inference.design_startnum="))
+            assert int(start.split("=", 1)[1]) == 42 * int(spec["n_trajectories"])
+
+
+class TestTheSequenceDesignerIsSeeded:
+    """ProteinMPNN reads 0 as "pick a random seed", and 0 was the default.
+
+    Verified against pinned commit 8907e66::
+
+        argparser.add_argument("--seed", type=int, default=0,
+            help="If set to 0 then a random seed will be picked;")
+        if args.seed:
+            seed = args.seed
+        else:
+            seed = int(np.random.randint(0, high=999, size=1, dtype=int)[0])
+
+    So the value that reads as "plain default, no offset" is the one that turns
+    seeding off — and it is the default of ``build_mpnn_cmd``'s parameter and of
+    ``DesignSpec.seed`` on several paths, including the validate-only specs this
+    project submits. A run seeded 0 drew a different sequence set every time
+    while recording ``"seed": 0`` as its provenance.
+    """
+
+    @staticmethod
+    def _seed_arg(seed: int) -> str:
+        from bindsight.runners import tools
+
+        cmd = tools.build_mpnn_cmd(
+            mpnn_dir=Path("/m"),
+            pdb_path=Path("b.pdb"),
+            out_folder=Path("/o"),
+            designed_chains=["A"],
+            seed=seed,
+        )
+        return cmd[cmd.index("--seed") + 1]
+
+    def test_zero_never_reaches_proteinmpnn(self) -> None:
+        assert self._seed_arg(0) != "0", "0 is upstream's switch for random seeding"
+
+    def test_the_substitute_is_not_itself_the_sentinel(self) -> None:
+        from bindsight.runners import tools
+
+        assert tools._MPNN_SEED_FOR_ZERO != 0
+
+    def test_a_run_seeded_zero_is_reproducible(self) -> None:
+        """Substituting a *fixed* value, not a random one — the point is repeatability."""
+        assert self._seed_arg(0) == self._seed_arg(0)
+
+    def test_every_other_seed_is_passed_through_unchanged(self) -> None:
+        """Only the sentinel moves, so no reproducible run changes its results."""
+        for seed in (1, 2, 42, 999, 20260913):
+            assert self._seed_arg(seed) == str(seed)
+
+    def test_distinct_seeds_stay_distinct(self) -> None:
+        """A substitution that collided with a real seed would merge two runs."""
+        from bindsight.runners import tools
+
+        seeds = [0, 1, 42, tools._MPNN_SEED_FOR_ZERO]
+        mapped = [self._seed_arg(s) for s in seeds]
+        # 0 and the substitute deliberately coincide; everything else is 1:1.
+        assert len(set(mapped)) == len(set(seeds)) - 1
+
+    def test_the_executor_passes_the_run_seed(self, mock_run, tmp_path: Path) -> None:
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        spec = _spec()
+        spec["seed"] = 42
+        job_exec.run_job(spec, work, tarball=tmp_path / "r.tar.gz")
+        mpnn = [c for c in mock_run if any("protein_mpnn_run.py" in a for a in c)]
+        assert mpnn
+        for cmd in mpnn:
+            assert cmd[cmd.index("--seed") + 1] == "42"
+
+
 class TestTheValidatorIsSeeded:
     """The configured seed reached the designer and stopped there.
 

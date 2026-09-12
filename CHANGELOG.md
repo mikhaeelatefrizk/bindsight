@@ -77,6 +77,37 @@ control set the answer needs is sized in `benchmarks/calibration/README.md`.
   the files parse and the metrics row is well-formed and about a different
   molecule.
 
+### Fixed — the *designer* ran unseeded too, and that defeated the validator fix
+
+An integrity audit of the repository found the same defect one stage upstream,
+verified against the pinned upstream sources rather than from memory.
+
+- **RFdiffusion — the default designer, and a diffusion model — was invoked with
+  no determinism control at all.** At pinned commit 2d0c003 it seeds
+  torch/numpy/random only inside `if conf.inference.deterministic`, and
+  `config/inference/base.yaml` ships `deterministic: False`. So every backbone
+  was an unseeded draw, and the per-binder validator seed added above was
+  reproducibly folding sequences that were themselves not reproducible. Both
+  runs still recorded `"seed": 42` in the manifest and hashed to the same cache
+  key, so the artifacts asserted sameness the code could not deliver.
+- There is no `inference.seed` upstream; the *design index* is the seed
+  (`make_deterministic(i_des)`), and `design_startnum` chooses it. The run's
+  seed now selects a block of indices — multiplied by the trajectory count, so
+  adjacent seeds get **disjoint** blocks. Passing the seed straight through
+  would have given seeds 42 and 43 nine identical backbones out of ten while
+  reporting them as different runs.
+- **ProteinMPNN was handed `--seed 0`, which upstream documents as "pick a
+  random seed".** Its code is `if args.seed: seed = args.seed else: seed =
+  np.random.randint(...)`, so the one value that reads as a plain default is the
+  one that turns seeding off — and it was the default of both the parameter and
+  `DesignSpec.seed` on several paths. Only the sentinel is substituted, so every
+  non-zero seed keeps the value it has always had and no reproducible run moves.
+
+**Consequence for the committed benchmark:** those twenty designs were produced
+before any of this, so they cannot be reproduced — not merely "differ in the
+timestamp", but a different set of backbones and sequences each time. That is
+now a property of the past runs rather than of the tool.
+
 ### Fixed — the validator ran unseeded, so every ipTM was a single random draw
 
 - **Boltz-2 was invoked with neither `--seed` nor `--diffusion_samples`.** It

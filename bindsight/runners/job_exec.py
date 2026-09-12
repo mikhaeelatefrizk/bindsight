@@ -222,6 +222,10 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
             int(spec.get("binder_length_min", 50)),
             int(spec.get("binder_length_max", 100)),
         ),
+        # The first stochastic stage, and until now the only one the configured
+        # seed never reached. A reproducibly folded sequence is no use when the
+        # backbone that produced it was an unseeded draw.
+        seed=int(spec.get("seed", 0)),
     )
     if not residues:
         # whole-target design: drop the empty ppi.hotspot_res token
