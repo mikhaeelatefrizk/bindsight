@@ -8,6 +8,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — three collisions and a lie, found by auditing for today's defect classes
+
+An audit swept the repository for the *classes* of defect the ipTM calibration
+turned up. Each finding below was verified against the code, the artifact or the
+pinned upstream source before it was acted on.
+
+- **Modal silently dropped the working-tree wheel, and the summary published it
+  anyway.** `get_runner` forwards only the kwargs a constructor declares — right
+  for `MockRunner`, wrong to do quietly for `ModalRunner`, which declares no
+  `bindsight_wheel`. A `--backend modal` benchmark therefore built the wheel,
+  discarded it, installed bindsight from the repository's default branch on the
+  GPU, and published "working-tree wheel …" as the code that ran. That is the
+  failure the wheel exists to prevent, reported as prevented. Provenance-critical
+  drops are now logged, and `bindsight_source` asks whether the backend *can
+  carry* a wheel rather than whether one was built.
+- **Two epitope sites of one receptor minted identical binder ids.** Discovery
+  emits one epitopes row per qualifying targetable site and each becomes its own
+  design job, so two sites of one target both produced `P04626_binder_0_seq0`.
+  Since `binder_id` is the provenance key, the concatenated metrics carried two
+  rows with one id, `validate/<id>/` belonged to whichever job finished last,
+  and the per-target tarball was overwritten the same way. The epitope joins the
+  namespace; whole-surface design keeps the bare accession, so no published id
+  moves. Archives written before the fix are still found.
+- **A cohort whose discovery crashed was scored as one that found nothing** —
+  see below.
+
 ### Fixed — a wrong figure stood in six shipped documents at once
 
 "Thirteen of the seventeen approved-tier pairs fail the significance rule"
