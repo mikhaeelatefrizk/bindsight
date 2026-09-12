@@ -167,13 +167,14 @@ over the work itself:
 ```
 sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
        ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed
-       ‖ validator ‖ prescreen_top_k ‖ designer_commits)
+       ‖ validator ‖ prescreen_top_k ‖ diffusion_samples ‖ mode ‖ designer_commits)
 ```
 
-then folded with where the work will run and which code will run there:
+then folded with where the work will run, which code will run there, and any
+binders shipped with the job:
 
 ```
-sha256(work_key ‖ backend ‖ code_identity)
+sha256(work_key ‖ backend ‖ code_identity ‖ payload_digest)
 ```
 
 Reruns skip completed work, and `cache_status` records the hit or miss on both
@@ -191,6 +192,17 @@ produced, a wrong answer that looked right:
   returned the first's numbers under the other validator's name.
 - **Prescreen size**, because the ESM-2 screen drops designs before they are
   scored, which changes the result rather than just the cost.
+- **Diffusion samples.** The validator averages ipTM over that many draws from a
+  stochastic model, so one draw and five are different measurements of the same
+  design, not the same measurement at different precisions.
+- **Mode.** A `validate_only` job runs no designer at all; it scores binders it
+  was handed.
+- **Payload digest** — the content and the relative path of every shipped binder.
+  The spec-derived key covers what a *designer* would be told to produce, and a
+  validate-only job produces nothing: the binders travel in the payload and the
+  spec is identical whichever ones go. Two calibration sets against one target
+  hashed alike, so the second would have been served the first's rows — the right
+  number of well-formed metrics for the right target, and wrong.
 - **Backend.** Two runs differing only in where they executed are not the same
   work: one of them may be a mock's canned numbers wearing a real result's
   label.

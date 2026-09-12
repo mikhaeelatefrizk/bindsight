@@ -335,7 +335,13 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
 #: bookkeeping rather than on the work. These are the entries the remote
 #: executor actually acts on: which validator scores the designs, and whether an
 #: ESM-2 prescreen drops some before they are scored at all.
-_RESULT_AFFECTING_PARAMS = ("validator", "prescreen_top_k")
+#: ``extra_params`` keys that change what a job produces, and so belong in its key.
+#:
+#: ``diffusion_samples`` is here because it changes the reported number, not
+#: just its precision: the validator averages over that many draws, so one draw
+#: and five are different measurements of the same design. ``mode`` is here
+#: because a validate-only job runs no designer at all.
+_RESULT_AFFECTING_PARAMS = ("validator", "prescreen_top_k", "diffusion_samples", "mode")
 
 
 def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:

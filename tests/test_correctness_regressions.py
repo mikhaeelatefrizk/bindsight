@@ -1021,6 +1021,29 @@ class TestTheCacheKeyCoversTheValidator:
         screened = make_cache_key(self._spec(structure, validator="boltz2", prescreen_top_k=5))
         assert every != screened
 
+    def test_the_sample_count_changes_the_cache_key(self, tmp_path: Path) -> None:
+        """One draw and five are different measurements, not different precisions.
+
+        The validator averages over ``diffusion_samples`` draws, so the number
+        it reports changes with the count. Sharing a key would hand a five-draw
+        request the one-draw answer.
+        """
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        one = make_cache_key(self._spec(structure, validator="boltz2", diffusion_samples=1))
+        five = make_cache_key(self._spec(structure, validator="boltz2", diffusion_samples=5))
+        assert one != five
+
+    def test_the_mode_changes_the_cache_key(self, tmp_path: Path) -> None:
+        """A validate-only job runs no designer at all."""
+        from bindsight.design._common import make_cache_key
+
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        full = make_cache_key(self._spec(structure, validator="boltz2"))
+        validate = make_cache_key(self._spec(structure, validator="boltz2", mode="validate_only"))
+        assert full != validate
+
     def test_bookkeeping_added_after_the_key_does_not_disturb_it(self, tmp_path: Path) -> None:
         """target_structure_name is set after the key is computed; it must not matter."""
         from bindsight.design._common import make_cache_key

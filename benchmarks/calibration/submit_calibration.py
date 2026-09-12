@@ -44,7 +44,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--staged", type=Path, default=REPO / "runs" / "calibration")
     parser.add_argument("--backend", default="kaggle")
     parser.add_argument("--validator", default="boltz2")
+    parser.add_argument(
+        "--diffusion-samples",
+        type=int,
+        default=1,
+        help=(
+            "how many diffusion draws to average per binder. Boltz-2 samples "
+            "structures, so one draw is a sample rather than a measurement: the "
+            "first calibration run measured a median move of 0.129 ipTM between "
+            "two folds of the same sequence, which is four times the effect it "
+            "was trying to detect. Costs GPU time close to linearly."
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.diffusion_samples < 1:
+        print("--diffusion-samples must be at least 1", file=sys.stderr)
+        return 1
 
     staged = Path(args.staged) / "design"
     fastas = sorted(staged.glob("*.fasta"))
@@ -67,7 +82,11 @@ def main(argv: list[str] | None = None) -> int:
         design_ranges=[],
         n_trajectories=1,
         seed=0,
-        extra_params={"mode": "validate_only", "validator": str(args.validator)},
+        extra_params={
+            "mode": "validate_only",
+            "validator": str(args.validator),
+            "diffusion_samples": int(args.diffusion_samples),
+        },
     )
 
     runner = get_runner(
@@ -77,10 +96,11 @@ def main(argv: list[str] | None = None) -> int:
         bindsight_wheel=build_working_tree_wheel(Path(args.staged) / "_wheel"),
     )
     LOG.info(
-        "submitting %d sequence(s) for %s validation on %s",
+        "submitting %d sequence(s) for %s validation on %s, %d diffusion sample(s) each",
         len(fastas),
         args.validator,
         args.backend,
+        args.diffusion_samples,
     )
 
     result = submit_via_runner(
