@@ -10,9 +10,12 @@ import paths if the package metadata isn't available (editable corner cases).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from importlib.metadata import entry_points
 from typing import Any
+
+LOG = logging.getLogger(__name__)
 
 _FALLBACK = {
     "bindsight.designers": {
@@ -198,16 +201,63 @@ def get_designer(name: str) -> Any:
     return _load("bindsight.designers", name)()
 
 
+#: Constructor kwargs whose silent loss changes what a result means.
+#:
+#: Dropping ``gpu_type`` costs an accurate cost estimate. Dropping
+#: ``bindsight_wheel`` means the GPU installs the repository's default branch
+#: instead of the code in front of you, and the run's own summary went on
+#: reporting "working-tree wheel ..." because it described what was *asked for*
+#: rather than what the runner took. That is the failure the wheel exists to
+#: prevent, so losing it has to be loud.
+_PROVENANCE_KWARGS = frozenset({"bindsight_wheel", "bindsight_ref"})
+
+
+def runner_accepts(name: str, param: str) -> bool:
+    """Whether backend ``name``'s constructor takes ``param``.
+
+    Callers that *report* on a kwarg need this, because passing one to
+    :func:`get_runner` is not the same as the runner using it.
+
+    Args:
+        name: the runner's entry-point name.
+        param: the constructor parameter to look for.
+
+    Returns:
+        True when the runner accepts it.
+    """
+    import inspect
+
+    return param in inspect.signature(_load("bindsight.runners", name)).parameters
+
+
 def get_runner(name: str, **kwargs: Any) -> Any:
     """Instantiate a runner backend by name.
 
     Runners have heterogeneous constructors (e.g. ``MockRunner`` takes none of
     the design kwargs), so only the kwargs a given runner actually accepts are
-    forwarded.
+    forwarded. Anything dropped that changes what a result *means* is logged
+    rather than discarded quietly: ``ModalRunner`` takes no ``bindsight_wheel``,
+    so a benchmark that built one from the working tree had it silently
+    thrown away and the GPU installed the default branch, while the published
+    summary still named the wheel.
     """
     import inspect
 
     cls = _load("bindsight.runners", name)
     params = inspect.signature(cls).parameters
     accepted = {k: v for k, v in kwargs.items() if k in params}
+
+    dropped = sorted(k for k in kwargs if k not in params and kwargs[k] is not None)
+    for key in dropped:
+        if key in _PROVENANCE_KWARGS:
+            LOG.warning(
+                "backend %r does not accept %s, so it was discarded: the remote job "
+                "will install bindsight from its own default source, not from the "
+                "code that launched it. Results from this run cannot be attributed "
+                "to this working tree.",
+                name,
+                key,
+            )
+        else:
+            LOG.debug("backend %r does not accept %s; ignored", name, key)
     return cls(**accepted)

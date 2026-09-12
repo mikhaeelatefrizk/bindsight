@@ -32,7 +32,7 @@ from typing import Any
 from bindsight import __version__
 from bindsight import cost as cost_mod
 from bindsight.benchmark.statistics import cluster_bootstrap_interval, wilson_interval
-from bindsight.plugins import get_designer, get_runner
+from bindsight.plugins import get_designer, get_runner, runner_accepts
 
 LOG = logging.getLogger(__name__)
 
@@ -513,13 +513,7 @@ def run_designer_benchmark(
         # Which bindsight actually ran. A result that cannot name its own code
         # is not reproducible, and "the default branch at some past moment" is
         # not a name.
-        "bindsight_source": (
-            "mock backend: nothing is installed and no GPU runs"
-            if is_mock
-            else f"working-tree wheel {Path(bindsight_wheel).name}"
-            if bindsight_wheel
-            else "pip install from the repository default branch"
-        ),
+        "bindsight_source": _bindsight_source(backend, bindsight_wheel, is_mock=is_mock),
         "targets": [t.symbol for t in targets],
         "designers": [_score_dict(s) for s in scores],
     }
@@ -658,6 +652,38 @@ def _success_intervals(outcomes: dict[str, list[bool]]) -> dict[str, Any]:
     out["success_ci_high"] = round(clustered.high, 4)
     out["success_ci_method"] = clustered.method
     return out
+
+
+def _bindsight_source(backend: str, wheel: Path | None, *, is_mock: bool) -> str:
+    """Which bindsight actually ran, as opposed to which one was offered.
+
+    This said "working-tree wheel <name>" whenever a wheel had been *built*,
+    and building one is not the same as the backend taking it.
+    ``get_runner`` forwards only the kwargs a runner's constructor declares, and
+    ``ModalRunner`` declares no ``bindsight_wheel`` — so a Modal benchmark built
+    the wheel, dropped it, installed bindsight from the repository's default
+    branch, and published the wheel's name as its provenance. That is the exact
+    failure the wheel was introduced to prevent, reported as though prevented.
+
+    Args:
+        backend: the runner name the results came from.
+        wheel: the wheel that was built, if any.
+        is_mock: whether the mock backend produced these numbers.
+
+    Returns:
+        A sentence naming the code that ran.
+    """
+    if is_mock:
+        return "mock backend: nothing is installed and no GPU runs"
+    if wheel is None:
+        return "pip install from the repository default branch"
+    if not runner_accepts(backend, "bindsight_wheel"):
+        return (
+            f"pip install from the repository default branch — a working-tree wheel "
+            f"({Path(wheel).name}) was built but backend {backend!r} cannot ship one, "
+            "so these results are not attributable to the tree that launched them"
+        )
+    return f"working-tree wheel {Path(wheel).name}"
 
 
 def _success_cell(d: dict[str, Any]) -> str:

@@ -1882,3 +1882,81 @@ class TestTheValidatorSettingsReachTheDesignPath:
         params = ValidateParams()
         assert params.diffusion_samples == 1
         assert params.max_parallel_samples == 1
+
+
+# ---------------------------------------------------------------------------
+# 15. A dropped kwarg that changes what a result means must not be silent
+# ---------------------------------------------------------------------------
+class TestTheWheelIsNotSilentlyDiscarded:
+    """`get_runner` filtered kwargs to the constructor and said nothing.
+
+    That filtering is right — `MockRunner` takes none of the design kwargs — but
+    `ModalRunner` declares no `bindsight_wheel`, so a benchmark that built one
+    from the working tree had it dropped, the GPU installed bindsight from the
+    repository's default branch, and the published summary still reported
+    "working-tree wheel <name>" as the code that ran.
+
+    That is the exact failure the wheel exists to prevent. `_with_backend`'s
+    docstring records it happening once already: a corrected benchmark submitted
+    against a branch whose fixes existed only locally, producing pre-fix output.
+    """
+
+    def test_modal_does_not_accept_the_wheel(self) -> None:
+        """The anchor. If Modal gains the parameter, these tests change with it."""
+        from bindsight.plugins import runner_accepts
+
+        assert not runner_accepts("modal", "bindsight_wheel")
+        assert runner_accepts("kaggle", "bindsight_wheel")
+
+    def test_dropping_it_is_logged(self, caplog: pytest.LogCaptureFixture) -> None:
+        from bindsight.plugins import get_runner
+
+        with caplog.at_level("WARNING", logger="bindsight.plugins"):
+            get_runner(
+                "modal",
+                designer="rfdiff_mpnn",
+                n_units_per_target=1,
+                bindsight_wheel="/tmp/x.whl",
+            )
+        assert "bindsight_wheel" in caplog.text
+        assert "not from the code that launched it" in caplog.text
+
+    def test_a_backend_that_takes_it_logs_nothing(self, caplog: pytest.LogCaptureFixture) -> None:
+        from bindsight.plugins import get_runner
+
+        with caplog.at_level("WARNING", logger="bindsight.plugins"):
+            get_runner(
+                "kaggle",
+                designer="rfdiff_mpnn",
+                n_units_per_target=1,
+                bindsight_wheel="/tmp/x.whl",
+            )
+        assert "bindsight_wheel" not in caplog.text
+
+    def test_an_irrelevant_kwarg_does_not_warn(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Only provenance-critical losses are loud; the rest is ordinary filtering."""
+        from bindsight.plugins import get_runner
+
+        with caplog.at_level("WARNING", logger="bindsight.plugins"):
+            get_runner("mock", designer="rfdiff_mpnn", n_units_per_target=1, gpu_type="A100")
+        assert caplog.text.strip() == ""
+
+    def test_the_summary_reports_what_ran_not_what_was_offered(self) -> None:
+        """The published provenance must follow the runner, not the request."""
+        from bindsight.benchmark.designer_bench import _bindsight_source
+
+        wheel = Path("bindsight-0.2.2-py3-none-any.whl")
+        kaggle = _bindsight_source("kaggle", wheel, is_mock=False)
+        modal = _bindsight_source("modal", wheel, is_mock=False)
+
+        assert kaggle == "working-tree wheel bindsight-0.2.2-py3-none-any.whl"
+        assert "default branch" in modal, "Modal claimed a wheel it never received"
+        assert "not attributable to the tree that launched them" in modal
+
+    def test_no_wheel_and_the_mock_backend_are_unchanged(self) -> None:
+        from bindsight.benchmark.designer_bench import _bindsight_source
+
+        assert _bindsight_source("kaggle", None, is_mock=False) == (
+            "pip install from the repository default branch"
+        )
+        assert "mock backend" in _bindsight_source("mock", None, is_mock=True)
