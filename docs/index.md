@@ -79,7 +79,7 @@ produced](results.md).**
     That is the recall of clinically approved antigens across a pre-registered
     panel of 22 antigen-cohort pairs over fifteen whole, unstratified TCGA
     projects. The interval, not the point estimate, is the finding at this panel
-    size. Thirteen of the seventeen are simply not significantly over-expressed
+    size. Twelve of the seventeen are not over-expressed
     in an unstratified bulk contrast; their agents are licensed, so the antigens
     are real, and that is a limit of the signal rather than of the ranking. An
     earlier six-cohort version reported ERBB2 at rank 4 and recall@5 of 33%; it

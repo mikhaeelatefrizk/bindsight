@@ -545,3 +545,74 @@ class TestEverySurfaceStatesOnlyTheArtifactsStudyFigures:
         assert len(self.SURFACES) >= 6
         assert "paper/validation/manuscript.md" in self.SURFACES
         assert "README.md" in self.SURFACES
+
+
+# ---------------------------------------------------------------------------
+# The approved-tier disposition counts, recomputed rather than quoted
+# ---------------------------------------------------------------------------
+#: Documents stating how many approved-tier pairs fail the significance rule.
+#:
+#: Six of them said "thirteen of the seventeen". Thirteen is the count across
+#: all twenty-two pairs; across the seventeen approved-tier pairs it is eleven,
+#: with a twelfth measured as down-regulated. The wrong figure survived in a
+#: deposit-ready manuscript, a preprint, the architecture document and the
+#: public landing page at once, because each copy was written from another copy
+#: rather than from the artifact.
+_APPROVED_TIER_DOCUMENTS: tuple[str, ...] = (
+    "ARCHITECTURE.md",
+    "docs/index.md",
+    "paper/paper.md",
+    "paper/biorxiv/manuscript.tex",
+    "paper/validation/manuscript.md",
+)
+
+
+def _approved_tier_counts() -> dict[str, int]:
+    """Disposition counts over the approved tier, straight from results.json."""
+    import collections
+    import json
+
+    root = Path(__file__).resolve().parents[1]
+    data = json.loads((root / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8"))
+    approved = [p for p in data["pairs"] if p.get("tier") == "approved"]
+    counts = collections.Counter(p.get("disposition") for p in approved)
+    return {"n": len(approved), **counts}
+
+
+def test_the_approved_tier_split_is_what_the_artifact_says() -> None:
+    """The anchor. If the study is re-run, these move and the prose must follow."""
+    counts = _approved_tier_counts()
+    assert counts["n"] == 17
+    assert counts["not_significant"] == 11
+    assert counts["down_regulated"] == 1
+
+
+def test_no_document_claims_thirteen_approved_tier_failures() -> None:
+    """Thirteen is the all-tier count; attributing it to the seventeen is wrong."""
+    root = Path(__file__).resolve().parents[1]
+    for rel in _APPROVED_TIER_DOCUMENTS:
+        text = " ".join((root / rel).read_text(encoding="utf-8").split())
+        for wrong in (
+            "Thirteen of the seventeen",
+            "Thirteen of seventeen",
+            "13 of the 17",
+            "13 of 17",
+        ):
+            assert wrong not in text, f"{rel} still claims {wrong!r}"
+
+
+def test_every_document_states_a_number_the_artifact_supports() -> None:
+    """Eleven fail the rule; twelve are not over-expressed. Nothing else is right."""
+    counts = _approved_tier_counts()
+    fails_rule = counts["not_significant"]
+    not_over = counts["not_significant"] + counts["down_regulated"]
+
+    words = {11: ("Eleven", "eleven"), 12: ("Twelve", "twelve")}
+    root = Path(__file__).resolve().parents[1]
+    for rel in _APPROVED_TIER_DOCUMENTS:
+        text = " ".join((root / rel).read_text(encoding="utf-8").split())
+        if "approved-tier" not in text and "seventeen" not in text:
+            continue
+        assert any(w in text for w in words[fails_rule] + words[not_over]), (
+            f"{rel} discusses the approved tier but states neither {fails_rule} nor {not_over}"
+        )

@@ -77,8 +77,9 @@ sought. Under the pre-registered primary denominator, recall at rank 20 is 1 of
 reach the shortlist, led by CA9 at rank 1 of 291 in clear-cell renal carcinoma
 and GPC3 at 9 of 289 in hepatocellular carcinoma.
 
-The study's more useful output is diagnostic rather than a rate. Thirteen of the
-seventeen approved-tier pairs fail the significance rule: their targeting agents
+The study's more useful output is diagnostic rather than a rate. Eleven of the
+seventeen approved-tier pairs fail the significance rule, and a twelfth is
+measured as down-regulated: their targeting agents
 are licensed, so the antigens are real, but they are not significantly
 over-expressed in an unstratified bulk contrast. That delineates the scope of
 bulk differential expression as a discovery signal, and motivates the

@@ -8,6 +8,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — a wrong figure stood in six shipped documents at once
+
+"Thirteen of the seventeen approved-tier pairs fail the significance rule"
+appeared in the deposit-ready manuscript twice, the bioRxiv preprint, paper.md,
+ARCHITECTURE.md and the public landing page. **Thirteen is the count across all
+twenty-two pairs.** Across the seventeen approved-tier ones the artifact says
+eleven fail the significance rule, with a twelfth measured as down-regulated —
+so twelve are not over-expressed.
+
+Every copy was written from another copy rather than from `results.json`, which
+is how one arithmetic slip reached six surfaces and the guards that pin other
+published figures never covered this one. A test now recomputes the
+approved-tier dispositions from the artifact, refuses the wrong phrasing
+outright, and requires every document discussing the tier to state a number the
+artifact supports.
+
+Nothing about the study's conclusion changes: most clinically validated surface
+antigens are still not significantly over-expressed in unstratified bulk
+contrasts. The count was wrong, not the finding.
+
 ### Withdrawn — the designer benchmark's success rate is not a design measurement
 
 `DEFAULT_IPTM_SUCCESS = 0.65` carried the headline "40% success@0.65" and

@@ -38,8 +38,9 @@ GPC3 at 9 of 289 in hepatocellular carcinoma, MET at 10 of 287 in papillary rena
 carcinoma, FOLH1 at 34 of 285 in prostate adenocarcinoma, and STEAP1 at 158 of
 285 in the same cohort.
 
-Two findings matter more than the rate. Thirteen of the seventeen approved-tier
-pairs fail the significance rule outright: their agents are licensed, so the
+Two findings matter more than the rate. Eleven of the seventeen approved-tier
+pairs fail the significance rule outright, and a twelfth is measured as
+down-regulated: their agents are licensed, so the
 antigens are real, but they are not significantly over-expressed in an
 unstratified bulk contrast. This is a limit of bulk differential expression as a
 discovery signal, not of the ranking. Separately, CA9 measures a log2 fold change
@@ -253,8 +254,9 @@ would have shown neither.
 ## 4. Discussion
 
 **Most clinically validated surface antigens are not significantly
-over-expressed in unstratified bulk tumour-versus-normal contrasts.** Thirteen of
-seventeen approved-tier pairs fail the significance rule. Their agents are
+over-expressed in unstratified bulk tumour-versus-normal contrasts.** Eleven of
+seventeen approved-tier pairs fail the significance rule, and a twelfth is
+measured as down-regulated. Their agents are
 licensed, so the antigens are real and the targeting works; the signal simply is
 not present in this measurement. Mechanisms differ. ERBB2 in breast and lung is
 diluted by intra-cohort heterogeneity. FOLH1, CEACAM5 and CLDN18 are abundant in
