@@ -427,6 +427,53 @@ def _decoy_null_by_gene(
     return out
 
 
+#: What a stage status says when the run cannot be asked.
+#:
+#: Deliberately not "completed". A cohort scored from a run whose manifest is
+#: missing has an unknown provenance, and the one thing that must not be written
+#: is the reassuring answer.
+UNRECORDED_STAGE = "unrecorded"
+
+
+def stage_status_from_manifest(run_dir: Path) -> dict[str, str]:
+    """The stages a run actually recorded, read rather than assumed.
+
+    ``CohortResult.stage_status`` was the literal
+    ``{"deg": "completed", "discover": "completed"}``. A cohort whose discover
+    stage crashed still has its DEG table, so it was scored — with an empty
+    shortlist, every panel antigen counted as gated out, and both stages
+    asserted complete. That turns an infrastructure failure into a biological
+    negative and folds it into the study's headline recall.
+
+    The principle is already stated one function down, for the DEG table: *a
+    cohort that did not run is not a cohort that found nothing*. It simply was
+    not applied to the stage that builds the shortlist.
+
+    Args:
+        run_dir: the cohort's run directory.
+
+    Returns:
+        ``{stage name: status}`` from ``run_manifest.jsonld``. A stage the
+        manifest does not mention, and every stage when the manifest is absent
+        or unreadable, maps to :data:`UNRECORDED_STAGE`.
+    """
+    import json
+
+    wanted = ("deg", "discover")
+    manifest = Path(run_dir) / "run_manifest.jsonld"
+    status = dict.fromkeys(wanted, UNRECORDED_STAGE)
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return status
+    for record in data.get("stages") or []:
+        name = record.get("name")
+        if name in status and record.get("status"):
+            # Last write wins: a stage re-run supersedes its earlier attempt.
+            status[name] = str(record["status"])
+    return status
+
+
 def score_cohort(
     project: str,
     run_dir: Path,
@@ -464,6 +511,19 @@ def score_cohort(
             "did not run is not a cohort that found nothing."
         )
     deg = pd.read_parquet(deg_path)
+
+    # Read, not assumed. A discover stage that crashed leaves the DEG table
+    # intact, so the guard above passes and the cohort is scored with an empty
+    # shortlist — every panel antigen gated out, counted in the denominator,
+    # and folded into the study's recall as though discovery had legitimately
+    # found nothing.
+    stage_status = stage_status_from_manifest(run_dir)
+    if stage_status.get("discover") == "failed":
+        raise RuntimeError(
+            f"{project}: the discover stage failed, so this cohort has no shortlist "
+            "to score. A cohort whose discovery crashed is not a cohort that found "
+            "nothing; scoring it would count every panel antigen as a miss."
+        )
 
     candidates_path = run_dir / "targets" / "candidates.parquet"
     candidates = (
@@ -583,7 +643,7 @@ def score_cohort(
             "n_significant": int(deg["significant"].sum()) if "significant" in deg.columns else 0,
         },
         pairs=pairs,
-        stage_status={"deg": "completed", "discover": "completed"},
+        stage_status=stage_status,
         antigen_scores=antigen_scores,
     )
 

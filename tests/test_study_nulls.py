@@ -321,3 +321,95 @@ class TestTheCalibrationCohortsFinallyDoSomething:
         text = path.read_text(encoding="utf-8")
         assert "Calibration" in text
         assert "no panel antigen" in text
+
+
+# ---------------------------------------------------------------------------
+# A crashed cohort is not a cohort that found nothing
+# ---------------------------------------------------------------------------
+class TestTheStageStatusIsReadNotAsserted:
+    """`stage_status` was the literal `{"deg": "completed", "discover": "completed"}`.
+
+    A cohort whose discover stage crashed still has its DEG table, so
+    `score_cohort`'s only guard passed and the cohort was scored — with an empty
+    shortlist, every panel antigen counted as gated out and folded into the
+    study's headline recall as a miss, and both stages asserted complete in the
+    result.
+
+    The principle was already written down one function below, for the DEG
+    table: *a cohort that did not run is not a cohort that found nothing.* It
+    was simply not applied to the stage that builds the shortlist.
+    """
+
+    @staticmethod
+    def _manifest(run: Path, **stages: str) -> Path:
+        import json
+
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "run_manifest.jsonld").write_text(
+            json.dumps({"stages": [{"name": k, "status": v} for k, v in stages.items()]}),
+            encoding="utf-8",
+        )
+        return run
+
+    def test_it_reports_what_the_manifest_recorded(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.study import stage_status_from_manifest
+
+        run = self._manifest(tmp_path / "kirc", deg="completed", discover="failed")
+        assert stage_status_from_manifest(run) == {"deg": "completed", "discover": "failed"}
+
+    def test_an_absent_manifest_is_not_reported_as_completed(self, tmp_path: Path) -> None:
+        """The one answer that must never be invented is the reassuring one."""
+        from bindsight.benchmark.study import UNRECORDED_STAGE, stage_status_from_manifest
+
+        run = tmp_path / "bare"
+        run.mkdir()
+        status = stage_status_from_manifest(run)
+        assert set(status.values()) == {UNRECORDED_STAGE}
+        assert "completed" not in status.values()
+
+    def test_an_unreadable_manifest_is_not_reported_as_completed(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.study import UNRECORDED_STAGE, stage_status_from_manifest
+
+        run = tmp_path / "broken"
+        run.mkdir()
+        (run / "run_manifest.jsonld").write_text("{not json", encoding="utf-8")
+        assert set(stage_status_from_manifest(run).values()) == {UNRECORDED_STAGE}
+
+    def test_a_stage_the_manifest_omits_is_unrecorded(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.study import UNRECORDED_STAGE, stage_status_from_manifest
+
+        run = self._manifest(tmp_path / "partial", deg="completed")
+        assert stage_status_from_manifest(run)["discover"] == UNRECORDED_STAGE
+
+    def test_a_rerun_stage_supersedes_its_earlier_attempt(self, tmp_path: Path) -> None:
+        """Stages are appended in execution order, so the last one is current."""
+        import json
+
+        from bindsight.benchmark.study import stage_status_from_manifest
+
+        run = tmp_path / "rerun"
+        run.mkdir()
+        (run / "run_manifest.jsonld").write_text(
+            json.dumps(
+                {
+                    "stages": [
+                        {"name": "discover", "status": "failed"},
+                        {"name": "discover", "status": "completed"},
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        assert stage_status_from_manifest(run)["discover"] == "completed"
+
+    def test_the_unrecorded_sentinel_is_not_a_status_word(self) -> None:
+        """It must not be mistakable for one of the manifest's own values."""
+        from bindsight.benchmark.study import UNRECORDED_STAGE
+
+        assert UNRECORDED_STAGE not in {
+            "running",
+            "completed",
+            "failed",
+            "skipped",
+            "skipped_cache",
+        }
