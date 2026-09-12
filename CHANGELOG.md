@@ -36,6 +36,47 @@ fact no better, or the metric was too noisy to tell, is not yet decided: a
 seeded re-run with multiple diffusion samples is what settles it, and the full
 control set the answer needs is sized in `benchmarks/calibration/README.md`.
 
+### Added — the metric's own noise is measured rather than inferred
+
+- **`iptm_sd` and `iptm_n_samples` on every row.** With more than one draw per
+  binder, each row carries the spread of its own repeated draws: one input, one
+  job, one installed version, nothing confounded with anything. Pooled across
+  binders that is the metric's noise floor, and it is what any difference
+  between two designs has to exceed to have been observed. Until this, the only
+  handle on ipTM's spread was refolding across runs, which mixed sampling noise
+  with everything else that differed between them.
+- The calibration report states which side of that floor an effect falls on,
+  rather than printing two numbers and leaving the reader to compare them.
+- Pooled as a root-mean-square, because standard deviations do not average —
+  variances do, and a plain mean understates the spread exactly when the
+  per-binder values differ.
+
+### Fixed — asking for five diffusion draws silently diffused five at once
+
+- **`--max_parallel_samples` defaults to 5**, though its own help text says
+  "Default is None". The instrumented run measured the headroom that leaves: a
+  peak of 10,917 MiB of the T4's 15,360 for a *single* draw of a ~230-token
+  complex. The flag is now always explicit and sequential by default; a caller
+  with the VRAM can raise it.
+- **It is not a performance knob.** The sampler draws noise shaped by the batch,
+  so one seed consumes the RNG stream differently at batch 1 and batch 5 and
+  produces different structures. It is folded into the cache key with
+  `diffusion_samples` and `mode`, and documented in ARCHITECTURE 4.4 alongside
+  the payload digest.
+
+### Changed — the calibration works for any design run, not just this benchmark
+
+- `stage_scrambles.py` takes `--binders`, `--target` and `--target-chain`;
+  `submit_calibration.py` takes `--target`. A scramble control is meaningful for
+  any design run, so a user can calibrate their own designs rather than only
+  reproduce the committed ERBB2 one.
+- The staging script gained thirteen tests. It builds the control the
+  withdrawal rests on and had none: nothing checked that a "scramble" is a
+  composition-preserving shuffle of its **own** design, or that each staged
+  structure describes the sequence staged beside it. Both failures are silent —
+  the files parse and the metrics row is well-formed and about a different
+  molecule.
+
 ### Fixed — the validator ran unseeded, so every ipTM was a single random draw
 
 - **Boltz-2 was invoked with neither `--seed` nor `--diffusion_samples`.** It
