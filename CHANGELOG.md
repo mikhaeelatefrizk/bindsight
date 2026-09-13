@@ -8,6 +8,55 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — the study ranked against a smaller surfaceome than the pipeline searched
+
+`score_cohort` built its eligible-gene set from `load_surfy_gene_map()` — the
+SURFY core, 3,366 gene ids — while `run_study` passes the **extended** accession
+set (4,801) that discovery actually used. Every SURFY accession is already in the
+extended set, so the filter beside it removed nothing and **2,108 genes the
+pipeline can surface were simply absent from the denominator**.
+
+`run_study._surfaceome` states the requirement in its own docstring — "this must
+match what discovery actually used ... scoring against SURFY alone while the
+pipeline ran against the extended reference would report antigens as unreachable
+that the run could see perfectly well, which is exactly what happened the first
+time the extension landed". It was applied to the accession set and not to the
+gene map keyed against it. The gene map is now derived from the accessions
+passed in, so the two agree by construction rather than by remembering to pass
+the same flag twice.
+
+The study has been re-scored from the cohort tables on disk. What changed:
+
+- **Every counterfactual rank moved**, because each is taken among ~70% more
+  competitors: ERBB2/BRCA 263 → 476 of 2,284 → 3,817, MET/KIRP 7 → 10, EGFR/COAD
+  1,547 → 2,715. The **normalised** ranks barely moved (0.1231 → 0.1225 for the
+  first pair), because numerator and denominator grew together.
+- **CA9 and STEAP1 re-enter the specificity null.** They were excluded as "not
+  scored in every cohort" purely because the SURFY map lacked them — the same
+  omission the project already fixed once at the accession level. The null now
+  runs over 7 antigens instead of 5; observed mean standing 0.817 → 0.858, and
+  p falls to the permutation floor.
+- The calibration separation widens slightly: own-indication 0.741 → 0.738
+  against off-indication 0.461 → **0.418**.
+- Recall, dispositions and outcome classes are **unchanged**. The conclusion —
+  most clinically validated antigens are not surfaced by unstratified bulk
+  expression — does not move.
+
+Two things found while re-scoring:
+
+- **The specificity null's p-value now sits on its floor**, so the report says
+  so. "As extreme as 10,000 permutations can show" and "vanishingly small" are
+  different claims, and the decoy null beside it already reported its own floor.
+- **A BH-adjusted p-value could print one unit in the last place below the raw
+  p-value it corrects.** `p * n / n` is not exactly `p` in floating point.
+  Every term of the running minimum is `p_(j) * n / j` with `n / j >= 1`, so the
+  exact adjusted value is always at least the raw one; the implementation now
+  says so rather than relying on the arithmetic to land there.
+- **A test had pinned the bug's own consequence as expected behaviour**,
+  asserting CA9 appears in the specificity null's exclusion list. It now pins
+  the property that actually matters: every excluded antigen is absent from the
+  scored set, and the two lists do not overlap.
+
 ### Fixed — three collisions and a lie, found by auditing for today's defect classes
 
 An audit swept the repository for the *classes* of defect the ipTM calibration

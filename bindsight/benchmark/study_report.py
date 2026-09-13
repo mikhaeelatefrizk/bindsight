@@ -341,7 +341,15 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             f"- Observed mean standing: **{_fmt(spec.get('observed'), 3)}** "
             "(1.0 is the top of the eligible surfaceome, 0.0 the bottom)",
             f"- p = **{_fmt(spec.get('p_value'), 4)}** over "
-            f"{spec.get('n_permutations')} permutations",
+            f"{spec.get('n_permutations')} permutations"
+            + (
+                " — the floor for this many, so it is as extreme as this "
+                "permutation count can show rather than vanishingly small"
+                if spec.get("p_value_floor") is not None
+                and spec.get("p_value") is not None
+                and spec["p_value"] <= spec["p_value_floor"] * 1.000001
+                else ""
+            ),
             f"- Computed over {spec.get('n_antigens')} antigens "
             f"and {spec.get('n_cohorts')} cohorts: "
             f"{', '.join(spec.get('antigens', []))}",
@@ -376,14 +384,24 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             ]
 
         if excluded_missing:
-            lines += [
+            # Derived, not asserted. This sentence used to end "This list
+            # includes CA9, the strongest single signal in the panel, so the
+            # specificity result is reached without it" — a claim about the
+            # list's contents written as a literal. When the eligible surfaceome
+            # was corrected, CA9 stopped being excluded and the sentence went on
+            # saying it was. A report that describes its own table has to read
+            # the table.
+            note = (
                 f"Excluded, not scored in every cohort: {', '.join(excluded_missing)}. "
                 "A complete matrix is required, or the observed statistic and the "
-                "permuted one would be built from different sets of cohorts. This "
-                "list includes CA9, the strongest single signal in the panel, so "
-                "the specificity result is reached without it.",
-                "",
-            ]
+                "permuted one would be built from different sets of cohorts."
+            )
+            if "CA9" in excluded_missing:
+                note += (
+                    " That list includes CA9, the strongest single signal in the "
+                    "panel, so the specificity result is reached without it."
+                )
+            lines += [note, ""]
 
     return lines
 

@@ -547,11 +547,26 @@ def score_cohort(
     # enrichment cut, so ranking within it would be ranking within the pipeline's
     # own output — and the counterfactual rank exists precisely to say where an
     # antigen would have landed had that cut not been applied.
-    from bindsight.surfaceome.surfy import load_surfy_gene_map
+    # And it must come from the *same* reference the pipeline filtered on.
+    #
+    # This read ``load_surfy_gene_map()`` — the SURFY core, 3,366 gene ids —
+    # while ``run_study`` passes the extended accession set (4,801) that
+    # discovery actually used. Every SURFY accession is already in the extended
+    # set, so the filter below removed nothing and 2,108 genes the pipeline can
+    # surface were simply absent from the denominator. Counterfactual ranks were
+    # then taken among fewer competitors than the run really had, which flatters
+    # them, and the decoy null drew its support from the same short set.
+    #
+    # ``run_study._surfaceome`` states this exact requirement in its docstring —
+    # "this must match what discovery actually used" — and it was applied to the
+    # accession set and not to the gene map keyed against it. Deriving the map
+    # from the accessions that were passed in makes the two agree by
+    # construction rather than by remembering to pass the same flag twice.
+    from bindsight.surfaceome.surfy import load_surfaceome_gene_map
 
     gene_to_uniprot = {
         gene: accession
-        for gene, accession in load_surfy_gene_map().items()
+        for gene, accession in load_surfaceome_gene_map(extended=True).items()
         if accession in surfaceome
     }
     entries = entries if entries is not None else [c for c in P.PANEL if c.project == project]
@@ -984,6 +999,12 @@ def _specificity_null(results: list[CohortResult], config: StudyConfig) -> dict[
         ),
         "observed": observed,
         "p_value": p,
+        # The smallest p this many permutations can return. A p sitting on its
+        # floor means "as extreme as 10,000 draws can show", not "vanishingly
+        # small", and the decoy null next to it already reports its own floor
+        # for exactly that reason. Correcting the eligible surfaceome put this
+        # one on the floor, which is precisely when the distinction matters.
+        "p_value_floor": 1.0 / (config.n_permutations + 1),
         "n_antigens": len(usable),
         "n_cohorts": len(by_project),
         "n_permutations": config.n_permutations,

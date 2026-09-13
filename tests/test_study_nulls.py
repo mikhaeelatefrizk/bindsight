@@ -168,7 +168,35 @@ class TestTheCommittedStudyPublishesItsNulls:
         )
         # The exclusions are the part a reader needs and would not guess.
         assert spec["excluded_multi_indication"]
-        assert "CA9" in spec["excluded_not_scored_everywhere"]
+        # This asserted "CA9" in excluded_not_scored_everywhere, which was the
+        # bug's own consequence written down as expected behaviour: CA9 was
+        # missing from every cohort's eligible set only because that set was
+        # built from the SURFY-only gene map while the pipeline ran against the
+        # extended one. With the reference corrected, CA9 is scored everywhere
+        # and belongs in the test, so the test now pins the property that
+        # matters — every excluded antigen is excluded for a stated, checkable
+        # reason — rather than one antigen's membership.
+        scored = set(spec["antigens"])
+        for symbol in spec["excluded_not_scored_everywhere"]:
+            assert symbol not in scored, f"{symbol} is listed as excluded and also as scored"
+        assert not scored & set(spec["excluded_multi_indication"])
+        assert spec["n_antigens"] == len(scored)
+
+    def test_the_specificity_p_value_is_reported_against_its_floor(
+        self, summary: dict[str, Any]
+    ) -> None:
+        """A permutation p sitting on its floor is a ceiling on evidence, not a vanishing one.
+
+        Correcting the eligible surfaceome put this p on the floor for 10,000
+        permutations, which is exactly when the difference between "as extreme
+        as this many draws can show" and "vanishingly small" stops being
+        pedantic.
+        """
+        spec = summary["specificity_null"]
+        floor = spec.get("p_value_floor")
+        assert floor is not None, "the permutation floor is not reported"
+        assert floor == pytest.approx(1.0 / (spec["n_permutations"] + 1))
+        assert spec["p_value"] >= floor
 
     def test_the_written_report_carries_a_null(self) -> None:
         """RESULTS.md published three intervals and no p-value of any kind."""

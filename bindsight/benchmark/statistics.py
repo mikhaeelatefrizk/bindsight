@@ -445,5 +445,13 @@ def benjamini_hochberg(p_values: Sequence[float]) -> list[float]:
     for rank, idx in enumerate(reversed(order), start=1):
         i = n - rank + 1
         running = min(running, p_values[idx] * n / i)
-        adjusted[idx] = running
+        # Never below the raw value. Every term in the running minimum is
+        # p_(j) * n / j with j >= i, and n / j >= 1, so the exact adjusted
+        # p-value is always at least p_(i); this is arithmetic, not a fudge
+        # factor. In floating point the largest p-value's own term, p * n / n,
+        # can land one unit in the last place below p — observed here as an
+        # adjusted 0.8170212765957445 against a raw 0.8170212765957446 — and a
+        # corrected p-value printed below the one it corrects is wrong however
+        # small the margin.
+        adjusted[idx] = max(running, p_values[idx])
     return adjusted
