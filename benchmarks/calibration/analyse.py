@@ -408,7 +408,67 @@ def controls_needed_for(max_fpr: float, *, confidence: float = 0.95) -> int:
     return math.ceil(math.log(alpha / 2) / math.log(1.0 - max_fpr))
 
 
-def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
+def cross_target(metrics: Path, decoy_metrics: Path) -> dict[str, Any]:
+    """Compare each design against itself folded on an unrelated receptor.
+
+    The scramble control asks whether the binder's *sequence* carries the score.
+    This asks whether the *target* does. A design that scores as well against a
+    receptor it was not designed for is not a binder for either one, and that
+    would make the metric unable to support target selection — which is the
+    premise of the discovery half of this project.
+
+    Paired per binder, so each design is its own control and the comparison does
+    not depend on the two sets of designs being comparable in any other way.
+
+    A spec carries one target, so the two arms are necessarily two jobs. Read
+    the difference against the refold-drift figure, which bounds what moves
+    between runs on its own.
+
+    Args:
+        metrics: metrics from the native-target job.
+        decoy_metrics: metrics from the decoy-target job, same binder ids.
+
+    Returns:
+        The paired comparison, or ``None`` when the two runs share no binder.
+    """
+    native = _load(metrics)
+    decoy = _load(decoy_metrics)
+    shared = sorted(set(native) & set(decoy))
+    # Designs only: a shuffle's score against a decoy answers no question the
+    # design's own does not, and pooling the two would hide which is which.
+    designs = [b for b in shared if not b.endswith(SCRAMBLE_SUFFIX)]
+    if not designs:
+        return {}
+
+    diffs = [native[b] - decoy[b] for b in designs]
+    p, n_perm = exact_signflip_p(diffs)
+    return {
+        "n_designs": len(designs),
+        "native": _describe([native[b] for b in designs]),
+        "decoy": _describe([decoy[b] for b in designs]),
+        "paired_difference": _describe(diffs),
+        "paired_interval": paired_interval(diffs),
+        "n_higher_on_native": sum(d > 0 for d in diffs),
+        "exact_signflip_p": p,
+        "exact_signflip_p_floor": 2 / n_perm,
+        "n_permutations": n_perm,
+        "native_pass_rate": _rate_at([native[b] for b in designs], DEFAULT_IPTM_SUCCESS),
+        "decoy_pass_rate": _rate_at([decoy[b] for b in designs], DEFAULT_IPTM_SUCCESS),
+        "per_design": [
+            {
+                "binder_id": b,
+                "native": native[b],
+                "decoy": decoy[b],
+                "difference": native[b] - decoy[b],
+            }
+            for b in designs
+        ],
+    }
+
+
+def analyse(
+    metrics: Path, committed: Path | None = None, decoy_metrics: Path | None = None
+) -> dict[str, Any]:
     """Compare each design against its own scramble. Returns the report as a dict."""
     scored = _load(metrics)
     pairs: list[tuple[str, float, float]] = []
@@ -439,6 +499,11 @@ def analyse(metrics: Path, committed: Path | None = None) -> dict[str, Any]:
         "paired_difference": _describe(diffs),
         "paired_interval": paired_interval(diffs),
         "sampling_noise": noise,
+        "cross_target": (
+            cross_target(metrics, decoy_metrics)
+            if decoy_metrics is not None and Path(decoy_metrics).is_file()
+            else None
+        ),
         "variance_decomposition": variance_decomposition(
             paired_interval(diffs).get("sd", 0.0) or 0.0, noise
         ),
@@ -678,6 +743,54 @@ def render(report: dict[str, Any]) -> str:
             for p in split["pairs_needed"]
         ]
 
+    xt = report.get("cross_target")
+    if xt:
+        d_native, d_decoy = xt["native"], xt["decoy"]
+        ci = xt["paired_interval"]
+        lines += [
+            "",
+            "## Does the target matter?",
+            "",
+            f"The same {xt['n_designs']} designs folded against an unrelated receptor — "
+            "NECTIN4's Ig-like V-type domain, 113 residues against the native target's "
+            "142, no shared fold or family. Paired per design, so each is its own "
+            "control.",
+            "",
+            f"| | mean | median | min | max | clears {report['threshold']} |",
+            "|---|---|---|---|---|---|",
+            f"| designed target | {d_native['mean']:.3f} | {d_native['median']:.3f} | "
+            f"{d_native['min']:.3f} | {d_native['max']:.3f} | "
+            f"{xt['native_pass_rate']:.0%} |",
+            f"| unrelated target | {d_decoy['mean']:.3f} | {d_decoy['median']:.3f} | "
+            f"{d_decoy['min']:.3f} | {d_decoy['max']:.3f} | "
+            f"{xt['decoy_pass_rate']:.0%} |",
+            "",
+            f"Paired difference (designed − unrelated): "
+            f"median {xt['paired_difference']['median']:+.3f}, "
+            f"mean {xt['paired_difference']['mean']:+.3f}; "
+            f"{xt['n_higher_on_native']} of {xt['n_designs']} score higher on the target "
+            "they were designed for. Exact sign-flip "
+            f"p = {_fmt_p(xt['exact_signflip_p'])}"
+            + (
+                f", the floor for {xt['n_designs']} pairs."
+                if xt["exact_signflip_p"] <= xt["exact_signflip_p_floor"] * 1.000001
+                else "."
+            ),
+        ]
+        if ci.get("estimable"):
+            lines.append(
+                f"95% interval on that difference: [{ci['low']:+.3f}, {ci['high']:+.3f}]; "
+                f"the smallest difference this many designs would catch 80% of the time "
+                f"is {ci['min_detectable_difference_80pct']:.3f}."
+            )
+        lines += [
+            "",
+            "The two arms are two jobs, because a spec carries one target. Same "
+            "sequences, same pinned validator, same seeded derivation, five draws "
+            "each — so read the difference against the refold drift below, which "
+            "bounds what moves between runs on its own.",
+        ]
+
     if "refold_drift" in report:
         drift = report["refold_drift"]
         a = drift["abs_delta"]
@@ -711,6 +824,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metrics", type=Path, required=True)
     parser.add_argument("--committed", type=Path, default=COMMITTED)
+    parser.add_argument(
+        "--decoy-metrics",
+        type=Path,
+        default=None,
+        help=(
+            "metrics from the same binders folded against an unrelated receptor. "
+            "Turns on the specificity comparison: whether these designs "
+            "distinguish the target they were designed for from one they were not."
+        ),
+    )
     parser.add_argument("--out", type=Path, default=Path(__file__).parent)
     args = parser.parse_args(argv)
 
@@ -718,7 +841,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no metrics at {args.metrics}", file=sys.stderr)
         return 1
 
-    report = analyse(args.metrics, args.committed)
+    report = analyse(args.metrics, args.committed, decoy_metrics=args.decoy_metrics)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "RESULTS.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"

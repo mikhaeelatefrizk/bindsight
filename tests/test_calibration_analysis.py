@@ -601,3 +601,85 @@ class TestTheReportRenders:
         # The table must carry both arms, not just the flattering one.
         assert "| designs |" in text
         assert "| scrambles |" in text
+
+
+class TestTheSpecificityComparison:
+    """Whether these designs distinguish the target they were designed for.
+
+    The scramble control asks whether the binder's sequence carries the score.
+    This asks whether the target does — and a design that scores as well against
+    a receptor it was not designed for is not a binder for either one, which
+    would leave the metric unable to support target selection at all.
+    """
+
+    @staticmethod
+    def _write(path: Path, rows: list[dict[str, object]]) -> Path:
+        path.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        return path
+
+    def _arms(self, tmp_path: Path, native: float, decoy: float, n: int = 20) -> tuple[Path, Path]:
+        a = [
+            {"binder_id": f"b{i}", "iptm": native + i * 0.001, "iptm_n_samples": 5}
+            for i in range(n)
+        ] + [{"binder_id": f"b{i}_scram", "iptm": 0.4, "iptm_n_samples": 5} for i in range(n)]
+        b = [
+            {"binder_id": f"b{i}", "iptm": decoy + i * 0.001, "iptm_n_samples": 5} for i in range(n)
+        ] + [{"binder_id": f"b{i}_scram", "iptm": 0.4, "iptm_n_samples": 5} for i in range(n)]
+        return (
+            self._write(tmp_path / "native.jsonl", a),
+            self._write(tmp_path / "decoy.jsonl", b),
+        )
+
+    def test_a_design_is_compared_against_itself(self, tmp_path: Path) -> None:
+        """Paired, so the comparison does not depend on the sets matching elsewhere."""
+        native, decoy = self._arms(tmp_path, 0.70, 0.30)
+        xt = calib.cross_target(native, decoy)
+        assert xt["n_designs"] == 20
+        assert xt["paired_difference"]["mean"] == pytest.approx(0.40)
+        assert xt["n_higher_on_native"] == 20
+
+    def test_scrambles_are_left_out_of_the_comparison(self, tmp_path: Path) -> None:
+        """A shuffle's score against a decoy answers nothing its design does not.
+
+        Pooling them would also hide which arm a row belongs to.
+        """
+        native, decoy = self._arms(tmp_path, 0.70, 0.30)
+        xt = calib.cross_target(native, decoy)
+        assert all(not d["binder_id"].endswith("_scram") for d in xt["per_design"])
+
+    def test_no_difference_reads_as_no_difference(self, tmp_path: Path) -> None:
+        """The outcome that would invalidate target selection must read as such."""
+        native, decoy = self._arms(tmp_path, 0.55, 0.55)
+        xt = calib.cross_target(native, decoy)
+        assert xt["exact_signflip_p"] > 0.05
+        assert xt["native_pass_rate"] == pytest.approx(xt["decoy_pass_rate"])
+
+    def test_both_pass_rates_are_reported(self, tmp_path: Path) -> None:
+        native, decoy = self._arms(tmp_path, 0.70, 0.30)
+        xt = calib.cross_target(native, decoy)
+        assert xt["native_pass_rate"] == pytest.approx(1.0)
+        assert xt["decoy_pass_rate"] == pytest.approx(0.0)
+
+    def test_runs_with_no_shared_binder_yield_nothing(self, tmp_path: Path) -> None:
+        """Two unrelated runs are not a paired comparison."""
+        a = self._write(
+            tmp_path / "a.jsonl", [{"binder_id": "x", "iptm": 0.5, "iptm_n_samples": 5}]
+        )
+        b = self._write(
+            tmp_path / "b.jsonl", [{"binder_id": "y", "iptm": 0.5, "iptm_n_samples": 5}]
+        )
+        assert calib.cross_target(a, b) == {}
+
+    def test_the_section_is_absent_without_a_decoy_run(self, tmp_path: Path) -> None:
+        native, _ = self._arms(tmp_path, 0.70, 0.30)
+        report = calib.analyse(native, committed=None)
+        assert report["cross_target"] is None
+        assert "Does the target matter?" not in calib.render(report)
+
+    def test_the_section_states_both_arms_and_the_pairing(self, tmp_path: Path) -> None:
+        native, decoy = self._arms(tmp_path, 0.70, 0.30)
+        text = calib.render(calib.analyse(native, committed=None, decoy_metrics=decoy))
+        assert "Does the target matter?" in text
+        assert "designed target" in text
+        assert "unrelated target" in text
+        assert "two jobs" in text, "the cross-run caveat must travel with the number"
