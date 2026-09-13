@@ -195,8 +195,49 @@ class TestTheCommittedStudyPublishesItsNulls:
         spec = summary["specificity_null"]
         floor = spec.get("p_value_floor")
         assert floor is not None, "the permutation floor is not reported"
-        assert floor == pytest.approx(1.0 / (spec["n_permutations"] + 1))
         assert spec["p_value"] >= floor
+        if spec.get("exact"):
+            # Enumerated: the identity permutation is always counted, so the
+            # floor is one over the permutation count with no add-one term.
+            assert floor == pytest.approx(1.0 / spec["n_permutations"])
+        else:
+            assert floor == pytest.approx(1.0 / (spec["n_permutations"] + 1))
+
+    def test_the_specificity_null_is_enumerated_not_sampled(self, summary: dict[str, Any]) -> None:
+        """Seven antigens give 5,040 permutations, so there is an exact answer.
+
+        A p-value that can be exact should not carry Monte Carlo error, and the
+        distinction matters here: the previous number sat on a *sampling* floor,
+        which is what an observation outside its own null looks like.
+        """
+        spec = summary["specificity_null"]
+        assert spec.get("exact") is True
+        import math
+
+        assert spec["n_permutations"] == math.factorial(spec["n_antigens"])
+
+    def test_the_observation_is_inside_the_null_it_is_compared_against(
+        self, summary: dict[str, Any]
+    ) -> None:
+        """Two panel antigens share an indication, and the null must allow it.
+
+        FOLH1 and STEAP1 are both single-indication and both TCGA-PRAD. The
+        previous null dealt each antigen a distinct cohort, so the observed
+        assignment was a zero-probability event under it.
+        """
+        from bindsight.benchmark import panel as P
+
+        spec = summary["specificity_null"]
+        usable = set(spec["antigens"])
+        cognate: dict[str, set[str]] = {}
+        for c in P.PANEL:
+            cognate.setdefault(c.symbol, set()).add(c.project)
+        assigned = [next(iter(cognate[s])) for s in sorted(usable)]
+        # The panel really does assign one cohort twice; if that ever stops
+        # being true this test still passes, but the defect it guards is gone.
+        if len(set(assigned)) < len(assigned):
+            assert spec["p_value"] > 0.0
+            assert spec["p_value"] >= spec["p_value_floor"]
 
     def test_the_written_report_carries_a_null(self) -> None:
         """RESULTS.md published three intervals and no p-value of any kind."""

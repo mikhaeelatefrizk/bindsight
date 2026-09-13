@@ -108,7 +108,7 @@ That is the finding, and it is a negative one: against background matched on abu
 Antigens ranked in their own indication versus a permuted assignment. The statistic is the mean standing of each antigen in its cohort, where 1.0 is the top of the eligible surfaceome and 0.0 the bottom. Restricted to antigens with a single indication in the panel, because the test assigns one cohort per antigen.
 
 - Observed mean standing: **0.858** (1.0 is the top of the eligible surfaceome, 0.0 the bottom)
-- p = **1.00e-04** over 10000 permutations — the floor for this many, so it is as extreme as this permutation count can show rather than vanishingly small
+- p = **3.97e-04** over 5040 enumerated permutations
 - Computed over 7 antigens and 15 cohorts: CA9, FGFR2, FOLH1, FOLR1, GPC3, NECTIN4, STEAP1
 
 Excluded, several indications each: CLDN18, EGFR, ERBB2, MET, TACSTD2. The test assigns one cohort per antigen, so an antigen with four indications has no single 'own' cohort to hold fixed.

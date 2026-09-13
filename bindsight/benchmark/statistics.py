@@ -40,6 +40,7 @@ every function takes an explicit seed so a published number is reproducible.
 
 from __future__ import annotations
 
+import itertools
 import math
 import random
 from collections.abc import Mapping, Sequence
@@ -354,38 +355,60 @@ def match_decoys(
 
 
 def permutation_null_p(
-    observed: float,
     scores: dict[str, dict[str, float]],
+    assignment: dict[str, str],
     *,
     n_perm: int = 10_000,
     seed: int = 0,
     higher_is_better: bool = True,
-) -> float:
+    exact_limit: int = 200_000,
+) -> dict[str, Any]:
     """Panel-level p-value for indication specificity.
 
     Asks whether bindsight matches antigens to the *right* cancers, rather than
-    surfacing generic epithelial biology that happens to contain them. Each
-    antigen is scored in every cohort, the antigen-to-cohort assignment is then
-    permuted, and the panel statistic recomputed. No differential expression is
-    re-run, so this is cheap.
+    surfacing generic epithelial biology that happens to contain them. The
+    antigen-to-cohort assignment is permuted and the panel statistic recomputed.
+    No differential expression is re-run, so this is cheap.
+
+    **The null permutes the assignment; it does not resample cohorts.** This
+    drew each antigen a *distinct* cohort from the whole panel, which put the
+    observation outside the null's support the moment two antigens shared an
+    indication — and two do. FOLH1 and STEAP1 are both single-indication and
+    both TCGA-PRAD, so the observed statistic counts prostate twice while no
+    draw from ``sample`` ever could. Both score near the top there, so the
+    observed statistic was systematically larger than anything the null could
+    produce, and the p-value was not a tail probability of it under any
+    distribution the code sampled. It reached the reporting floor, which is
+    exactly what that failure looks like.
+
+    Shuffling which antigen receives which of the *observed* cohorts fixes the
+    support — the observation is the identity permutation, so it is always in
+    the null — and controls for cohort difficulty as a side effect: every
+    permutation uses the same cohorts the observation did, so a cohort whose
+    standings run high cannot inflate one arm and not the other.
+
+    Enumerated exactly when the antigen count allows, because a p-value that
+    could be exact should not carry Monte Carlo error or a sampling floor.
 
     Args:
-        observed: the panel statistic actually obtained.
         scores: antigen -> {cohort -> score}. Must be complete: a missing score
             is an antigen that was never evaluated in that cohort, which would
             bias the permutation.
-        n_perm: permutations.
+        assignment: antigen -> its own indication. The observed statistic is
+            computed from this rather than passed in, so the observation and
+            the null cannot be built from different rules.
+        n_perm: permutations to sample when exact enumeration is too large.
         seed: fixed for reproducibility.
         higher_is_better: whether a larger statistic is a better result.
+        exact_limit: enumerate when ``n!`` is at most this.
 
-    The panel may carry more cohorts than antigens — it does: eight distinct
-    antigens against fifteen TCGA projects — and every cohort must be reachable
-    by the permutation, or the null is drawn from a smaller world than the
-    observation it is compared against.
+    Returns:
+        ``observed``, ``p_value``, ``p_value_floor``, ``n_permutations`` and
+        ``exact``.
 
     Raises:
         ValueError: If fewer than two antigens are supplied, the score matrix is
-            ragged, or there are fewer cohorts than antigens to assign.
+            ragged, or an assignment names a cohort or antigen not in ``scores``.
     """
     antigens = sorted(scores)
     if len(antigens) < 2:
@@ -397,31 +420,58 @@ def permutation_null_p(
             "score matrix is ragged; every antigen must be scored in every cohort. "
             f"incomplete: {ragged[:5]}"
         )
-
-    n = len(antigens)
-    if len(cohorts) < n:
+    if set(assignment) != set(antigens):
         raise ValueError(
-            f"{n} antigens cannot be given distinct cohorts drawn from {len(cohorts)}; "
-            "the permutation has nothing to draw from"
+            "every antigen must have exactly one assigned cohort; "
+            f"mismatch: {sorted(set(antigens) ^ set(assignment))[:5]}"
         )
+    unknown = sorted({c for c in assignment.values() if c not in set(cohorts)})
+    if unknown:
+        raise ValueError(f"assigned cohorts absent from the score matrix: {unknown}")
 
-    # The observed assignment pairs each antigen with its own indication, so the
-    # null reassigns antigens to cohorts at random.
-    #
-    # Each antigen draws a distinct cohort from the *whole* panel. This used to
-    # slice `cohorts[:n]` before shuffling, which permuted only the
-    # alphabetically-first n and could never assign the rest: with eight
-    # antigens against fifteen cohorts it silently excluded seven — including
-    # cohorts carrying observed antigens — while the observed statistic included
-    # them. Every test of it was square, where the slice is a no-op.
+    # The multiset the observation actually used. Repeats are kept: two antigens
+    # sharing an indication is a property of the panel, not an error, and
+    # removing it is what put the observation outside the null before.
+    assigned = [assignment[a] for a in antigens]
+    n = len(antigens)
+    observed = sum(scores[a][c] for a, c in zip(antigens, assigned, strict=True)) / n
+
+    def _stat(order: Sequence[int]) -> float:
+        return sum(scores[antigens[i]][assigned[j]] for j, i in enumerate(order)) / n
+
+    def _as_extreme(stat: float) -> bool:
+        # Tolerance, not equality: permutations that only swap two antigens
+        # sharing a cohort reproduce the observed statistic through a different
+        # summation order, and floating point does not guarantee the same bits.
+        return (stat >= observed - 1e-12) if higher_is_better else (stat <= observed + 1e-12)
+
+    total = math.factorial(n)
+    if total <= exact_limit:
+        extreme = sum(1 for order in itertools.permutations(range(n)) if _as_extreme(_stat(order)))
+        # Exact: the identity permutation is always counted, so this can never
+        # be zero and needs no add-one correction.
+        return {
+            "observed": observed,
+            "p_value": extreme / total,
+            "p_value_floor": 1.0 / total,
+            "n_permutations": total,
+            "exact": True,
+        }
+
     rng = random.Random(seed)
+    order = list(range(n))
     extreme = 0
     for _ in range(n_perm):
-        assigned = rng.sample(cohorts, n)
-        stat = sum(scores[a][c] for a, c in zip(antigens, assigned, strict=True)) / n
-        if (stat >= observed) if higher_is_better else (stat <= observed):
+        rng.shuffle(order)
+        if _as_extreme(_stat(order)):
             extreme += 1
-    return (1 + extreme) / (1 + n_perm)
+    return {
+        "observed": observed,
+        "p_value": (1 + extreme) / (1 + n_perm),
+        "p_value_floor": 1.0 / (1 + n_perm),
+        "n_permutations": n_perm,
+        "exact": False,
+    }
 
 
 def benjamini_hochberg(p_values: Sequence[float]) -> list[float]:

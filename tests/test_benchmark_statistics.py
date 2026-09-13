@@ -9,10 +9,6 @@ whose tests only confirm it does what it does is worth nothing.
 
 from __future__ import annotations
 
-import random
-from typing import Any
-from unittest import mock
-
 import pytest
 
 from bindsight.benchmark import statistics as st
@@ -292,6 +288,22 @@ class TestDecoyMatching:
 
 
 class TestPermutationNull:
+    """The null permutes the assignment; it does not resample cohorts.
+
+    It used to deal each antigen a *distinct* cohort from the whole panel. That
+    put the observation outside the null's support as soon as two antigens
+    shared an indication — and two do: FOLH1 and STEAP1 are both
+    single-indication and both TCGA-PRAD. The observed statistic counted
+    prostate twice; no draw ever could. Both score near the top there, so the
+    observation was systematically larger than anything the null could produce
+    and the p-value collapsed to its reporting floor.
+
+    Shuffling which antigen receives which of the *observed* cohorts fixes the
+    support — the observation is the identity permutation — and controls for
+    cohort difficulty, since every permutation uses exactly the cohorts the
+    observation used.
+    """
+
     def test_perfect_indication_matching_is_significant(self) -> None:
         """Each antigen scores well only in its own cohort."""
         scores = {
@@ -299,81 +311,133 @@ class TestPermutationNull:
             "B": {"ca": 0.0, "cb": 1.0, "cc": 0.0},
             "C": {"ca": 0.0, "cb": 0.0, "cc": 1.0},
         }
-        p = st.permutation_null_p(1.0, scores, n_perm=2000, seed=5)
-        assert p < 0.2
+        result = st.permutation_null_p(scores, {"A": "ca", "B": "cb", "C": "cc"})
+        assert result["observed"] == pytest.approx(1.0)
+        assert result["p_value"] == pytest.approx(1 / 6), "only the identity is this extreme"
 
     def test_generic_biology_is_not_significant(self) -> None:
         """If every antigen scores the same everywhere, matching means nothing."""
         scores = {a: {c: 0.5 for c in ("ca", "cb", "cc")} for a in ("A", "B", "C")}
-        p = st.permutation_null_p(0.5, scores, n_perm=2000, seed=5)
-        assert p == pytest.approx(1.0)
+        result = st.permutation_null_p(scores, {"A": "ca", "B": "cb", "C": "cc"})
+        assert result["p_value"] == pytest.approx(1.0)
+
+    def test_two_antigens_sharing_a_cohort_keep_the_observation_in_the_null(self) -> None:
+        """The defect: the panel has two prostate-only antigens.
+
+        Under the old null every permutation gave a cohort to at most one
+        antigen, so an observation that used prostate twice could not be
+        produced by any draw. Its p-value was not a tail probability of
+        anything the code sampled.
+        """
+        scores = {
+            "FOLH1": {"PRAD": 0.99, "KIRC": 0.40, "LIHC": 0.30},
+            "STEAP1": {"PRAD": 0.93, "KIRC": 0.35, "LIHC": 0.32},
+            "CA9": {"PRAD": 0.20, "KIRC": 0.98, "LIHC": 0.25},
+        }
+        assignment = {"FOLH1": "PRAD", "STEAP1": "PRAD", "CA9": "KIRC"}
+        result = st.permutation_null_p(scores, assignment)
+
+        # The observation is the identity permutation, so it is always counted.
+        assert result["p_value"] >= result["p_value_floor"]
+        assert result["p_value"] > 0.0
+        assert result["observed"] == pytest.approx((0.99 + 0.93 + 0.98) / 3)
+
+    def test_the_observed_statistic_comes_from_the_assignment(self) -> None:
+        """It used to be passed in, computed by the caller under its own rule.
+
+        That is how the observation and the null came to disagree. Deriving it
+        here makes the two impossible to build differently.
+        """
+        scores = {
+            "A": {"ca": 0.9, "cb": 0.1},
+            "B": {"ca": 0.2, "cb": 0.8},
+        }
+        assert st.permutation_null_p(scores, {"A": "ca", "B": "cb"})["observed"] == pytest.approx(
+            0.85
+        )
+        assert st.permutation_null_p(scores, {"A": "cb", "B": "ca"})["observed"] == pytest.approx(
+            0.15
+        )
+
+    def test_the_null_uses_only_the_cohorts_the_observation_used(self) -> None:
+        """Which is what makes it control for cohort difficulty.
+
+        A cohort whose standings run high across the board cannot inflate the
+        observed arm without inflating every permuted one too.
+        """
+        scores = {
+            "A": {"ca": 0.5, "cb": 0.5, "unused": 9.0},
+            "B": {"ca": 0.5, "cb": 0.5, "unused": 9.0},
+        }
+        # `unused` is never assigned, so it can never enter the statistic.
+        result = st.permutation_null_p(scores, {"A": "ca", "B": "cb"})
+        assert result["observed"] == pytest.approx(0.5)
+        assert result["p_value"] == pytest.approx(1.0)
+
+    def test_a_small_panel_is_enumerated_exactly(self) -> None:
+        """A p-value that can be exact should not carry Monte Carlo error."""
+        scores = {a: {c: 0.5 for c in ("ca", "cb", "cc")} for a in ("A", "B", "C")}
+        result = st.permutation_null_p(scores, {"A": "ca", "B": "cb", "C": "cc"})
+        assert result["exact"] is True
+        assert result["n_permutations"] == 6
+        assert result["p_value_floor"] == pytest.approx(1 / 6)
+
+    def test_a_large_panel_falls_back_to_sampling_and_says_so(self) -> None:
+        scores = {f"A{i}": {f"c{j}": 0.5 for j in range(10)} for i in range(10)}
+        assignment = {f"A{i}": f"c{i}" for i in range(10)}
+        result = st.permutation_null_p(scores, assignment, n_perm=200, exact_limit=1000)
+        assert result["exact"] is False
+        assert result["n_permutations"] == 200
+        assert result["p_value_floor"] == pytest.approx(1 / 201)
+
+    def test_the_same_seed_reproduces_a_sampled_p_value(self) -> None:
+        scores = {f"A{i}": {f"c{j}": (i * j) % 7 / 7 for j in range(10)} for i in range(10)}
+        assignment = {f"A{i}": f"c{i}" for i in range(10)}
+        a = st.permutation_null_p(scores, assignment, n_perm=500, seed=3, exact_limit=10)
+        b = st.permutation_null_p(scores, assignment, n_perm=500, seed=3, exact_limit=10)
+        assert a["p_value"] == b["p_value"]
 
     def test_a_ragged_score_matrix_is_rejected(self) -> None:
         """A missing score is an unevaluated pair, which would bias the null."""
         with pytest.raises(ValueError, match="ragged"):
-            st.permutation_null_p(0.5, {"A": {"ca": 1.0, "cb": 0.0}, "B": {"ca": 0.0}}, n_perm=10)
+            st.permutation_null_p(
+                {"A": {"ca": 1.0, "cb": 0.0}, "B": {"ca": 0.0}}, {"A": "ca", "B": "ca"}
+            )
 
     def test_needs_more_than_one_antigen(self) -> None:
         with pytest.raises(ValueError, match="at least two antigens"):
-            st.permutation_null_p(1.0, {"A": {"ca": 1.0}}, n_perm=10)
+            st.permutation_null_p({"A": {"ca": 1.0}}, {"A": "ca"})
 
-    def test_every_cohort_can_be_assigned_on_a_non_square_panel(self) -> None:
-        """The real panel is 8 antigens against 15 cohorts, and was never square.
+    def test_an_assignment_that_misses_an_antigen_is_refused(self) -> None:
+        scores = {"A": {"ca": 1.0, "cb": 0.0}, "B": {"ca": 0.0, "cb": 1.0}}
+        with pytest.raises(ValueError, match="exactly one assigned cohort"):
+            st.permutation_null_p(scores, {"A": "ca"})
 
-        This sliced the cohort list to the antigen count before shuffling, so it
-        permuted only the alphabetically-first n and could never assign the rest.
-        Seven of fifteen cohorts were unreachable while the observed statistic
-        included them. Every test of it was square, where the slice is a no-op —
-        which is exactly why it survived.
+    def test_an_assignment_naming_an_unscored_cohort_is_refused(self) -> None:
+        """Scoring an antigen in a cohort it was never evaluated in is not a null."""
+        scores = {"A": {"ca": 1.0, "cb": 0.0}, "B": {"ca": 0.0, "cb": 1.0}}
+        with pytest.raises(ValueError, match="absent from the score matrix"):
+            st.permutation_null_p(scores, {"A": "ca", "B": "somewhere_else"})
+
+    def test_more_antigens_than_cohorts_is_now_allowed(self) -> None:
+        """It had to be refused when cohorts were dealt out without replacement.
+
+        Permuting an assignment has no such constraint, and forbidding it was
+        forbidding exactly the panel shape that exposed the defect.
         """
-        cohorts = [f"c{i}" for i in range(1, 7)]
-        antigens = ["A1", "A2", "A3"]
-        scores = {a: dict.fromkeys(cohorts, 0.0) for a in antigens}
-
-        drawn: set[str] = set()
-        real_sample = random.Random.sample
-
-        def spy(self: random.Random, population: Any, k: int) -> list[Any]:
-            picked = real_sample(self, population, k)
-            drawn.update(picked)
-            return picked
-
-        with mock.patch.object(random.Random, "sample", spy):
-            st.permutation_null_p(0.0, scores, n_perm=300)
-
-        assert drawn == set(cohorts), (
-            f"never assigned: {sorted(set(cohorts) - drawn)}; the null is drawn "
-            "from a smaller world than the observation it is compared against"
-        )
-
-    def test_an_unreachable_cohort_would_manufacture_significance(self) -> None:
-        """The consequence, not just the mechanism.
-
-        One antigen scores well in the *last* cohort alphabetically and nowhere
-        else. If the permutation cannot reach that cohort, no rearrangement ever
-        matches the observed statistic and p collapses to its floor — a
-        confident claim of indication specificity produced entirely by the
-        slice.
-        """
-        cohorts = [f"c{i}" for i in range(1, 7)]
-        antigens = ["A1", "A2", "A3"]
-        scores = {a: dict.fromkeys(cohorts, 0.0) for a in antigens}
-        scores["A1"]["c6"] = 9.0
-        observed = 9.0 / 3
-
-        p = st.permutation_null_p(observed, scores, n_perm=4000)
-        floor = 1 / (1 + 4000)
-        assert p > 20 * floor, (
-            f"p={p} is at the floor, which is what an unreachable cohort produces"
-        )
-        # A1 draws c6 about one time in six, so the honest p is near that.
-        assert 0.10 < p < 0.25, f"p={p} is not the reachable-cohort answer"
-
-    def test_more_antigens_than_cohorts_is_refused(self) -> None:
-        """Distinct cohorts cannot be dealt out of a smaller set."""
         scores = {a: {"ca": 1.0, "cb": 1.0} for a in ("A", "B", "C")}
-        with pytest.raises(ValueError, match="nothing to draw from"):
-            st.permutation_null_p(1.0, scores, n_perm=10)
+        result = st.permutation_null_p(scores, {"A": "ca", "B": "ca", "C": "cb"})
+        assert result["p_value"] == pytest.approx(1.0)
+
+    def test_lower_is_better_flips_the_tail(self) -> None:
+        scores = {
+            "A": {"ca": 0.0, "cb": 1.0},
+            "B": {"ca": 1.0, "cb": 0.0},
+        }
+        assignment = {"A": "ca", "B": "cb"}
+        low = st.permutation_null_p(scores, assignment, higher_is_better=False)
+        high = st.permutation_null_p(scores, assignment, higher_is_better=True)
+        assert low["p_value"] < high["p_value"]
 
 
 class TestBenjaminiHochberg:

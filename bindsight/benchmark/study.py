@@ -985,10 +985,21 @@ def _specificity_null(results: list[CohortResult], config: StudyConfig) -> dict[
         symbol: {project: by_project[project][symbol] for project in by_project}
         for symbol in usable
     }
-    observed = sum(scores[s][next(iter(cognate[s]))] for s in usable) / len(usable)
-    p = S.permutation_null_p(
-        observed, scores, n_perm=config.n_permutations, seed=config.seed, higher_is_better=True
+    # The assignment goes in; the observed statistic comes back out. It used to
+    # be computed here and the null built separately, which is how the two came
+    # to disagree: this sum gives TCGA-PRAD to both FOLH1 and STEAP1, and the
+    # null drew distinct cohorts, so the observation was outside the
+    # distribution it was being compared against.
+    assignment = {s: next(iter(cognate[s])) for s in usable}
+    null = S.permutation_null_p(
+        scores,
+        assignment,
+        n_perm=config.n_permutations,
+        seed=config.seed,
+        higher_is_better=True,
     )
+    observed = null["observed"]
+    p = null["p_value"]
     return {
         "description": (
             "Antigens ranked in their own indication versus a permuted "
@@ -1004,10 +1015,14 @@ def _specificity_null(results: list[CohortResult], config: StudyConfig) -> dict[
         # small", and the decoy null next to it already reports its own floor
         # for exactly that reason. Correcting the eligible surfaceome put this
         # one on the floor, which is precisely when the distinction matters.
-        "p_value_floor": 1.0 / (config.n_permutations + 1),
+        "p_value_floor": null["p_value_floor"],
+        # Whether the p-value is enumerated or sampled. With seven antigens the
+        # 5,040 permutations are enumerable, so there is no Monte Carlo error
+        # and no sampling floor to reason about.
+        "exact": null["exact"],
         "n_antigens": len(usable),
         "n_cohorts": len(by_project),
-        "n_permutations": config.n_permutations,
+        "n_permutations": null["n_permutations"],
         "antigens": usable,
         "excluded_multi_indication": sorted(
             s for s in scored_everywhere if len(cognate.get(s, ())) > 1

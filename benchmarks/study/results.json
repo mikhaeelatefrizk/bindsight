@@ -1509,11 +1509,12 @@
   "specificity_null": {
     "description": "Antigens ranked in their own indication versus a permuted assignment. The statistic is the mean standing of each antigen in its cohort, where 1.0 is the top of the eligible surfaceome and 0.0 the bottom. Restricted to antigens with a single indication in the panel, because the test assigns one cohort per antigen.",
     "observed": 0.8575382138733182,
-    "p_value": 9.999000099990002e-05,
-    "p_value_floor": 9.999000099990002e-05,
+    "p_value": 0.0003968253968253968,
+    "p_value_floor": 0.0001984126984126984,
+    "exact": true,
     "n_antigens": 7,
     "n_cohorts": 15,
-    "n_permutations": 10000,
+    "n_permutations": 5040,
     "antigens": [
       "CA9",
       "FGFR2",

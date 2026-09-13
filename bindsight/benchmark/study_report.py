@@ -341,7 +341,9 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             f"- Observed mean standing: **{_fmt(spec.get('observed'), 3)}** "
             "(1.0 is the top of the eligible surfaceome, 0.0 the bottom)",
             f"- p = **{_fmt(spec.get('p_value'), 4)}** over "
-            f"{spec.get('n_permutations')} permutations"
+            f"{spec.get('n_permutations')} "
+            + ("enumerated" if spec.get("exact") else "sampled")
+            + " permutations"
             + (
                 " — the floor for this many, so it is as extreme as this "
                 "permutation count can show rather than vanishingly small"

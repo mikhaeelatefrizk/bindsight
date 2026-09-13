@@ -8,6 +8,47 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — the specificity null compared the observation against a null that excluded it
+
+The panel-level p-value was not a tail probability of the observed statistic
+under any distribution the code sampled.
+
+`permutation_null_p` dealt each antigen a **distinct** cohort. The observed
+statistic pairs each antigen with its own indication — and two panel antigens
+share one. FOLH1 and STEAP1 are both single-indication and both TCGA-PRAD, so
+the observation counts prostate twice while no draw without replacement ever
+could. Both score near the top there, so the observed statistic was
+systematically larger than anything the null could produce, and the p-value
+collapsed onto its sampling floor. That collapse is exactly what an observation
+outside its own null looks like.
+
+**This became live today.** STEAP1 had been excluded from the null as "not
+scored in every cohort" — an artefact of the SURFY-only gene map fixed a few
+entries above. Correcting that map restored STEAP1 to the usable set and, with
+it, the second prostate assignment. The fix that made the study's denominators
+right is what made its specificity p-value wrong.
+
+The null now shuffles **which antigen receives which of the observed cohorts**,
+so the observation is the identity permutation and always in its own support.
+It controls for cohort difficulty as a side effect: every permutation uses
+exactly the cohorts the observation used, so a cohort whose standings run high
+cannot inflate one arm and not the other.
+
+With seven antigens the 5,040 permutations are enumerable, so the p-value is
+exact rather than sampled — a p that can be exact should not carry Monte Carlo
+error or a floor to reason about. **p = 3.97e-04**, meaning 2 of 5,040
+permutations are as extreme: the observed assignment and the FOLH1/STEAP1 swap
+that necessarily ties it. The previously published 9.99e-05 was the sampling
+floor of an invalid comparison.
+
+The observed statistic is now computed inside the null from the assignment it
+is given, rather than by the caller under its own rule. That is how the two
+came to disagree, and passing one number where the structure was needed is what
+made the disagreement invisible.
+
+The conclusion stands: indication specificity is real and now defensible. The
+number under it was not.
+
 ### Fixed — the Chai-1 validator carried both defects Boltz-2 did
 
 Verified against pinned commit c544fb1: `run_inference` takes
