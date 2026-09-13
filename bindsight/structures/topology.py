@@ -48,10 +48,35 @@ class Topology:
     extracellular_ranges: tuple[tuple[int, int], ...]
     transmembrane_ranges: tuple[tuple[int, int], ...]
     signal_peptide: tuple[int, int] | None
+    #: Omega-site residue of a GPI anchor, when UniProt annotates one.
+    #:
+    #: A GPI-anchored protein is tethered to the outer leaflet by a lipid rather
+    #: than by a transmembrane helix, so it has no transmembrane segment — and
+    #: UniProt annotates topological domains *relative to* transmembrane
+    #: segments, so it has none of those either. Reading extracellular extent
+    #: from topological domains alone therefore classified an entire class of
+    #: cell-surface protein as having nothing a binder can reach. MSLN
+    #: (Q13421) is the clearest case: no Transmembrane feature, no Topological
+    #: domain, one Lipidation reading "GPI-anchor amidated serine" — and it is
+    #: the target of multiple clinical antibody-drug conjugates and CAR-T
+    #: programmes. CEACAM5, FOLR1 and CD59 have the same shape.
+    gpi_anchor: int | None = None
+
+    @property
+    def is_gpi_anchored(self) -> bool:
+        """True if UniProt annotates a GPI anchor and no transmembrane segment."""
+        return self.gpi_anchor is not None and not self.transmembrane_ranges
 
     @property
     def has_extracellular(self) -> bool:
-        """True if UniProt annotates at least one extracellular topological domain."""
+        """True if any part of the chain is annotated as reachable from outside.
+
+        A GPI-anchored protein counts: its whole mature chain sits outside the
+        membrane. This returned ``False`` for every one of them, and with
+        ``require_extracellular_domain`` enabled that dropped them from design
+        carry-forward as "not antibody-accessible" — the opposite of the truth
+        for some of the best-validated antibody targets there are.
+        """
         return bool(self.extracellular_ranges)
 
     def extracellular_residues(self) -> set[int]:
@@ -80,6 +105,8 @@ def parse_topology(uniprot_id: str, data: dict[str, Any]) -> Topology:
     extracellular: list[tuple[int, int]] = []
     transmembrane: list[tuple[int, int]] = []
     signal: tuple[int, int] | None = None
+    gpi: int | None = None
+    propeptide: tuple[int, int] | None = None
     for feat in data.get("features", []):
         loc = feat.get("location", {})
         start = loc.get("start", {}).get("value")
@@ -95,11 +122,39 @@ def parse_topology(uniprot_id: str, data: dict[str, Any]) -> Topology:
             transmembrane.append(rng)
         elif ftype == "Signal" and signal is None:
             signal = rng
+        elif ftype == "Lipidation" and "gpi-anchor" in desc and gpi is None:
+            # The omega site: the residue the glycolipid is amidated onto.
+            gpi = rng[0]
+        elif ftype == "Propeptide" and propeptide is None:
+            propeptide = rng
+
+    if gpi is not None and not transmembrane and not extracellular:
+        # A GPI-anchored protein has no transmembrane helix, so UniProt gives it
+        # no topological domains either — the annotation is defined relative to
+        # a membrane-spanning segment. Its mature chain nonetheless sits wholly
+        # outside the cell, which is why MSLN and CEACAM5 are antibody targets.
+        #
+        # The reachable region is the mature chain: everything after the signal
+        # peptide, up to and including the omega site. Residues beyond it are
+        # the propeptide UniProt marks "Removed in mature form" — they are gone
+        # before the protein reaches the surface, so designing against them
+        # would target a sequence that does not exist on a cell. For MSLN that
+        # is 37-598 of 622: signal 1-36, omega site 598, propeptide 599-622.
+        start = (signal[1] + 1) if signal else 1
+        end = gpi
+        if propeptide is not None and propeptide[0] <= gpi:
+            # An omega site inside the cleaved region would make the mature
+            # chain end before it begins; trust the propeptide boundary.
+            end = propeptide[0] - 1
+        if end >= start:
+            extracellular.append((start, end))
+
     return Topology(
         uniprot_id=uniprot_id,
         extracellular_ranges=tuple(extracellular),
         transmembrane_ranges=tuple(transmembrane),
         signal_peptide=signal,
+        gpi_anchor=gpi,
     )
 
 

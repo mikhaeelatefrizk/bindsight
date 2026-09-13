@@ -8,6 +8,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — GPI-anchored antigens were classified as having nothing a binder can reach
+
+UniProt annotates topological domains *relative to* a transmembrane segment. A
+GPI-anchored protein is held in the outer leaflet by a lipid and has no
+transmembrane helix, so it carries no topological domain either — and reading
+extracellular extent from topological domains alone returned "no extracellular
+domain" for an entire class of cell-surface protein.
+
+That class includes some of the best-validated antibody targets there are.
+Verified against the live record for **MSLN** (Q13421), which is in this
+project's own default target set and is the target of multiple clinical
+antibody-drug conjugates and CAR-T programmes: no Transmembrane feature, no
+Topological domain, one Lipidation reading "GPI-anchor amidated serine" at
+residue 598, signal peptide 1–36, propeptide 599–622 "Removed in mature form".
+CEACAM5, FOLR1 and CD59 have the same shape.
+
+With `require_extracellular_domain` enabled, discovery dropped such candidates
+from design carry-forward as "not antibody-accessible" — the opposite of the
+truth. The gate defaults to off, so no committed result is affected, but
+`has_extracellular_domain` was written as `False` into every candidates table
+regardless, which is simply a wrong fact.
+
+A GPI anchor is now recognised, and the reachable region derived as the mature
+chain: after the signal peptide, up to and including the omega site. Residues
+past it are the propeptide UniProt marks removed in the mature form — gone
+before the protein reaches the surface, so designing against them would target
+a sequence no cell displays. For MSLN that is 37–598 of 622.
+
+The inference is a fallback, not an override: a protein with annotated
+topological domains, or with a transmembrane helix, keeps the annotation.
+
 ### Fixed — the study ranked against a smaller surfaceome than the pipeline searched
 
 `score_cohort` built its eligible-gene set from `load_surfy_gene_map()` — the
