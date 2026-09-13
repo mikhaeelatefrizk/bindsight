@@ -126,6 +126,13 @@ class DesignerScore:
     # twenty designs claims a precision the sample does not carry, so the
     # interval travels with it.
     n_success: int | None = None
+    # The denominator the rate was actually computed over: designs the validator
+    # returned a confidence for. It can be smaller than n_designs, because a
+    # design Boltz-2 skipped has no ipTM to compare against the threshold. The
+    # cell used to print n_success/n_designs beside a percentage computed over
+    # this, so with any unfolded design the fraction and the percentage
+    # disagreed — 8/20 rendered beside a rate of 8/16.
+    n_scored: int | None = None
     # The reported interval, clustered over backbones. See _success_intervals.
     success_ci_low: float | None = None
     success_ci_high: float | None = None
@@ -342,6 +349,7 @@ def run_one_designer(
         n_ok = sum(1 for v in all_iptm if v >= DEFAULT_IPTM_SUCCESS)
         score.success_rate = round(n_ok / len(all_iptm), 4)
         score.n_success = n_ok
+        score.n_scored = len(all_iptm)
         for field, value in _success_intervals(outcomes_by_backbone).items():
             setattr(score, field, value)
     if all_pae:
@@ -697,10 +705,22 @@ def _success_cell(d: dict[str, Any]) -> str:
     if rate is None:
         return "—"
     low, high = d.get("success_ci_low"), d.get("success_ci_high")
-    n_ok, n = d.get("n_success"), d.get("n_designs")
+    n_ok = d.get("n_success")
+    # The denominator the rate was computed over, not the number of designs
+    # submitted. Older summaries carry no n_scored; for those the two were
+    # equal or the discrepancy is unrecoverable, and n_designs is the honest
+    # fallback.
+    n_designs = d.get("n_designs")
+    n = d.get("n_scored") or n_designs
     if low is None or high is None or n_ok is None or not n:
         return f"{rate:.0%}"
-    return f"{n_ok}/{n} = {rate:.0%} ({low:.0%}–{high:.0%})"
+    cell = f"{n_ok}/{n} = {rate:.0%} ({low:.0%}–{high:.0%})"
+    if n_designs and n != n_designs:
+        # Silently narrowing a denominator is itself a claim. Say how many
+        # designs the validator never scored, so the rate is read as the
+        # conditional quantity it is.
+        cell += f" of {n_designs} designed; {n_designs - n} unscored"
+    return cell
 
 
 def _backbone_cell(d: dict[str, Any]) -> str:

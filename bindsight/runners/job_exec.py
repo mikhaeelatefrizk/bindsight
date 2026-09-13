@@ -870,6 +870,20 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
     else:
         designs = _DESIGNERS[designer](spec, work_dir, tools_root)
         LOG.info("designer produced %d designs", len(designs))
+        if not designs:
+            # The validate_only branch already refuses an empty set. This one
+            # did not, so a designer that wrote nothing — a bad contig, an OOM,
+            # a tool exiting 0 after failing — produced an empty metrics.jsonl,
+            # a valid tarball and a zero exit, and the caller recorded a
+            # completed design stage. A run that designed nothing is not a run
+            # that found nothing worth keeping.
+            raise ValueError(
+                f"{designer} produced no designs. The job cannot be reported as "
+                "completed: an empty result here is a failed designer, not a "
+                "negative finding. Check the designer's output above for the "
+                "cause (contig, hotspots, or a tool that exited 0 without "
+                "writing)."
+            )
 
         # ESM-2 pre-screen, between design and validation — the only point where
         # dropping a design actually saves GPU time. Off unless prescreen_top_k is

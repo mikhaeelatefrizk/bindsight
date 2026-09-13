@@ -114,6 +114,10 @@ GATE_EXPLANATIONS: dict[str, str] = {
     "no_alphafold_model": "no AlphaFold model available",
     "not_top_n": "ranked below the design carry-forward cutoff",
     "no_surface_bind_site": "no targetable site in the SURFACE-Bind data",
+    "surface_bind_lookup_failed": (
+        "the SURFACE-Bind lookup errored, so nothing was learned about this "
+        "protein — not the same as learning it has no targetable site"
+    ),
     "surfaced": "carried through to design",
 }
 

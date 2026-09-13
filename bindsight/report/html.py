@@ -239,6 +239,7 @@ _DISPOSITION_ORDER = (
     "low_confidence_structure",
     "not_top_n",
     "no_surface_bind_site",
+    "surface_bind_lookup_failed",
     "surfaced",
 )
 

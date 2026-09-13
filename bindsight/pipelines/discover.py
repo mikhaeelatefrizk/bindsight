@@ -898,6 +898,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "low_confidence_structure",
     "not_top_n",
     "no_surface_bind_site",
+    "surface_bind_lookup_failed",
     "surfaced",
 )
 
@@ -1024,10 +1025,21 @@ def _build_taxonomy(
                 str(g) for g in candidates.loc[candidates["normal_tissue_unassessed"], "gene_id"]
             }
     site_gids: set[str] = set()
+    # Genes whose site lookup errored. They are not genes without a site: the
+    # lookup said nothing about them at all, and the taxonomy derived
+    # "no_surface_bind_site" purely from the absence of a row, so an outage
+    # became a biological finding about every protein it touched.
+    lookup_failed_gids: set[str] = set()
     if surface_bind_active and not epitopes.empty and "epitope_status" in epitopes.columns:
         site_gids = {
             str(g)
             for g in epitopes.loc[epitopes["epitope_status"] == "surface_bind_site", "gene_id"]
+        }
+        lookup_failed_gids = {
+            str(g)
+            for g in epitopes.loc[
+                epitopes["epitope_status"] == "surface_bind_lookup_failed", "gene_id"
+            ]
         }
 
     rows: list[dict[str, object]] = []
@@ -1041,11 +1053,12 @@ def _build_taxonomy(
         # structure-less gene can still appear in candidates). Only genes that
         # never reached candidates get the upstream "why dropped" reasons.
         if gid in struct_gids and gid in topn_gids:
-            disp = (
-                "no_surface_bind_site"
-                if surface_bind_active and gid not in site_gids
-                else "surfaced"
-            )
+            if gid in lookup_failed_gids:
+                disp = "surface_bind_lookup_failed"
+            elif surface_bind_active and gid not in site_gids:
+                disp = "no_surface_bind_site"
+            else:
+                disp = "surfaced"
         elif gid in cand_gids:
             # passed the filters but can't proceed to design: over-expressed in vital
             # tissue, not antibody-accessible (no ECD), low-confidence model, no
@@ -1197,6 +1210,8 @@ def _build_epitopes(
 
     - ``surface_bind_site``           — a real vendored site (focused design);
     - ``no_surface_bind_site``        — data present, none for this protein;
+    - ``surface_bind_lookup_failed``  — the client raised; nothing was learned
+      about this protein, and that is not the same as learning it has no site;
     - ``surface_bind_not_configured`` — no SURFACE-Bind data vendored.
 
     ``require_surface_bind_site`` only bites when data is actually vendored: with
@@ -1247,6 +1262,7 @@ def _build_epitopes(
             "design_range_source": "uniprot_topology" if topo else "not_available",
         }
         sites: list[Any] = []
+        lookup_failed = False
         if client is not None and isinstance(uni, str) and uni:
             try:
                 sites = [
@@ -1256,6 +1272,7 @@ def _build_epitopes(
                 ]
             except Exception as e:  # malformed vendored data must not abort discovery
                 LOG.warning("SURFACE-Bind lookup failed for %s: %s", uni, e)
+                lookup_failed = True
         if sites:
             for s in sites:
                 rows.append(
@@ -1275,10 +1292,22 @@ def _build_epitopes(
                         ),
                     }
                 )
-        elif client is None or not p.require_surface_bind_site:
+        elif lookup_failed or client is None or not p.require_surface_bind_site:
             # whole-surface fallback (honest status); omitted only when data is
             # vendored AND a site is required but none exists for this protein.
-            status = "no_surface_bind_site" if client is not None else "surface_bind_not_configured"
+            # A lookup that errored is not a biological negative.
+            # ``no_surface_bind_site`` is documented as "data present, none for
+            # this protein" — a finding about the protein. An exception in the
+            # client said nothing about the protein at all, and reporting the
+            # two identically turned an outage into evidence. The project's own
+            # outcomes module states the rule: "a lookup that errored or never
+            # ran is not a scientific negative."
+            if lookup_failed:
+                status = "surface_bind_lookup_failed"
+            elif client is not None:
+                status = "no_surface_bind_site"
+            else:
+                status = "surface_bind_not_configured"
             rows.append(
                 {
                     **base,

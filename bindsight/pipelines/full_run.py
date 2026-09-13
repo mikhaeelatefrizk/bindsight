@@ -87,6 +87,23 @@ def _inputs(root: Path, refs: Iterable[tuple[Path, str]]) -> list[InputRef]:
     return out
 
 
+def _parquet_has_rows(path: Path) -> bool:
+    """True when ``path`` is a parquet file holding at least one row.
+
+    Existence and size do not answer this: an empty table is a valid parquet
+    file of ~1.9 kB, all of it schema and footer. Reading the metadata rather
+    than the table keeps this cheap on a large result.
+    """
+    if not path.exists():
+        return False
+    try:
+        import pyarrow.parquet as pq
+
+        return pq.ParquetFile(path).metadata.num_rows > 0
+    except Exception:  # unreadable or not parquet: not a completed stage
+        return False
+
+
 def _outputs(root: Path, refs: Iterable[tuple[Path, str]]) -> list[OutputRef]:
     """Digest every produced artifact that exists (see :func:`_inputs`)."""
     out: list[OutputRef] = []
@@ -240,7 +257,12 @@ def run(
                 LOG.warning("validate stage failed: %s", e)
                 validate_stage.mark_failed(repr(e))
         if validate_stage.status == "running":
-            if validated_path.exists() and validated_path.stat().st_size > 0:
+            # Rows, not bytes. A zero-row parquet still carries its schema
+            # footer — 1,878 bytes for this table — so `st_size > 0` passed on a
+            # validation that produced nothing, and the manifest recorded a
+            # completed stage while the report rendered an empty table as a
+            # finished result.
+            if _parquet_has_rows(validated_path):
                 if not design_ok:
                     # The GPU half can run elsewhere (Colab/Modal) with the
                     # results dropped back into the run directory; the digest

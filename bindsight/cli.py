@@ -429,6 +429,24 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
     # materialise those into validate/validated.parquet (+ per-binder dirs).
     n = _finalize_validate(run_dir)
     validated = run_dir / "validate" / "validated.parquet"
+    if n == 0:
+        # Nothing was validated, so nothing is recorded. provenance.record marks
+        # the stage completed unconditionally, so this command used to append a
+        # completed validate stage to run_manifest.jsonld and then print, on the
+        # same screen, that the GPU step still needed running. The manifest is
+        # what a reviewer reads and what the RO-Crate exports; it must not
+        # assert a stage the console is telling the user to go and perform.
+        console.print(
+            Panel(
+                "No design results to validate yet. Run [bold]bindsight design[/bold] on a\n"
+                "headless backend (modal/local_docker/kaggle), or for --backend colab open "
+                "the\ngenerated notebook (GPU), download the results tarball into "
+                "<run>/design/,\nthen re-run this command. See docs/colab-design-howto.md.",
+                title="validate: GPU step pending",
+                border_style="cyan",
+            )
+        )
+        sys.exit(0)
     # Record the validator that produced these numbers, not the one the flag
     # asked for. Without --revalidate no validator runs here, so the flag is a
     # request the metrics may not answer to.
@@ -446,28 +464,16 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
         },
         notes=f"{n} design(s) materialised into validated.parquet",
     )
-    if n > 0:
-        console.print(
-            Panel(
-                f"[green]Validated {n} design(s).[/green]\n"
-                f"Output: {validated}\nNext: [bold]bindsight rank {run_dir}[/bold]",
-                title="validate: ready",
-                border_style="green",
-            )
-        )
-        return
-
+    # n == 0 returned above, before the stage was recorded, so reaching here
+    # means designs really were validated.
     console.print(
         Panel(
-            "No design results to validate yet. Run [bold]bindsight design[/bold] on a\n"
-            "headless backend (modal/local_docker/kaggle), or for --backend colab open the\n"
-            "generated notebook (GPU), download the results tarball into <run>/design/,\n"
-            "then re-run this command. See docs/colab-design-howto.md.",
-            title="validate: GPU step pending",
-            border_style="cyan",
+            f"[green]Validated {n} design(s).[/green]\n"
+            f"Output: {validated}\nNext: [bold]bindsight rank {run_dir}[/bold]",
+            title="validate: ready",
+            border_style="green",
         )
     )
-    sys.exit(0)
 
 
 # ---------------------------------------------------------------------------
