@@ -437,9 +437,7 @@ def _empty_dir_parsers(tmp: Path) -> dict[str, object]:
         "parse_af2ig_output": parse_af2ig_output(
             tmp / "absent.sc", binder_id="b1", target_uniprot="P04626"
         ),
-        "parse_chai_output": parse_chai_output(
-            tmp, binder_id="b1", target_uniprot="P04626"
-        ),
+        "parse_chai_output": parse_chai_output(tmp, binder_id="b1", target_uniprot="P04626"),
         "parse_boltz_output": parse_boltz_output(
             output_dir=tmp, binder_id="b1", target_uniprot="P04626"
         ),
@@ -479,7 +477,8 @@ class TestAValidatorThatParsedNothingSaysSo:
         from bindsight.validate.protocol import NO_METRICS_NOTE
 
         for name, result in _empty_dir_parsers(tmp_path).items():
-            assert result.notes and NO_METRICS_NOTE in result.notes, (
+            assert result.notes, f"{name} returned an all-null result with no notes"
+            assert NO_METRICS_NOTE in result.notes, (
                 f"{name} returned an all-null result with notes={result.notes!r}"
             )
 
@@ -493,9 +492,9 @@ class TestAValidatorThatParsedNothingSaysSo:
 
         messages = [r.getMessage() for r in caplog.records]
         for name, result in parsers.items():
-            assert any(
-                result.validator_name in m and "parsed no metrics" in m for m in messages
-            ), f"{name} parsed nothing without warning; warnings were {messages}"
+            assert any(result.validator_name in m and "parsed no metrics" in m for m in messages), (
+                f"{name} parsed nothing without warning; warnings were {messages}"
+            )
 
     def test_a_measured_result_is_left_exactly_as_it_was(self) -> None:
         """The annotation must not touch a real measurement -- including one that
@@ -591,9 +590,7 @@ class TestAnUnreadCandidateTableIsNotAMiss:
     def _score(self, run: Path):
         from bindsight.benchmark import core
 
-        return core.score_run(
-            run, known=self._known(), tumor_type="breast", run_name="t"
-        )
+        return core.score_run(run, known=self._known(), tumor_type="breast", run_name="t")
 
     def test_a_missing_table_reports_no_recall_at_all(self, tmp_path: Path) -> None:
         score = self._score(self._run_dir(tmp_path, write_candidates=False))

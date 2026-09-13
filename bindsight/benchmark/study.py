@@ -855,9 +855,7 @@ def _cognate_projects() -> dict[str, set[str]]:
     return cognate
 
 
-def _null_calibration(
-    results: list[CohortResult], config: StudyConfig
-) -> dict[str, Any] | None:
+def _null_calibration(results: list[CohortResult], config: StudyConfig) -> dict[str, Any] | None:
     """What the pipeline surfaces where no panel antigen is expected.
 
     ``NULL_CALIBRATION_PROJECTS`` has been declared since the panel was written —
@@ -871,6 +869,11 @@ def _null_calibration(
     number cannot: where does a panel antigen land in a cancer it has nothing to
     do with? If the standing in an antigen's own indication is not clearly
     better than its standing here, the pipeline is ranking generic biology.
+
+    Args:
+        results: every scored cohort, calibration cohorts included.
+        config: the study configuration; its ``seed`` fixes the bootstraps so a
+            published interval is reproducible.
 
     Args:
         results: every scored cohort.

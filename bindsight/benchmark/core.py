@@ -232,9 +232,7 @@ def score_run(
             "log2fc": hit.log2fc if hit else None,
             "padj": hit.padj if hit else None,
             **{
-                f"in_top_{k}": (hit is not None and hit.rank <= k)
-                if candidates_available
-                else None
+                f"in_top_{k}": (hit is not None and hit.rank <= k) if candidates_available else None
                 for k in ks
             },
         }

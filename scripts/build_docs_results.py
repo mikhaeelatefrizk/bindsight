@@ -195,8 +195,7 @@ def _study_section(st: showcase.StudyShowcase) -> list[str]:
             "",
             "| Outcome | Approved agents | Every scored pair |",
             "|---|--:|--:|",
-            f"| Reached the shortlist | {counts.get('ranked', 0)} | "
-            f"{every.get('ranked', 0)} |",
+            f"| Reached the shortlist | {counts.get('ranked', 0)} | {every.get('ranked', 0)} |",
             f"| Excluded by a stated filter | {counts.get('gated_out', 0)} | "
             f"{every.get('gated_out', 0)} |",
             f"| Outside the instrument's reach | {counts.get('not_reachable', 0)} | "

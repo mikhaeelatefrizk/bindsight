@@ -232,9 +232,7 @@ def _one_row_per_accession(cand: pd.DataFrame) -> pd.DataFrame:
     order["_symbol"] = order["symbol"].astype(str) if "symbol" in order.columns else ""
     # NaN padj sorts last under na_position, so a row with no statistic never
     # displaces one that has it.
-    order = order.sort_values(
-        ["_padj", "_absfc", "_symbol"], na_position="last", kind="mergesort"
-    )
+    order = order.sort_values(["_padj", "_absfc", "_symbol"], na_position="last", kind="mergesort")
     return (
         order.drop_duplicates("uniprot_id")
         .drop(columns=["_padj", "_absfc", "_symbol"])

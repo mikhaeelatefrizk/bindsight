@@ -277,6 +277,36 @@ def variance_decomposition(
     }
 
 
+def _input_provenance(metrics: Path, committed: Path, decoy_metrics: Path | None) -> dict[str, Any]:
+    """Repo-relative paths and SHA-256 digests of everything this report read.
+
+    Paths are recorded POSIX-style so the artifact does not differ by operating
+    system, and digests alongside them because a path alone does not say whether
+    the file still holds what it held.
+    """
+    import hashlib
+
+    def record(path: Path | None) -> dict[str, str] | None:
+        if path is None:
+            return None
+        path = Path(path)
+        try:
+            relative = path.resolve().relative_to(REPO).as_posix()
+        except ValueError:
+            relative = path.as_posix()
+        entry = {"path": relative}
+        if path.is_file():
+            entry["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            entry["bytes"] = str(path.stat().st_size)
+        return entry
+
+    return {
+        "metrics": record(metrics),
+        "committed_metrics": record(committed),
+        "decoy_metrics": record(decoy_metrics),
+    }
+
+
 def _describe(values: list[float]) -> dict[str, float]:
     """Summary statistics, or NaNs when there is nothing to summarise."""
     if not values:
@@ -323,6 +353,28 @@ def _fpr(scrambles: list[float], threshold: float) -> dict[str, Any]:
     }
 
 
+def _pass_rate(designs: list[float], threshold: float) -> dict[str, Any]:
+    """Design pass rate at ``threshold``, with its count and an exact interval.
+
+    The control side has carried an interval since it was written; the design
+    side was a bare fraction beside it. Twenty designs resolve a rate to steps of
+    5% just as twenty controls do, and the asymmetry made the design number look
+    like the better-measured of the two when it is measured identically.
+    """
+    from bindsight.benchmark.statistics import clopper_pearson_interval
+
+    passing = sum(v >= threshold for v in designs)
+    interval = clopper_pearson_interval(passing, len(designs))
+    return {
+        "threshold": threshold,
+        "n_passing": passing,
+        "n": len(designs),
+        "point": interval.point,
+        "lower95": interval.low,
+        "upper95": interval.high,
+    }
+
+
 def operating_point(
     designs: list[float],
     scrambles: list[float],
@@ -358,7 +410,20 @@ def operating_point(
                 "reachable": True,
                 "threshold": threshold,
                 "false_positive_rate": fpr,
-                "design_pass_rate": _rate_at(designs, threshold),
+                "design_pass_rate": _pass_rate(designs, threshold),
+                # The threshold was chosen by scanning this grid against these
+                # same controls. The control side is protected by testing the
+                # interval's upper bound, but the design pass rate *at* a
+                # threshold picked on the data is optimistic, and how many
+                # candidates were tried is what tells a reader by how much.
+                "n_thresholds_searched": sum(1 for t in sorted(grid) if t <= threshold),
+                "n_thresholds_available": len(grid),
+                "selection_note": (
+                    "The threshold was selected on these controls, so the design "
+                    "pass rate here is an in-sample figure: it is the best of the "
+                    "thresholds tried, not an estimate of what this threshold "
+                    "would achieve on designs it has not seen."
+                ),
             }
     return {
         "max_fpr": max_fpr,
@@ -528,6 +593,11 @@ def analyse(
     noise = sampling_noise(_load_rows(metrics))
 
     report: dict[str, Any] = {
+        # Which files this was computed from, and their content digests. Without
+        # this the artifact could not be regenerated without searching every
+        # metrics.jsonl in runs/ for one whose means happened to match -- which
+        # is how these two were recovered when the report needed rebuilding.
+        "inputs": _input_provenance(metrics, committed, decoy_metrics),
         "n_pairs": len(pairs),
         "threshold": DEFAULT_IPTM_SUCCESS,
         "designs": _describe(designs),
@@ -706,10 +776,15 @@ def render(report: dict[str, Any]) -> str:
             keeps = op["design_pass_rate"]
             line = (
                 f"- **≤{op['max_fpr']:.0%} false positives → threshold "
-                f"{op['threshold']:.2f}**, keeping {keeps:.0%} of designs "
-                f"(bound {op['false_positive_rate']['upper95']:.1%})."
+                f"{op['threshold']:.2f}**, keeping {keeps['n_passing']}/{keeps['n']} "
+                f"= {keeps['point']:.0%} of designs "
+                f"({keeps['lower95']:.0%}–{keeps['upper95']:.0%}); "
+                f"control bound {op['false_positive_rate']['upper95']:.1%} over "
+                f"{op['false_positive_rate']['n']} controls. Threshold chosen from "
+                f"{op['n_thresholds_available']} candidates, so the design rate is "
+                "in-sample."
             )
-            if keeps == 0.0:
+            if keeps["point"] == 0.0:
                 line += (
                     " That threshold keeps nothing: the only way to exclude the "
                     "controls is to exclude the designs with them, which means "

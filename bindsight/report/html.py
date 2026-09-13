@@ -355,7 +355,7 @@ def _deg_thresholds(manifest: dict | None) -> tuple[float | None, float | None]:
 
 
 def _significance_basis(
-    columns: "Iterable[str]", fdr_threshold: float | None
+    columns: Iterable[str], fdr_threshold: float | None
 ) -> tuple[str, float | None]:
     """How the plot decides which points are significant.
 

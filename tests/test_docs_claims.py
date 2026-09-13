@@ -324,9 +324,7 @@ def test_version_agrees_across_pyproject_citation_and_zenodo() -> None:
 #:     bindsight --version           # 0.2.2
 #: Release notes elsewhere name old versions on purpose, so only text presented
 #: as this command's own output is checked.
-_DOCUMENTED_VERSION_OUTPUT = re.compile(
-    r"bindsight\s+--version[^\n]*?#\s*v?(\d+\.\d+\.\d+)"
-)
+_DOCUMENTED_VERSION_OUTPUT = re.compile(r"bindsight\s+--version[^\n]*?#\s*v?(\d+\.\d+\.\d+)")
 
 
 def _documents_showing_version_output() -> list[tuple[str, str]]:
@@ -342,7 +340,10 @@ def test_the_sweep_for_documented_versions_still_finds_the_known_example() -> No
     """Guards the guard: a pattern that matches nothing would make the check
     below vacuous, which is exactly how docs/how-to-use.md sat two releases behind."""
     shown = _documents_showing_version_output()
-    assert ("docs/how-to-use.md", tomllib.loads(_read("pyproject.toml"))["project"]["version"]) in shown, (
+    assert (
+        "docs/how-to-use.md",
+        tomllib.loads(_read("pyproject.toml"))["project"]["version"],
+    ) in shown, (
         f"the --version sweep no longer sees the docs/how-to-use.md example; it found {shown}"
     )
 
@@ -356,8 +357,7 @@ def test_documented_version_output_matches_the_package() -> None:
     pyproject = tomllib.loads(_read("pyproject.toml"))["project"]["version"]
     for rel, shown in _documents_showing_version_output():
         assert shown == pyproject, (
-            f"{rel} shows `bindsight --version` printing {shown}; "
-            f"pyproject says {pyproject}"
+            f"{rel} shows `bindsight --version` printing {shown}; pyproject says {pyproject}"
         )
 
 
@@ -788,3 +788,125 @@ def test_no_document_says_the_surfaceome_is_downloaded_on_first_run() -> None:
             ):
                 claims.append(f"{rel}: {line.strip()}")
     assert not claims, "documents claiming the surfaceome is fetched:\n" + "\n".join(claims)
+
+
+def test_the_success_card_states_its_count_and_interval() -> None:
+    """The landing page showed "40%" with a withdrawal note and no interval,
+    directly beside a card reading "1 of 17 ... 95% CI 0.01-0.27".
+
+    The interval exists in the artifact (15%-70%, clustered over backbones) and
+    ``DesignerShowcase.success_interval`` already said in its own docstring that
+    a page printing the rate without it "claims a precision twenty designs from
+    ten backbones do not carry". It simply was not read at this call site.
+    """
+    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+    if not artifact.is_file():
+        pytest.skip("designer benchmark artifact not present")
+    designer = json.loads(artifact.read_text(encoding="utf-8"))["designers"][0]
+    low = round(designer["success_ci_low"] * 100)
+    high = round(designer["success_ci_high"] * 100)
+
+    page = " ".join(_read("docs/index.md").split())
+    start = page.index("success @ ipTM 0.65")
+    card = page[start : start + 500]
+
+    assert f"{designer['n_success']} of {designer['n_designs']}" in card, card[:400]
+    assert str(low) in card, f"the card omits the lower bound {low}%: {card[:400]}"
+    assert str(high) in card, f"the card omits the upper bound {high}%: {card[:400]}"
+
+
+def test_the_generated_success_card_carries_the_same_interval() -> None:
+    """The hand-written landing page and the generated card must not diverge."""
+    from bindsight.report.showcase import headline_stats, load_designer_benchmark
+
+    designer = load_designer_benchmark(ROOT / "benchmarks")
+    if designer is None or designer.success_rate is None:
+        pytest.skip("designer benchmark artifact not present")
+
+    cards = [h for h in headline_stats() if "success" in h.label]
+    assert cards, "the showcase no longer renders a success card"
+    detail = cards[0].detail
+
+    assert f"{designer.n_success} of {designer.n_designs}" in detail, detail
+    assert "95%" in detail, detail
+    assert "clustered over backbones" in detail, detail
+    assert "withdrawn" in detail, detail
+
+
+#: Designers the README states no shipped backend can execute. The three-way
+#: designer benchmark cannot be completed on the free path at all, which is a
+#: different statement from "not run yet".
+_UNRUNNABLE_DESIGNERS = ("BindCraft", "BoltzGen")
+
+
+@pytest.mark.parametrize("rel", MANUSCRIPTS)
+def test_no_manuscript_says_the_three_way_benchmark_only_awaits_a_gpu(rel: str) -> None:
+    """The bioRxiv draft said the benchmark ships "to be populated from a GPU run".
+
+    Two things were wrong with that. One arm *is* populated — the
+    RFdiffusion+ProteinMPNN figures the same paper reports come from a real
+    Kaggle T4 run of that harness. And the other two are not merely waiting: the
+    README says no shipped backend builds an environment in which BindCraft or
+    BoltzGen executes, and that both need 24–32 GB against anything larger than a
+    small domain, so the comparison needs paid hardware rather than more free
+    tier. "Awaiting a GPU run" reads as a scheduling detail; it is a capability
+    limit.
+    """
+    path = ROOT / rel
+    if not path.is_file():
+        pytest.skip(f"{rel} not present")
+    text = " ".join(path.read_text(encoding="utf-8").split())
+    if not any(name in text for name in _UNRUNNABLE_DESIGNERS):
+        pytest.skip(f"{rel} does not discuss the designer benchmark")
+
+    assert "to be populated from a GPU run" not in text, (
+        f"{rel} presents the three-way benchmark as merely pending a GPU run"
+    )
+
+
+def test_the_readme_still_says_those_designers_need_paid_hardware() -> None:
+    """The premise of the test above. If the README ever reports them running on
+    free hardware, the manuscript wording must be revised with it rather than
+    the pair silently disagreeing again."""
+    readme = _read("README.md")
+    assert "no shipped backend can run them" in readme, (
+        "the README no longer says the alternative designers cannot run; revisit "
+        "what the manuscripts say about the three-way benchmark"
+    )
+    assert "paid backends" in readme
+
+
+def _success_interval_from_artifact() -> tuple[int, int] | None:
+    """The benchmark's own 95% bounds, as whole percents."""
+    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+    if not artifact.is_file():
+        return None
+    designers = json.loads(artifact.read_text(encoding="utf-8")).get("designers") or []
+    for entry in designers:
+        low, high = entry.get("success_ci_low"), entry.get("success_ci_high")
+        if low is not None and high is not None:
+            return (round(low * 100), round(high * 100))
+    return None
+
+
+@pytest.mark.parametrize("rel", SUCCESS_RATE_DOCUMENTS)
+def test_every_document_stating_the_rate_also_states_its_interval(rel: str) -> None:
+    """The withdrawal notice was already required on every one of these. The
+    interval was not, so eleven surfaces carried it and one did not — and the
+    landing page showed a bare "40%" directly beside a card quoting a 95% CI.
+
+    A point estimate over twenty designs from ten backbones resolves to steps of
+    5%; printing it alone claims a precision the run does not have, withdrawal
+    notice or no withdrawal notice.
+    """
+    bounds = _success_interval_from_artifact()
+    if bounds is None:
+        pytest.skip("designer benchmark artifact not present")
+    low, high = bounds
+    text = _flat(_read(rel))
+
+    missing = [str(b) for b in (low, high) if str(b) not in text]
+    assert not missing, (
+        f"{rel} states the success rate without the interval the artifact "
+        f"reports ({low}–{high}%); missing {', '.join(missing)}"
+    )

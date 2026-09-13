@@ -526,6 +526,11 @@ def run_designer_benchmark(
         "backend": backend,
         "validator": validator,
         "n_trajectories": n_trajectories,
+        # The parameter that decides which draw this is. It was the only input
+        # the summary did not record — backend, validator, trajectory count,
+        # version and wheel were all here — so a run could name everything about
+        # itself except the thing that would let someone reproduce it.
+        "seed": seed,
         "is_mock": is_mock,
         # Which bindsight actually ran. A result that cannot name its own code
         # is not reproducible, and "the default branch at some past moment" is
@@ -777,6 +782,17 @@ def _render_md(summary: dict[str, Any]) -> str:
     a(
         f"- Backend: `{summary['backend']}` · validator: `{summary['validator']}` · "
         f"trajectories/target: {summary['n_trajectories']}"
+    )
+    # Absent, not zero. A run predating the seed record must not render as
+    # though it had been seeded with 0, which is a real and different run.
+    a(
+        "- Seed: "
+        + (
+            f"`{summary['seed']}`"
+            if summary.get("seed") is not None
+            else "**unrecorded** — this run predates the benchmark recording "
+            "its seed, and its designer and validator both ran unseeded"
+        )
     )
     a(f"- Targets: {', '.join(summary['targets'])}")
     if summary.get("gpu"):

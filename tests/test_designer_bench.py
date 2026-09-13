@@ -415,7 +415,8 @@ class TestGpuHoursSaysWhereItCameFrom:
             }
         )
 
-        assert "(est.)" in md and "(measured)" in md, md[-600:]
+        assert "(est.)" in md, md[-600:]
+        assert "(measured)" in md, md[-600:]
         assert "forecasts made before" in md
 
 
@@ -457,3 +458,77 @@ class TestTheCommittedTableIsARender:
         altered["designers"][0]["mean_iptm"] = 0.123456
 
         assert _render_md(altered) != page
+
+
+class TestTheSummaryRecordsItsSeed:
+    """``results.json`` recorded backend, validator, trajectory count, version
+    and the wheel that ran — every input except the seed. A run could name
+    everything about itself except the one parameter that decides which draw it
+    is, which is the parameter someone reproducing it needs.
+    """
+
+    def test_a_run_records_the_seed_it_was_given(self, tmp_path: Path) -> None:
+        from bindsight.benchmark.designer_bench import run_designer_benchmark
+
+        run_designer_benchmark(
+            designers=["rfdiff_mpnn"],
+            targets=[],
+            backend="mock",
+            validator="boltz2",
+            n_trajectories=1,
+            seed=4242,
+            out_dir=tmp_path,
+        )
+
+        summary = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))
+        assert summary["seed"] == 4242, summary
+
+    def test_a_seed_of_zero_is_recorded_rather_than_treated_as_absent(self, tmp_path: Path) -> None:
+        """Zero is a real seed. Falsy-checking it away would make the commonest
+        seed in the project indistinguishable from no seed at all."""
+        from bindsight.benchmark.designer_bench import _render_md, run_designer_benchmark
+
+        run_designer_benchmark(
+            designers=["rfdiff_mpnn"],
+            targets=[],
+            backend="mock",
+            validator="boltz2",
+            n_trajectories=1,
+            seed=0,
+            out_dir=tmp_path,
+        )
+
+        summary = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))
+        assert summary["seed"] == 0
+        assert "- Seed: `0`" in _render_md(summary)
+
+    def test_an_older_artifact_renders_as_unrecorded_not_as_zero(self) -> None:
+        """The committed run predates this field. It must not render as seed 0,
+        which is a real and different run."""
+        from bindsight.benchmark.designer_bench import _render_md
+
+        summary = {
+            "generated_utc": "2026-01-01T00:00:00+00:00",
+            "bindsight_version": "0.0.0",
+            "backend": "kaggle",
+            "validator": "boltz2",
+            "n_trajectories": 10,
+            "is_mock": False,
+            "targets": ["ERBB2"],
+            "designers": [],
+        }
+
+        rendered = _render_md(summary)
+
+        assert "- Seed: **unrecorded**" in rendered
+        assert "`0`" not in rendered.split("- Targets:")[0]
+
+    def test_the_committed_page_says_which_case_it_is(self) -> None:
+        summary, page = TestTheCommittedTableIsARender._committed()
+
+        if summary.get("seed") is None:
+            assert "Seed: **unrecorded**" in page, (
+                "the committed artifact records no seed and the page does not say so"
+            )
+        else:
+            assert f"- Seed: `{summary['seed']}`" in page

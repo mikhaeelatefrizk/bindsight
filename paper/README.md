@@ -190,10 +190,10 @@ To stay honest:
   GPU stages were templated notebooks that had never been run. That is no
   longer accurate. The `rfdiff_mpnn` + `boltz2` path has since been executed
   end-to-end on a free Kaggle T4, under the corrected ProteinMPNN protocol,
-  and produced the 20 committed ERBB2 binders (best ipTM 0.88, 40%
-  success@0.65 — withdrawn as a measure of design quality; shuffles of the
-  designs' own sequences clear it at the same rate, see
-  benchmarks/calibration/README.md). The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG)
+  and produced the 20 committed ERBB2 binders (best ipTM 0.88, 8/20 = 40%
+  success@0.65, 95% CI 15–70% clustered over backbones — withdrawn as a
+  measure of design quality; shuffles of the designs' own sequences clear it at
+  the same rate, see benchmarks/calibration/README.md). The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG)
   remain mock-tested only and have still never been run on real hardware. The
   manuscripts in this directory were written before that run and understate
   what has been executed.

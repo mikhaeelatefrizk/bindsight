@@ -16,6 +16,7 @@ import json
 import random
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -289,7 +290,8 @@ class TestTheOperatingPointIsBoundedNotEyeballed:
         designs, scrambles = self._SEPARATED
         op = calib.operating_point(designs, scrambles, max_fpr=0.25)
         assert op["reachable"] is True
-        assert op["design_pass_rate"] == pytest.approx(1.0)
+        assert op["design_pass_rate"]["point"] == pytest.approx(1.0)
+        assert op["design_pass_rate"]["n"] == len(designs)
         below = round(op["threshold"] - 0.01, 2)
         assert calib._fpr(scrambles, below)["upper95"] > 0.25
 
@@ -339,7 +341,8 @@ class TestTheOperatingPointIsBoundedNotEyeballed:
         designs, _ = self._SEPARATED
         op = calib.operating_point(designs, [0.99] * 20, max_fpr=0.25)
         assert op["reachable"] is True
-        assert op["design_pass_rate"] == 0.0
+        assert op["design_pass_rate"]["point"] == 0.0
+        assert op["design_pass_rate"]["n_passing"] == 0
 
     def test_the_report_carries_both_bounds(self, tmp_path: Path) -> None:
         rows: dict[str, float | None] = {}
@@ -813,7 +816,7 @@ class TestTheCalibrationProseIsRenderedNotWritten:
 
         scramble = altered.get("scramble") or altered
         changed = False
-        for key, value in list(scramble.items()):
+        for value in list(scramble.values()):
             if isinstance(value, dict):
                 for inner, v in list(value.items()):
                     if isinstance(v, (int, float)) and not isinstance(v, bool):
@@ -828,3 +831,111 @@ class TestTheCalibrationProseIsRenderedNotWritten:
             "the rendered page is unchanged after perturbing a number in the "
             "report, so it is not derived from it"
         )
+
+
+class TestTheOperatingPointReportsTheDesignSideAsCarefully:
+    """The control side has carried an exact interval since it was written. The
+    design side beside it was a bare fraction at a threshold chosen by scanning
+    101 candidates against those same controls -- an in-sample figure presented
+    like a measurement.
+    """
+
+    DESIGNS: ClassVar[list[float]] = [0.9, 0.8, 0.7, 0.66, 0.5, 0.4, 0.3, 0.2]
+    SCRAMBLES: ClassVar[list[float]] = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]
+
+    def test_the_design_pass_rate_carries_its_count_and_interval(self) -> None:
+        op = calib.operating_point(self.DESIGNS, self.SCRAMBLES, max_fpr=0.9)
+
+        assert op["reachable"], op
+        keeps = op["design_pass_rate"]
+        assert isinstance(keeps, dict), f"still a bare number: {keeps!r}"
+        assert keeps["n"] == len(self.DESIGNS)
+        assert keeps["n_passing"] <= keeps["n"]
+        assert keeps["lower95"] <= keeps["point"] <= keeps["upper95"]
+
+    def test_the_record_says_the_threshold_was_selected_on_the_data(self) -> None:
+        op = calib.operating_point(self.DESIGNS, self.SCRAMBLES, max_fpr=0.9)
+
+        assert op["n_thresholds_available"] == 101
+        assert 1 <= op["n_thresholds_searched"] <= op["n_thresholds_available"]
+        assert "in-sample" in op["selection_note"]
+
+    def test_the_interval_is_the_one_the_rest_of_the_project_reports(self) -> None:
+        """Clopper-Pearson from bindsight.benchmark.statistics, not a second
+        implementation that could drift from it."""
+        from bindsight.benchmark.statistics import clopper_pearson_interval
+
+        op = calib.operating_point(self.DESIGNS, self.SCRAMBLES, max_fpr=0.9)
+        keeps = op["design_pass_rate"]
+        expected = clopper_pearson_interval(keeps["n_passing"], keeps["n"])
+
+        assert keeps["lower95"] == pytest.approx(expected.low)
+        assert keeps["upper95"] == pytest.approx(expected.high)
+
+    def test_an_unreachable_bound_still_blames_the_control_set(self) -> None:
+        """Unchanged behaviour, asserted so the change above did not disturb it."""
+        op = calib.operating_point(self.DESIGNS, self.SCRAMBLES, max_fpr=0.001)
+
+        assert op["reachable"] is False
+        assert op["n_controls"] == len(self.SCRAMBLES)
+        assert op["n_controls_needed"] > len(self.SCRAMBLES)
+
+    def test_the_committed_report_states_the_count_and_the_selection(self) -> None:
+        page = (CALIBRATION_DIR / "CALIBRATION.md").read_text(encoding="utf-8")
+        report = json.loads((CALIBRATION_DIR / "RESULTS.json").read_text(encoding="utf-8"))
+
+        for op in report["operating_points"]:
+            if not op["reachable"]:
+                continue
+            keeps = op["design_pass_rate"]
+            assert f"{keeps['n_passing']}/{keeps['n']}" in page, (
+                f"the page states no count for the {op['max_fpr']:.0%} operating point"
+            )
+            assert "in-sample" in page
+
+
+class TestTheCalibrationReportNamesWhatItRead:
+    """RESULTS.json recorded no inputs. Rebuilding it meant scanning every
+    metrics.jsonl under runs/ for one whose design mean happened to match the
+    committed figure -- a reconstruction, not a record.
+    """
+
+    @staticmethod
+    def _report() -> dict:
+        path = CALIBRATION_DIR / "RESULTS.json"
+        if not path.is_file():
+            pytest.skip("calibration artifact not present")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_every_input_is_named_with_a_digest(self) -> None:
+        inputs = self._report().get("inputs")
+        assert inputs, "the calibration report records no inputs"
+        assert inputs.get("metrics"), "the primary metrics file is unrecorded"
+        for role, entry in inputs.items():
+            if entry is None:
+                continue
+            assert entry.get("path"), role
+            assert "\\" not in entry["path"], (
+                f"{role} records a Windows-style path, which differs by OS: {entry['path']}"
+            )
+            assert len(entry.get("sha256", "")) == 64, role
+
+    def test_the_recorded_files_still_hold_what_they_held(self) -> None:
+        """A path without a digest check is a path that may have been rewritten."""
+        import hashlib
+
+        repo = Path(__file__).resolve().parents[1]
+        checked = 0
+        for role, entry in (self._report().get("inputs") or {}).items():
+            if entry is None:
+                continue
+            path = repo / entry["path"]
+            if not path.is_file():
+                pytest.skip(f"{role} input not present in this checkout: {entry['path']}")
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            assert digest == entry["sha256"], (
+                f"{role} ({entry['path']}) no longer matches the digest the report "
+                "was computed from; re-run analyse.py"
+            )
+            checked += 1
+        assert checked, "no input files were checked"

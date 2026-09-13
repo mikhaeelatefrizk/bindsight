@@ -353,6 +353,15 @@ class DesignerShowcase:
         return None
 
     @property
+    def n_success(self) -> int | None:
+        """Designs at or above the criterion, as the artifact counts them."""
+        for d in self.designers:
+            value = d.get("n_success")
+            if value is not None:
+                return int(value)
+        return None
+
+    @property
     def success_interval(self) -> tuple[float, float] | None:
         """The reported interval around the success rate, if the artifact has one.
 
@@ -517,6 +526,22 @@ def headline_stats() -> list[Headline]:
             )
         rate = designer.success_rate
         if rate is not None:
+            # ``success_interval`` existed, said in its own docstring that a page
+            # printing the rate without it "claims a precision twenty designs
+            # from ten backbones do not carry", and was not read here. The card
+            # next to this one carries its 95% CI; this one did not.
+            interval = designer.success_interval
+            counted = (
+                f"{designer.n_success} of {designer.n_designs} — "
+                if designer.n_success is not None and designer.n_designs is not None
+                else ""
+            )
+            bounds = (
+                f"{interval[0] * 100:.0f}–{interval[1] * 100:.0f}% at 95%, "
+                "clustered over backbones — "
+                if interval
+                else ""
+            )
             stats.append(
                 Headline(
                     value=f"{rate * 100:.0f}%",
@@ -526,8 +551,9 @@ def headline_stats() -> list[Headline]:
                     # it does not support: shuffles of the designs' own
                     # sequences clear 0.65 at the same rate.
                     detail=(
-                        f"validated with {designer.validator or 'Boltz-2'} — "
-                        "withdrawn as a design-quality measure; shuffled "
+                        f"{counted}{bounds}"
+                        f"validated with {designer.validator or 'Boltz-2'}; "
+                        "withdrawn as a design-quality measure — shuffled "
                         "sequences clear this bar at the same rate"
                     ),
                 )

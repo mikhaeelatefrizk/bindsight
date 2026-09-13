@@ -399,10 +399,15 @@ centroid classifier is built on, so the tumor arm was selected partly by
 expression of the gene then reported as discovered; the denominator of three was
 also chosen after seeing which antigens proved over-expressed.} Antigens without
 matched TCGA normals (CLDN6, CD33/CD123, FOLR1 in ovary) remain documented as
-data limitations rather than reported with a manufactured number. A complementary, CPU-tested three-way \textit{designer
-benchmark} (RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable
-harness and protocol in \texttt{benchmarks/designer\_benchmark/}, to be populated
-from a GPU run.
+data limitations rather than reported with a manufactured number. A complementary three-way \textit{designer benchmark}
+(RFdiffusion+ProteinMPNN vs BindCraft vs BoltzGen) ships as a runnable harness
+and protocol in \texttt{benchmarks/designer\_benchmark/}. One arm is populated:
+the RFdiffusion+ProteinMPNN results reported above come from a real run of that
+harness on a free Kaggle T4. The other two arms are not, and not merely pending
+a GPU: no shipped backend builds an environment in which BindCraft or BoltzGen
+executes, and both need 24--32\,GB of VRAM against anything larger than a small
+domain, so completing the comparison requires paid hardware rather than more of
+the free tier.
 
 \paragraph{Broader impact.} \texttt{bindsight} is positioned to lower the
 barrier-to-entry for translational binder design from approximately six

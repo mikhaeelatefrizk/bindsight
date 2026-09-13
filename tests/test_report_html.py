@@ -360,9 +360,9 @@ class TestVolcanoThresholds:
         assert not any(math.isclose(x, 1.0, abs_tol=1e-9) for x in verticals), (
             f"a line still sits at the library default of 1.0: {verticals}"
         )
-        assert not any(
-            math.isclose(y, -math.log10(0.05), abs_tol=1e-9) for y in horizontals
-        ), f"a line still sits at the library default of 0.05: {horizontals}"
+        assert not any(math.isclose(y, -math.log10(0.05), abs_tol=1e-9) for y in horizontals), (
+            f"a line still sits at the library default of 0.05: {horizontals}"
+        )
 
     def test_a_run_that_recorded_no_cutoffs_gets_no_guide_lines(
         self, tmp_path: Path, monkeypatch
@@ -377,7 +377,7 @@ class TestVolcanoThresholds:
         assert axes
         assert not axes[0].lines, (
             "guide lines were drawn for a run that never recorded its cutoffs: "
-            f"{[ (ln.get_xdata(), ln.get_ydata()) for ln in axes[0].lines ]}"
+            f"{[(ln.get_xdata(), ln.get_ydata()) for ln in axes[0].lines]}"
         )
 
     def test_the_caption_states_the_cutoffs_rather_than_the_word_threshold(
@@ -388,22 +388,19 @@ class TestVolcanoThresholds:
 
         caption = _caption(render_run(run).read_text(encoding="utf-8"))
 
-        assert "0.01" in caption and "1.5" in caption, caption
+        assert "0.01" in caption, caption
+        assert "1.5" in caption, caption
         assert "&lt;&nbsp;threshold" not in caption, (
             "the caption still says 'threshold' where the number belongs"
         )
 
-    def test_the_caption_admits_when_the_cutoffs_were_not_recorded(
-        self, tmp_path: Path
-    ) -> None:
+    def test_the_caption_admits_when_the_cutoffs_were_not_recorded(self, tmp_path: Path) -> None:
         caption = _caption(render_run(_make_run(tmp_path)).read_text(encoding="utf-8"))
 
         assert "did not record" in caption, caption
         assert "no threshold lines are drawn" in caption, caption
 
-    def test_thresholds_are_read_from_whichever_stage_recorded_them(
-        self, tmp_path: Path
-    ) -> None:
+    def test_thresholds_are_read_from_whichever_stage_recorded_them(self, tmp_path: Path) -> None:
         run = _make_run(tmp_path)
         _set_deg_params(run, fdr_threshold=0.2, log2fc_threshold=0.5)
         manifest = json.loads((run / "run_manifest.jsonld").read_text(encoding="utf-8"))

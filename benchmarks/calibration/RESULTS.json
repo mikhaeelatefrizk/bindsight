@@ -203,12 +203,36 @@
     "threshold": 0.65,
     "upper95": 0.7280421504392082
   },
+  "inputs": {
+    "committed_metrics": {
+      "bytes": "7317",
+      "path": "benchmarks/designer_benchmark/binders/metrics.jsonl",
+      "sha256": "c8eff8fd4aa0ce34514fce4df17253039856e083d5879a05268c160890d481a7"
+    },
+    "decoy_metrics": {
+      "bytes": "17122",
+      "path": "runs/_design/7ebadd46261efc1bb707ccd6e0f8111952a64de68b0d091af78244e2dcde2160/metrics.jsonl",
+      "sha256": "37fd41aaf584099f4260dfb7c8c2969b240755e82196f3b30204b69b554ae459"
+    },
+    "metrics": {
+      "bytes": "17144",
+      "path": "runs/_design/8a67100169e5bb3814951f90f704fffad3e855555f454dc5701eb27ed2b69d0b/metrics.jsonl",
+      "sha256": "1fb40c314f725f00072b408440618907ac3771f8dde8bc65bd1da0090afa8b75"
+    }
+  },
   "n_designs_above_scramble": 9,
   "n_pairs": 20,
   "n_permutations": 1048576,
   "operating_points": [
     {
-      "design_pass_rate": 0.15,
+      "design_pass_rate": {
+        "lower95": 0.032070937185463715,
+        "n": 20,
+        "n_passing": 3,
+        "point": 0.15,
+        "threshold": 0.73,
+        "upper95": 0.378926826545314
+      },
       "false_positive_rate": {
         "n": 20,
         "n_passing": 1,
@@ -217,7 +241,10 @@
         "upper95": 0.24873276277202766
       },
       "max_fpr": 0.25,
+      "n_thresholds_available": 101,
+      "n_thresholds_searched": 74,
       "reachable": true,
+      "selection_note": "The threshold was selected on these controls, so the design pass rate here is an in-sample figure: it is the best of the thresholds tried, not an estimate of what this threshold would achieve on designs it has not seen.",
       "threshold": 0.73
     },
     {

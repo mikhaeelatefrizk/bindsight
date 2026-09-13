@@ -661,9 +661,7 @@ class TestTheGatedOutBreakdownAddsUp:
     was wrong about both. These tests tie every stated figure to one frame.
     """
 
-    def test_the_breakdown_sums_to_the_number_of_gated_out_pairs(
-        self, summary: dict
-    ) -> None:
+    def test_the_breakdown_sums_to_the_number_of_gated_out_pairs(self, summary: dict) -> None:
         """The artifact first: a breakdown that does not sum is a bug in the study,
         not in the prose quoting it."""
         for label, pairs in (
@@ -683,9 +681,7 @@ class TestTheGatedOutBreakdownAddsUp:
                 f"{label}: breakdown {breakdown} does not sum to {len(gated)} gated-out pairs"
             )
 
-    def test_the_recorded_class_counts_are_the_primary_denominator(
-        self, summary: dict
-    ) -> None:
+    def test_the_recorded_class_counts_are_the_primary_denominator(self, summary: dict) -> None:
         """``outcome_class_counts`` counts the pre-registered tiers, not every
         pair. It reads like a total, and section 3.3 used it as one."""
         tiers = summary["design"]["tiers_in_primary_denominator"]
@@ -700,9 +696,7 @@ class TestTheGatedOutBreakdownAddsUp:
             "sentence needs revisiting"
         )
 
-    def test_the_manuscript_states_the_approved_tier_breakdown(
-        self, summary: dict
-    ) -> None:
+    def test_the_manuscript_states_the_approved_tier_breakdown(self, summary: dict) -> None:
         """The stated numbers, in the frame the rest of the manuscript uses."""
         tiers = summary["design"]["tiers_in_primary_denominator"]
         in_tiers = [p for p in summary["pairs"] if p.get("tier") in tiers]
@@ -729,9 +723,7 @@ class TestTheGatedOutBreakdownAddsUp:
             f"{every['significance']}, {every['enrichment']} and {every['down_regulated']}."
         ) in text, f"the all-tier frame is not stated as {gated}: {every}"
 
-    def test_every_ranked_antigen_in_the_table_carries_its_tier(
-        self, summary: dict
-    ) -> None:
+    def test_every_ranked_antigen_in_the_table_carries_its_tier(self, summary: dict) -> None:
         """The table spans three tiers while the text around it counts one. A
         reader who assumes the table is the denominator reads 5 of 17."""
         text = _doc("paper/validation/manuscript.md")
@@ -791,8 +783,7 @@ def test_no_document_calls_one_validator_the_only_commercially_usable_one() -> N
     for rel in ("ARCHITECTURE.md", "README.md", "LICENSING.md", "docs/index.md"):
         text = " ".join(_doc(rel).split())
         assert "only commercially usable" not in text, (
-            f"{rel} claims a single commercially usable tool; LICENSING.md lists "
-            f"{len(usable)}"
+            f"{rel} claims a single commercially usable tool; LICENSING.md lists {len(usable)}"
         )
 
 
@@ -802,9 +793,7 @@ class TestTheCalibrationContrastCarriesItsUncertainty:
     argument is that a number without its uncertainty should not be quoted.
     """
 
-    def test_both_means_carry_an_interval_and_a_cluster_count(
-        self, summary: dict
-    ) -> None:
+    def test_both_means_carry_an_interval_and_a_cluster_count(self, summary: dict) -> None:
         calib = summary.get("null_calibration")
         if not calib:
             pytest.skip("no null calibration in the artifact")
@@ -830,9 +819,7 @@ class TestTheCalibrationContrastCarriesItsUncertainty:
         assert paired["low"] <= paired["point"] <= paired["high"], paired
         assert "antigens" in paired["description"]
 
-    def test_the_report_states_every_interval_the_artifact_holds(
-        self, summary: dict
-    ) -> None:
+    def test_the_report_states_every_interval_the_artifact_holds(self, summary: dict) -> None:
         """Each bound, from the artifact.
 
         An earlier version of this test asserted only that "95% CI" appeared

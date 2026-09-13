@@ -12,7 +12,6 @@ agreement or ``AF2-IG`` for the gold-standard Bennet/Baker filtering pipeline
 from __future__ import annotations
 
 import logging
-
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field

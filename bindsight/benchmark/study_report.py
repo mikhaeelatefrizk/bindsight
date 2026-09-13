@@ -62,7 +62,7 @@ _CLASS_NOTE = {
 
 
 def _interval_phrase(interval: dict[str, object] | None) -> str:
-    """" (95% CI a–b, n antigens)" for an interval, or "" when there is none.
+    """Render an interval as ``(95% CI a–b, n antigens)``, or empty when absent.
 
     Written to degrade rather than fail: an artifact produced before the study
     recorded these fields still renders, it simply renders the bare mean it has.
@@ -96,11 +96,7 @@ def _paired_phrase(paired: dict[str, object] | None) -> str:
         return ""
     n = paired.get("n_clusters")
     spans_zero = float(low) <= 0.0 <= float(high)
-    tail = (
-        ", an interval that includes zero"
-        if spans_zero
-        else ", an interval that excludes zero"
-    )
+    tail = ", an interval that includes zero" if spans_zero else ", an interval that excludes zero"
     return (
         f" — a within-antigen difference of **{_fmt(point, 3)}** "
         f"(95% CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"

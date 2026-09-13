@@ -35,7 +35,7 @@ Exact paired sign-flip test over all 1,048,576 assignments: **p = 0.40420** (flo
 
 The lowest threshold whose false-positive **upper bound** clears each target. Judged on the bound rather than the count, so a threshold is never accepted on the strength of a rate this many controls cannot establish.
 
-- **≤25% false positives → threshold 0.73**, keeping 15% of designs (bound 24.9%).
+- **≤25% false positives → threshold 0.73**, keeping 3/20 = 15% of designs (3%–38%); control bound 24.9% over 20 controls. Threshold chosen from 101 candidates, so the design rate is in-sample.
 - **≤5% false positives: not established by this run.** 20 controls cannot certify a rate below 16.8% however cleanly the arms separate; 72 would be needed. This is a limit of the control set's size, not a statement about the designs.
 
 ## The metric's own noise

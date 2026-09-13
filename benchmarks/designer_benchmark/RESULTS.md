@@ -2,6 +2,7 @@
 
 - Generated: `2026-09-07T06:05:26+00:00` · bindsight `0.2.2`
 - Backend: `kaggle` · validator: `boltz2` · trajectories/target: 10
+- Seed: **unrecorded** — this run predates the benchmark recording its seed, and its designer and validator both ran unseeded
 - Targets: ERBB2
 - GPU: `Tesla T4-16GB (Kaggle free)`
 - Code: working-tree wheel bindsight-0.2.2-py3-none-any.whl
