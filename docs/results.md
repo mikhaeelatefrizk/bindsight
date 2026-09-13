@@ -110,10 +110,9 @@ A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (K
 
     The run below uses the corrected protocol, and every design carries a
     target chain byte-identical to the native 142-residue domain IV. The
-    corrected mean ipTM is *lower* than the superseded one, 0.51
-    against 0.59, which is what you would expect once designs stop being
-    scored against a surface they helped invent. The best single design is
-    better: 0.88.
+    corrected mean ipTM is 0.51 against the superseded 0.59, but the two are not distinguishable at this size: the interval on this mean is 0.40–0.62 and 0.59 falls inside it.
+    The protocol correction rests on the chain-identity check below, not
+    on the means moving. The best single design is 0.88.
 
 **Target:** ERBB2
 

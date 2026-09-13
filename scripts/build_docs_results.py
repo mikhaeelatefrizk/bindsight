@@ -68,6 +68,25 @@ def build_glossary() -> str:
     return "\n".join(lines)
 
 
+def _mean_iptm_interval(d: Any) -> tuple[float, float, float] | None:
+    """Mean ipTM with a normal-approximation interval, from the binders themselves.
+
+    The page compared this mean against a superseded run's and called the
+    difference "what you would expect". Two means from twenty designs each are
+    not distinguishable at this spread, and saying so is the difference between
+    reporting a measurement and reporting a preference.
+    """
+    import math
+    import statistics
+
+    values = [b.iptm for b in d.binders if getattr(b, "iptm", None) is not None]
+    if len(values) < 2:
+        return None
+    mean = statistics.fmean(values)
+    half = 1.959963985 * statistics.stdev(values) / math.sqrt(len(values))
+    return mean, mean - half, mean + half
+
+
 def _mean_iptm(d: Any) -> str:
     """Mean ipTM from the artifact, so the prose cannot outlive the run."""
     value = d.mean_iptm
@@ -230,9 +249,23 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
     lines = [
         "## The binders it actually designed",
         "",
-        f"A **real GPU run**, not a simulation — backend `{d.backend}`, GPU `{d.gpu}`, "
-        f"validator `{d.validator}`, bindsight `{d.bindsight_version}`, "
-        f"{d.generated_utc[:10]}.",
+        # Derived from the artifact's own is_mock flag, not asserted. This
+        # sentence was a literal, so regenerating the page from a mock run — one
+        # that installs nothing and runs no GPU — would have published synthetic
+        # numbers under the words "not a simulation".
+        (
+            f"A **real GPU run**, not a simulation — backend `{d.backend}`, GPU `{d.gpu}`, "
+            f"validator `{d.validator}`, bindsight `{d.bindsight_version}`, "
+            f"{d.generated_utc[:10]}."
+            if d.is_mock is False
+            else f"⚠️ **Synthetic output from the mock backend** — no GPU ran and no tool "
+            f"was installed. Backend `{d.backend}`, bindsight `{d.bindsight_version}`, "
+            f"{d.generated_utc[:10]}. These numbers are for orchestration testing only."
+            if d.is_mock
+            else f"Backend `{d.backend}`, GPU `{d.gpu}`, validator `{d.validator}`, "
+            f"bindsight `{d.bindsight_version}`, {d.generated_utc[:10]}. The artifact "
+            "does not record whether a real GPU ran."
+        ),
         "",
         '!!! success "The target was held fixed, and that is checked"',
         "",
@@ -244,10 +277,15 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
         "",
         "    The run below uses the corrected protocol, and every design carries a",
         "    target chain byte-identical to the native 142-residue domain IV. The",
-        f"    corrected mean ipTM is *lower* than the superseded one, {_mean_iptm(d)}",
-        "    against 0.59, which is what you would expect once designs stop being",
-        "    scored against a surface they helped invent. The best single design is",
-        f"    better: {_best_iptm(d)}.",
+        f"    corrected mean ipTM is {_mean_iptm(d)} against the superseded 0.59"
+        + (
+            f", but the two are not distinguishable at this size: the interval on"
+            f" this mean is {_ci[1]:.2f}–{_ci[2]:.2f} and 0.59 falls inside it."
+            if (_ci := _mean_iptm_interval(d)) and _ci[1] <= 0.59 <= _ci[2]
+            else "."
+        ),
+        "    The protocol correction rests on the chain-identity check below, not",
+        f"    on the means moving. The best single design is {_best_iptm(d)}.",
         "",
     ]
     if d.targets:
