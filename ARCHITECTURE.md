@@ -188,6 +188,14 @@ produced, a wrong answer that looked right:
 - **Target structure content**, not just the accession. A new AlphaFold model
   for the same protein is different work, and keying on the accession alone
   would silently reuse a result computed against the superseded structure.
+- **Seed**, so that re-running an identical configuration reuses the work
+  instead of redrawing it. Two of the three designers cannot keep the other half
+  of that promise: at the pinned commits BindCraft draws its own seed per
+  trajectory (`bindcraft.py:91`) and the `boltzgen` CLI has no seed option, so a
+  cache *miss* under an identical seed yields different binders. The executor
+  warns whenever one of them runs, and `UNSEEDABLE_DESIGNERS` in
+  `bindsight/runners/job_exec.py` carries the evidence. RFdiffusion, ProteinMPNN,
+  Boltz-2 and Chai-1 all take the run's seed.
 - **Validator.** The remote executor runs whichever validator the spec names, so
   without it a Boltz-2 run and a Chai-1r run shared an entry and the second
   returned the first's numbers under the other validator's name.
@@ -341,7 +349,7 @@ is what the tool requires, not what this project has run it on. The
 | Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32 GB) full; T4 for a reduced target | Prepared | Fits a free T4 only below roughly 250 total residues |
 | Designer (newest) | [BoltzGen](https://github.com/HannesStark/boltzgen) | MIT (code+weights) | Yes | Prepared, not executed | The command this project built, `boltzgen design`, does not exist upstream, so this path had never run. Rewritten to emit a design-spec YAML and call `boltzgen run` |
 | Validator (default) | [Boltz-2](https://github.com/jwohlwend/boltz) | MIT (code+weights) | Yes | Run on Kaggle T4 | Structure + affinity, has CLI |
-| Validator (alt) | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2 | **Ampere or newer** | Cannot run on any free GPU | Needs bfloat16, which Turing lacks. The only commercially usable validator, so worth renting an hour for |
+| Validator (alt) | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2 | **Ampere or newer** | Cannot run on any free GPU | Needs bfloat16, which Turing lacks. Commercially usable (Apache-2.0), as Boltz-2 also is; worth renting an hour for a second opinion from an independent model |
 | Validator (gold, opt-in) | AF2-IG via [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | AF2 weights non-commercial | Yes | Prepared | Behind license-banner flag |
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | Run | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | Run | DAG, conda envs, --report |

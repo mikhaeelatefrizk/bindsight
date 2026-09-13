@@ -61,6 +61,53 @@ _CLASS_NOTE = {
 }
 
 
+def _interval_phrase(interval: dict[str, object] | None) -> str:
+    """" (95% CI a–b, n antigens)" for an interval, or "" when there is none.
+
+    Written to degrade rather than fail: an artifact produced before the study
+    recorded these fields still renders, it simply renders the bare mean it has.
+    A missing interval is a gap in the artifact, not a reason for the report to
+    stop building.
+    """
+    if not interval:
+        return ""
+    low, high = interval.get("low"), interval.get("high")
+    n = interval.get("n_clusters")
+    if low is None or high is None:
+        return ""
+    confidence = interval.get("confidence") or 0.95
+    inside = f"{float(confidence) * 100:g}% CI {_fmt(low, 3)}–{_fmt(high, 3)}"
+    if n:
+        inside += f", {n} antigen{'s' if int(n) != 1 else ''}"
+    return f" ({inside})"
+
+
+def _paired_phrase(paired: dict[str, object] | None) -> str:
+    """The within-antigen contrast, which is the comparison the sentence makes.
+
+    The two means share antigens, so their difference is not the difference of
+    two independent samples. Pairing inside each antigen is; this is the number
+    a reader should weigh.
+    """
+    if not paired:
+        return ""
+    point, low, high = paired.get("point"), paired.get("low"), paired.get("high")
+    if point is None or low is None or high is None:
+        return ""
+    n = paired.get("n_clusters")
+    spans_zero = float(low) <= 0.0 <= float(high)
+    tail = (
+        ", an interval that includes zero"
+        if spans_zero
+        else ", an interval that excludes zero"
+    )
+    return (
+        f" — a within-antigen difference of **{_fmt(point, 3)}** "
+        f"(95% CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
+        f"{'s' if n and int(n) != 1 else ''}{tail})"
+    )
+
+
 def _fmt(value: Any, places: int = 3) -> str:
     """Numbers to fixed precision, absences as an explicit dash."""
     if value is None:
@@ -370,14 +417,18 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
         if calib:
             own = calib.get("mean_standing_in_own_indication")
             off = calib.get("mean_standing_off_indication")
+            off_ci = calib.get("off_indication_interval") or {}
+            own_ci = calib.get("own_indication_interval") or {}
+            paired = calib.get("paired_difference") or {}
             lines += [
                 "**Calibration.** "
                 + ", ".join(str(x).removeprefix("TCGA-") for x in calib.get("projects", []))
                 + " carry no panel antigen and were run to show what no signal "
                 "looks like on this scale. Panel antigens land at a mean standing "
-                f"of **{_fmt(off, 3)}** there — the middle of the eligible "
-                "surfaceome — against "
-                f"**{_fmt(own, 3)}** in their own indication. "
+                f"of **{_fmt(off, 3)}**{_interval_phrase(off_ci)} there — the middle "
+                "of the eligible surfaceome — against "
+                f"**{_fmt(own, 3)}**{_interval_phrase(own_ci)} in their own "
+                f"indication{_paired_phrase(paired)}. "
                 f"Neither cohort contributes a scored pair "
                 f"({calib.get('n_scored_pairs')}), because inventing an "
                 "expectation for a cohort chosen for having none is the error "

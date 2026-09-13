@@ -769,3 +769,62 @@ class TestTheControlledSpecificityComparison:
         text = calib.render(calib.analyse(native, committed=None, decoy_metrics=decoy))
         assert "raw comparison is confounded" in text
         assert "beat its own shuffle by more on the receptor it was designed for" in text
+
+
+# ---------------------------------------------------------------------------
+# The prose and the artifact it is rendered from
+# ---------------------------------------------------------------------------
+CALIBRATION_DIR = Path(__file__).resolve().parents[1] / "benchmarks" / "calibration"
+
+
+class TestTheCalibrationProseIsRenderedNotWritten:
+    """``analyse.py`` writes RESULTS.json and CALIBRATION.md from one report in
+    one call, so they cannot disagree at the moment they are written. They can
+    disagree afterwards: editing the prose, or regenerating the JSON alone,
+    leaves a page whose numbers no longer come from anything. Nothing checked.
+    """
+
+    @staticmethod
+    def _committed() -> tuple[dict, str]:
+        results = CALIBRATION_DIR / "RESULTS.json"
+        page = CALIBRATION_DIR / "CALIBRATION.md"
+        if not results.is_file() or not page.is_file():
+            pytest.skip("calibration artifacts not present")
+        return (
+            json.loads(results.read_text(encoding="utf-8")),
+            page.read_text(encoding="utf-8"),
+        )
+
+    def test_the_committed_page_is_exactly_what_the_artifact_renders_to(self) -> None:
+        """Byte-for-byte: this is the same call ``analyse.py`` makes when it
+        writes the file, over the committed report."""
+        report, page = self._committed()
+
+        assert calib.render(report) == page, (
+            "benchmarks/calibration/CALIBRATION.md is not what RESULTS.json renders "
+            "to. Re-run analyse.py rather than editing the page by hand."
+        )
+
+    def test_the_renderer_actually_depends_on_the_numbers(self) -> None:
+        """Guards the guard: a renderer that ignored the report would make the
+        comparison above pass against any artifact at all."""
+        report, page = self._committed()
+        altered = json.loads(json.dumps(report))
+
+        scramble = altered.get("scramble") or altered
+        changed = False
+        for key, value in list(scramble.items()):
+            if isinstance(value, dict):
+                for inner, v in list(value.items()):
+                    if isinstance(v, (int, float)) and not isinstance(v, bool):
+                        value[inner] = float(v) + 0.123456
+                        changed = True
+                        break
+            if changed:
+                break
+        assert changed, f"no numeric field found to perturb in {list(scramble)}"
+
+        assert calib.render(altered) != page, (
+            "the rendered page is unchanged after perturbing a number in the "
+            "report, so it is not derived from it"
+        )

@@ -28,6 +28,7 @@ import base64
 import io
 import json
 import logging
+from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -69,7 +70,12 @@ def render_run(
     ranking_df = _maybe_read_parquet(run_dir / "rank" / "ranking.parquet")
     manifest = _maybe_read_jsonld(run_dir / "run_manifest.jsonld")
 
-    volcano_b64 = _render_volcano(deg_df) if deg_df is not None and len(deg_df) else ""
+    deg_fdr, deg_log2fc = _deg_thresholds(manifest)
+    volcano_b64 = (
+        _render_volcano(deg_df, fdr_threshold=deg_fdr, log2fc_threshold=deg_log2fc)
+        if deg_df is not None and len(deg_df)
+        else ""
+    )
 
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATES_DIR)),
@@ -87,6 +93,8 @@ def render_run(
         created_at=manifest.get("created_at", "") if manifest else "",
         css=css,
         volcano_b64=volcano_b64,
+        deg_fdr=deg_fdr,
+        deg_log2fc=deg_log2fc,
         n_deg=len(deg_df) if deg_df is not None else 0,
         n_significant=(
             int(deg_df["significant"].sum())
@@ -316,8 +324,68 @@ def _df_to_records(
     return records
 
 
-def _render_volcano(deg_df: pd.DataFrame) -> str:
-    """Render a volcano plot as a base64-encoded PNG embedded in the HTML."""
+#: The conventional defaults, used only when a run did not record what it used.
+#: They match :class:`bindsight.config` so a default run is labelled correctly;
+#: they are never silently substituted for a run that chose something else.
+_DEFAULT_FDR = 0.05
+_DEFAULT_LOG2FC = 1.0
+
+
+def _deg_thresholds(manifest: dict | None) -> tuple[float | None, float | None]:
+    """The FDR and |log2FC| cutoffs the ``deg`` stage ran with, if recorded.
+
+    The results parquet carries a ``significant`` column but not the numbers
+    behind it, so the plot used to draw its guide lines at the library defaults
+    whatever the run had configured -- putting dashed lines through the middle of
+    the red points for any run that chose something else. The manifest does
+    record them, per stage; this reads them from there.
+    """
+    if not manifest:
+        return (None, None)
+    for stage in manifest.get("stages", []) or []:
+        params = stage.get("params") or {}
+        if "fdr_threshold" in params or "log2fc_threshold" in params:
+            fdr = params.get("fdr_threshold")
+            lfc = params.get("log2fc_threshold")
+            return (
+                float(fdr) if fdr is not None else None,
+                float(lfc) if lfc is not None else None,
+            )
+    return (None, None)
+
+
+def _significance_basis(
+    columns: "Iterable[str]", fdr_threshold: float | None
+) -> tuple[str, float | None]:
+    """How the plot decides which points are significant.
+
+    Returns ``(basis, cutoff)`` where basis is one of:
+
+    * ``"column"`` -- the analysis' own ``significant`` column; authoritative,
+      since it already applied both cutoffs.
+    * ``"padj"`` -- no column, but the run recorded its FDR cutoff.
+    * ``"assumed"`` -- neither; the conventional 0.05 is used and the report
+      says so rather than presenting an assumption as the run's own choice.
+    """
+    if "significant" in set(columns):
+        return ("column", None)
+    if fdr_threshold is not None:
+        return ("padj", fdr_threshold)
+    return ("assumed", _DEFAULT_FDR)
+
+
+def _render_volcano(
+    deg_df: pd.DataFrame,
+    *,
+    fdr_threshold: float | None = None,
+    log2fc_threshold: float | None = None,
+) -> str:
+    """Render a volcano plot as a base64-encoded PNG embedded in the HTML.
+
+    ``fdr_threshold`` and ``log2fc_threshold`` are the cutoffs the run recorded.
+    A guide line is drawn only for a cutoff that is known: an unlabelled dashed
+    line at a value the run did not use is worse than no line at all.
+    """
     try:
         import matplotlib
 
@@ -332,10 +400,20 @@ def _render_volcano(deg_df: pd.DataFrame) -> str:
     log2fc = deg_df["log2fc"].astype(float)
     padj = deg_df["padj"].astype(float).fillna(1.0)
     nlp = -np.log10(padj.clip(lower=1e-300))
-    sig = deg_df["significant"].astype(bool) if "significant" in deg_df.columns else (padj < 0.05)
+    basis, cutoff = _significance_basis(deg_df.columns, fdr_threshold)
+    if basis == "column":
+        sig = deg_df["significant"].astype(bool)
+        sig_label = "significant"
+    else:
+        sig = padj < float(cutoff)
+        sig_label = (
+            f"significant (padj < {cutoff:g})"
+            if basis == "padj"
+            else f"significant (padj < {cutoff:g}, assumed)"
+        )
 
     ax.scatter(log2fc[~sig], nlp[~sig], s=18, alpha=0.45, c="#888", label="ns")
-    ax.scatter(log2fc[sig], nlp[sig], s=22, alpha=0.85, c="#d62728", label="significant")
+    ax.scatter(log2fc[sig], nlp[sig], s=22, alpha=0.85, c="#d62728", label=sig_label)
     if "gene_id" in deg_df.columns:
         for _, row in deg_df[sig].iterrows():
             label = str(row.get("symbol") or row.get("gene_id"))[:20]
@@ -347,9 +425,26 @@ def _render_volcano(deg_df: pd.DataFrame) -> str:
                 xytext=(3, 3),
                 textcoords="offset points",
             )
-    ax.axhline(-np.log10(0.05), color="grey", linestyle="--", linewidth=0.8, alpha=0.6)
-    ax.axvline(1.0, color="grey", linestyle="--", linewidth=0.8, alpha=0.6)
-    ax.axvline(-1.0, color="grey", linestyle="--", linewidth=0.8, alpha=0.6)
+    # A guide line only where the run told us where the line is.
+    if fdr_threshold is not None:
+        ax.axhline(
+            -np.log10(max(float(fdr_threshold), 1e-300)),
+            color="grey",
+            linestyle="--",
+            linewidth=0.8,
+            alpha=0.6,
+            label=f"padj = {float(fdr_threshold):g}",
+        )
+    if log2fc_threshold is not None:
+        for i, x in enumerate((float(log2fc_threshold), -float(log2fc_threshold))):
+            ax.axvline(
+                x,
+                color="grey",
+                linestyle="--",
+                linewidth=0.8,
+                alpha=0.6,
+                label=f"|log2FC| = {abs(float(log2fc_threshold)):g}" if i == 0 else None,
+            )
     ax.set_xlabel("log2 fold-change (tumor vs. normal)")
     ax.set_ylabel("-log10(padj)")
     ax.set_title("Differential expression — volcano")

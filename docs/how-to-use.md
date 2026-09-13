@@ -26,7 +26,7 @@ pip install -e ".[discover,report]"
 Then:
 
 ```bash
-bindsight --version           # 0.2.0
+bindsight --version           # 0.2.2
 bindsight doctor              # check the install + cache state
 bindsight verify-licenses     # see the per-component license inventory
 ```
@@ -159,8 +159,13 @@ from NIH/GDC (see `bindsight/io/gdc.py`), or bring your own aligner output
 `bindsight` caches external data under your OS cache dir; `bindsight doctor`
 shows the state. On first real run these populate automatically:
 
-- **SURFY surfaceome** (full ~2,886-protein list) — downloaded from
-  [wlab.ethz.ch/surfaceome](https://wlab.ethz.ch/surfaceome) (CC-BY).
+- **SURFY surfaceome** (full ~2,886-protein list) — **vendored, not
+  downloaded**: it ships inside the package and needs no network. The upstream
+  spreadsheet ([Wollscheid lab](https://wollscheidlab.org/SURFY/), CC-BY) is no
+  longer retrievable — the old `wlab.ethz.ch` host serves a landing page and the
+  relocated one serves a Git-LFS pointer — so fetching it on first use was
+  failing or silently degrading to a ten-protein list. Refresh it deliberately
+  with `scripts/build_surfy_list.py`.
 - **AlphaFoldDB** structures + **Open Targets** evidence — fetched per target.
 - **SURFACE-Bind** targetable-site lookup is implemented: when a vendored
   SURFACE-Bind site tree is present, design focuses on those sites; otherwise it

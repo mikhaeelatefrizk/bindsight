@@ -195,22 +195,26 @@ The interval, not the point estimate, is the finding at this panel size.
 
 ### 3.2 Antigens that surfaced
 
-| Antigen | Cohort | Rank | Eligible surfaceome | log2FC |
-|---|---|--:|--:|--:|
-| CA9 | Clear-cell renal | 1 of 291 | 1 of 2,210 | 9.58 |
-| GPC3 | Hepatocellular | 9 of 289 | 6 of 2,057 | 3.97 |
-| MET | Papillary renal | 10 of 287 | 7 of 2,170 | 2.34 |
-| FOLH1 | Prostate | 34 of 285 | 24 of 2,208 | 2.21 |
-| STEAP1 | Prostate | 158 of 285 | 151 of 2,208 | 1.14 |
+| Antigen | Cohort | Tier | Rank | Eligible surfaceome | log2FC |
+|---|---|---|--:|--:|--:|
+| CA9 | Clear-cell renal | Clinical stage | 1 of 291 | 1 of 3,727 | 9.58 |
+| GPC3 | Hepatocellular | Clinical stage | 9 of 289 | 9 of 3,510 | 3.97 |
+| MET | Papillary renal | Approved | 10 of 287 | 10 of 3,674 | 2.34 |
+| FOLH1 | Prostate | Approved | 34 of 285 | 36 of 3,710 | 2.21 |
+| STEAP1 | Prostate | Late clinical | 158 of 285 | 244 of 3,710 | 1.14 |
 
 All five come from whole unstratified cohorts with no selection on the antigen.
+Two of them — MET and FOLH1 — are in the pre-registered approved-tier
+denominator; the table spans every tier, as the labelled sensitivity analysis in
+section 2 does.
 The three strongest are oncofetal or driver antigens with large effects, which is
 what a differential-expression method should find.
 
 ### 3.3 Why the others did not surface
 
-Of the 15 gated-out pairs: 13 failed the significance rule, 3 fell outside the
-enrichment cut, and one was measured as down-regulated. No pair was lost to
+Of the 15 gated-out approved-tier pairs: 11 failed the significance rule, 3 fell
+outside the enrichment cut, and one was measured as down-regulated. Across all
+three tiers the 17 gated-out pairs break down as 13, 3 and 1. No pair was lost to
 infrastructure.
 
 Four cases are individually informative:

@@ -118,7 +118,15 @@ def plot_outcome_classes(summary: dict[str, Any], out_path: Path) -> Path | None
                 fontsize=10,
             )
     ax.set_ylabel("Antigen-cohort pairs")
-    ax.set_title("Four outcomes, reported separately rather than as one rate")
+    # The bars count the pre-registered denominator, which is fewer pairs than
+    # the study scored. An untitled denominator reads as a total of the panel.
+    tiers = (summary.get("design") or {}).get("tiers_in_primary_denominator") or []
+    scope = (
+        " ".join(str(t).replace("_", " ") for t in tiers) + "-tier pairs"
+        if tiers
+        else "every scored pair"
+    )
+    ax.set_title(f"Four outcomes ({scope}), reported separately rather than as one rate")
     ax.set_ylim(0, max(values) * 1.2 if max(values) else 1)
     ax.spines[["top", "right"]].set_visible(False)
     ax.tick_params(axis="x", labelsize=9)

@@ -87,8 +87,12 @@ class RunScore:
     cross-reactivity observations rather than rediscoveries. ``recall_basis``
     records which of the two regimes produced ``recall_at``:
     ``"on_indication"``, ``"indication_unknown"`` (no indication supplied for
-    the run) or ``"no_known_antigen_for_indication"`` (nothing to score, so
-    ``recall_at`` is left empty rather than reported as zero).
+    the run), ``"no_known_antigen_for_indication"`` (nothing to score, so
+    ``recall_at`` is left empty rather than reported as zero) or
+    ``"candidates_unavailable"`` (the run's ``candidates.parquet`` was missing,
+    empty or unreadable -- the same rule applies, and used not to: every antigen
+    came back ``found=False`` and every cutoff reported 0%, which reads as a
+    ranking that missed everything rather than a run that was never read).
     """
 
     run_name: str
@@ -187,7 +191,10 @@ def score_run(
     # Build a uniprot -> _Hit lookup from the candidates.
     rank_by_uniprot: dict[str, _Hit] = {}
     n_candidates = 0
-    if cands is not None and "uniprot_id" in cands.columns:
+    # A frame that loaded but carries no accession column is as unusable as one
+    # that never loaded: neither can say whether an antigen was ranked.
+    candidates_available = cands is not None and "uniprot_id" in cands.columns
+    if candidates_available:
         n_candidates = int(cands["uniprot_id"].notna().sum())
         ranked = cands.dropna(subset=["uniprot_id"]).copy()
         # Prefer an explicit 'rank' column; otherwise rank by row order.
@@ -217,11 +224,19 @@ def score_run(
             "uniprot": ka.uniprot,
             "tumor_type": ka.tumor_type,
             "on_indication": on,
-            "found": hit is not None,
+            # ``None``, not ``False``, when there was no shortlist to look in.
+            # "We did not find it" and "we could not look" render identically
+            # otherwise, and only one of them is a result.
+            "found": (hit is not None) if candidates_available else None,
             "rank": hit.rank if hit else None,
             "log2fc": hit.log2fc if hit else None,
             "padj": hit.padj if hit else None,
-            **{f"in_top_{k}": (hit is not None and hit.rank <= k) for k in ks},
+            **{
+                f"in_top_{k}": (hit is not None and hit.rank <= k)
+                if candidates_available
+                else None
+                for k in ks
+            },
         }
 
     per_antigen = [
@@ -238,12 +253,14 @@ def score_run(
     ]
 
     recall_at: dict[int, float] = {}
-    if on_indication:
+    if on_indication and candidates_available:
         for k in ks:
             hits = sum(1 for a in per_antigen if a[f"in_top_{k}"])
             recall_at[k] = hits / len(on_indication)
 
-    if tumor_type is None:
+    if not candidates_available:
+        basis = "candidates_unavailable"
+    elif tumor_type is None:
         basis = "indication_unknown"
     elif on_indication:
         basis = "on_indication"
@@ -348,6 +365,12 @@ def render_benchmark_html(
                 "<div class='scope warn'>Indication not supplied for this run, so no "
                 "indication gate could be applied: the whole known set is scored and a "
                 "match may belong to another cancer type.</div>"
+            )
+        elif s.recall_basis == "candidates_unavailable":
+            detail_blocks += (
+                "<div class='scope warn'>This run's candidate table could not be read "
+                "(missing, empty or unreadable), so nothing could be looked up and "
+                "recall@k is not defined. This is not a rediscovery rate of zero.</div>"
             )
         else:
             detail_blocks += (

@@ -34,6 +34,7 @@ from bindsight.validate.protocol import (
     UNRECORDED_VERSION,
     ValidationResult,
     installed_version,
+    note_unmeasured,
 )
 
 LOG = logging.getLogger(__name__)
@@ -878,7 +879,7 @@ def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) 
         iptm = statistics.fmean(iptm_samples)
     if ptm_samples:
         ptm = statistics.fmean(ptm_samples)
-    return ValidationResult(
+    result = ValidationResult(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=iptm,
@@ -897,6 +898,11 @@ def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) 
         validator_version=installed_version("chai_lab") or UNRECORDED_VERSION,
         notes=f"parsed chai scores={len(iptm_samples)} sample(s)",
     )
+    return note_unmeasured(
+        result,
+        reason=f"no scores*.npz under {output_dir} yielded an iptm or ptm value",
+        log=LOG,
+    )
 
 
 def parse_af2ig_output(
@@ -905,14 +911,25 @@ def parse_af2ig_output(
     """Parse an AF2 initial-guess ``.sc`` score table into a ValidationResult."""
     pae_interaction = plddt = None
     sc = Path(score_file)
-    if sc.exists():
+    # Each way the file can fail to yield a metric, named. Returning None for
+    # all three without a reason made a missing file, a header-only file and a
+    # file with different column names indistinguishable from a real low score.
+    if not sc.exists():
+        reason = f"score file {sc} does not exist"
+    else:
         lines = [ln.split() for ln in sc.read_text().splitlines() if ln.strip()]
-        if len(lines) >= 2:
+        if len(lines) < 2:
+            reason = f"score file {sc} has {len(lines)} line(s); expected a header and a row"
+        else:
             header, row = lines[0], lines[1]
             cols = dict(zip(header, row, strict=False))
             pae_interaction = _to_float(cols.get("pae_interaction"))
             plddt = _to_float(cols.get("plddt_binder"))
-    return ValidationResult(
+            reason = (
+                f"score file {sc} has no readable pae_interaction or plddt_binder "
+                f"column (columns: {', '.join(header) or 'none'})"
+            )
+    result = ValidationResult(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=None,
@@ -929,6 +946,7 @@ def parse_af2ig_output(
         validator_version=f"dl_binder_design@{DL_BINDER_DESIGN_COMMIT}",
         notes="AF2 initial-guess (non-commercial weights)",
     )
+    return note_unmeasured(result, reason=reason, log=LOG)
 
 
 def _to_float(v: object) -> float | None:

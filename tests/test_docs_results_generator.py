@@ -133,3 +133,123 @@ class TestTheMeanComparisonCarriesItsInterval:
         one = _showcase(is_mock=False)
         object.__setattr__(one, "binders", list(one.binders)[:1])
         assert module._mean_iptm_interval(one) is None
+
+
+class TestTheOutcomeTableNamesItsDenominator:
+    """``outcome_class_counts`` counts the pre-registered approved-tier
+    denominator. The page rendered it as a single unlabelled column reading
+    "Reached the shortlist | 2" directly above a table listing the five pairs
+    that reached it, and the figure drew bars summing to 17 for a 22-pair study.
+    """
+
+    @staticmethod
+    def _study():
+        from bindsight.report.showcase import load_study
+
+        study = load_study(ROOT / "benchmarks")
+        if study is None:
+            pytest.skip("study artifact not present")
+        return study
+
+    def test_the_every_tier_counts_account_for_every_scored_pair(self) -> None:
+        """The second column's whole purpose is to sum to the pair table."""
+        study = self._study()
+
+        assert sum(study.outcome_counts_every_tier.values()) == study.n_scored
+
+    def test_the_primary_counts_cover_fewer_pairs_than_the_panel(self) -> None:
+        """If these ever coincide the two columns become redundant, and the
+        labelling decision below should be revisited rather than left in place."""
+        study = self._study()
+
+        assert study.primary_tiers, "the study no longer records its denominator"
+        assert sum(study.outcome_counts.values()) < study.n_scored
+
+    def test_the_primary_counts_are_the_tier_filtered_pairs(self) -> None:
+        study = self._study()
+        in_tier = [p for p in study.pairs if p.get("tier") in study.primary_tiers]
+
+        for outcome, n in study.outcome_counts.items():
+            assert n == sum(1 for p in in_tier if p.get("outcome_class") == outcome), outcome
+
+    def test_the_page_gives_both_columns_and_they_sum_correctly(self) -> None:
+        """Read off the rendered page, because that is what a reader meets."""
+        page = (ROOT / "docs" / "results.md").read_text(encoding="utf-8")
+        study = self._study()
+
+        assert "| Outcome | Approved agents | Every scored pair |" in page, (
+            "the outcome table no longer names its two denominators"
+        )
+        rows = [
+            line
+            for line in page.splitlines()
+            if line.startswith("| ") and line.count("|") == 4 and " | " in line
+        ]
+        totals = {"primary": 0, "every": 0}
+        for line in rows:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) != 3 or not cells[1].isdigit() or not cells[2].isdigit():
+                continue
+            totals["primary"] += int(cells[1])
+            totals["every"] += int(cells[2])
+        assert totals["every"] == study.n_scored, (
+            f"the every-pair column sums to {totals['every']}, not the "
+            f"{study.n_scored} pairs the study scored"
+        )
+        assert totals["primary"] == sum(study.outcome_counts.values()), totals
+
+    def test_the_page_never_shows_the_primary_count_as_if_it_were_the_total(
+        self,
+    ) -> None:
+        """The exact line that shipped."""
+        page = (ROOT / "docs" / "results.md").read_text(encoding="utf-8")
+        study = self._study()
+        ranked_primary = study.outcome_counts.get("ranked", 0)
+        ranked_every = study.outcome_counts_every_tier.get("ranked", 0)
+        if ranked_primary == ranked_every:  # pragma: no cover - frames coincide
+            pytest.skip("the two frames agree; the confusion cannot arise")
+
+        # Whole lines: the corrected two-column row starts with the same text,
+        # so a substring check passes on the page that shipped and fails on the
+        # page that fixed it.
+        lines = {line.strip() for line in page.splitlines()}
+        assert f"| Reached the shortlist | {ranked_primary} |" not in lines, (
+            "the outcome table shows the approved-tier count as a single "
+            f"unlabelled column, above a table of {study.n_scored} pairs"
+        )
+
+    def test_the_outcome_figure_title_names_the_denominator(self, tmp_path) -> None:
+        """Drawn, then read back off the rendered axes, so the title is the real
+        one rather than the format string it came from."""
+        import json
+
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        from bindsight.benchmark import study_figures
+
+        summary = json.loads(
+            (ROOT / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8")
+        )
+        titles: list[str] = []
+        original = plt.subplots
+
+        def _subplots(*a, **kw):
+            fig, ax = original(*a, **kw)
+            titles.append(ax)
+            return fig, ax
+
+        plt.subplots = _subplots
+        try:
+            study_figures.plot_outcome_classes(summary, tmp_path / "outcomes.png")
+        finally:
+            plt.subplots = original
+
+        assert titles, "no figure was drawn"
+        title = titles[0].get_title()
+        for tier in summary["design"]["tiers_in_primary_denominator"]:
+            assert str(tier).replace("_", " ") in title, (
+                f"the figure title does not name the {tier} denominator: {title!r}"
+            )

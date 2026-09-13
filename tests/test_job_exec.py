@@ -9,14 +9,16 @@ the downstream-correct tarball layout (metrics.jsonl + validate/<binder>/...).
 
 from __future__ import annotations
 
+import inspect
 import json
+import logging
 import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from bindsight.runners import job_exec
+from bindsight.runners import job_exec, tools
 
 _TINY_PDB = (
     "ATOM      1  CA  MET A   1      0.0  0.0  0.0  1.0  0.0           C\n"
@@ -513,3 +515,96 @@ def test_materialise_target_copies_pdb(tmp_path: Path) -> None:
     work = tmp_path / "work"
     job_exec.materialise_target(spec, spec_dir, work)
     assert (work / "target.pdb").read_text() == _TINY_PDB
+
+
+# ---------------------------------------------------------------------------
+# Designers the pinned upstream cannot seed
+# ---------------------------------------------------------------------------
+class TestUnseedableDesigners:
+    """``spec["seed"]`` is part of the design cache key, which says "same seed,
+    same work". Two of the three designers cannot honour that, because their
+    pinned upstream exposes no way to set a seed. These tests keep the exception
+    declared, evidenced, and audible rather than silent.
+    """
+
+    def test_every_designer_threads_the_seed_or_is_declared_unseedable(self) -> None:
+        """Discovered from the registry, not from a list written beside it, so a
+        designer added later cannot quietly join without answering the question."""
+        for name, fn in job_exec._DESIGNERS.items():
+            if name in job_exec.UNSEEDABLE_DESIGNERS:
+                continue
+            source = inspect.getsource(fn)
+            assert 'spec.get("seed"' in source, (
+                f"designer {name!r} neither reads spec['seed'] nor appears in "
+                "UNSEEDABLE_DESIGNERS; the seed is in its cache key either way"
+            )
+
+    def test_the_declarations_are_all_real_designers(self) -> None:
+        """A stale entry would make the warning unreachable and the claim untestable."""
+        unknown = set(job_exec.UNSEEDABLE_DESIGNERS) - set(job_exec._DESIGNERS)
+        assert not unknown, f"UNSEEDABLE_DESIGNERS names no-such-designer(s): {unknown}"
+
+    def test_each_reason_cites_the_commit_that_is_actually_pinned(self) -> None:
+        """The evidence was read at a specific commit. Bumping the pin without
+        re-reading it would leave a citation that no longer describes the code,
+        which is worse than no citation at all.
+        """
+        pinned = {
+            "bindcraft": tools.BINDCRAFT_COMMIT,
+            "boltzgen": tools.BOLTZGEN_COMMIT,
+        }
+        for designer, reason in job_exec.UNSEEDABLE_DESIGNERS.items():
+            commit = pinned[designer]
+            cited = [w.strip(".,;:()") for w in reason.split() if len(w.strip(".,;:()")) >= 8]
+            assert any(commit.startswith(c) for c in cited), (
+                f"the {designer} reason cites no prefix of the pinned commit "
+                f"{commit}; re-read the upstream at this commit and restate it"
+            )
+
+    def test_running_an_unseedable_designer_warns_through_run_job(
+        self, mock_run, monkeypatch, tmp_path: Path, caplog
+    ) -> None:
+        """Drives the real dispatch. The warning has to be wired into ``run_job``;
+        a test that called ``warn_if_unseeded`` directly would still pass with the
+        call site deleted, which is the failure this is written to prevent.
+
+        BindCraft's own implementation is not what is under test, so the registry
+        entry points at the designer the fake tools can drive. ``run_job`` still
+        sees ``designer == "bindcraft"``, and that is what selects the branch.
+        """
+        registry = dict(job_exec._DESIGNERS)
+        registry["bindcraft"] = job_exec._design_rfdiff_mpnn
+        monkeypatch.setattr(job_exec, "_DESIGNERS", registry)
+
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+        spec = _spec()
+        spec["seed"] = 4242
+        spec["extra_params"]["designer"] = "bindcraft"
+
+        with caplog.at_level(logging.WARNING, logger=job_exec.LOG.name):
+            job_exec.run_job(spec, work, tarball=tmp_path / "r.tar.gz")
+
+        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        seed_warnings = [m for m in warnings if "ignores the configured seed" in m]
+        assert seed_warnings, f"no unseeded-designer warning; got {warnings}"
+        assert "bindcraft" in seed_warnings[0]
+        assert "4242" in seed_warnings[0], "the warning must name the seed being ignored"
+        assert "not reproducible" in seed_warnings[0]
+
+    def test_a_seeded_designer_does_not_warn(self, mock_run, tmp_path: Path, caplog) -> None:
+        """The warning must stay specific; firing it for rfdiff_mpnn — which does
+        thread the seed — would teach readers to ignore it."""
+        work = tmp_path / "work"
+        work.mkdir()
+        (work / "target.pdb").write_text(_TINY_PDB)
+
+        with caplog.at_level(logging.WARNING, logger=job_exec.LOG.name):
+            job_exec.run_job(_spec(), work, tarball=tmp_path / "r.tar.gz")
+
+        assert not [
+            r.getMessage()
+            for r in caplog.records
+            if "ignores the configured seed" in r.getMessage()
+        ]

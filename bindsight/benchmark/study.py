@@ -841,7 +841,7 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     specificity = _specificity_null(results, config)
     if specificity is not None:
         summary["specificity_null"] = specificity
-    calibration = _null_calibration(results)
+    calibration = _null_calibration(results, config)
     if calibration is not None:
         summary["null_calibration"] = calibration
     return summary
@@ -855,7 +855,9 @@ def _cognate_projects() -> dict[str, set[str]]:
     return cognate
 
 
-def _null_calibration(results: list[CohortResult]) -> dict[str, Any] | None:
+def _null_calibration(
+    results: list[CohortResult], config: StudyConfig
+) -> dict[str, Any] | None:
     """What the pipeline surfaces where no panel antigen is expected.
 
     ``NULL_CALIBRATION_PROJECTS`` has been declared since the panel was written —
@@ -882,13 +884,21 @@ def _null_calibration(results: list[CohortResult]) -> dict[str, Any] | None:
         return None
 
     cognate = _cognate_projects()
-    off_indication = [score for r in calibration for score in r.antigen_scores.values()]
-    own_indication = [
-        score
-        for r in results
-        for symbol, score in r.antigen_scores.items()
-        if r.project in cognate.get(symbol, set())
-    ]
+    # Kept by antigen, not flattened. One antigen contributes a standing in each
+    # calibration cohort, so the standings are not independent draws and an
+    # interval over the flat list would be too narrow. The antigen is the unit.
+    off_by_antigen: dict[str, list[float]] = {}
+    for r in calibration:
+        for symbol, score in r.antigen_scores.items():
+            off_by_antigen.setdefault(symbol, []).append(score)
+    own_by_antigen: dict[str, list[float]] = {}
+    for r in results:
+        for symbol, score in r.antigen_scores.items():
+            if r.project in cognate.get(symbol, set()):
+                own_by_antigen.setdefault(symbol, []).append(score)
+
+    off_indication = [score for scores in off_by_antigen.values() for score in scores]
+    own_indication = [score for scores in own_by_antigen.values() for score in scores]
     if not off_indication:
         return None
 
@@ -906,10 +916,40 @@ def _null_calibration(results: list[CohortResult]) -> dict[str, Any] | None:
         "n_scored_pairs": sum(len(r.pairs) for r in calibration),
         "n_antigen_standings": len(off_indication),
         "mean_standing_off_indication": sum(off_indication) / len(off_indication),
+        # The same mean with the spread and interval behind it. Two bare means
+        # were being contrasted in the report with no n and no uncertainty, which
+        # is exactly the shape of claim this study exists to avoid making.
+        "off_indication_interval": S.cluster_bootstrap_mean(
+            off_by_antigen, seed=config.seed
+        ).as_dict(),
     }
     if own_indication:
         block["mean_standing_in_own_indication"] = sum(own_indication) / len(own_indication)
         block["n_own_indication"] = len(own_indication)
+        block["own_indication_interval"] = S.cluster_bootstrap_mean(
+            own_by_antigen, seed=config.seed
+        ).as_dict()
+
+        # The paired contrast, which is the comparison the sentence is making.
+        # Pairing within an antigen removes the between-antigen variation that
+        # both means share, and it is the only form of this comparison in which
+        # the two groups are not partly the same antigens measured twice.
+        paired = {
+            symbol: [
+                sum(own_by_antigen[symbol]) / len(own_by_antigen[symbol])
+                - sum(off_by_antigen[symbol]) / len(off_by_antigen[symbol])
+            ]
+            for symbol in sorted(set(own_by_antigen) & set(off_by_antigen))
+        }
+        if paired:
+            block["paired_difference"] = {
+                "description": (
+                    "Per antigen, its mean standing in its own indication minus its "
+                    "mean standing in the calibration cohorts. Bootstrapped over "
+                    "antigens, which are the independent unit."
+                ),
+                **S.cluster_bootstrap_mean(paired, seed=config.seed).as_dict(),
+            }
     return block
 
 

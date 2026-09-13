@@ -49,9 +49,11 @@ from typing import Any
 
 __all__ = [
     "Interval",
+    "MeanEstimate",
     "benjamini_hochberg",
     "clopper_pearson_interval",
     "cluster_bootstrap_interval",
+    "cluster_bootstrap_mean",
     "decoy_null_p",
     "permutation_null_p",
     "uniform_rank_p",
@@ -79,6 +81,38 @@ class Interval:
             "high": self.high,
             "numerator": self.numerator,
             "denominator": self.denominator,
+            "method": self.method,
+            "confidence": self.confidence,
+        }
+
+
+@dataclass(frozen=True)
+class MeanEstimate:
+    """A mean with a confidence interval, its spread, and the counts behind it.
+
+    :class:`Interval` carries a numerator and a denominator because it describes
+    a proportion. A mean standing has neither, and forcing one into those fields
+    would put a number in front of a reader that does not mean what it says.
+    """
+
+    point: float
+    low: float
+    high: float
+    sd: float
+    n_clusters: int
+    n_observations: int
+    method: str
+    confidence: float = 0.95
+
+    def as_dict(self) -> dict[str, Any]:
+        """Serialisable form, including the counts so a reader can recompute it."""
+        return {
+            "point": self.point,
+            "low": self.low,
+            "high": self.high,
+            "sd": self.sd,
+            "n_clusters": self.n_clusters,
+            "n_observations": self.n_observations,
             "method": self.method,
             "confidence": self.confidence,
         }
@@ -269,6 +303,73 @@ def cluster_bootstrap_interval(
         high=high,
         numerator=sum(flat),
         denominator=len(flat),
+        method=method,
+        confidence=confidence,
+    )
+
+
+def cluster_bootstrap_mean(
+    clusters: Mapping[str, Sequence[float]],
+    *,
+    n_boot: int = 10_000,
+    confidence: float = 0.95,
+    seed: int = 0,
+) -> MeanEstimate:
+    """Percentile bootstrap of a mean, resampling clusters rather than values.
+
+    The continuous counterpart of :func:`cluster_bootstrap_interval`, and it
+    exists for the same reason: one antigen contributes a standing in several
+    cohorts, so the values are not independent draws and an interval built from
+    the values alone would be too narrow.
+
+    Each cluster contributes the mean of its own values, so a cluster measured
+    in ten cohorts does not outweigh one measured in two -- the antigen is the
+    unit, not the measurement.
+
+    Args:
+        clusters: cluster key -> its values (e.g. antigen -> per-cohort standings).
+        n_boot: bootstrap replicates.
+        confidence: interval width.
+        seed: fixed so a published interval is reproducible.
+
+    Raises:
+        ValueError: If no cluster carries a value.
+    """
+    keys = [k for k, v in clusters.items() if len(v) > 0]
+    if not keys:
+        raise ValueError("no clusters with values")
+
+    per_cluster = [sum(clusters[k]) / len(clusters[k]) for k in keys]
+    n_observations = sum(len(clusters[k]) for k in keys)
+    point = sum(per_cluster) / len(per_cluster)
+    sd = (
+        math.sqrt(sum((v - point) ** 2 for v in per_cluster) / (len(per_cluster) - 1))
+        if len(per_cluster) > 1
+        else 0.0
+    )
+
+    rng = random.Random(seed)
+    n_clusters = len(keys)
+    estimates = []
+    for _ in range(n_boot):
+        drawn = [per_cluster[rng.randrange(n_clusters)] for _ in range(n_clusters)]
+        estimates.append(sum(drawn) / n_clusters)
+    estimates.sort()
+    alpha = 1.0 - confidence
+    lo_i = max(0, math.floor(alpha / 2 * len(estimates)))
+    hi_i = min(len(estimates) - 1, math.ceil((1 - alpha / 2) * len(estimates)) - 1)
+    method = f"cluster-bootstrap-mean(n_clusters={n_clusters}, B={n_boot})"
+    if estimates[lo_i] == estimates[hi_i]:
+        # One cluster, or every cluster identical: nothing to resample. Said in
+        # the method string rather than left to read as certainty.
+        method += " [degenerate: no variation to resample]"
+    return MeanEstimate(
+        point=point,
+        low=estimates[lo_i],
+        high=estimates[hi_i],
+        sd=sd,
+        n_clusters=n_clusters,
+        n_observations=n_observations,
         method=method,
         confidence=confidence,
     )

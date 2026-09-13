@@ -20,7 +20,7 @@ that shortlist, you want designed binder candidates.
 
 **Without `bindsight`** (typical workflow today):
 - Week 1: Run DESeq2, manually filter, dump gene list.
-- Week 2: Cross-check against [SURFY](https://wlab.ethz.ch/surfaceome) by
+- Week 2: Cross-check against [SURFY](https://wollscheidlab.org/SURFY/) by
   hand. Annotate UniProt accessions. Pull AlphaFoldDB structures one by one.
 - Week 3: Set up RFdiffusion + ProteinMPNN environment on the cluster. Spend
   3 days on PyRosetta install issues.

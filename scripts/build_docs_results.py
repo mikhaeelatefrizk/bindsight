@@ -179,21 +179,30 @@ def _study_section(st: showcase.StudyShowcase) -> list[str]:
             lines.append(f"| {cutoff} | {w.get('numerator')}/{w.get('denominator')} |")
         lines.append("")
 
+    # Both frames, side by side. A single unlabelled column of the
+    # approved-only counts read as a total of the pair table printed below it.
     counts = st.outcome_counts or {}
+    every = st.outcome_counts_every_tier
     if counts:
         lines += [
             "### Four outcomes, never merged",
             "",
             "An antigen the surfaceome reference does not contain, one a stated filter "
             "excluded, one the ranking placed low, and one whose lookup failed are four "
-            "different findings about four different parts of the system.",
+            "different findings about four different parts of the system. The first "
+            "column is the pre-registered approved-agent denominator; the second is "
+            "every scored pair, matching the table below.",
             "",
-            "| Outcome | Pairs |",
-            "|---|--:|",
-            f"| Reached the shortlist | {counts.get('ranked', 0)} |",
-            f"| Excluded by a stated filter | {counts.get('gated_out', 0)} |",
-            f"| Outside the instrument's reach | {counts.get('not_reachable', 0)} |",
-            f"| Invalid, must be re-run | {counts.get('infrastructure', 0)} |",
+            "| Outcome | Approved agents | Every scored pair |",
+            "|---|--:|--:|",
+            f"| Reached the shortlist | {counts.get('ranked', 0)} | "
+            f"{every.get('ranked', 0)} |",
+            f"| Excluded by a stated filter | {counts.get('gated_out', 0)} | "
+            f"{every.get('gated_out', 0)} |",
+            f"| Outside the instrument's reach | {counts.get('not_reachable', 0)} | "
+            f"{every.get('not_reachable', 0)} |",
+            f"| Invalid, must be re-run | {counts.get('infrastructure', 0)} | "
+            f"{every.get('infrastructure', 0)} |",
             "",
         ]
 

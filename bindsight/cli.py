@@ -1907,11 +1907,23 @@ def demo(out_dir: Path, no_report: bool) -> None:
     """Run the full discovery half on a real TCGA breast-cancer cohort.
 
     Auto-downloads an authentic TCGA-BRCA tumor-vs-adjacent-normal RNA-seq
-    cohort (STAR - Counts) from NIH/GDC on first run, runs real DESeq2, and
-    rediscovers ERBB2 (HER2) and EGFR as top antibody-tractable surface
-    antigens. Needs network the first time (cohort + SURFY downloaded, then
-    cached); takes a few minutes on real data. Produces an HTML report.
+    cohort (STAR - Counts, 20 tumour vs 20 normal) from NIH/GDC on first run and
+    runs real DESeq2 over it. Needs network the first time (cohort + SURFY
+    downloaded, then cached); takes a few minutes on real data. Produces an HTML
+    report.
+
+    Which antigens surface is the run's result, not a scripted one: a 20-vs-20
+    subsample can land either side of the significance cutoffs. See
+    benchmarks/study/RESULTS.md for what the full cohorts show.
     """
+    # This help text once promised the demo rediscovered ERBB2 (HER2) and EGFR
+    # as top antibody-tractable surface antigens. The project's own rediscovery
+    # study measures ERBB2 in a whole unstratified breast cohort at log2 fold
+    # change 0.92 -- below the 1.0 floor, so it does not clear the significance
+    # rule -- and the demo config's own comment notes that EGFR is often lower in
+    # bulk tumour than in normal breast epithelium. Naming an expected outcome in
+    # --help turns whatever the run produces into either a confirmation or an
+    # apparent malfunction, and one of those readings would be wrong.
     from bindsight.config import RunConfig
     from bindsight.pipelines import discover as discover_pipeline
 

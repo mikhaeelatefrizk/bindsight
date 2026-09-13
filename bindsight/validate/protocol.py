@@ -11,6 +11,8 @@ agreement or ``AF2-IG`` for the gold-standard Bennet/Baker filtering pipeline
 
 from __future__ import annotations
 
+import logging
+
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -117,6 +119,26 @@ class ValidationResult(BaseModel):
     validator_version: str
     notes: str | None = None
 
+    @property
+    def measured(self) -> bool:
+        """True when the validator produced at least one metric.
+
+        A result whose every metric is ``None`` is still a valid row: it reaches
+        metrics.jsonl, the ranker and the report looking exactly like a design
+        that was scored and scored badly. It is not the same thing, and the
+        difference is invisible unless something says so.
+        """
+        return any(
+            value is not None
+            for value in (
+                self.iptm,
+                self.ptm,
+                self.plddt_binder,
+                self.pae_interaction,
+                self.affinity_pred_value,
+            )
+        )
+
 
 @runtime_checkable
 class Validator(Protocol):
@@ -135,3 +157,33 @@ class Validator(Protocol):
     ) -> ValidationResult:
         """Run the validator and return metrics."""
         ...
+
+
+#: The phrase a validator's ``notes`` carries when it parsed no metric at all.
+#: Checked across every parser by the test suite, so the guarantee is uniform
+#: rather than whichever parser someone remembered to handle.
+NO_METRICS_NOTE = "no metrics parsed"
+
+
+def note_unmeasured(
+    result: ValidationResult, *, reason: str, log: logging.Logger
+) -> ValidationResult:
+    """Warn and annotate when ``result`` carries no metric; pass it through otherwise.
+
+    The AF2 initial-guess parser returned an all-``None`` result for a score file
+    that was missing, truncated to its header, or written with different column
+    names -- three real failure modes, none of which produced a warning or left
+    any trace in the row. This is the single place that decides what such a
+    result says about itself.
+    """
+    if result.measured:
+        return result
+    log.warning(
+        "%s parsed no metrics for %s: %s",
+        result.validator_name,
+        result.binder_id,
+        reason,
+    )
+    existing = (result.notes or "").strip()
+    note = f"{NO_METRICS_NOTE}: {reason}"
+    return result.model_copy(update={"notes": f"{existing}; {note}" if existing else note})

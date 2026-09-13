@@ -48,14 +48,14 @@ The headline counts only antigens whose targeting agent is approved. That exclud
 
 ### Four outcomes, never merged
 
-An antigen the surfaceome reference does not contain, one a stated filter excluded, one the ranking placed low, and one whose lookup failed are four different findings about four different parts of the system.
+An antigen the surfaceome reference does not contain, one a stated filter excluded, one the ranking placed low, and one whose lookup failed are four different findings about four different parts of the system. The first column is the pre-registered approved-agent denominator; the second is every scored pair, matching the table below.
 
-| Outcome | Pairs |
-|---|--:|
-| Reached the shortlist | 2 |
-| Excluded by a stated filter | 15 |
-| Outside the instrument's reach | 0 |
-| Invalid, must be re-run | 0 |
+| Outcome | Approved agents | Every scored pair |
+|---|--:|--:|
+| Reached the shortlist | 2 | 5 |
+| Excluded by a stated filter | 15 | 17 |
+| Outside the instrument's reach | 0 | 0 |
+| Invalid, must be re-run | 0 | 0 |
 
 ### Every pair
 

@@ -25,6 +25,7 @@ import json
 import logging
 import statistics
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -153,6 +154,9 @@ class DesignerScore:
     archives: list[Path] = field(default_factory=list)
     cost_usd: float | None = None
     gpu_hours: float | None = None
+    #: Estimated by :mod:`bindsight.cost` before the run, not measured.
+    #: :attr:`wall_seconds` is the measurement; the table says which is which.
+    wall_seconds: float | None = None
     error: str | None = None
 
 
@@ -270,6 +274,10 @@ def run_one_designer(
 ) -> DesignerScore:
     """Design + validate binders for every target with one designer; aggregate."""
     score = DesignerScore(designer=designer_name, n_targets=len(targets))
+    # Wall-clock for this designer's whole pass. The table's GPU-hours column was
+    # the cost model's forecast, printed beside measured ipTMs with no marking,
+    # and the run it described recorded nothing to check it against.
+    started = time.monotonic()
     try:
         designer = get_designer(designer_name)
         # get_runner forwards only the kwargs a given runner accepts, so this is
@@ -370,6 +378,7 @@ def run_one_designer(
         score.gpu_hours = combined.gpu_hours
     except Exception as e:  # pragma: no cover - unknown plugin/backend
         LOG.warning("cost estimate failed for %s: %s", designer_name, e)
+    score.wall_seconds = round(time.monotonic() - started, 1)
 
     score.archives = archives
     return score
@@ -604,6 +613,7 @@ def _score_dict(s: DesignerScore) -> dict[str, Any]:
         "n_backbones_with_success": s.n_backbones_with_success,
         "cost_usd": s.cost_usd,
         "gpu_hours": s.gpu_hours,
+        "wall_seconds": s.wall_seconds,
         "per_target": s.per_target,
         "error": s.error,
     }
@@ -692,6 +702,22 @@ def _bindsight_source(backend: str, wheel: Path | None, *, is_mock: bool) -> str
             "so these results are not attributable to the tree that launched them"
         )
     return f"working-tree wheel {Path(wheel).name}"
+
+
+def _gpu_hours_cell(designer: dict[str, Any]) -> str:
+    """GPU-hours, marked as measured or forecast.
+
+    The column used to print ``bindsight.cost``'s forecast unmarked, in a row
+    whose other numbers are all measurements. A reader had no way to tell that
+    0.722 was predicted before the run rather than observed during it.
+    """
+    wall = designer.get("wall_seconds")
+    if wall:
+        return f"{float(wall) / 3600:.3g} (measured)"
+    estimate = designer.get("gpu_hours")
+    if estimate is None:
+        return "—"
+    return f"{float(estimate):.3g} (est.)"
 
 
 def _success_cell(d: dict[str, Any]) -> str:
@@ -793,7 +819,7 @@ def _render_md(summary: dict[str, Any]) -> str:
             f"| {d['designer']} | {d['n_designs']} | {fmt(d['mean_iptm'])} | "
             f"{fmt(d['median_iptm'])} | {fmt(d['mean_pae_interaction'])} | "
             f"{fmt(d['mean_affinity'])} | {_success_cell(d)} | {_backbone_cell(d)} | "
-            f"{fmt(d['cost_usd'])} | {fmt(d['gpu_hours'])} |"
+            f"{fmt(d['cost_usd'])} | {_gpu_hours_cell(d)} |"
         )
     a("")
     a(
@@ -808,7 +834,11 @@ def _render_md(summary: dict[str, Any]) -> str:
         "that worked. Read the interval, not the point: two runs of the same target "
         "differing only in seed returned 2/20 and 6/20, which a Fisher exact test "
         "cannot separate. Cost is the "
-        "`bindsight.cost` estimate for the run on the chosen backend.\n"
+        "`bindsight.cost` estimate for the run on the chosen backend, and so is "
+        "any GPU-hours figure marked `(est.)` — both are forecasts made before "
+        "the run rather than measurements of it. A figure marked `(measured)` is "
+        "this designer's own wall-clock. The committed run predates that "
+        "measurement, which is why its GPU-hours are an estimate.\n"
     )
     a(IPTM_CALIBRATION_CAVEAT)
     return "\n".join(lines)

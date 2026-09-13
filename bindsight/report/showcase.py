@@ -161,6 +161,10 @@ class StudyShowcase:
     recall_cascade: dict[str, Any]
     tier_sensitivity: dict[str, Any]
     primary_interval: dict[str, Any]
+    #: Outcome counts over the **pre-registered denominator only** (the tiers in
+    #: ``design.tiers_in_primary_denominator``), not over every scored pair. Use
+    #: :attr:`outcome_counts_every_tier` for the whole panel, and never show
+    #: either without saying which one it is.
     outcome_counts: dict[str, int]
     pairs: list[dict[str, Any]]
     set_sizes: dict[str, dict[str, int]]
@@ -178,6 +182,26 @@ class StudyShowcase:
         """The best-ranked surfaced antigen."""
         surfaced = self.surfaced
         return surfaced[0] if surfaced else None
+
+    @property
+    def primary_tiers(self) -> tuple[str, ...]:
+        """The regulatory tiers the headline denominator was pre-registered on."""
+        return tuple(self.design.get("tiers_in_primary_denominator") or ())
+
+    @property
+    def outcome_counts_every_tier(self) -> dict[str, int]:
+        """The same four outcomes over every scored pair.
+
+        Counted from :attr:`pairs` rather than read from the artifact, because
+        the artifact records only the primary-denominator counts and a reader
+        comparing them against the pair table needs the other frame too.
+        """
+        counts: dict[str, int] = {}
+        for pair in self.pairs:
+            outcome = str(pair.get("outcome_class") or "")
+            if outcome:
+                counts[outcome] = counts.get(outcome, 0) + 1
+        return counts
 
     @property
     def n_scored(self) -> int:

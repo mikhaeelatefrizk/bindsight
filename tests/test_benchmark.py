@@ -86,12 +86,21 @@ def test_score_run_ranks_and_recall(tmp_path: Path) -> None:
 
 
 def test_score_run_missing_candidates(tmp_path: Path) -> None:
+    """A run with no candidate table yields no verdict, not a negative one.
+
+    This test used to assert ``found is False`` — which is what the code did, and
+    what was wrong with it. "We looked and it was not there" is a statement about
+    the ranking; nothing was looked at here. The distinction is the difference
+    between a rediscovery rate of zero and no rediscovery rate at all.
+    """
     known = [KnownAntigen("ERBB2", "P04626")]
     empty = tmp_path / "empty"
     empty.mkdir()
     score = score_run(empty, known)
     assert score.n_found == 0
-    assert score.per_antigen[0]["found"] is False
+    assert score.per_antigen[0]["found"] is None
+    assert score.recall_basis == "candidates_unavailable"
+    assert score.recall_at == {}
 
 
 def test_render_html_contains_antigens(tmp_path: Path) -> None:

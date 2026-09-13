@@ -1548,8 +1548,39 @@
     "n_scored_pairs": 0,
     "n_antigen_standings": 25,
     "mean_standing_off_indication": 0.41841785416838273,
+    "off_indication_interval": {
+      "point": 0.4172114883002832,
+      "low": 0.28186783266064447,
+      "high": 0.5671437794059359,
+      "sd": 0.2745405122768129,
+      "n_clusters": 13,
+      "n_observations": 25,
+      "method": "cluster-bootstrap-mean(n_clusters=13, B=10000)",
+      "confidence": 0.95
+    },
     "mean_standing_in_own_indication": 0.7382188660333444,
-    "n_own_indication": 22
+    "n_own_indication": 22,
+    "own_indication_interval": {
+      "point": 0.765414860221819,
+      "low": 0.6479772899073536,
+      "high": 0.870699195039479,
+      "sd": 0.21512018971836055,
+      "n_clusters": 13,
+      "n_observations": 22,
+      "method": "cluster-bootstrap-mean(n_clusters=13, B=10000)",
+      "confidence": 0.95
+    },
+    "paired_difference": {
+      "description": "Per antigen, its mean standing in its own indication minus its mean standing in the calibration cohorts. Bootstrapped over antigens, which are the independent unit.",
+      "point": 0.34820337192153583,
+      "low": 0.18844043133907004,
+      "high": 0.5127434918493132,
+      "sd": 0.30895387387529893,
+      "n_clusters": 13,
+      "n_observations": 13,
+      "method": "cluster-bootstrap-mean(n_clusters=13, B=10000)",
+      "confidence": 0.95
+    }
   },
   "cohorts_not_yet_run": [],
   "surfaceome_size": 4801

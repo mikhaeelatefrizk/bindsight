@@ -88,7 +88,7 @@ def rank_validated(
             if c in candidates.columns
         ]
         if "uniprot_id" in keep_cols:
-            cand = candidates[keep_cols].drop_duplicates("uniprot_id")
+            cand = _one_row_per_accession(candidates[keep_cols])
             df = df.merge(
                 cand,
                 left_on="target_uniprot",
@@ -190,6 +190,56 @@ def _fold_change_score(log2fc: pd.Series) -> pd.Series:
         # Nothing in the table is over-expressed, so nothing carries evidence.
         return values.where(values.isna(), 0.0)
     return (values.clip(lower=0.0) / top).where(values.notna())
+
+
+def _one_row_per_accession(cand: pd.DataFrame) -> pd.DataFrame:
+    """Reduce the candidate evidence to one row per UniProt accession.
+
+    Several gene IDs can map to one accession -- read-through loci, paralogous
+    symbols sharing a product -- and each carries its own ``log2fc`` and
+    ``padj``, which feed the evidence component of the composite score. The
+    previous ``drop_duplicates("uniprot_id")`` kept whichever row happened to
+    come first, so the evidence joined to a binder depended on the row order of
+    an upstream table: a different answer from the same data.
+
+    The strongest evidence for the protein wins instead: smallest ``padj``, then
+    largest ``|log2fc|``, then the symbol, so the result is the same whatever
+    order the rows arrive in. A collision is logged, because an accession with
+    two disagreeing rows is something the reader should be able to see.
+
+    No committed cohort has ever contained one (4,665 candidate rows across the
+    eleven real runs, zero duplicated accessions), which is why the arbitrary
+    tie-break went unnoticed; that is a reason to make it deterministic, not a
+    reason to leave it.
+    """
+    accessions = cand["uniprot_id"]
+    duplicated = accessions.notna() & accessions.duplicated(keep=False)
+    if not duplicated.any():
+        return cand.drop_duplicates("uniprot_id")
+
+    for accession, group in cand[duplicated].groupby("uniprot_id", sort=True):
+        LOG.warning(
+            "%d candidate rows share accession %s (%s); keeping the most "
+            "significant one for ranking evidence",
+            len(group),
+            accession,
+            ", ".join(sorted(str(v) for v in group.get("symbol", []))) or "no symbols",
+        )
+
+    order = cand.copy()
+    order["_padj"] = order["padj"].astype(float) if "padj" in order.columns else 1.0
+    order["_absfc"] = -order["log2fc"].abs().astype(float) if "log2fc" in order.columns else 0.0
+    order["_symbol"] = order["symbol"].astype(str) if "symbol" in order.columns else ""
+    # NaN padj sorts last under na_position, so a row with no statistic never
+    # displaces one that has it.
+    order = order.sort_values(
+        ["_padj", "_absfc", "_symbol"], na_position="last", kind="mergesort"
+    )
+    return (
+        order.drop_duplicates("uniprot_id")
+        .drop(columns=["_padj", "_absfc", "_symbol"])
+        .loc[:, cand.columns]
+    )
 
 
 def _evidence_score(df: pd.DataFrame) -> pd.Series:

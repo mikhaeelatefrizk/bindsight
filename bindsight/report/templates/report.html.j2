@@ -72,9 +72,15 @@
 <section>
   <h2>Differential expression</h2>
   <p>
-    Volcano plot of the differential expression analysis. Significant genes
-    (FDR&nbsp;&lt;&nbsp;threshold and |log2FC|&nbsp;&ge;&nbsp;threshold) are
-    highlighted; dashed lines mark the thresholds.
+    Volcano plot of the differential expression analysis.
+    {% if deg_fdr is not none and deg_log2fc is not none %}
+    Significant genes (padj&nbsp;&lt;&nbsp;{{ deg_fdr }} and
+    |log2FC|&nbsp;&ge;&nbsp;{{ deg_log2fc }}) are highlighted; the dashed lines
+    mark those cutoffs.
+    {% else %}
+    Significant genes are highlighted. This run did not record the cutoffs it
+    applied, so no threshold lines are drawn.
+    {% endif %}
   </p>
   <img class="plot" src="data:image/png;base64,{{ volcano_b64 }}" alt="Volcano plot">
 </section>

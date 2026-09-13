@@ -346,3 +346,114 @@ class TestTheSuccessIntervalIsClusteredOverBackbones:
         assert arm["success_ci_independent_low"] == pytest.approx(0.2188)
         assert arm["success_ci_low"] < arm["success_ci_independent_low"]
         assert arm["success_ci_high"] > arm["success_ci_independent_high"]
+
+
+# ---------------------------------------------------------------------------
+# Forecasts must not sit unmarked in a row of measurements
+# ---------------------------------------------------------------------------
+REPO = Path(__file__).resolve().parents[1]
+BENCH_DIR = REPO / "benchmarks" / "designer_benchmark"
+
+
+class TestGpuHoursSaysWhereItCameFrom:
+    """The GPU-hours column printed ``bindsight.cost``'s pre-run forecast beside
+    measured ipTMs, unmarked. 0.722 looked like something the run observed; the
+    run observed nothing of the kind, and recorded no duration to check it.
+    """
+
+    def test_a_forecast_is_marked_as_one(self) -> None:
+        from bindsight.benchmark.designer_bench import _gpu_hours_cell
+
+        assert _gpu_hours_cell({"gpu_hours": 0.722}) == "0.722 (est.)"
+
+    def test_a_measurement_is_preferred_and_marked_as_one(self) -> None:
+        """A measured wall-clock beats the forecast for the same run."""
+        from bindsight.benchmark.designer_bench import _gpu_hours_cell
+
+        cell = _gpu_hours_cell({"gpu_hours": 99.0, "wall_seconds": 3600.0})
+
+        assert cell == "1 (measured)"
+        assert "est." not in cell
+
+    def test_neither_renders_as_a_dash_not_a_zero(self) -> None:
+        """An absent figure must not become 0, which would read as "free"."""
+        from bindsight.benchmark.designer_bench import _gpu_hours_cell
+
+        assert _gpu_hours_cell({}) == "—"
+
+    def test_a_real_run_records_its_own_wall_clock(self) -> None:
+        """Measured going forward, so the next run does not need the forecast."""
+        from bindsight.benchmark.designer_bench import run_one_designer
+
+        score = run_one_designer(
+            "rfdiff_mpnn",
+            [],
+            backend="mock",
+            validator="boltz2",
+            n_trajectories=1,
+            seed=0,
+            structures_dir=None,
+            scratch=REPO / "does-not-matter-no-targets",
+        )
+
+        assert score.wall_seconds is not None
+        assert score.wall_seconds >= 0.0
+
+    def test_the_note_explains_which_is_which(self) -> None:
+        from bindsight.benchmark.designer_bench import _render_md
+
+        md = _render_md(
+            {
+                "generated_utc": "2026-01-01T00:00:00+00:00",
+                "bindsight_version": "0.0.0",
+                "backend": "mock",
+                "validator": "boltz2",
+                "n_trajectories": 1,
+                "is_mock": True,
+                "targets": [],
+                "designers": [],
+            }
+        )
+
+        assert "(est.)" in md and "(measured)" in md, md[-600:]
+        assert "forecasts made before" in md
+
+
+class TestTheCommittedTableIsARender:
+    """``RESULTS.md`` is written from ``results.json`` in the same call. Nothing
+    checked that it still matched afterwards, so an edited table -- or a
+    regenerated JSON -- would leave a page whose numbers came from nowhere.
+    """
+
+    @staticmethod
+    def _committed() -> tuple[dict, str]:
+        results = BENCH_DIR / "results.json"
+        page = BENCH_DIR / "RESULTS.md"
+        if not results.is_file() or not page.is_file():
+            pytest.skip("designer benchmark artifacts not present")
+        return (
+            json.loads(results.read_text(encoding="utf-8")),
+            page.read_text(encoding="utf-8"),
+        )
+
+    def test_the_page_is_exactly_what_the_artifact_renders_to(self) -> None:
+        from bindsight.benchmark.designer_bench import _render_md
+
+        summary, page = self._committed()
+
+        assert _render_md(summary) == page, (
+            "benchmarks/designer_benchmark/RESULTS.md is not what results.json "
+            "renders to. Regenerate it rather than editing the table by hand."
+        )
+
+    def test_the_renderer_depends_on_the_numbers(self) -> None:
+        """Guards the guard: a renderer ignoring the summary would make the
+        comparison above pass against any artifact."""
+        from bindsight.benchmark.designer_bench import _render_md
+
+        summary, page = self._committed()
+        altered = json.loads(json.dumps(summary))
+        assert altered["designers"], "the committed summary scores no designer"
+        altered["designers"][0]["mean_iptm"] = 0.123456
+
+        assert _render_md(altered) != page

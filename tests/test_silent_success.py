@@ -419,3 +419,214 @@ class TestTheSafetyVerdictSaysWhatItExamined:
         assert both is not None
         assert partial is not None
         assert partial <= both
+
+
+# ---------------------------------------------------------------------------
+# A validator that measured nothing must not look like one that measured badly
+# ---------------------------------------------------------------------------
+def _empty_dir_parsers(tmp: Path) -> dict[str, object]:
+    """Every validator output parser, run against output that isn't there.
+
+    A missing directory is the honest stand-in for the real failure modes: the
+    tool crashed, wrote nowhere, or wrote files this parser cannot read.
+    """
+    from bindsight.runners.tools import parse_af2ig_output, parse_chai_output
+    from bindsight.validate.boltz2 import parse_boltz_output
+
+    return {
+        "parse_af2ig_output": parse_af2ig_output(
+            tmp / "absent.sc", binder_id="b1", target_uniprot="P04626"
+        ),
+        "parse_chai_output": parse_chai_output(
+            tmp, binder_id="b1", target_uniprot="P04626"
+        ),
+        "parse_boltz_output": parse_boltz_output(
+            output_dir=tmp, binder_id="b1", target_uniprot="P04626"
+        ),
+    }
+
+
+class TestAValidatorThatParsedNothingSaysSo:
+    """``parse_af2ig_output`` returned a fully-formed ValidationResult with every
+    metric ``None`` when the score file was missing, header-only, or written with
+    different column names. That row reaches metrics.jsonl, the ranker and the
+    report indistinguishable from a design that scored badly.
+    """
+
+    def test_every_parser_in_the_package_is_covered_here(self, tmp_path: Path) -> None:
+        """Discovered from the source, so a validator added later cannot be
+        the one parser nobody checked."""
+        import re
+
+        root = Path(__file__).resolve().parents[1] / "bindsight"
+        found = set()
+        for path in root.rglob("*.py"):
+            found.update(
+                re.findall(r"^def (parse_\w*output)\(", path.read_text(encoding="utf-8"), re.M)
+            )
+        assert found, "no output parsers found; the discovery pattern has drifted"
+        assert found <= set(_empty_dir_parsers(tmp_path)), (
+            f"parsers with no unmeasured-result test: {found - set(_empty_dir_parsers(tmp_path))}"
+        )
+
+    def test_none_of_them_reports_a_metric_it_did_not_read(self, tmp_path: Path) -> None:
+        for name, result in _empty_dir_parsers(tmp_path).items():
+            assert not result.measured, f"{name} invented a metric from absent output"
+
+    def test_each_records_why_it_measured_nothing(self, tmp_path: Path) -> None:
+        """The note is the part that survives into metrics.jsonl, so it is the
+        part a reader of the artifact can act on."""
+        from bindsight.validate.protocol import NO_METRICS_NOTE
+
+        for name, result in _empty_dir_parsers(tmp_path).items():
+            assert result.notes and NO_METRICS_NOTE in result.notes, (
+                f"{name} returned an all-null result with notes={result.notes!r}"
+            )
+
+    def test_each_warns_at_parse_time(self, tmp_path: Path, caplog) -> None:
+        """The note reaches whoever reads the artifact later; the warning reaches
+        whoever is watching the run now."""
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            parsers = _empty_dir_parsers(tmp_path)
+
+        messages = [r.getMessage() for r in caplog.records]
+        for name, result in parsers.items():
+            assert any(
+                result.validator_name in m and "parsed no metrics" in m for m in messages
+            ), f"{name} parsed nothing without warning; warnings were {messages}"
+
+    def test_a_measured_result_is_left_exactly_as_it_was(self) -> None:
+        """The annotation must not touch a real measurement -- including one that
+        measured badly, which is a finding rather than a failure."""
+        import logging
+
+        from bindsight.validate.protocol import (
+            NO_METRICS_NOTE,
+            ValidationResult,
+            note_unmeasured,
+        )
+
+        scored = ValidationResult(
+            binder_id="b1",
+            target_uniprot="P04626",
+            iptm=0.02,
+            validator_name="boltz2",
+            validator_version="2.0.3",
+            notes="parsed confidence=1 sample(s), affinity=no",
+        )
+
+        passed = note_unmeasured(
+            scored, reason="should not appear", log=logging.getLogger(__name__)
+        )
+
+        assert passed is scored
+        assert NO_METRICS_NOTE not in (passed.notes or "")
+
+    def test_measured_is_true_for_any_single_metric(self) -> None:
+        """pLDDT-only (AF2 initial guess) and ipTM-only (Chai) results are both
+        real measurements; keying the check on ipTM alone would have missed one."""
+        from bindsight.validate.protocol import ValidationResult
+
+        base = {
+            "binder_id": "b1",
+            "target_uniprot": "P04626",
+            "validator_name": "v",
+            "validator_version": "1",
+        }
+        assert not ValidationResult(**base).measured
+        for field, value in (
+            ("iptm", 0.5),
+            ("ptm", 0.5),
+            ("plddt_binder", 80.0),
+            ("pae_interaction", 7.0),
+            ("affinity_pred_value", -7.0),
+        ):
+            assert ValidationResult(**base, **{field: value}).measured, field
+
+
+# ---------------------------------------------------------------------------
+# A run whose candidates could not be read has no recall, not 0% recall
+# ---------------------------------------------------------------------------
+class TestAnUnreadCandidateTableIsNotAMiss:
+    """``_load_candidates`` warns and returns ``None`` for a missing, empty or
+    unreadable ``candidates.parquet``. Every known antigen then came back
+    ``found=False`` and every cutoff reported 0.0 -- a rediscovery rate of zero,
+    reported as a measurement, for a run nothing was ever read from.
+    """
+
+    @staticmethod
+    def _run_dir(tmp_path: Path, *, write_candidates: bool) -> Path:
+        import pandas as pd
+
+        run = tmp_path / "run"
+        (run / "targets").mkdir(parents=True)
+        if write_candidates:
+            pd.DataFrame(
+                {
+                    "uniprot_id": ["P04626"],
+                    "symbol": ["ERBB2"],
+                    "rank": [1],
+                    "log2fc": [3.5],
+                    "padj": [1e-9],
+                }
+            ).to_parquet(run / "targets" / "candidates.parquet", index=False)
+        return run
+
+    @staticmethod
+    def _known():
+        from bindsight.benchmark.core import KnownAntigen
+
+        return [
+            KnownAntigen(
+                symbol="ERBB2",
+                uniprot="P04626",
+                tumor_type="breast",
+                disease="breast cancer",
+                expected_direction="up",
+            )
+        ]
+
+    def _score(self, run: Path):
+        from bindsight.benchmark import core
+
+        return core.score_run(
+            run, known=self._known(), tumor_type="breast", run_name="t"
+        )
+
+    def test_a_missing_table_reports_no_recall_at_all(self, tmp_path: Path) -> None:
+        score = self._score(self._run_dir(tmp_path, write_candidates=False))
+
+        assert score.recall_basis == "candidates_unavailable"
+        assert score.recall_at == {}, (
+            f"recall was reported for a run with no candidate table: {score.recall_at}"
+        )
+
+    def test_no_antigen_is_recorded_as_not_found(self, tmp_path: Path) -> None:
+        """``False`` is a claim about the ranking; ``None`` is the truth."""
+        score = self._score(self._run_dir(tmp_path, write_candidates=False))
+
+        assert score.per_antigen
+        for row in score.per_antigen:
+            assert row["found"] is None, row
+            assert all(v is None for k, v in row.items() if k.startswith("in_top_")), row
+
+    def test_a_readable_table_still_scores_exactly_as_before(self, tmp_path: Path) -> None:
+        """The change must not touch the case that was working."""
+        score = self._score(self._run_dir(tmp_path, write_candidates=True))
+
+        assert score.recall_basis == "on_indication"
+        assert score.recall_at, "a readable table produced no recall"
+        assert score.per_antigen[0]["found"] is True
+        assert score.per_antigen[0]["rank"] == 1
+
+    def test_the_report_says_why_rather_than_printing_zero(self, tmp_path: Path) -> None:
+        from bindsight.benchmark import core
+
+        html = core.render_benchmark_html(
+            [self._score(self._run_dir(tmp_path, write_candidates=False))]
+        )
+
+        assert "candidate table could not be read" in html
+        assert "not a rediscovery rate of zero" in html.lower()

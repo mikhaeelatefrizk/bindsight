@@ -403,6 +403,58 @@ _DESIGNERS = {
 }
 
 
+#: Designers whose pinned upstream offers no way to set the random seed, with
+#: the evidence for each. ``spec["seed"]`` is folded into the design cache key,
+#: which is a promise that the same seed means the same work; for these two that
+#: promise cannot be kept, and saying so here is the difference between a
+#: documented limitation and a silent one.
+#:
+#: Checked against the pinned commits, not from memory:
+#:
+#: * **BindCraft** ``b971db42``: ``bindcraft.py`` line 91 draws its own seed with
+#:   ``np.random.randint(0, high=999999, ...)`` on every trajectory. There is no
+#:   ``--seed`` flag, and no seed field in ``settings_advanced/`` — and because
+#:   bindsight runs it as a subprocess, seeding numpy in this process cannot
+#:   reach it.
+#: * **BoltzGen** ``a3149cf1``: ``src/boltzgen/cli/boltzgen.py`` contains no
+#:   occurrence of "seed" among its 30-odd options, and neither do the
+#:   ``design``/``fold``/``inverse_fold`` configs that ``--config`` overrides.
+#:
+#: Neither backend has been executed end to end (the README's runner table is the
+#: authority), so no published number rests on this. It is the reproducibility
+#: claim that has to stay accurate, not a result.
+UNSEEDABLE_DESIGNERS = {
+    "bindcraft": (
+        "BindCraft draws its own seed per trajectory (bindcraft.py:91 at commit "
+        "b971db42) and exposes no flag or settings field to fix it"
+    ),
+    "boltzgen": (
+        "the boltzgen CLI at commit a3149cf1 has no --seed option and no seed "
+        "field in the configs --config overrides"
+    ),
+}
+
+
+def warn_if_unseeded(designer: str, seed: int) -> str | None:
+    """Warn, once per job, that ``seed`` will not reach ``designer``.
+
+    Returns the reason when the designer is unseedable, so callers that record
+    run metadata can carry it too; ``None`` when the seed is honoured.
+    """
+    reason = UNSEEDABLE_DESIGNERS.get(designer)
+    if reason is None:
+        return None
+    LOG.warning(
+        "designer %s ignores the configured seed (%s): %s. This run is not "
+        "reproducible from its seed; re-running it will produce different "
+        "binders even with an identical spec.",
+        designer,
+        seed,
+        reason,
+    )
+    return reason
+
+
 # ---------------------------------------------------------------------------
 # Validators
 # ---------------------------------------------------------------------------
@@ -877,6 +929,7 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
                 "run `bindsight design` first, or ship the design directory with the spec"
             )
     else:
+        warn_if_unseeded(designer, int(spec.get("seed", 0)))
         designs = _DESIGNERS[designer](spec, work_dir, tools_root)
         LOG.info("designer produced %d designs", len(designs))
         if not designs:

@@ -320,6 +320,47 @@ def test_version_agrees_across_pyproject_citation_and_zenodo() -> None:
     assert zenodo == pyproject, f".zenodo.json {zenodo} != pyproject {pyproject}"
 
 
+#: ``bindsight --version`` shown with its output, e.g. in a fenced example:
+#:     bindsight --version           # 0.2.2
+#: Release notes elsewhere name old versions on purpose, so only text presented
+#: as this command's own output is checked.
+_DOCUMENTED_VERSION_OUTPUT = re.compile(
+    r"bindsight\s+--version[^\n]*?#\s*v?(\d+\.\d+\.\d+)"
+)
+
+
+def _documents_showing_version_output() -> list[tuple[str, str]]:
+    """Every (path, version) a shipped document presents as ``--version`` output."""
+    return [
+        (path.relative_to(ROOT).as_posix(), version)
+        for path in _shipped_documents()
+        for version in _DOCUMENTED_VERSION_OUTPUT.findall(path.read_text(encoding="utf-8"))
+    ]
+
+
+def test_the_sweep_for_documented_versions_still_finds_the_known_example() -> None:
+    """Guards the guard: a pattern that matches nothing would make the check
+    below vacuous, which is exactly how docs/how-to-use.md sat two releases behind."""
+    shown = _documents_showing_version_output()
+    assert ("docs/how-to-use.md", tomllib.loads(_read("pyproject.toml"))["project"]["version"]) in shown, (
+        f"the --version sweep no longer sees the docs/how-to-use.md example; it found {shown}"
+    )
+
+
+def test_documented_version_output_matches_the_package() -> None:
+    """docs/how-to-use.md promised ``# 0.2.0`` while the package shipped 0.2.2.
+
+    A reader runs the command and sees a different number than the page says --
+    small, but it is the page telling them something untrue about the software.
+    """
+    pyproject = tomllib.loads(_read("pyproject.toml"))["project"]["version"]
+    for rel, shown in _documents_showing_version_output():
+        assert shown == pyproject, (
+            f"{rel} shows `bindsight --version` printing {shown}; "
+            f"pyproject says {pyproject}"
+        )
+
+
 def test_licence_agrees_across_pyproject_citation_and_zenodo() -> None:
     """The v0.1.0 Zenodo record said MIT for AGPL code; that is what to prevent."""
     pyproject = tomllib.loads(_read("pyproject.toml"))["project"]["license"]
@@ -405,25 +446,80 @@ def test_the_readme_still_marks_those_backends_unexecuted() -> None:
     assert "not a reproducibility path" in readme
 
 
-def test_the_stated_test_count_does_not_exceed_the_suite() -> None:
-    """The manuscript claimed 635 tests against a suite of 784 functions.
+#: Files that count tests per changeset rather than describing the suite. The
+#: CHANGELOG says "15 tests" about one release's additions; that is history, not
+#: a claim about how large the suite is now, and it must not be rewritten.
+_TEST_COUNT_EXEMPT = {"CHANGELOG.md"}
 
-    Stated as a floor rather than an exact count, so adding tests does not make
-    the paper wrong, and checked against a static count of test functions —
-    which is a lower bound on collected cases, so a claim that passes here is
-    true of the real suite too.
+#: Any shipped document that states a number of tests is claiming it about this
+#: suite. Written as a pattern rather than a file list because the previous
+#: version of this guard read only paper/paper.md, and paper/README.md sat at a
+#: stale "635 tests" for as long as that list went unrevised.
+_TEST_COUNT_CLAIM = re.compile(r"(over\s+)?(\d[\d,]*)\s+(?:\w+\s+){0,3}?tests\b", re.I)
+
+
+def _shipped_documents() -> list[Path]:
+    """``PROSE_FILES`` plus every root-level document.
+
+    ``NAMED_PROSE`` lists four root files by hand and so misses ARCHITECTURE.md,
+    CHANGELOG.md and anything added later -- the same shape of omission that let
+    paper/README.md sit at a stale figure. Root markdown is discovered, not listed.
     """
-    text = _read("paper/paper.md")
-    match = re.search(r"over (\d[\d,]*) unit and integration tests", text)
-    assert match, "paper.md no longer states a test count in the expected form"
-    claimed = int(match.group(1).replace(",", ""))
-    functions = sum(
+    files = set(PROSE_FILES)
+    files.update(q for q in ROOT.glob("*.md") if q.is_file())
+    return sorted(files)
+
+
+def _test_function_count() -> int:
+    """A lower bound on collected cases: parametrised tests expand beyond this,
+    so a claim that clears this number is true of the real suite too."""
+    return sum(
         len(re.findall(r"^\s*(?:async )?def test_", p.read_text(encoding="utf-8"), re.M))
         for p in (ROOT / "tests").glob("*.py")
     )
-    assert claimed <= functions, (
-        f"paper.md claims over {claimed} tests; only {functions} test functions exist"
+
+
+def _documents_stating_a_test_count() -> list[tuple[str, bool, int]]:
+    """Every (path, is_floor, count) test-size claim in a shipped document."""
+    found: list[tuple[str, bool, int]] = []
+    for path in _shipped_documents():
+        rel = path.relative_to(ROOT).as_posix()
+        if path.name in _TEST_COUNT_EXEMPT:
+            continue
+        for floor, number in _TEST_COUNT_CLAIM.findall(path.read_text(encoding="utf-8")):
+            found.append((rel, bool(floor), int(number.replace(",", ""))))
+    return found
+
+
+def test_the_sweep_for_test_counts_still_finds_the_known_claims() -> None:
+    """Guards the guard. A regex that silently stops matching would turn the
+    check below into a test that passes because it inspects nothing."""
+    claiming = {rel for rel, _floor, _n in _documents_stating_a_test_count()}
+    assert "paper/paper.md" in claiming, (
+        f"the test-count sweep no longer sees paper/paper.md; it found {claiming}"
     )
+    assert "paper/README.md" in claiming, (
+        f"the test-count sweep no longer sees paper/README.md; it found {claiming}"
+    )
+
+
+def test_no_shipped_document_claims_more_tests_than_the_suite_has() -> None:
+    """The manuscript once claimed 635 tests against a suite of 784 functions;
+    paper/README.md later claimed 635 against 1097. Both directions are wrong to
+    ship, so every document is swept, not the one that was wrong last time.
+
+    Counts must be stated as floors ("over N"). An exact number is a claim that
+    goes stale the moment a test is added, which is how both figures rotted.
+    """
+    functions = _test_function_count()
+    for rel, is_floor, claimed in _documents_stating_a_test_count():
+        assert is_floor, (
+            f"{rel} states an exact test count ({claimed}); write it as "
+            f'"over N tests" so adding tests cannot make the document wrong'
+        )
+        assert claimed <= functions, (
+            f"{rel} claims over {claimed} tests; only {functions} test functions exist"
+        )
 
 
 #: Designers and validators that no shipped backend can execute. The README's
@@ -630,3 +726,65 @@ def test_the_report_surfaces_carry_the_withdrawal_too() -> None:
         assert "withdrawn" in source.lower(), (
             f"{module.__name__} renders the success rate without the withdrawal"
         )
+
+
+def test_the_demo_help_does_not_promise_a_rediscovery_the_study_refutes() -> None:
+    """``bindsight demo --help`` said it "rediscovers ERBB2 (HER2) and EGFR as
+    top antibody-tractable surface antigens".
+
+    The rediscovery study measures ERBB2 in a whole unstratified breast cohort
+    below the fold-change floor, so it does not clear the significance rule, and
+    the demo's own config comment says EGFR is often lower in bulk tumour than in
+    normal breast. A help string is the first thing a new user reads; it is not
+    the place to assert an outcome the repository's own artifact contradicts.
+    """
+    from bindsight.cli import demo
+
+    help_text = " ".join((demo.__doc__ or "").split())
+    assert help_text, "the demo command lost its help text"
+    assert "rediscovers ERBB2" not in help_text, help_text
+    assert "result, not a scripted one" in help_text, (
+        "the demo help no longer says that which antigens surface is the run's "
+        f"own result: {help_text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# SURFY ships in the package; no document may say it is fetched
+# ---------------------------------------------------------------------------
+def test_the_vendored_surfaceome_is_actually_in_the_package() -> None:
+    """The premise of the next test, checked rather than assumed."""
+    vendored = ROOT / "bindsight" / "surfaceome" / "data" / "surfy_v1.uniprot.txt"
+    assert vendored.is_file(), f"the vendored surfaceome is missing: {vendored}"
+    accessions = [ln for ln in vendored.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    assert len(accessions) > 2000, (
+        f"the vendored list holds {len(accessions)} accessions; the full SURFY list "
+        "is ~2,886 and a short one is the degraded fallback"
+    )
+
+
+def test_no_document_says_the_surfaceome_is_downloaded_on_first_run() -> None:
+    """docs/how-to-use.md listed SURFY under "on first real run these populate
+    automatically", "downloaded from wlab.ethz.ch/surfaceome".
+
+    The package vendors the list precisely because that download stopped working:
+    the old host serves a landing page and the relocated one a Git-LFS pointer,
+    so fetching it was either hard-failing or silently degrading to a ten-protein
+    list. A reader following the page would wait for a fetch that never happens
+    and, if it did, would get the wrong thing.
+    """
+    claims = []
+    for path in _shipped_documents():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel == "CHANGELOG.md":
+            continue  # a historical record of when the fetch was removed
+        for line in path.read_text(encoding="utf-8").splitlines():
+            lowered = line.lower()
+            if "surfy" not in lowered and "surfaceome" not in lowered:
+                continue
+            if any(word in lowered for word in ("download", "fetch")) and not any(
+                word in lowered
+                for word in ("vendored", "no longer", "not downloaded", "needs no network")
+            ):
+                claims.append(f"{rel}: {line.strip()}")
+    assert not claims, "documents claiming the surfaceome is fetched:\n" + "\n".join(claims)

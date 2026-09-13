@@ -502,7 +502,14 @@ class TestEverySurfaceStatesOnlyTheArtifactsStudyFigures:
     _CONTEXT = re.compile(r"recall|antigen|approved|tier|shortlist|surfac|rank", re.I)
     #: A trial phase ("phase 2/3") is not a recall figure, and the drug-name
     #: column shares a row with the ranks.
-    _FRACTION = re.compile(r"(?<!phase )\b(\d{1,3})\s*(?:of|/)\s*(\d{1,4})\b", re.I)
+    #: ``\d{1,4}`` stopped at the comma in "7 of 2,170" and read it as "7 of 2",
+    #: so every eligible-surfaceome figure in the manuscript was being compared
+    #: against the wrong denominator -- and matched nothing, silently, until a
+    #: table row happened to fall inside the context filter.
+    _FRACTION = re.compile(
+        r"(?<!phase )\b(\d{1,3}(?:,\d{3})*)\s*(?:of|/)\s*(\d{1,3}(?:,\d{3})*|\d{1,4})\b",
+        re.I,
+    )
     _RETRACTED = ("withdraw", "supersed", "retract", "earlier", "no longer", "replaces")
 
     @pytest.mark.parametrize("rel", SURFACES)
@@ -525,7 +532,10 @@ class TestEverySurfaceStatesOnlyTheArtifactsStudyFigures:
                 near = line[max(0, match.start() - 90) : match.end() + 90].lower()
                 if any(word in near for word in self._RETRACTED):
                     continue  # a retraction may quote the figure it retracts
-                found = (int(match.group(1)), int(match.group(2)))
+                found = (
+                    int(match.group(1).replace(",", "")),
+                    int(match.group(2).replace(",", "")),
+                )
                 if found[1] < 2:  # "1 of 1" style prose, not a study figure
                     continue
                 checked += 1
@@ -616,3 +626,252 @@ def test_every_document_states_a_number_the_artifact_supports() -> None:
         assert any(w in text for w in words[fails_rule] + words[not_over]), (
             f"{rel} discusses the approved tier but states neither {fails_rule} nor {not_over}"
         )
+
+
+# ---------------------------------------------------------------------------
+# The gated-out breakdown, and the denominator it is stated against
+# ---------------------------------------------------------------------------
+#: Each gate a pair can fail, and the phrase the artifact's ``reason`` uses.
+#: Derived from the reason text rather than a separate field so the buckets
+#: cannot drift from what the pairs actually say.
+_GATES = {
+    "significance": "significance rule",
+    "enrichment": "enrichment cut",
+    "down_regulated": "down-regulated",
+}
+
+
+def _gated_out_breakdown(pairs: list[dict]) -> dict[str, int]:
+    """How many gated-out pairs failed at each gate."""
+    counts = dict.fromkeys(_GATES, 0)
+    for pair in pairs:
+        if pair.get("outcome_class") != "gated_out":
+            continue
+        reason = str(pair.get("reason", ""))
+        matched = [name for name, phrase in _GATES.items() if phrase in reason]
+        assert len(matched) == 1, f"{pair.get('symbol')}: {len(matched)} gates match {reason!r}"
+        counts[matched[0]] += 1
+    return counts
+
+
+class TestTheGatedOutBreakdownAddsUp:
+    """Section 3.3 stated a total of 15 -- the pre-registered approved-tier
+    denominator -- with a breakdown of 13 + 3 + 1 taken from the all-tier frame.
+    The numbers were each correct about a different set of pairs, so the sentence
+    was wrong about both. These tests tie every stated figure to one frame.
+    """
+
+    def test_the_breakdown_sums_to_the_number_of_gated_out_pairs(
+        self, summary: dict
+    ) -> None:
+        """The artifact first: a breakdown that does not sum is a bug in the study,
+        not in the prose quoting it."""
+        for label, pairs in (
+            ("all tiers", summary["pairs"]),
+            (
+                "approved tier",
+                [
+                    p
+                    for p in summary["pairs"]
+                    if p.get("tier") in summary["design"]["tiers_in_primary_denominator"]
+                ],
+            ),
+        ):
+            gated = [p for p in pairs if p.get("outcome_class") == "gated_out"]
+            breakdown = _gated_out_breakdown(pairs)
+            assert sum(breakdown.values()) == len(gated), (
+                f"{label}: breakdown {breakdown} does not sum to {len(gated)} gated-out pairs"
+            )
+
+    def test_the_recorded_class_counts_are_the_primary_denominator(
+        self, summary: dict
+    ) -> None:
+        """``outcome_class_counts`` counts the pre-registered tiers, not every
+        pair. It reads like a total, and section 3.3 used it as one."""
+        tiers = summary["design"]["tiers_in_primary_denominator"]
+        in_tiers = [p for p in summary["pairs"] if p.get("tier") in tiers]
+        recorded = summary["outcome_class_counts"]
+        for outcome in ("gated_out", "ranked"):
+            assert recorded[outcome] == sum(
+                1 for p in in_tiers if p.get("outcome_class") == outcome
+            ), f"{outcome}: {recorded[outcome]} recorded, {len(in_tiers)} pairs in tier"
+        assert sum(recorded.values()) < len(summary["pairs"]), (
+            "the recorded counts now cover every pair; section 3.3's framing "
+            "sentence needs revisiting"
+        )
+
+    def test_the_manuscript_states_the_approved_tier_breakdown(
+        self, summary: dict
+    ) -> None:
+        """The stated numbers, in the frame the rest of the manuscript uses."""
+        tiers = summary["design"]["tiers_in_primary_denominator"]
+        in_tiers = [p for p in summary["pairs"] if p.get("tier") in tiers]
+        gated = sum(1 for p in in_tiers if p.get("outcome_class") == "gated_out")
+        breakdown = _gated_out_breakdown(in_tiers)
+
+        text = " ".join(_doc("paper/validation/manuscript.md").split())
+        sentence = (
+            f"Of the {gated} gated-out approved-tier pairs: "
+            f"{_word(breakdown['significance'])} failed the significance rule, "
+            f"{breakdown['enrichment']} fell outside the enrichment cut, and "
+            f"{_word(breakdown['down_regulated'])} was measured as down-regulated."
+        )
+        assert sentence in text, f"manuscript does not state:\n  {sentence}"
+
+    def test_the_manuscript_states_the_all_tier_breakdown_as_the_other_frame(
+        self, summary: dict
+    ) -> None:
+        every = _gated_out_breakdown(summary["pairs"])
+        gated = sum(1 for p in summary["pairs"] if p.get("outcome_class") == "gated_out")
+        text = " ".join(_doc("paper/validation/manuscript.md").split())
+        assert (
+            f"Across all three tiers the {gated} gated-out pairs break down as "
+            f"{every['significance']}, {every['enrichment']} and {every['down_regulated']}."
+        ) in text, f"the all-tier frame is not stated as {gated}: {every}"
+
+    def test_every_ranked_antigen_in_the_table_carries_its_tier(
+        self, summary: dict
+    ) -> None:
+        """The table spans three tiers while the text around it counts one. A
+        reader who assumes the table is the denominator reads 5 of 17."""
+        text = _doc("paper/validation/manuscript.md")
+        ranked = [p for p in summary["pairs"] if p.get("outcome_class") == "ranked"]
+        assert ranked
+        for pair in ranked:
+            tier = str(pair["tier"]).replace("_", " ").capitalize()
+            row = [
+                line
+                for line in text.splitlines()
+                if line.startswith("| ") and f"| {pair['symbol']} |" in line
+            ]
+            assert row, f"{pair['symbol']} has no row in the ranked table"
+            assert tier in row[0], (
+                f"{pair['symbol']}'s row does not name its tier ({tier}): {row[0]}"
+            )
+
+
+def _word(n: int) -> str:
+    """The manuscript spells small counts; the artifact holds integers."""
+    return {
+        1: "one",
+        2: "two",
+        3: "three",
+        4: "four",
+        5: "five",
+        6: "six",
+        7: "seven",
+        8: "eight",
+        9: "nine",
+        10: "ten",
+        11: "11",
+        12: "12",
+        13: "13",
+    }.get(n, str(n))
+
+
+# ---------------------------------------------------------------------------
+# Licensing claims must agree with LICENSING.md
+# ---------------------------------------------------------------------------
+def test_no_document_calls_one_validator_the_only_commercially_usable_one() -> None:
+    """ARCHITECTURE.md called Chai-1r "the only commercially usable validator"
+    eight lines after calling Boltz-2 commercial-friendly, and LICENSING.md --
+    the authority -- marks Boltz-2, Chai-1r and BoltzGen all usable. A reader
+    choosing a validator for commercial work was told the wrong thing.
+    """
+    licensing = _doc("LICENSING.md")
+    usable = [
+        line
+        for line in licensing.splitlines()
+        if line.startswith("|") and "✅" in line and ("Boltz" in line or "Chai" in line)
+    ]
+    assert len(usable) >= 2, (
+        f"LICENSING.md no longer lists two commercially usable validators: {usable}"
+    )
+
+    for rel in ("ARCHITECTURE.md", "README.md", "LICENSING.md", "docs/index.md"):
+        text = " ".join(_doc(rel).split())
+        assert "only commercially usable" not in text, (
+            f"{rel} claims a single commercially usable tool; LICENSING.md lists "
+            f"{len(usable)}"
+        )
+
+
+class TestTheCalibrationContrastCarriesItsUncertainty:
+    """The report contrasted two mean standings -- 0.418 against 0.738 -- with no
+    n and no interval. Two bare means are not a comparison, and this study's own
+    argument is that a number without its uncertainty should not be quoted.
+    """
+
+    def test_both_means_carry_an_interval_and_a_cluster_count(
+        self, summary: dict
+    ) -> None:
+        calib = summary.get("null_calibration")
+        if not calib:
+            pytest.skip("no null calibration in the artifact")
+        for key in ("off_indication_interval", "own_indication_interval"):
+            block = calib.get(key)
+            assert block, f"{key} missing; the contrast has no uncertainty behind it"
+            assert block["low"] <= block["point"] <= block["high"], block
+            assert block["n_clusters"] >= 1, block
+            assert block["n_observations"] >= block["n_clusters"], block
+
+    def test_the_contrast_is_paired_within_antigen(self, summary: dict) -> None:
+        """The two groups are the same antigens measured in different cohorts, so
+        the difference of the two means is not a difference of independent
+        samples. The paired statistic is the one to quote."""
+        calib = summary.get("null_calibration")
+        if not calib:
+            pytest.skip("no null calibration in the artifact")
+        # Asserted, not skipped: this artifact carries the paired statistic, so
+        # an artifact that stops carrying it is a regression rather than an
+        # older file, and a skip here would let that regression through.
+        paired = calib.get("paired_difference")
+        assert paired, "the calibration contrast lost its paired statistic"
+        assert paired["low"] <= paired["point"] <= paired["high"], paired
+        assert "antigens" in paired["description"]
+
+    def test_the_report_states_every_interval_the_artifact_holds(
+        self, summary: dict
+    ) -> None:
+        """Each bound, from the artifact.
+
+        An earlier version of this test asserted only that "95% CI" appeared
+        somewhere in the sentence, and passed with one of the three intervals
+        deleted -- the other two kept the phrase alive. Checking the numbers is
+        what makes it a check.
+        """
+        calib = summary.get("null_calibration")
+        if not calib:
+            pytest.skip("no null calibration in the artifact")
+        text = " ".join(_doc("benchmarks/study/RESULTS.md").split())
+        assert "**Calibration.**" in text
+        head = text[text.index("**Calibration.**") :][:1200]
+
+        for key in ("off_indication_interval", "own_indication_interval", "paired_difference"):
+            block = calib.get(key)
+            assert block, f"{key} missing from the artifact"
+            bounds = f"95% CI {block['low']:.3f}–{block['high']:.3f}"
+            assert bounds in head, (
+                f"the calibration sentence does not state {key} as '{bounds}': {head[:400]}"
+            )
+        assert "within-antigen difference" in head, head[:400]
+
+    def test_the_bootstrap_treats_the_antigen_as_the_unit(self) -> None:
+        """An antigen measured in ten cohorts must not outweigh one measured in
+        two; that is the whole reason for clustering."""
+        from bindsight.benchmark.statistics import cluster_bootstrap_mean
+
+        lopsided = cluster_bootstrap_mean({"A": [1.0] * 10, "B": [0.0]}, seed=0)
+        balanced = cluster_bootstrap_mean({"A": [1.0], "B": [0.0]}, seed=0)
+
+        assert lopsided.point == balanced.point == 0.5
+        assert lopsided.n_observations == 11
+        assert lopsided.n_clusters == balanced.n_clusters == 2
+
+    def test_a_single_cluster_says_it_cannot_resample(self) -> None:
+        from bindsight.benchmark.statistics import cluster_bootstrap_mean
+
+        lone = cluster_bootstrap_mean({"A": [0.5, 0.7]}, seed=0)
+
+        assert "degenerate" in lone.method
+        assert lone.low == lone.high == lone.point

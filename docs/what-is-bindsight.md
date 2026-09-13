@@ -277,7 +277,10 @@ Anyone with a GPU can run the existing tools. The work `bindsight` does is the
 2. **Container-pinned, seed-pinned, weights-pinned reproducibility.** Two runs
    of the same config on the same data should produce identical outputs apart
    from the `generated_utc` timestamp in the manifest, modulo logged stochastic
-   seeds.
+   seeds. Seed-pinning covers the executed path — RFdiffusion, ProteinMPNN,
+   Boltz-2 and Chai-1 each take the run's seed. It does not cover BindCraft or
+   BoltzGen, which expose no way to set one at their pinned commits; the
+   executor warns when either runs.
 3. **Negative-result curation.** A `failure_taxonomy.parquet` per run — every
    target that *didn't* make it, with a reason.
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running.

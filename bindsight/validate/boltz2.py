@@ -42,6 +42,7 @@ from bindsight.validate.protocol import (
     UNRECORDED_VERSION,
     ValidationResult,
     installed_version,
+    note_unmeasured,
 )
 
 LOG = logging.getLogger(__name__)
@@ -175,7 +176,7 @@ def parse_boltz_output(
         except (json.JSONDecodeError, OSError) as e:
             LOG.warning("failed to parse %s: %s", affinity_path, e)
 
-    return ValidationResult(
+    result = ValidationResult(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=iptm,
@@ -190,6 +191,14 @@ def parse_boltz_output(
             f"parsed confidence={len(confidence_paths)} sample(s), "
             f"affinity={'yes' if affinity_path else 'no'}"
         ),
+    )
+    return note_unmeasured(
+        result,
+        reason=(
+            f"none of the {len(confidence_paths)} confidence file(s) under "
+            f"{output_dir} yielded an iptm or pae_interaction value"
+        ),
+        log=LOG,
     )
 
 

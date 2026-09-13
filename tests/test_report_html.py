@@ -16,7 +16,12 @@ from bindsight.provenance import (
     ToolRef,
     new_manifest,
 )
-from bindsight.report.html import _df_to_records, render_run
+from bindsight.report.html import (
+    _deg_thresholds,
+    _df_to_records,
+    _significance_basis,
+    render_run,
+)
 
 
 def _make_run(tmp_path: Path) -> Path:
@@ -276,3 +281,140 @@ def test_the_report_funnel_matches_the_canonical_disposition_list() -> None:
 
     missing = set(TAXONOMY_DISPOSITIONS) - set(_DISPOSITION_ORDER)
     assert not missing, f"the report cannot render these dispositions: {sorted(missing)}"
+
+
+# ---------------------------------------------------------------------------
+# The volcano's guide lines
+# ---------------------------------------------------------------------------
+def _set_deg_params(run: Path, **params: float) -> None:
+    """Record cutoffs on the manifest's ``deg`` stage, as a real run does."""
+    path = run / "run_manifest.jsonld"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    for stage in manifest["stages"]:
+        if stage["name"] == "deg":
+            stage.setdefault("params", {}).update(params)
+            break
+    else:  # pragma: no cover - the fixture always has a deg stage
+        raise AssertionError("fixture has no deg stage")
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def _caption(html: str) -> str:
+    """The paragraph under the Differential expression heading."""
+    import re
+
+    match = re.search(r"Volcano plot.*?</p>", html, re.S)
+    assert match, "the report no longer carries a volcano caption"
+    return " ".join(match.group(0).split())
+
+
+def _capture_axes(monkeypatch) -> list:
+    """Record the axes the renderer draws on, so the guide lines can be read
+    back from the real figure rather than from a re-implementation of them."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    seen: list = []
+    original = plt.subplots
+
+    def _subplots(*a, **kw):
+        fig, ax = original(*a, **kw)
+        seen.append(ax)
+        return fig, ax
+
+    monkeypatch.setattr(plt, "subplots", _subplots)
+    return seen
+
+
+class TestVolcanoThresholds:
+    """The plot drew dashed lines at padj = 0.05 and |log2FC| = 1 whatever the
+    run had configured. For a run using anything else those lines cut straight
+    through the red points, telling the reader a cutoff that was never applied.
+    """
+
+    def test_the_guide_lines_sit_at_the_cutoffs_the_run_recorded(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Driven through ``render_run`` so the manifest-to-plot wiring is what
+        is under test, not a helper read back on its own."""
+        import math
+
+        run = _make_run(tmp_path)
+        _set_deg_params(run, fdr_threshold=0.01, log2fc_threshold=1.5)
+        axes = _capture_axes(monkeypatch)
+
+        render_run(run)
+
+        assert axes, "the renderer drew no figure"
+        ax = axes[0]
+        horizontals = [ln.get_ydata()[0] for ln in ax.lines if len(set(ln.get_ydata())) == 1]
+        verticals = [ln.get_xdata()[0] for ln in ax.lines if len(set(ln.get_xdata())) == 1]
+        assert any(math.isclose(y, -math.log10(0.01), abs_tol=1e-9) for y in horizontals), (
+            f"no guide line at padj = 0.01; horizontals were {horizontals}"
+        )
+        assert any(math.isclose(x, 1.5, abs_tol=1e-9) for x in verticals), verticals
+        assert any(math.isclose(x, -1.5, abs_tol=1e-9) for x in verticals), verticals
+        # The old hardcoded positions must be gone, not merely joined.
+        assert not any(math.isclose(x, 1.0, abs_tol=1e-9) for x in verticals), (
+            f"a line still sits at the library default of 1.0: {verticals}"
+        )
+        assert not any(
+            math.isclose(y, -math.log10(0.05), abs_tol=1e-9) for y in horizontals
+        ), f"a line still sits at the library default of 0.05: {horizontals}"
+
+    def test_a_run_that_recorded_no_cutoffs_gets_no_guide_lines(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Drawing an unlabelled line at a value the run did not use is worse
+        than drawing none: the reader cannot tell it is a guess."""
+        run = _make_run(tmp_path)  # the fixture's deg stage records no params
+        axes = _capture_axes(monkeypatch)
+
+        render_run(run)
+
+        assert axes
+        assert not axes[0].lines, (
+            "guide lines were drawn for a run that never recorded its cutoffs: "
+            f"{[ (ln.get_xdata(), ln.get_ydata()) for ln in axes[0].lines ]}"
+        )
+
+    def test_the_caption_states_the_cutoffs_rather_than_the_word_threshold(
+        self, tmp_path: Path
+    ) -> None:
+        run = _make_run(tmp_path)
+        _set_deg_params(run, fdr_threshold=0.01, log2fc_threshold=1.5)
+
+        caption = _caption(render_run(run).read_text(encoding="utf-8"))
+
+        assert "0.01" in caption and "1.5" in caption, caption
+        assert "&lt;&nbsp;threshold" not in caption, (
+            "the caption still says 'threshold' where the number belongs"
+        )
+
+    def test_the_caption_admits_when_the_cutoffs_were_not_recorded(
+        self, tmp_path: Path
+    ) -> None:
+        caption = _caption(render_run(_make_run(tmp_path)).read_text(encoding="utf-8"))
+
+        assert "did not record" in caption, caption
+        assert "no threshold lines are drawn" in caption, caption
+
+    def test_thresholds_are_read_from_whichever_stage_recorded_them(
+        self, tmp_path: Path
+    ) -> None:
+        run = _make_run(tmp_path)
+        _set_deg_params(run, fdr_threshold=0.2, log2fc_threshold=0.5)
+        manifest = json.loads((run / "run_manifest.jsonld").read_text(encoding="utf-8"))
+
+        assert _deg_thresholds(manifest) == (0.2, 0.5)
+        assert _deg_thresholds(None) == (None, None)
+        assert _deg_thresholds({"stages": []}) == (None, None)
+
+    def test_significance_prefers_the_analysis_own_verdict(self) -> None:
+        """The ``significant`` column already applied both cutoffs; re-deriving
+        it from padj alone would silently drop the fold-change half."""
+        assert _significance_basis(["padj", "significant"], 0.01) == ("column", None)
+        assert _significance_basis(["padj"], 0.01) == ("padj", 0.01)
+        assert _significance_basis(["padj"], None) == ("assumed", 0.05)

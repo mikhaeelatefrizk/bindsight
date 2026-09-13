@@ -29,7 +29,7 @@ The default `bindsight` configuration uses **only** components with permissive l
 | Open Targets Python client | Apache-2.0 | ✅ Yes |
 | [Human Protein Atlas](https://www.proteinatlas.org/) data | CC BY-SA 3.0 | ✅ Yes (with attribution + share-alike for derivatives of the data itself) |
 | [GTEx](https://gtexportal.org/) data | Open (NIH dbGaP for protected) | ✅ Yes for v8 public release |
-| [SURFY](https://wlab.ethz.ch/surfaceome/) gene list | CC BY | ✅ Yes (with attribution) |
+| [SURFY](https://wollscheidlab.org/SURFY/) gene list | CC BY | ✅ Yes (with attribution) |
 | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3-Clause | ✅ Yes |
 | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) structures | CC BY 4.0 | ✅ Yes (with attribution) |
 | [RCSB PDB](https://www.rcsb.org/) | Public domain (CC0) | ✅ Yes (used only by `benchmarks/build_eval_set.py`; **no structure client in `bindsight/structures/`** — planned) |
