@@ -55,6 +55,30 @@ That decides the next experiment, and the two answers look nothing alike. Drawin
 - detecting a 0.10 difference at 80% power needs **36 pairs**, however many draws each gets
 - detecting a 0.05 difference at 80% power needs **142 pairs**, however many draws each gets
 
+## Does the target matter?
+
+The same 20 designs folded against an unrelated receptor — NECTIN4's Ig-like V-type domain, 113 residues against the native target's 142, no shared fold or family. Paired per design, so each is its own control.
+
+| | mean | median | min | max | clears 0.65 |
+|---|---|---|---|---|---|
+| designed target | 0.527 | 0.525 | 0.183 | 0.803 | 30% |
+| unrelated target | 0.652 | 0.656 | 0.393 | 0.876 | 50% |
+
+Paired difference (designed − unrelated): median -0.119, mean -0.125; 3 of 20 score higher on the target they were designed for. Exact sign-flip p = 0.01131.
+95% interval on that difference: [-0.207, -0.041]; the smallest difference this many designs would catch 80% of the time is 0.124.
+
+**That raw comparison is confounded, and the direction is the tell.** The unrelated receptor scores higher with *everything*, shuffles included: their mean rises from 0.570 on the designed target to 0.769 on it — a larger jump than the designs make. A target that folds well with any partner moves both arms, so native-versus-decoy measures the target's own propensity rather than whether these binders pick it out.
+
+Subtracting each binder's own shuffle on each target cancels that. What is left is the question specificity actually asks: does a design beat its own shuffle by more on the receptor it was designed for?
+
+- on the designed target, a design beats its shuffle by **-0.043**
+- on the unrelated one, by **-0.117**
+- difference: **+0.074** (95% CI -0.032 to +0.180, exact sign-flip p = 0.19984; 12 of 20 designs favour their own target)
+
+So the controlled estimate points the expected way and does not clear its own noise: this many designs would only catch a difference of 0.156 or larger. Neither specificity nor its absence is established here — which is a different and weaker statement than the raw comparison appears to make.
+
+The two arms are two jobs, because a spec carries one target. Same sequences, same pinned validator, same seeded derivation, five draws each — so read the difference against the refold drift below, which bounds what moves between runs on its own.
+
 ## Refold drift
 
 The same 20 sequences also carry committed ipTM values from an earlier job. Refolding them here gives a bound on how far a number moves between runs — but the earlier job's Boltz-2 version was never recorded (see `PRECISION.md`), so this is run drift and version drift together, not a determinism measurement.

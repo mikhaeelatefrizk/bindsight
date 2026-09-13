@@ -113,6 +113,10 @@ GATE_EXPLANATIONS: dict[str, str] = {
     "low_confidence_structure": "predicted structure too disordered",
     "no_alphafold_model": "no AlphaFold model available",
     "not_top_n": "ranked below the design carry-forward cutoff",
+    "structure_confidence_unassessed": (
+        "carries a structure whose mean pLDDT could not be read, so the "
+        "confidence gate never assessed it — not the same as clearing it"
+    ),
     "no_surface_bind_site": "no targetable site in the SURFACE-Bind data",
     "surface_bind_lookup_failed": (
         "the SURFACE-Bind lookup errored, so nothing was learned about this "

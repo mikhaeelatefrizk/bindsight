@@ -683,3 +683,89 @@ class TestTheSpecificityComparison:
         assert "designed target" in text
         assert "unrelated target" in text
         assert "two jobs" in text, "the cross-run caveat must travel with the number"
+
+
+class TestTheControlledSpecificityComparison:
+    """Raw native-versus-decoy is confounded by the decoy's own baseline.
+
+    The specificity run measured it: the unrelated receptor scored higher with
+    *everything*, and its shuffles rose further than its designs did. A target
+    that folds well with any partner moves both arms, so the raw comparison
+    reports the target's propensity rather than whether these binders pick it
+    out — and it did so with p = 0.011 pointing the wrong way.
+
+    Subtracting each binder's own shuffle on each target cancels whatever the
+    target contributes to every partner. What is left is the question
+    specificity actually asks.
+    """
+
+    @staticmethod
+    def _write(path: Path, rows: dict[str, float]) -> Path:
+        path.write_text(
+            "\n".join(
+                json.dumps({"binder_id": b, "iptm": v, "iptm_n_samples": 5})
+                for b, v in rows.items()
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return path
+
+    def _arms(
+        self, tmp_path: Path, *, nd: float, ns: float, dd: float, ds: float, n: int = 20
+    ) -> tuple[Path, Path]:
+        """Two runs with given design/shuffle means on each target."""
+        native = {}
+        decoy = {}
+        for i in range(n):
+            native[f"b{i}"] = nd + i * 0.001
+            native[f"b{i}_scram"] = ns + i * 0.001
+            decoy[f"b{i}"] = dd + i * 0.001
+            decoy[f"b{i}_scram"] = ds + i * 0.001
+        return (
+            self._write(tmp_path / "native.jsonl", native),
+            self._write(tmp_path / "decoy.jsonl", decoy),
+        )
+
+    def test_a_decoy_that_lifts_everything_is_not_read_as_specificity(self, tmp_path: Path) -> None:
+        """The exact shape the real run produced.
+
+        Designs score lower on their own target *and* shuffles score lower
+        still, so the design-minus-shuffle advantage is the same on both. The
+        raw comparison screams; the controlled one is silent, and the
+        controlled one is right.
+        """
+        native, decoy = self._arms(tmp_path, nd=0.50, ns=0.45, dd=0.70, ds=0.65)
+        xt = calib.cross_target(native, decoy)
+
+        assert xt["paired_difference"]["mean"] < 0, "raw comparison favours the decoy"
+        ctl = xt["controlled"]
+        assert ctl["difference_in_differences"] == pytest.approx(0.0, abs=1e-9)
+        assert ctl["exact_signflip_p"] == pytest.approx(1.0)
+
+    def test_real_specificity_survives_the_control(self, tmp_path: Path) -> None:
+        """A design that genuinely beats its shuffle only on its own target."""
+        native, decoy = self._arms(tmp_path, nd=0.80, ns=0.40, dd=0.70, ds=0.70)
+        ctl = calib.cross_target(native, decoy)["controlled"]
+        assert ctl["difference_in_differences"] == pytest.approx(0.40, abs=1e-9)
+        assert ctl["exact_signflip_p"] < 0.01
+        assert ctl["n_favouring_own_target"] == 20
+
+    def test_both_shuffle_means_are_recorded(self, tmp_path: Path) -> None:
+        """The prose cites them, so they come from the artifact."""
+        native, decoy = self._arms(tmp_path, nd=0.50, ns=0.45, dd=0.70, ds=0.65)
+        ctl = calib.cross_target(native, decoy)["controlled"]
+        assert ctl["native_scramble_mean"] == pytest.approx(0.45 + 0.0095, abs=1e-6)
+        assert ctl["decoy_scramble_mean"] == pytest.approx(0.65 + 0.0095, abs=1e-6)
+
+    def test_without_shuffles_there_is_no_controlled_comparison(self, tmp_path: Path) -> None:
+        """It cannot be faked from designs alone, so it reports nothing."""
+        native = self._write(tmp_path / "n.jsonl", {f"b{i}": 0.5 for i in range(5)})
+        decoy = self._write(tmp_path / "d.jsonl", {f"b{i}": 0.7 for i in range(5)})
+        assert calib.cross_target(native, decoy)["controlled"] is None
+
+    def test_the_report_leads_with_the_confound(self, tmp_path: Path) -> None:
+        native, decoy = self._arms(tmp_path, nd=0.50, ns=0.45, dd=0.70, ds=0.65)
+        text = calib.render(calib.analyse(native, committed=None, decoy_metrics=decoy))
+        assert "raw comparison is confounded" in text
+        assert "beat its own shuffle by more on the receptor it was designed for" in text

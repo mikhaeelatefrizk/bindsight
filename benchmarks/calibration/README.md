@@ -207,6 +207,49 @@ the same seeded derivation and five draws each, so the difference between them
 is the target and the run. The refold-drift figure is what bounds the second
 part, and it has to be read alongside.
 
+### What the specificity control returned
+
+The third row of the table above — the outcome named as "something is wrong with
+the native-target arm that neither control has isolated". Full numbers in
+`CALIBRATION.md`.
+
+**Raw, the designs score higher against the receptor they were *not* designed
+for**: 0.527 against 0.652, with 50% clearing 0.65 on the decoy and 30% on the
+native target, and only 3 of 20 higher on their own. Taken at face value that is
+p = 0.011 in the wrong direction.
+
+**It is confounded, and the shuffles say so.** The decoy scores higher with
+everything: shuffle means rise from 0.570 to 0.769 — a *larger* jump than the
+designs make. A receptor that folds plausibly with any partner lifts both arms,
+so the raw comparison measures the target's own propensity, not whether these
+binders pick it out. The 113-vs-142-residue size gap is the obvious candidate
+and this run cannot separate it from target identity.
+
+**Controlled, by subtracting each binder's own shuffle on each target:**
+
+| | design − its own shuffle |
+|---|---|
+| on the designed target | −0.043 |
+| on the unrelated target | −0.117 |
+| **difference** | **+0.074** (95% CI −0.032 to +0.180, p = 0.20) |
+
+Twelve of twenty designs favour their own target. The estimate points the
+expected way and does not clear its own noise — this many designs would only
+catch a difference of 0.156 or larger. **Neither specificity nor its absence is
+established**, which is a weaker and more honest statement than either the raw
+comparison or a bare "no effect" would make.
+
+One thing the control did settle: **the design-versus-shuffle null replicates**.
+Shuffles beat designs on the decoy too (−0.117), in the same direction as on the
+native target (−0.043). A negative result that reproduces on an independent
+target is worth more than one that does not.
+
+### What would separate the remaining confound
+
+Several decoys across a size range, so target size and target identity stop
+moving together. One decoy cannot do it, and saying which of the two drove
++0.074 would be guessing.
+
 ## What this still does not control for
 
 **Whether any of it predicts binding.** Every number here is a structure

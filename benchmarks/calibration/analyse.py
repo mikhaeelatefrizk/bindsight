@@ -442,7 +442,43 @@ def cross_target(metrics: Path, decoy_metrics: Path) -> dict[str, Any]:
 
     diffs = [native[b] - decoy[b] for b in designs]
     p, n_perm = exact_signflip_p(diffs)
+
+    # The comparison that actually isolates specificity.
+    #
+    # Raw native-versus-decoy is confounded by the decoy's own baseline: a
+    # target that yields higher ipTM with *anything* moves both arms, and this
+    # decoy does — its shuffles rose further than its designs did. Subtracting
+    # each binder's own shuffle on each target cancels whatever the target
+    # contributes to every partner, and leaves the quantity the question is
+    # about: does a design beat its own shuffle by more on the receptor it was
+    # designed for than on one it was not?
+    controlled: dict[str, Any] | None = None
+    paired = [b for b in designs if b + SCRAMBLE_SUFFIX in native and b + SCRAMBLE_SUFFIX in decoy]
+    if len(paired) > 1:
+        did = [
+            (native[b] - native[b + SCRAMBLE_SUFFIX]) - (decoy[b] - decoy[b + SCRAMBLE_SUFFIX])
+            for b in paired
+        ]
+        did_p, did_n = exact_signflip_p(did)
+        controlled = {
+            "n_designs": len(paired),
+            "native_scramble_mean": statistics.fmean(native[b + SCRAMBLE_SUFFIX] for b in paired),
+            "decoy_scramble_mean": statistics.fmean(decoy[b + SCRAMBLE_SUFFIX] for b in paired),
+            "advantage_on_native": statistics.fmean(
+                native[b] - native[b + SCRAMBLE_SUFFIX] for b in paired
+            ),
+            "advantage_on_decoy": statistics.fmean(
+                decoy[b] - decoy[b + SCRAMBLE_SUFFIX] for b in paired
+            ),
+            "difference_in_differences": statistics.fmean(did),
+            "paired_interval": paired_interval(did),
+            "exact_signflip_p": did_p,
+            "exact_signflip_p_floor": 2 / did_n,
+            "n_favouring_own_target": sum(x > 0 for x in did),
+        }
+
     return {
+        "controlled": controlled,
         "n_designs": len(designs),
         "native": _describe([native[b] for b in designs]),
         "decoy": _describe([decoy[b] for b in designs]),
@@ -783,6 +819,38 @@ def render(report: dict[str, Any]) -> str:
                 f"the smallest difference this many designs would catch 80% of the time "
                 f"is {ci['min_detectable_difference_80pct']:.3f}."
             )
+        ctl = xt.get("controlled")
+        if ctl:
+            cci = ctl["paired_interval"]
+            lines += [
+                "",
+                "**That raw comparison is confounded, and the direction is the tell.** "
+                "The unrelated receptor scores higher with *everything*, shuffles "
+                f"included: their mean rises from {ctl['native_scramble_mean']:.3f} on "
+                f"the designed target to {ctl['decoy_scramble_mean']:.3f} on it — a "
+                "larger jump than the designs make. A target that folds well with any "
+                "partner moves both arms, so native-versus-decoy measures the target's "
+                "own propensity rather than whether these binders pick it out.",
+                "",
+                "Subtracting each binder's own shuffle on each target cancels that. "
+                "What is left is the question specificity actually asks: does a design "
+                "beat its own shuffle by more on the receptor it was designed for?",
+                "",
+                f"- on the designed target, a design beats its shuffle by "
+                f"**{ctl['advantage_on_native']:+.3f}**",
+                f"- on the unrelated one, by **{ctl['advantage_on_decoy']:+.3f}**",
+                f"- difference: **{ctl['difference_in_differences']:+.3f}** "
+                f"(95% CI {cci['low']:+.3f} to {cci['high']:+.3f}, "
+                f"exact sign-flip p = {_fmt_p(ctl['exact_signflip_p'])}; "
+                f"{ctl['n_favouring_own_target']} of {ctl['n_designs']} designs favour "
+                "their own target)",
+                "",
+                "So the controlled estimate points the expected way and does not clear "
+                f"its own noise: this many designs would only catch a difference of "
+                f"{cci['min_detectable_difference_80pct']:.3f} or larger. Neither "
+                "specificity nor its absence is established here — which is a different "
+                "and weaker statement than the raw comparison appears to make.",
+            ]
         lines += [
             "",
             "The two arms are two jobs, because a spec carries one target. Same "

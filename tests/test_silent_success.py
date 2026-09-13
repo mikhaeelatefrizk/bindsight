@@ -299,3 +299,123 @@ class TestValidateRecordsNoStageWhenNothingWasValidated:
                 "a completed validate stage was recorded for a run the command "
                 "just told the user still needs the GPU step"
             )
+
+
+class TestAnUnmeasuredStructureIsNotAPassingOne:
+    """The pLDDT gate tested ``mean_plddt.notna()``, so an unreadable one passed.
+
+    The gate exists to exclude models too disordered to design against. A model
+    whose confidence could not be read is not such a model — but it is not a
+    model that cleared the bar either, and it fell through to the accepting
+    side. GTEx already draws this distinction with ``normal_tissue_unassessed``;
+    the structure gate did not.
+    """
+
+    @staticmethod
+    def _candidates(plddt: object) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "gene_id": ["ENSG1"],
+                "uniprot_id": ["P04626"],
+                "has_alphafold_structure": [True],
+                "alphafold_structure_path": [None],
+                "mean_plddt": [plddt],
+            }
+        )
+
+    def test_an_unreadable_confidence_is_recorded_not_passed(self) -> None:
+        import numpy as np
+
+        df = self._candidates(np.nan)
+        unassessed = df["has_alphafold_structure"] & df["mean_plddt"].isna() & (70 > 0)
+        assert bool(unassessed.iloc[0]), "an unmeasured model must not look like a passing one"
+
+    def test_a_measured_confidence_is_not_recorded_as_unassessed(self) -> None:
+        df = self._candidates(88.0)
+        unassessed = df["has_alphafold_structure"] & df["mean_plddt"].isna() & (70 > 0)
+        assert not bool(unassessed.iloc[0])
+
+    def test_the_disposition_is_canonical_and_renderable(self) -> None:
+        """A status a reader meets in an artifact must be listed and describable."""
+        from bindsight.benchmark.outcomes import GATE_EXPLANATIONS
+        from bindsight.pipelines.discover import TAXONOMY_DISPOSITIONS
+        from bindsight.report.html import _DISPOSITION_ORDER
+
+        assert "structure_confidence_unassessed" in TAXONOMY_DISPOSITIONS
+        assert "structure_confidence_unassessed" in _DISPOSITION_ORDER
+        text = GATE_EXPLANATIONS["structure_confidence_unassessed"]
+        assert "not the same as" in text
+
+    def test_it_is_distinct_from_low_confidence(self) -> None:
+        """Merging them would report an outage as a disordered model."""
+        from bindsight.benchmark.outcomes import GATE_EXPLANATIONS
+
+        assert (
+            GATE_EXPLANATIONS["structure_confidence_unassessed"]
+            != GATE_EXPLANATIONS["low_confidence_structure"]
+        )
+
+
+class TestTheSafetyVerdictSaysWhatItExamined:
+    """A vital tissue with no GTEx column was dropped without a word.
+
+    ``max_expression`` normalised each requested tissue, kept the ones matching
+    a column, and took the maximum over whatever remained. A gene highly
+    expressed in a *dropped* tissue was therefore reported "safe" by a check
+    that never looked at it — and the reason string named only the ceiling, so
+    nothing downstream could tell a full check from a partial one.
+    """
+
+    FIX = Path(__file__).parent / "fixtures" / "gtex" / "gtex_median_subset.gct"
+
+    def _client(self) -> Any:
+        from bindsight.targets.gtex import GTExTissueExpression
+
+        return GTExTissueExpression(gct_path=self.FIX)
+
+    @property
+    def _gene(self) -> str:
+        return "ENSG00000118194"
+
+    def test_an_unrecognised_tissue_is_named_in_the_verdict(self) -> None:
+        verdict = self._client().assess(
+            self._gene, ["heart_left_ventricle", "pancreas_islet"], max_tpm=1e9
+        )
+        assert verdict.status == "safe"
+        assert "pancreas_islet" in verdict.tissues_unrecognised
+        assert "pancreas_islet" in verdict.reason, (
+            "a verdict that never examined a requested tissue must say so"
+        )
+
+    def test_the_tissues_actually_examined_are_recorded(self) -> None:
+        verdict = self._client().assess(
+            self._gene, ["heart_left_ventricle", "liver", "nowhere_at_all"], max_tpm=1e9
+        )
+        assert set(verdict.tissues_checked) == {"heart_left_ventricle", "liver"}
+        assert verdict.tissues_unrecognised == ("nowhere_at_all",)
+
+    def test_a_complete_check_says_nothing_extra(self) -> None:
+        """The note must not fire when there is no gap to report."""
+        verdict = self._client().assess(self._gene, ["liver"], max_tpm=1e9)
+        assert verdict.tissues_unrecognised == ()
+        assert "Not examined" not in verdict.reason
+
+    def test_an_unsafe_verdict_also_names_the_gap(self) -> None:
+        verdict = self._client().assess(
+            self._gene, ["heart_left_ventricle", "pancreas_islet"], max_tpm=0.0
+        )
+        assert verdict.status == "unsafe"
+        assert "pancreas_islet" in verdict.reason
+
+    def test_the_dropped_tissue_is_what_makes_this_matter(self) -> None:
+        """The maximum is taken over the surviving tissues only.
+
+        So a gene's expression in a dropped tissue cannot raise the verdict,
+        however high it is. That is the fail-open the record now exposes.
+        """
+        client = self._client()
+        both = client.max_expression(self._gene, ["heart_left_ventricle", "liver"])
+        partial = client.max_expression(self._gene, ["heart_left_ventricle", "not_a_tissue"])
+        assert both is not None
+        assert partial is not None
+        assert partial <= both

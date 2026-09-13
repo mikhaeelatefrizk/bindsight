@@ -63,6 +63,14 @@ class TissueSafety:
     status: Literal["safe", "unsafe", "unassessed"]
     max_tpm: float | None
     reason: str
+    #: The vital tissues this verdict actually looked at, and those it could not.
+    #:
+    #: A requested tissue with no matching GTEx column was silently dropped and
+    #: the maximum taken over whatever remained, so a gene highly expressed in a
+    #: dropped tissue was reported "safe" by a check that never looked at it.
+    #: A safety verdict has to say what it examined.
+    tissues_checked: tuple[str, ...] = ()
+    tissues_unrecognised: tuple[str, ...] = ()
 
 
 def normalize_tissue(name: str) -> str:
@@ -173,11 +181,24 @@ class GTExTissueExpression:
         gene = ensembl_id.split(".")[0]
         if gene not in df.index:
             return None
-        cols = [normalize_tissue(t) for t in tissues]
-        cols = [c for c in cols if c in df.columns]
+        cols = [c for c in (normalize_tissue(t) for t in tissues) if c in df.columns]
         if not cols:
             return None
         return float(df.loc[gene, cols].max())
+
+    def coverage(self, tissues: list[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """Split ``tissues`` into those GTEx can answer for and those it cannot.
+
+        Returns ``(checked, unrecognised)``, both in config spelling. The
+        unrecognised half used to be dropped without a word, which turned a
+        partial check into a clean bill of health.
+        """
+        try:
+            columns = set(self._load().columns)
+        except Exception:  # a reference that will not load answers for nothing
+            return (), tuple(tissues)
+        checked = tuple(t for t in tissues if normalize_tissue(t) in columns)
+        return checked, tuple(t for t in tissues if normalize_tissue(t) not in columns)
 
     def assess(self, ensembl_id: str, tissues: list[str], max_tpm: float) -> TissueSafety:
         """Verdict for one gene against the vital-tissue ceiling ``max_tpm``.
@@ -197,21 +218,33 @@ class GTExTissueExpression:
                 be applied to any candidate at all.
         """
         value = self.max_expression(ensembl_id, tissues)
+        checked, unrecognised = self.coverage(tissues)
+        # Named in every verdict, not only the failing ones: a reader checking
+        # whether brain was examined should not have to infer it from silence.
+        gap = f" Not examined (no GTEx column): {', '.join(unrecognised)}." if unrecognised else ""
         if value is None:
             return TissueSafety(
                 status="unassessed",
                 max_tpm=None,
                 reason=f"{ensembl_id or '<no gene id>'} has no GTEx median-TPM entry for "
-                f"{', '.join(tissues) or '<no tissues>'}",
+                f"{', '.join(tissues) or '<no tissues>'}" + gap,
+                tissues_checked=checked,
+                tissues_unrecognised=unrecognised,
             )
         if value > max_tpm:
             return TissueSafety(
                 status="unsafe",
                 max_tpm=value,
-                reason=f"median TPM {value:.1f} exceeds the {max_tpm:.1f} vital-tissue ceiling",
+                reason=f"median TPM {value:.1f} exceeds the {max_tpm:.1f} vital-tissue ceiling"
+                + gap,
+                tissues_checked=checked,
+                tissues_unrecognised=unrecognised,
             )
         return TissueSafety(
             status="safe",
             max_tpm=value,
-            reason=f"median TPM {value:.1f} is at or below the {max_tpm:.1f} vital-tissue ceiling",
+            reason=f"median TPM {value:.1f} is at or below the {max_tpm:.1f} "
+            f"vital-tissue ceiling" + gap,
+            tissues_checked=checked,
+            tissues_unrecognised=unrecognised,
         )

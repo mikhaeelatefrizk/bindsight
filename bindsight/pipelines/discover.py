@@ -719,6 +719,24 @@ def _do_discover(
     else:
         low_conf = pd.Series(False, index=candidates.index)
     candidates["low_confidence_structure"] = low_conf
+    # A model whose pLDDT could not be read is not a model that passed. The gate
+    # above tests `mean_plddt.notna()`, so an unreadable confidence fell through
+    # to the accepting side and an unmeasured structure was carried forward as
+    # though it had cleared the bar. Recorded rather than gated, mirroring
+    # `normal_tissue_unassessed`: what a reader needs is the difference between
+    # a model that passed and one never measured, and dropping the second for an
+    # infrastructure reason would be its own error.
+    candidates["structure_confidence_unassessed"] = (
+        candidates["has_alphafold_structure"]
+        & candidates["mean_plddt"].isna()
+        & (p.min_mean_plddt > 0)
+    )
+    if bool(candidates["structure_confidence_unassessed"].any()):
+        LOG.info(
+            "pLDDT gate: %d candidate(s) carry a structure whose confidence could not "
+            "be read; recorded as structure_confidence_unassessed, not as passing",
+            int(candidates["structure_confidence_unassessed"].sum()),
+        )
     if bool(low_conf.any()):
         # Distinct from no_alphafold_model: the model exists but is too disordered.
         candidates.loc[low_conf, "has_alphafold_structure"] = False
@@ -896,6 +914,7 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "structure_not_queried",
     "no_alphafold_model",
     "low_confidence_structure",
+    "structure_confidence_unassessed",
     "not_top_n",
     "no_surface_bind_site",
     "surface_bind_lookup_failed",
@@ -994,6 +1013,7 @@ def _build_taxonomy(
     queried_gids: set[str] = set()
     topn_gids: set[str] = set()
     low_conf_gids: set[str] = set()
+    unassessed_conf_gids: set[str] = set()
     no_ecd_gids: set[str] = set()
     tissue_unsafe_gids: set[str] = set()
     tissue_unassessed_gids: set[str] = set()
@@ -1010,6 +1030,11 @@ def _build_taxonomy(
         if "low_confidence_structure" in candidates.columns:
             low_conf_gids = {
                 str(g) for g in candidates.loc[candidates["low_confidence_structure"], "gene_id"]
+            }
+        if "structure_confidence_unassessed" in candidates.columns:
+            unassessed_conf_gids = {
+                str(g)
+                for g in candidates.loc[candidates["structure_confidence_unassessed"], "gene_id"]
             }
         if "no_extracellular_domain" in candidates.columns:
             no_ecd_gids = {
@@ -1069,6 +1094,8 @@ def _build_taxonomy(
                 disp = "normal_tissue_unassessed"
             elif gid in no_ecd_gids:
                 disp = "no_extracellular_domain"
+            elif gid in unassessed_conf_gids:
+                disp = "structure_confidence_unassessed"
             elif gid in low_conf_gids:
                 disp = "low_confidence_structure"
             elif gid not in struct_gids:

@@ -237,6 +237,7 @@ _DISPOSITION_ORDER = (
     "structure_not_queried",
     "no_alphafold_model",
     "low_confidence_structure",
+    "structure_confidence_unassessed",
     "not_top_n",
     "no_surface_bind_site",
     "surface_bind_lookup_failed",
