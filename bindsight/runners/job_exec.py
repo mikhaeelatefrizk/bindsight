@@ -521,7 +521,16 @@ def _validate_chai1r(
         fasta.parent.mkdir(parents=True, exist_ok=True)
         fasta.write_text(f">protein|T\n{target_seq}\n>protein|{d.binder_id}\n{d.sequence}\n")
         out_dir = chai_root / d.binder_id
-        _run(tools.build_chai_cmd(fasta_path=fasta, out_dir=out_dir))
+        _run(
+            tools.build_chai_cmd(
+                fasta_path=fasta,
+                out_dir=out_dir,
+                # Per binder, from the run's seed — the same derivation the
+                # Boltz-2 path uses, so the two validators are reproducible in
+                # the same way rather than one of them by accident.
+                seed=_binder_seed(int(spec.get("seed", 0)), d.binder_id),
+            )
+        )
         result = tools.parse_chai_output(
             out_dir, binder_id=d.binder_id, target_uniprot=str(spec.get("target_uniprot", ""))
         )

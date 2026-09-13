@@ -440,3 +440,80 @@ class TestEveryValidatorRecordsWhatItRan:
 
         assert installed_version("pydantic") is not None
         assert installed_version("a-distribution-that-is-not-installed") is None
+
+
+class TestTheChaiValidatorMatchesTheBoltzDiscipline:
+    """Chai-1 carried the same two defects Boltz-2 did, unfixed because unused.
+
+    `plugin_support` marks chai1r unsupported on every bundled backend — it
+    needs bfloat16 and the free tiers pin pre-Ampere cards — so no published
+    number comes from it. That is exactly why the defects survived: a plugin
+    that has not run is the one place a defect sits unnoticed until it is
+    producing results.
+
+    Both verified against the pinned commit c544fb1: `run_inference` takes
+    `seed: int | None = None` and `num_diffn_samples: int = 5`.
+    """
+
+    @staticmethod
+    def _scores(tmp_path: Path, values: list[float]) -> Path:
+        import numpy as np
+
+        for i, v in enumerate(values):
+            np.savez(tmp_path / f"scores.model_idx_{i}.npz", iptm=np.array(v), ptm=np.array(v))
+        return tmp_path
+
+    def test_the_reported_iptm_is_the_mean_not_the_best_draw(self, tmp_path: Path) -> None:
+        """chai-lab writes one npz per draw and ranks them best-first."""
+        from bindsight.runners import tools
+
+        root = self._scores(tmp_path, [0.81, 0.62, 0.58, 0.55, 0.51])
+        row = tools.parse_chai_output(root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm == pytest.approx(0.614)
+        assert row.iptm != pytest.approx(0.81), "reported the best draw, not an estimate"
+
+    def test_the_draw_count_and_spread_are_recorded(self, tmp_path: Path) -> None:
+        from bindsight.runners import tools
+
+        root = self._scores(tmp_path, [0.8, 0.6, 0.4])
+        row = tools.parse_chai_output(root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm_n_samples == 3
+        assert row.iptm_sd is not None
+        assert row.iptm_sd > 0
+
+    def test_a_single_draw_has_no_spread(self, tmp_path: Path) -> None:
+        from bindsight.runners import tools
+
+        root = self._scores(tmp_path, [0.77])
+        row = tools.parse_chai_output(root, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm_n_samples == 1
+        assert row.iptm_sd is None
+
+    def test_no_output_yields_nulls_rather_than_a_guess(self, tmp_path: Path) -> None:
+        from bindsight.runners import tools
+
+        row = tools.parse_chai_output(tmp_path, binder_id="b0", target_uniprot="P04626")
+        assert row.iptm is None
+        assert row.iptm_n_samples is None
+
+    def test_the_command_can_carry_a_seed(self) -> None:
+        from bindsight.runners import tools
+
+        cmd = tools.build_chai_cmd(fasta_path=Path("x.fa"), out_dir=Path("o"), seed=7)
+        assert cmd[cmd.index("--seed") + 1] == "7"
+
+    def test_the_unseeded_form_is_unchanged(self) -> None:
+        from bindsight.runners import tools
+
+        assert tools.build_chai_cmd(fasta_path=Path("x.fa"), out_dir=Path("o")) == [
+            "chai-lab",
+            "fold",
+            "x.fa",
+            "o",
+        ]
+
+    def test_a_negative_seed_is_refused(self) -> None:
+        from bindsight.runners import tools
+
+        with pytest.raises(ValueError, match="negative"):
+            tools.build_chai_cmd(fasta_path=Path("x.fa"), out_dir=Path("o"), seed=-1)

@@ -8,6 +8,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — the Chai-1 validator carried both defects Boltz-2 did
+
+Verified against pinned commit c544fb1: `run_inference` takes
+`seed: int | None = None` and `num_diffn_samples: int = 5`. So Chai-1 diffuses
+five structures per binder and seeds none of them — exactly Boltz-2's position
+before it was fixed — and `parse_chai_output` read whichever `scores*.npz` the
+directory walk yielded first, which chai-lab ranks best-first.
+
+No published number comes from here: `plugin_support` marks chai1r unsupported
+on every bundled backend, because it needs bfloat16 and the free tiers pin
+pre-Ampere cards. That is precisely why the defects survived — a plugin that has
+not run is where a defect sits unnoticed until it is producing results, which is
+the same reason the hardcoded `validator_version` beside it was fixed earlier.
+
+Every draw is now read and averaged, `iptm_n_samples` and `iptm_sd` are
+recorded, and the seed is derived per binder from the run's seed by the same
+function the Boltz-2 path uses — so the two validators are reproducible in the
+same way rather than one of them by accident.
+
 ### Fixed — GPI-anchored antigens were classified as having nothing a binder can reach
 
 UniProt annotates topological domains *relative to* a transmembrane segment. A

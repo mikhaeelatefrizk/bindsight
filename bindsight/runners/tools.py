@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import statistics
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -409,9 +410,38 @@ def build_boltz_cmd(
     return cmd
 
 
-def build_chai_cmd(*, fasta_path: Path, out_dir: Path) -> list[str]:
-    """Chai-1 ``chai-lab fold`` argv (structure + confidence prediction)."""
-    return ["chai-lab", "fold", str(fasta_path), str(out_dir)]
+def build_chai_cmd(*, fasta_path: Path, out_dir: Path, seed: int | None = None) -> list[str]:
+    """Chai-1 ``chai-lab fold`` argv (structure + confidence prediction).
+
+    Chai-1 diffuses like Boltz-2 and is unseeded by the same default: at the
+    pinned commit ``run_inference`` takes ``seed: int | None = None`` and
+    ``num_diffn_samples: int = 5``. This builder passed no seed, so the
+    validator was nondeterministic exactly as Boltz-2 was before it was fixed.
+
+    No published number comes from here — ``plugin_support`` marks chai1r
+    unsupported on every bundled backend, because it needs bfloat16 and the free
+    tiers pin pre-Ampere cards — so the defect is latent. It is fixed anyway,
+    for the same reason the hardcoded ``validator_version`` beside it was: a
+    plugin that has not run yet is the one place a defect can sit unnoticed
+    until it is producing results.
+
+    Args:
+        fasta_path: the complex to fold.
+        out_dir: where Chai-1 writes its predictions.
+        seed: RNG seed. ``None`` leaves Chai-1 unseeded.
+
+    Returns:
+        The argv list.
+
+    Raises:
+        ValueError: If ``seed`` is negative.
+    """
+    cmd = ["chai-lab", "fold", str(fasta_path), str(out_dir)]
+    if seed is not None:
+        if seed < 0:
+            raise ValueError(f"seed must not be negative; got {seed}")
+        cmd += ["--seed", str(seed)]
+    return cmd
 
 
 def build_bindcraft_cmd(
@@ -822,20 +852,38 @@ def mpnn_design_sequences(fasta_path: Path) -> list[str]:
 def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) -> ValidationResult:
     """Parse Chai-1 output scores into a ValidationResult (lazy NumPy import)."""
     iptm = ptm = None
-    npz = next(Path(output_dir).rglob("scores*.npz"), None)
-    if npz is not None:
+    iptm_samples: list[float] = []
+    ptm_samples: list[float] = []
+    # Every draw, not the first. chai-lab writes one scores npz per diffusion
+    # sample — scores.model_idx_0.npz through model_idx_4.npz at its default of
+    # five — and this took whichever the directory walk yielded first. That is
+    # the same defect found and fixed in the Boltz-2 parser: a number that
+    # improves as more samples are bought, with no change to the design being
+    # scored. The mean estimates the centre of the distribution the model is
+    # sampling from; one draw estimates nothing.
+    for npz in sorted(Path(output_dir).rglob("scores*.npz")):
         try:
             import numpy as np
 
             data = np.load(npz)
-            iptm = _to_float(data["iptm"]) if "iptm" in data else None
-            ptm = _to_float(data["ptm"]) if "ptm" in data else None
+            value = _to_float(data["iptm"]) if "iptm" in data else None
+            if value is not None:
+                iptm_samples.append(value)
+            value = _to_float(data["ptm"]) if "ptm" in data else None
+            if value is not None:
+                ptm_samples.append(value)
         except Exception as e:  # pragma: no cover - depends on chai output shape
             LOG.warning("failed to parse chai npz %s: %s", npz, e)
+    if iptm_samples:
+        iptm = statistics.fmean(iptm_samples)
+    if ptm_samples:
+        ptm = statistics.fmean(ptm_samples)
     return ValidationResult(
         binder_id=binder_id,
         target_uniprot=target_uniprot,
         iptm=iptm,
+        iptm_n_samples=len(iptm_samples) or None,
+        iptm_sd=statistics.stdev(iptm_samples) if len(iptm_samples) > 1 else None,
         ptm=ptm,
         pae_interaction=None,
         # Chai-1 predicts no affinity. pTM is a structure-confidence score and
@@ -847,7 +895,7 @@ def parse_chai_output(output_dir: Path, *, binder_id: str, target_uniprot: str) 
         # readable. CHAI_PIP is still a range, which is why it is read
         # rather than assumed.
         validator_version=installed_version("chai_lab") or UNRECORDED_VERSION,
-        notes=f"parsed chai scores={'yes' if npz else 'no'}",
+        notes=f"parsed chai scores={len(iptm_samples)} sample(s)",
     )
 
 
