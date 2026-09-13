@@ -45,6 +45,9 @@ params:
       - liver
       - lung
     vital_tissue_max_tpm: 5.0
+    # NOTE: both settings above are inert unless `use_gtex_safety: true` is
+    # also set — without it no GTEx expression is fetched, so nothing is
+    # compared against these thresholds and no candidate is excluded by them.
 
     # Tractability + safety from Open Targets. Modalities are the Open Targets
     # codes: AB (antibody), SM (small molecule), PR (PROTAC), OC (other clinical).

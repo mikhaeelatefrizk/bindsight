@@ -918,7 +918,13 @@ def _null_calibration(results: list[CohortResult], config: StudyConfig) -> dict[
         # for a cohort chosen precisely because it carries none.
         "n_scored_pairs": sum(len(r.pairs) for r in calibration),
         "n_antigen_standings": len(off_indication),
+        # The flat mean over every standing, kept because it is what a reader
+        # recomputing by hand from the pair table will get. It is NOT the
+        # estimator the interval below describes: this one counts an antigen
+        # once per cohort, the interval counts it once. Report the interval's
+        # own point beside the interval; these two must never be mixed.
         "mean_standing_off_indication": sum(off_indication) / len(off_indication),
+        "mean_standing_off_indication_is_unclustered": True,
         # The same mean with the spread and interval behind it. Two bare means
         # were being contrasted in the report with no n and no uncertainty, which
         # is exactly the shape of claim this study exists to avoid making.
@@ -927,7 +933,9 @@ def _null_calibration(results: list[CohortResult], config: StudyConfig) -> dict[
         ).as_dict(),
     }
     if own_indication:
+        # Unclustered, as above.
         block["mean_standing_in_own_indication"] = sum(own_indication) / len(own_indication)
+        block["mean_standing_in_own_indication_is_unclustered"] = True
         block["n_own_indication"] = len(own_indication)
         block["own_indication_interval"] = S.cluster_bootstrap_mean(
             own_by_antigen, seed=config.seed

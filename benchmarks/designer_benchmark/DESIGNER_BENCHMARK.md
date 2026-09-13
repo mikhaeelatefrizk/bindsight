@@ -12,9 +12,11 @@ Kaggle's free T4 — is committed in [`RESULTS.md`](RESULTS.md) (20 designs, bes
 ipTM 0.88, mean 0.51, 40% success@0.65 — 8/20, 95% CI 15–70% over backbones), with the real Boltz-2-predicted
 complexes (`binders/*_complex.cif`) and the raw metrics in `results.json`.
 
-> **This success rate is withdrawn as a measure of design quality.** A paired control folded each of these twenty designs in one job alongside a shuffle of its own sequence — same length, same amino-acid composition, same target, same validator, same card. Designs and shuffles cleared 0.65 at the *same* rate (40% and 40%), the paired difference was +0.030 (95% CI −0.070 to +0.127, exact sign-flip p = 0.57), and one shuffle scored 0.815 — above nineteen of the twenty designs. The run bounds any real advantage at about 0.14 ipTM rather than showing there is none.
+> **This success rate is withdrawn as a measure of design quality.** A paired control folded each of these twenty designs in one job alongside a shuffle of its own sequence — same length, same amino-acid composition, same target, same validator, same card, same session. Under a seeded validator averaging five diffusion draws per binder, the **shuffles pass more often than the designs**: 50% of shuffles clear 0.65 against 30% of designs. The paired difference is −0.043 (95% CI −0.142 to +0.054, exact sign-flip p = 0.40), and 9 of 20 designs beat their own shuffle where 10 is chance.
 >
-> A cause was found and fixed: Boltz-2 builds structures by diffusion, and the validator was invoked with neither `--seed` nor `--diffusion_samples`, so every number here is a single unseeded draw. Refolding the same twenty sequences moved ipTM by a median of 0.129 and flipped eight of twenty verdicts. The numbers in this table are real outputs; what is withdrawn is the claim that they measure the designs. See `benchmarks/calibration/README.md`.
+> Two causes were found in the pipeline and fixed — the validator and the designer were both invoked without a seed, so every number in this table is a single unseeded draw of a sequence that was itself an unseeded draw. Refolding these twenty sequences moves ipTM by a median of 0.172, against a measured per-draw spread of 0.139. But the fixes did not rescue the result: five times the sampling effort moved it slightly further against the designs, and 85% of the remaining spread is real pair-to-pair variation that no amount of resampling reduces.
+>
+> The numbers in this table are real Boltz-2 outputs. What is withdrawn is the claim that the rate measures the designs. See `benchmarks/calibration/README.md`.
 
 > ✅ **The committed result uses the corrected ProteinMPNN protocol, and the
 > target chain is verified rather than assumed.** All 20 designs carry a target

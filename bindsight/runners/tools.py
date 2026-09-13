@@ -363,9 +363,9 @@ def build_boltz_cmd(
     ``--diffusion_samples`` defaults to 1. Passing neither — which this builder
     did — makes every reported ipTM a single unseeded draw from a stochastic
     model, and the project's calibration run measured what that costs: refolding
-    the same twenty sequences moved ipTM by a median of 0.129 and a maximum of
-    0.667, flipped eight of twenty verdicts at the 0.65 threshold, and left the
-    two runs correlated at Spearman 0.065. A number that does not survive its own
+    the same twenty sequences moved ipTM by a median of 0.172 and a
+    maximum of 0.573, flipped 4 of 20 verdicts at the 0.65
+    threshold, and left the two runs correlated at Spearman 0.065. A number that does not survive its own
     rerun cannot support a per-design claim.
 
     The seed makes a run repeatable. It does not make one draw representative —

@@ -671,13 +671,23 @@ def test_the_notice_is_one_string_not_a_family_of_paraphrases() -> None:
     from bindsight.benchmark.designer_bench import IPTM_CALIBRATION_CAVEAT
 
     assert WITHDRAWAL_MARKER in IPTM_CALIBRATION_CAVEAT
-    for rel in (
-        "benchmarks/designer_benchmark/RESULTS.md",
-        "benchmarks/designer_benchmark/run_t4/RESULTS.md",
-    ):
-        assert IPTM_CALIBRATION_CAVEAT.strip() in _read(rel), (
-            f"{rel} paraphrases the notice instead of carrying it verbatim, so "
-            "regenerating the results would produce a diff"
+    # Discovered, not listed. The previous version of this named two files, and
+    # two benchmark guides carrying the same notice in its superseded first-run
+    # wording were outside its scope for as long as the list went unrevised.
+    opening = IPTM_CALIBRATION_CAVEAT.strip().splitlines()[0]
+    carriers = [
+        path
+        for path in _calibration_surfaces()
+        if path.suffix == ".md" and opening[:60] in path.read_text(encoding="utf-8")
+    ]
+    assert len(carriers) >= 2, (
+        f"expected the long-form notice on at least two surfaces; found {carriers}"
+    )
+    for path in carriers:
+        rel = path.relative_to(ROOT).as_posix()
+        assert IPTM_CALIBRATION_CAVEAT.strip() in path.read_text(encoding="utf-8"), (
+            f"{rel} opens the notice but then paraphrases it instead of carrying it "
+            "verbatim, so the two copies can drift"
         )
 
 
@@ -905,8 +915,222 @@ def test_every_document_stating_the_rate_also_states_its_interval(rel: str) -> N
     low, high = bounds
     text = _flat(_read(rel))
 
-    missing = [str(b) for b in (low, high) if str(b) not in text]
-    assert not missing, (
-        f"{rel} states the success rate without the interval the artifact "
-        f"reports ({low}–{high}%); missing {', '.join(missing)}"
+    # CHANGELOG.md states what each release reported at the time; a dated entry
+    # is a record, not a live claim, and back-filling today's interval into it
+    # would falsify the record.
+    if rel == "CHANGELOG.md":
+        pytest.skip("dated historical entries, not a current claim")
+
+    # The interval is required of a document that states the RATE, not of one
+    # that only names the metric. Which is which is decided by the artifact's own
+    # point estimate appearing in the text, not by a guess at sentence shape: an
+    # earlier heuristic here skipped docs/index.md and docs/results.md, both of
+    # which do state it, and so checked nothing on the two surfaces that matter
+    # most.
+    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+    designer = json.loads(artifact.read_text(encoding="utf-8"))["designers"][0]
+    point = f"{designer['success_rate']:.0%}"
+    fraction = f"{designer['n_success']}/{designer['n_designs']}"
+    spelled = f"{designer['n_success']} of {designer['n_designs']}"
+    if not any(form in text for form in (point, fraction, spelled)):
+        pytest.skip(f"{rel} names the metric without stating its rate")
+
+    # Anchored to a percent sign. A bare "70" matched inside "−0.070" in a
+    # neighbouring sentence, so RUN_ON_KAGGLE.md passed this check while stating
+    # no interval at all -- the guard was reading a digit out of another number.
+    bounds = re.compile(
+        rf"\b{low}\s*(?:%|&ndash;|–|-|to)\s*{high}\s*%|\b{low}%\s*(?:–|-|to)\s*{high}%"
     )
+    assert bounds.search(text), (
+        f"{rel} states the success rate without the interval the artifact reports ({low}–{high}%)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# The superseded first calibration run must not be quoted as current
+# ---------------------------------------------------------------------------
+#: The first paired job ran an unseeded validator at one diffusion draw and found
+#: designs and shuffles tied. The seeded re-run at five draws -- the committed
+#: artifact -- found the shuffles ahead. These markers belong only to the first
+#: run, and quoting them as the finding inverts the sign of a published result.
+_SUPERSEDED_CALIBRATION: tuple[str, ...] = (
+    "40% and 40%",
+    "40% vs 40%",
+    "paired difference +0.030",
+    "difference was +0.030",
+    "sign-flip p = 0.57",
+    "p = 0.57",
+    "median of 0.129",
+)
+
+#: Files allowed to quote the first run, each because it explicitly frames it as
+#: the first run rather than the finding:
+#:   CHANGELOG.md -- dated entries, a record of what was known when.
+#:   benchmarks/calibration/README.md -- narrates the sequence, and puts these
+#:     figures under "What happened: the first row of the table", followed by
+#:     "The seeded re-run settled it".
+_CALIBRATION_HISTORY_ALLOWED: frozenset[str] = frozenset(
+    {"CHANGELOG.md", "benchmarks/calibration/README.md"}
+)
+
+
+def _calibration_surfaces() -> list[Path]:
+    """Every place a reader can meet the calibration result.
+
+    Prose *and* code: the superseded figures were also hard-coded into the
+    Streamlit UI's tooltip, which no documentation sweep would ever have seen.
+    """
+    # ``tests`` is excluded because this module necessarily contains the
+    # forbidden strings in order to forbid them; no test file is a surface a
+    # reader of the project's results ever meets.
+    skip = (".git", "site", "runs", "node_modules", "__pycache__", ".venv", "tests")
+    out: list[Path] = []
+    for path in ROOT.rglob("*"):
+        if path.suffix not in {".md", ".tex", ".py"}:
+            continue
+        parts = set(path.relative_to(ROOT).parts)
+        if parts & set(skip):
+            continue
+        out.append(path)
+    return sorted(out)
+
+
+def test_the_sweep_for_calibration_surfaces_sees_prose_and_code() -> None:
+    """Guards the guard: a sweep that missed .py would have missed the UI copy."""
+    found = {p.relative_to(ROOT).as_posix() for p in _calibration_surfaces()}
+
+    assert "README.md" in found
+    assert "bindsight/report/webapp.py" in found, (
+        "the sweep no longer covers the Streamlit app, where a superseded copy of the notice lived"
+    )
+    assert "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md" in found
+
+
+def test_no_surface_quotes_the_superseded_calibration_run_as_current() -> None:
+    """The root README, ARCHITECTURE, two benchmark guides and the live web UI all
+    told the reader designs and shuffles cleared 0.65 at the same rate. The
+    committed artifact says the shuffles clear it more often. That is the sign of
+    the result, not a detail.
+    """
+    offenders: list[str] = []
+    for path in _calibration_surfaces():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel in _CALIBRATION_HISTORY_ALLOWED:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for marker in _SUPERSEDED_CALIBRATION:
+            if marker in text:
+                offenders.append(f"{rel}: {marker!r}")
+    assert not offenders, (
+        "surfaces quoting the superseded first calibration run:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_the_allowed_history_files_really_do_frame_it_as_history() -> None:
+    """The allowlist is only defensible while those files say which run it was."""
+    calibration_readme = _read("benchmarks/calibration/README.md")
+    assert "the first row of the table" in calibration_readme
+    assert "seeded re-run" in calibration_readme, (
+        "the calibration README quotes the first run without pointing at the one that superseded it"
+    )
+
+
+def test_every_surface_stating_the_pass_rates_states_the_measured_ones() -> None:
+    """Not merely the absence of the old figures: the presence of the new ones."""
+    import json
+
+    results = json.loads(_read("benchmarks/calibration/RESULTS.json"))
+    designs = f"{results['design_pass_rate']:.0%}"
+    scrambles = f"{results['scramble_pass_rate']:.0%}"
+
+    stating = []
+    for path in _calibration_surfaces():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel in _CALIBRATION_HISTORY_ALLOWED:
+            continue
+        text = _flat(path.read_text(encoding="utf-8", errors="replace"))
+        if WITHDRAWAL_MARKER not in text:
+            continue
+        if "clear 0.65" not in text and "cleared 0.65" not in text:
+            continue
+        stating.append(rel)
+        missing_rate = [r for r in (designs, scrambles) if r not in text]
+        assert not missing_rate, (
+            f"{rel} describes the paired control without stating the measured "
+            f"rates ({scrambles} of shuffles against {designs} of designs); "
+            f"missing {', '.join(missing_rate)}"
+        )
+        # The claim, not only the figures. "at the same rate" was the first
+        # run's finding; the seeded re-run inverted it, and a surface can carry
+        # the corrected numbers while still asserting the superseded conclusion
+        # in the sentence around them.
+        assert "at the same rate" not in text, (
+            f"{rel} still says the designs and their shuffles clear the bar at the "
+            f"same rate; the artifact measures {scrambles} against {designs}"
+        )
+    assert stating, "no surface describes the paired control; the sweep found nothing"
+
+
+# ---------------------------------------------------------------------------
+# A table row with the wrong number of cells loses the surplus silently
+# ---------------------------------------------------------------------------
+def _malformed_table_rows(path: Path) -> list[str]:
+    """Rows whose cell count differs from their table's header.
+
+    Markdown renderers drop surplus cells without complaint, so ARCHITECTURE.md
+    shipped a competitor table where three rows carried a status column the
+    header did not have — and one of those rows was a whole entry pasted in from
+    a different table. On the rendered page the extra cells simply vanished, so
+    nothing looked wrong and the duplicate was invisible.
+    """
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    bad: list[str] = []
+    i = 0
+    while i < len(lines):
+        is_divider = (
+            i + 1 < len(lines)
+            and lines[i + 1].strip()
+            and set(lines[i + 1].replace("|", "").replace(" ", "")) <= set("-:")
+        )
+        if lines[i].startswith("|") and is_divider:
+            header_cells = lines[i].count("|") - 1
+            j = i + 2
+            while j < len(lines) and lines[j].startswith("|"):
+                cells = lines[j].count("|") - 1
+                if cells != header_cells:
+                    bad.append(
+                        f"line {j + 1}: header has {header_cells} cells, row has "
+                        f"{cells} — {lines[j][:70]}"
+                    )
+                j += 1
+            i = j
+        else:
+            i += 1
+    return bad
+
+
+def test_the_table_scan_recognises_a_real_table() -> None:
+    """Guards the guard: a parser that matched no tables would pass everywhere."""
+    counted = 0
+    for path in _shipped_documents():
+        if path.suffix != ".md":
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        counted += sum(
+            1
+            for i, line in enumerate(text.splitlines()[:-1])
+            if line.startswith("|")
+            and set(text.splitlines()[i + 1].replace("|", "").replace(" ", "")) <= set("-:")
+            and text.splitlines()[i + 1].strip()
+        )
+    assert counted >= 10, f"the scan found only {counted} tables across the docs"
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [p.relative_to(ROOT).as_posix() for p in _shipped_documents() if p.suffix == ".md"],
+)
+def test_no_shipped_table_has_a_row_the_header_cannot_hold(rel: str) -> None:
+    bad = _malformed_table_rows(ROOT / rel)
+
+    assert not bad, f"{rel} has table rows the header cannot hold:\n  " + "\n  ".join(bad)

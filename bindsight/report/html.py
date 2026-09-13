@@ -28,7 +28,7 @@ import base64
 import io
 import json
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -103,6 +103,11 @@ def render_run(
         ),
         candidates_table=_df_to_records(candidates_df, _CANDIDATE_DISPLAY_COLS, head=20),
         epitopes_table=_df_to_records(epitopes_df, _EPITOPE_DISPLAY_COLS, head=20),
+        # The run's counts, not the display tables'. The KPI read
+        # ``candidates_table|length``, which is capped at 20, so every run with
+        # more than twenty candidates published "20" as its candidate count.
+        n_candidates=len(candidates_df) if candidates_df is not None else 0,
+        n_epitopes=len(epitopes_df) if epitopes_df is not None else 0,
         binders_table=_binders_table(ranking_df, run_dir, include_sequences=include_binders),
         n_binders=len(ranking_df) if ranking_df is not None else 0,
         include_binders=include_binders,
@@ -328,10 +333,15 @@ def _df_to_records(
 #: They match :class:`bindsight.config` so a default run is labelled correctly;
 #: they are never silently substituted for a run that chose something else.
 _DEFAULT_FDR = 0.05
+
+#: Points the volcano annotates, chosen by |log2FC| x -log10(padj). Labelling
+#: every significant gene produced an unreadable figure on real cohorts, and
+#: an unreadable figure communicates less than an unlabelled one.
+_MAX_VOLCANO_LABELS = 20
 _DEFAULT_LOG2FC = 1.0
 
 
-def _deg_thresholds(manifest: dict | None) -> tuple[float | None, float | None]:
+def _deg_thresholds(manifest: Mapping[str, Any] | None) -> tuple[float | None, float | None]:
     """The FDR and |log2FC| cutoffs the ``deg`` stage ran with, if recorded.
 
     The results parquet carries a ``significant`` column but not the numbers
@@ -401,11 +411,14 @@ def _render_volcano(
     padj = deg_df["padj"].astype(float).fillna(1.0)
     nlp = -np.log10(padj.clip(lower=1e-300))
     basis, cutoff = _significance_basis(deg_df.columns, fdr_threshold)
-    if basis == "column":
+    # ``cutoff is None`` happens only on the column branch, where the analysis
+    # already applied both cutoffs. Testing for it narrows the type without a
+    # cast and says the same thing the branch means.
+    if basis == "column" or cutoff is None:
         sig = deg_df["significant"].astype(bool)
         sig_label = "significant"
     else:
-        sig = padj < float(cutoff)
+        sig = padj < cutoff
         sig_label = (
             f"significant (padj < {cutoff:g})"
             if basis == "padj"
@@ -414,9 +427,18 @@ def _render_volcano(
 
     ax.scatter(log2fc[~sig], nlp[~sig], s=18, alpha=0.45, c="#888", label="ns")
     ax.scatter(log2fc[sig], nlp[sig], s=22, alpha=0.85, c="#d62728", label=sig_label)
-    if "gene_id" in deg_df.columns:
-        for _, row in deg_df[sig].iterrows():
-            label = str(row.get("symbol") or row.get("gene_id"))[:20]
+    # Only the strongest few. Labelling every significant gene put ~4,400
+    # overlapping annotations on a real run, which renders as a black bar across
+    # the figure and identifies nothing.
+    if "symbol" in deg_df.columns:
+        labelled = deg_df[sig].copy()
+        if not labelled.empty:
+            labelled["_weight"] = labelled["log2fc"].abs() * nlp[sig]
+            labelled = labelled.sort_values("_weight", ascending=False).head(_MAX_VOLCANO_LABELS)
+        for _, row in labelled.iterrows():
+            label = str(row.get("symbol") or "")[:20]
+            if not label:
+                continue
             ax.annotate(
                 label,
                 (row["log2fc"], -np.log10(max(row["padj"], 1e-300))),

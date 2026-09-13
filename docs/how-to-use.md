@@ -118,7 +118,9 @@ params:
   target_discovery:
     require_surfy: true
     use_open_targets: true
-    require_tractable_modality: ["Antibody"]
+    # Open Targets modality CODES, not names: AB (antibody), SM (small
+    # molecule), PR (PROTAC), OC (other clinical). "Antibody" is rejected.
+    require_tractable_modality: ["AB"]
     max_safety_events: 5
     top_n: 10
 
@@ -169,7 +171,10 @@ shows the state. On first real run these populate automatically:
 - **AlphaFoldDB** structures + **Open Targets** evidence — fetched per target.
 - **SURFACE-Bind** targetable-site lookup is implemented: when a vendored
   SURFACE-Bind site tree is present, design focuses on those sites; otherwise it
-  falls back to whole-surface design (`require_surface_bind_site: false`, the default).
+  falls back to whole-surface design. The schema default is
+  `require_surface_bind_site: true`, which only bites once a
+  SURFACE-Bind tree is actually vendored — with no tree present there is nothing
+  to require, so a standard run is unaffected either way.
 
 No manual setup is required for a standard run.
 

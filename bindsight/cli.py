@@ -241,16 +241,25 @@ def design(
     console.print(f"[dim]designer:[/dim] {designer}")
     console.print(f"[dim]validator:[/dim] {validator}")
     console.print(f"[dim]trajectories:[/dim] {trajectories}")
-    console.print(f"[dim]targets:[/dim] {n_targets}")
+    console.print(f"[dim]targets:[/dim] {n_targets if n_targets is not None else 'unknown'}")
 
-    d_cost, _v_cost, _c_cost = estimate_full_run(
-        backend=backend,
-        designer=designer,
-        validator=validator,
-        n_targets=n_targets,
-        n_trajectories=trajectories,
-    )
-    _print_cost_panel(d_cost, label=f"design ({designer})")
+    if n_targets is None:
+        # No estimate rather than an estimate of nothing. Costing a guessed
+        # target count produces a plausible dollar figure for work whose size is
+        # not known, which is worse than saying so.
+        console.print(
+            "[yellow]No epitopes table, so the target count is unknown and the "
+            "cost estimate is skipped.[/yellow] Run `bindsight discover` first."
+        )
+    else:
+        d_cost, _v_cost, _c_cost = estimate_full_run(
+            backend=backend,
+            designer=designer,
+            validator=validator,
+            n_targets=n_targets,
+            n_trajectories=trajectories,
+        )
+        _print_cost_panel(d_cost, label=f"design ({designer})")
 
     if dry_run:
         console.print(
@@ -704,12 +713,24 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     from bindsight.export import export_ro_crate
 
     out = export_ro_crate(run_dir, out_path)
+    # The crate is NOT recorded as a digested output. A copy of this manifest is
+    # sealed inside the crate, so any digest written here describes a file that
+    # did not exist when that copy was taken: the crate's own manifest would
+    # assert a hash that is not the crate's, and a reviewer checking the deposit
+    # against it would find a mismatch and no way to tell which artifact was
+    # wrong. The crate's digest belongs outside the crate -- see the SHA256SUMS
+    # published beside the deposit.
     provenance.record(
         run_dir,
         name="export",
         tool="bindsight.export",
-        outputs={"crate": out},
-        params={"format": fmt},
+        outputs={},
+        params={"format": fmt, "crate_path": out.name},
+        notes=(
+            "The crate is not listed as a digested output: it contains a copy of "
+            "this manifest, so it cannot also contain its own sha256. Publish the "
+            "crate's digest alongside the deposit (SHA256SUMS), not inside it."
+        ),
     )
     console.print(
         Panel(
@@ -987,16 +1008,25 @@ def verify_licenses(config: Path | None) -> None:
 # ---------------------------------------------------------------------------
 # CLI helpers used by design + validate
 # ---------------------------------------------------------------------------
-def _count_top_targets(epitopes_parquet: Path) -> int:
-    """Count top-N targets from a discover-stage epitopes Parquet, default 5."""
+def _count_top_targets(epitopes_parquet: Path) -> int | None:
+    """Count top-N targets from a discover-stage epitopes Parquet; None when unknown.
+
+    ``None``, not 5. This returned a hard-coded 5 for a table that was missing or
+    unreadable, and that invented number was printed as ``targets: 5`` and then
+    fed to the cost estimate — so a run with no epitopes table quoted a GPU cost
+    for work it had no targets to do, with nothing on screen to say the figure
+    was made up. Its sibling ``_count_designs`` already says exactly this.
+    """
     if not epitopes_parquet.exists():
-        return 5
+        LOG_CLI.warning("no epitopes table at %s; target count unknown", epitopes_parquet)
+        return None
     try:
         import pandas as pd
 
         return len(pd.read_parquet(epitopes_parquet))
-    except Exception:
-        return 5
+    except Exception as exc:
+        LOG_CLI.warning("could not read %s (%s); target count unknown", epitopes_parquet, exc)
+        return None
 
 
 def _count_designs(design_dir: Path) -> int | None:
@@ -1400,6 +1430,11 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
     design_dir = run_dir / "design"
     design_dir.mkdir(parents=True, exist_ok=True)
     plugin = get_designer(designer)
+    # The configured seed and binder-length bounds, read the same way the
+    # launch path reads them. Omitting them here left make_spec's own defaults
+    # embedded in the notebook -- on `colab`, which is the DEFAULT backend --
+    # so a run configured with seed 42 shipped a notebook carrying seed 0.
+    seed, binder_length_min, binder_length_max = _design_spec_params_from_run(run_dir)
     n = 0
     for t in _top_targets(run_dir):
         spec = plugin.make_spec(
@@ -1409,6 +1444,9 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
             epitope_chain=t["chain"],
             design_ranges=t["design_ranges"],
             n_trajectories=trajectories,
+            seed=seed,
+            binder_length_min=binder_length_min,
+            binder_length_max=binder_length_max,
         )
         spec_dict = spec.model_dump()
         # Embed the target structure (converted to PDB) so the Colab notebook is

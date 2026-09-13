@@ -15,9 +15,18 @@
 #
 #   2. Rediscovery check: a single `bindsight run` then `bindsight benchmark`.
 #
-# This cohort is TCGA-BRCA (breast). `bindsight discover` auto-downloads the
-# real STAR-Counts matrix from NIH/GDC into the cache on first run, so the
-# expected rediscovery is HER2 (ERBB2) and EGFR near the top of the shortlist.
+# This cohort is TCGA-BRCA (breast). Note that this config has no
+# `inputs.download:` block, so `bindsight discover` will NOT fetch the cohort for
+# you: point `inputs.counts` / `inputs.design` at files that already exist, or
+# copy the `download:` block from examples/demo/config.yaml.
+#
+# Which antigens surface is the run's result, not an expectation to confirm.
+# Naming one in advance turns whatever the benchmark produces into either a
+# confirmation or an apparent malfunction, and one of those readings is wrong.
+# In the committed study ERBB2 measures log2fc 0.92 in the whole unstratified
+# TCGA-BRCA cohort -- below the fold-change floor, so it does not clear the
+# significance rule. See benchmarks/study/RESULTS.md.
+#
 # To benchmark the AML antigens (CD33/CD123) instead, point `inputs` at an
 # AML-vs-normal cohort (e.g. TCGA-LAML tumor vs. GTEx whole-blood normal).
 

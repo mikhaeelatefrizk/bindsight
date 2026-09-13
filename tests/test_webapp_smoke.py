@@ -120,7 +120,10 @@ def test_results_page_shows_published_metrics(app: AppTest) -> None:
 
     assert metrics["Designs"] == str(arm["n_designs"])
     assert metrics["Best ipTM"] == f"{best:.2f}"
-    assert metrics["Success @ ipTM 0.65"] == f"{arm['success_rate'] * 100:g}%"
+    # The metric leads with the count. It used to print a bare "40%" beside a
+    # card that quoted a 95% CI, so the rate looked better measured than it is;
+    # the percentage and the interval now ride in the metric's help text.
+    assert metrics["Success @ ipTM 0.65"] == f"{arm['n_success']}/{arm['n_designs']}"
 
 
 def test_results_page_renders_a_structure(app: AppTest) -> None:

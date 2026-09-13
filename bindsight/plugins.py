@@ -179,13 +179,28 @@ def plugin_support(backend: str, plugin: str) -> tuple[str, str]:
 
 def _load(group: str, name: str) -> type:
     """Resolve a plugin class by entry-point group + name."""
+    discovered: list[Any] = []
     try:
-        eps = entry_points(group=group)
-        for ep in eps:
-            if ep.name == name:
-                return ep.load()  # type: ignore[no-any-return]
-    except Exception:  # pragma: no cover - metadata edge cases
-        pass
+        discovered = list(entry_points(group=group))
+    except Exception as exc:  # pragma: no cover - metadata edge cases
+        LOG.warning("could not read the %s entry-point group (%s)", group, exc)
+    for ep in discovered:
+        if ep.name != name:
+            continue
+        try:
+            return ep.load()  # type: ignore[no-any-return]
+        except Exception as exc:
+            # A registered plugin that fails to import is a broken plugin, not
+            # an unknown one. Swallowing this reported "unknown %s plugin",
+            # which names the opposite of the cause and sends the reader to
+            # check their spelling.
+            LOG.warning(
+                "entry point %s:%s is registered but failed to load (%s); "
+                "falling back to the bundled implementation if there is one",
+                group,
+                name,
+                exc,
+            )
     # Fallback: import the bundled path directly.
     target = _FALLBACK.get(group, {}).get(name)
     if target is None:

@@ -39,7 +39,7 @@ and demo. Different audiences and review processes.
 | DOI | Yes, on acceptance | Yes, on submission |
 | Cost | Free | Free |
 | Citation strength | Strong — peer-reviewed publication | Strong — preprint, citable immediately |
-| **Recommendation** | **Submit both.** They cover different audiences and don't compete. |
+| **Recommendation** | **Submit both.** They cover different audiences and don't compete. | **Submit both.** |
 
 ---
 
@@ -192,8 +192,8 @@ To stay honest:
   end-to-end on a free Kaggle T4, under the corrected ProteinMPNN protocol,
   and produced the 20 committed ERBB2 binders (best ipTM 0.88, 8/20 = 40%
   success@0.65, 95% CI 15–70% clustered over backbones — withdrawn as a
-  measure of design quality; shuffles of the designs' own sequences clear it at
-  the same rate, see benchmarks/calibration/README.md). The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG)
+  measure of design quality; shuffles of the designs' own sequences clear it more
+  often (50% against 30%), see benchmarks/calibration/README.md). The other backends (BindCraft, BoltzGen, Chai-1r, AF2-IG)
   remain mock-tested only and have still never been run on real hardware. The
   manuscripts in this directory were written before that run and understate
   what has been executed.

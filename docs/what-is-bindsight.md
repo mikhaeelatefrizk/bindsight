@@ -170,7 +170,7 @@ Adds:
 ### Validation (done — discovery half)
 
 A [companion report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md)
-runs the discovery half on six real indication-matched TCGA cohorts. It
+runs the discovery half on 15 whole, unstratified TCGA projects. It
 surfaces **CA9 at rank 1 of 291** in clear-cell kidney, alongside GPC3, MET,
 FOLH1 and STEAP1. Cohorts are whole, unstratified TCGA projects, so nothing in a
 cohort's definition refers to the antigen being sought. Recall at rank 20 is 1 of
@@ -233,9 +233,11 @@ We're transparent about what doesn't work yet. From [ARCHITECTURE.md § 10](http
   reflect infiltrating immune/stromal cells or tumour purity rather than a
   tumour-intrinsic target; single-cell / deconvolution evidence is needed to be sure
   (the multi-modal tumour-selectivity layer for v1.0).
-- Disease specificity is hard — "up in cancer, low in vital tissue" predictably
-  finds known antigens (a feature for the v0.1 rediscovery paper, a problem
-  layer for v1.0)
+- Disease specificity is hard, and the signal is weaker than this page used to
+  claim — "up in cancer, low in vital tissue" does *not* predictably find known
+  antigens. Recall at rank 20 is 1 of 17 on approved-agent antigens (95% CI 0.01
+  to 0.27). A multi-modal tumour-selectivity layer is the plausible route to a
+  stronger signal, and none of it is implemented.
 
 ---
 

@@ -57,4 +57,4 @@ defined here.
 : A complete, machine-readable record of every input, tool version and step, packaged (as an RO-Crate) so anyone can retrace and reproduce a result — and cite it.
 
 **ERBB2 (HER2)**
-: A well-known breast-cancer cell-surface antigen and an approved drug target. bindsight rediscovering it from raw data, with no hint that it should, is a sanity check that the pipeline works.
+: A well-known breast-cancer cell-surface antigen and an approved drug target — the canonical positive control for a discovery pipeline. bindsight does *not* rediscover it: in the whole unstratified TCGA-BRCA cohort it measures log2fc 0.92, below the fold-change floor, so it does not clear the significance rule. That is a limit of bulk differential expression, not of the ranking; see benchmarks/study/RESULTS.md.

@@ -51,8 +51,8 @@
   <div class="kpi-row">
     <div class="kpi"><div class="num">{{ n_deg }}</div><div class="label">genes tested</div></div>
     <div class="kpi"><div class="num">{{ n_significant }}</div><div class="label">significant DEGs</div></div>
-    <div class="kpi"><div class="num">{{ candidates_table|length }}</div><div class="label">candidate targets</div></div>
-    <div class="kpi"><div class="num">{{ epitopes_table|length }}</div><div class="label">top-N epitopes</div></div>
+    <div class="kpi"><div class="num">{{ n_candidates }}</div><div class="label">candidate targets</div></div>
+    <div class="kpi"><div class="num">{{ n_epitopes }}</div><div class="label">top-N epitopes</div></div>
   </div>
   {% if failed_stages %}
   <p class="note err">
@@ -144,6 +144,9 @@
     <code>surface_bind_not_configured</code> = whole-surface design (the
     SURFACE-Bind data tree had no site for this protein, or wasn't vendored
     &mdash; see <code>data/surface_bind/</code> to populate it).
+    <code>surface_bind_lookup_failed</code> is different from both: the lookup
+    <em>errored</em>, so nothing is known about this protein either way. It is
+    not a measured absence of a site.
   </p>
   {% if epitopes_table %}
   <table>
@@ -176,7 +179,9 @@
 <section>
   <h2>Designed binders</h2>
   <p>
-    Every design the run produced, ranked by the composite score. <code>ipTM</code>
+    {% if n_binders > binders_table|length %}The {{ binders_table|length }}
+    best-scoring of the {{ n_binders }} designs the run produced{% else %}Every
+    design the run produced{% endif %}, ranked by the composite score. <code>ipTM</code>
     is the validator's interface confidence (higher is better) and
     <code>PAE-int</code> the predicted interface error in &Aring;ngstr&ouml;m
     (lower is better). <code>passes</code> records each design against the
@@ -303,9 +308,11 @@
 <section>
   <h2>How to read this report</h2>
   <ul>
-    <li><strong>Candidate targets</strong> are ranked by structural
-        druggability (has_alphafold_structure first, then log2FC). The
-        top-N rows are carried forward into the GPU half.</li>
+    <li><strong>Candidate targets</strong> are ranked by the combined
+        differential-expression score &pi; = log2FC &times; &minus;log10(padj).
+        Structure availability does not affect that rank: it selects which of
+        the top-ranked candidates can be carried into the GPU half, because a
+        design needs a structure to design against.</li>
     <li><strong>Epitopes</strong> become the input to <code>bindsight design</code>
         once SURFACE-Bind data is populated.</li>
     <li><strong>Provenance</strong> shows what ran. Every entry's

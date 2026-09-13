@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 
 
@@ -96,8 +96,9 @@ class DEGParams(BaseModel):
     fdr_threshold: float = Field(0.05, ge=0.0, le=1.0)
     log2fc_threshold: float = Field(1.0, ge=0.0)
     min_replicates: int = Field(3, ge=2)
-    # When True, only genes with at least this many counts in at least
-    # ``min_replicates`` samples are retained (low-count filter).
+    # The low-count filter: only genes with at least ``min_count`` counts in at
+    # least ``min_replicates`` samples are retained. 0 disables it. (This comment
+    # opened "When True" from when the field was a boolean.)
     min_count: int = Field(10, ge=0)
     # Worker processes pydeseq2 may use. None means "every core", which is the
     # right default on a server and the wrong one on the laptop this pipeline is
@@ -115,9 +116,13 @@ class TargetDiscoveryParams(BaseModel):
     require_surfy: bool = True
     surfy_allow_offline_fallback: bool = Field(
         False,
-        description="If True, fall back to the small bundled SURFY list when the "
-        "user cache is empty. Production runs should set this False so the "
-        "pipeline fails fast if the cache isn't populated.",
+        description="Read ONLY when ``use_extended_surfaceome`` is False. If "
+        "True, fall back to the small bundled SURFY list when the user cache is "
+        "empty; production runs should leave it False so the pipeline fails fast "
+        "if the cache isn't populated. Under the default "
+        "``use_extended_surfaceome: true`` the extended list is loaded instead "
+        "and this field is not consulted at all, so setting it there has no "
+        "effect — see bindsight/pipelines/discover.py::_resolve_surfaceome.",
     )
 
     # Tissue-specificity filter (low expression in vital tissues)
@@ -279,8 +284,8 @@ class ValidateParams(BaseModel):
     #
     # Boltz-2 builds structures by diffusion, so one draw is a sample rather
     # than a measurement. The calibration measured what that costs: refolding
-    # twenty sequences moved ipTM by a median of 0.129 and flipped eight of
-    # twenty verdicts at the threshold below. Averaging k draws cuts that spread
+    # twenty sequences moved ipTM by a median of 0.172 and flipped
+    # 4 of 20 verdicts at the threshold below. Averaging k draws cuts that spread
     # by sqrt(k) and costs GPU time close to linearly, so the default stays 1
     # and the choice is the user's — but it is now a choice rather than
     # something only the executor could reach.
@@ -318,6 +323,23 @@ class RankWeights(BaseModel):
     affinity: float = Field(0.30, ge=0.0, le=1.0)
     sequence_recovery: float = Field(0.15, ge=0.0, le=1.0)
     developability: float = Field(0.15, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _at_least_one_weight_is_positive(self) -> RankWeights:
+        """Reject an all-zero weighting instead of ranking by nothing.
+
+        Each weight is independently valid at 0.0 — turning a component off is a
+        real choice — but all of them at zero made every composite score NaN and
+        produced a "ranking" that was the input order with ranks stapled on. It
+        validated, ran, and published a shortlist.
+        """
+        if not any(getattr(self, field) > 0.0 for field in type(self).model_fields):
+            raise ValueError(
+                "every rank weight is zero, so no candidate can score above any "
+                "other and the resulting order would be the input order. Set at "
+                "least one weight above zero."
+            )
+        return self
 
 
 class RankParams(BaseModel):

@@ -65,10 +65,67 @@ def test_validate_params_validator_choice() -> None:
     assert p.iptm_threshold == pytest.approx(0.65)
 
 
-def test_rank_weights_default_sums_close_to_one() -> None:
+def test_every_declared_rank_weight_is_accounted_for() -> None:
+    """The previous version of this test added four of the five weights by name
+    and asserted they summed to 1.0. They do -- because ``developability`` was
+    left out. It asserted a property the model's own docstring disclaims ("the
+    weights need not sum to 1.0 -- they are renormalised per row"), and it did so
+    over a hand-written subset, so adding a weight could not fail it.
+    """
     w = RankWeights()
-    total = w.log2fc_specificity + w.iptm + w.affinity + w.sequence_recovery
-    assert abs(total - 1.0) < 1e-9
+    fields = list(type(w).model_fields)
+
+    assert len(fields) >= 5, fields
+    assert sum(getattr(w, f) for f in fields) > 1.0, (
+        "the declared weights sum to 1.0; if that is now intended, say so here "
+        "and in the RankWeights docstring, which currently says they need not"
+    )
+    assert all(getattr(w, f) > 0.0 for f in fields), (
+        "a default weight of zero silently removes a component from the composite"
+    )
+
+
+def test_scaling_every_weight_does_not_change_the_ranking() -> None:
+    """The property the docstring actually claims: weights are renormalised per
+    row, so only their ratios matter. This is what "need not sum to 1.0" means,
+    and it is checkable."""
+    import pandas as pd
+
+    from bindsight.rank import rank_validated
+
+    validated = pd.DataFrame(
+        [
+            {"binder_id": "a", "target_uniprot": "P1", "iptm": 0.9, "affinity_pred_value": -9.0},
+            {"binder_id": "b", "target_uniprot": "P1", "iptm": 0.4, "affinity_pred_value": -5.0},
+            {"binder_id": "c", "target_uniprot": "P2", "iptm": 0.7, "affinity_pred_value": -7.0},
+        ]
+    )
+    base = RankWeights()
+    scaled = RankWeights(**{f: getattr(base, f) * 3.0 for f in type(base).model_fields})
+
+    first = rank_validated(validated, weights=base)
+    second = rank_validated(validated, weights=scaled)
+
+    assert list(first["binder_id"]) == list(second["binder_id"])
+
+
+def test_an_all_zero_weighting_is_refused() -> None:
+    """Every weight may be zero on its own -- turning a component off is a real
+    choice -- but all of them at zero made every composite NaN and published the
+    input order as a ranking."""
+    fields = list(RankWeights.model_fields)
+
+    with pytest.raises(ValidationError, match="every rank weight is zero"):
+        RankWeights(**{f: 0.0 for f in fields})
+
+
+def test_one_positive_weight_is_enough() -> None:
+    """The guard must not forbid switching components off."""
+    fields = list(RankWeights.model_fields)
+    weights = dict.fromkeys(fields, 0.0)
+    weights[fields[0]] = 1.0
+
+    assert RankWeights(**weights)
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +211,26 @@ def test_run_config_rejects_extra_top_level(tmp_path: Path) -> None:
 # Validates the bundled examples/tcga_luad.yaml against the schema.
 # Catches accidental drift between docs and code.
 # ---------------------------------------------------------------------------
+def _shipped_example_configs() -> list[Path]:
+    """Every example config the repository ships, found rather than listed."""
+    repo_root = Path(__file__).parent.parent
+    return sorted(p for p in (repo_root / "examples").rglob("*.yaml") if p.is_file())
+
+
+def test_the_example_sweep_finds_more_than_one_config() -> None:
+    """Guards the guard: this test existed for one file while two others shipped
+    unvalidated by anything."""
+    found = _shipped_example_configs()
+
+    assert len(found) >= 3, f"only {len(found)} example config(s) discovered: {found}"
+
+
+@pytest.mark.parametrize("path", _shipped_example_configs(), ids=lambda p: p.name)
+def test_every_shipped_example_validates(path: Path) -> None:
+    """A shipped example that the schema rejects is a broken instruction."""
+    assert RunConfig.from_yaml(path)
+
+
 def test_examples_tcga_luad_yaml_validates() -> None:
     repo_root = Path(__file__).parent.parent
     cfg = RunConfig.from_yaml(repo_root / "examples" / "tcga_luad.yaml")

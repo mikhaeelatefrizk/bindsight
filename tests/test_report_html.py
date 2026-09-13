@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from bindsight.provenance import (
     InputRef,
@@ -415,3 +416,190 @@ class TestVolcanoThresholds:
         assert _significance_basis(["padj", "significant"], 0.01) == ("column", None)
         assert _significance_basis(["padj"], 0.01) == ("padj", 0.01)
         assert _significance_basis(["padj"], None) == ("assumed", 0.05)
+
+
+# ---------------------------------------------------------------------------
+# A headline number must count the run, not the view of it
+# ---------------------------------------------------------------------------
+def _many_candidates(tmp_path: Path, n: int = 45) -> Path:
+    """A run whose candidate table is longer than the display cap."""
+    import pandas as pd
+
+    run = _make_run(tmp_path)
+    base = pd.read_parquet(run / "targets" / "candidates.parquet")
+    grown = pd.concat([base] * ((n // len(base)) + 1), ignore_index=True).head(n)
+    grown["uniprot_id"] = [f"P{i:05d}" for i in range(len(grown))]
+    grown["gene_id"] = [f"ENSG{i:011d}" for i in range(len(grown))]
+    grown["rank"] = range(1, len(grown) + 1)
+    grown.to_parquet(run / "targets" / "candidates.parquet", index=False)
+    return run
+
+
+class TestTheSummaryCountsTheRunNotTheTable:
+    """The "candidate targets" KPI read ``candidates_table|length``, and that
+    table is capped at twenty rows. Every run with more than twenty candidates
+    published "20" as its candidate count -- the committed run has 291.
+    """
+
+    def test_the_kpi_reports_every_candidate(self, tmp_path: Path) -> None:
+        import re
+
+        run = _many_candidates(tmp_path, n=45)
+
+        html = render_run(run).read_text(encoding="utf-8")
+
+        kpis = dict(
+            (m.group(2), int(m.group(1)))
+            for m in re.finditer(
+                r'<div class="num">(\d+)</div><div class="label">([^<]+)</div>', html
+            )
+        )
+        assert kpis["candidate targets"] == 45, (
+            f"the KPI reports {kpis.get('candidate targets')} for a 45-candidate run; "
+            "it is counting the truncated display table"
+        )
+
+    def test_the_committed_run_reports_its_real_count(self) -> None:
+        """The number a reader of the shipped report actually meets."""
+
+        import pandas as pd
+
+        run = Path(__file__).resolve().parents[1] / "runs" / "join"
+        if not (run / "targets" / "candidates.parquet").is_file():
+            pytest.skip("committed run not present")
+        expected = len(pd.read_parquet(run / "targets" / "candidates.parquet"))
+
+        html = render_run(run, tmp_path_factory_out := (run / "_guard_report.html")).read_text(
+            encoding="utf-8"
+        )
+        tmp_path_factory_out.unlink(missing_ok=True)
+
+        assert f'<div class="num">{expected}</div>' in html, (
+            f"the report does not state the run's {expected} candidates"
+        )
+
+    def test_a_truncated_binder_table_does_not_claim_to_be_every_design(
+        self, tmp_path: Path
+    ) -> None:
+        """ "Every design the run produced" captioned a table capped at 40 rows."""
+        run = _make_run(tmp_path)
+
+        html = render_run(run).read_text(encoding="utf-8")
+
+        if "best-scoring of the" in html:
+            assert "Every\n    design the run produced" not in html
+        else:
+            # Not truncated on this fixture; the claim is then true.
+            assert "design the run produced" in html
+
+
+class TestTheReportDescribesTheRankingItActuallyUses:
+    """ "How to read this report" told the reader candidates are ranked by
+    structural druggability, then log2FC. They are ranked by
+    pi = log2FC x -log10(padj); structure availability selects which of the
+    top-ranked ones can be designed against, and does not affect the order.
+    """
+
+    def test_the_reading_guide_names_the_combined_score(self, tmp_path: Path) -> None:
+        html = render_run(_make_run(tmp_path)).read_text(encoding="utf-8")
+
+        assert "log2FC" in html
+        assert "padj" in html
+        assert "has_alphafold_structure first" not in html, (
+            "the reading guide still describes the abandoned ordering"
+        )
+
+    def test_the_described_ranking_is_the_implemented_one(self) -> None:
+        """Tied to the code, so a change to either fails until both move."""
+        source = (
+            Path(__file__).resolve().parents[1] / "bindsight" / "pipelines" / "discover.py"
+        ).read_text(encoding="utf-8")
+
+        assert 'sort_values(by="pi_score", ascending=False)' in source, (
+            "the pipeline no longer ranks candidates by the combined score; the "
+            "report's reading guide describes it as doing so"
+        )
+
+
+class TestTheEpitopeLegendDistinguishesAnOutageFromAnAbsence:
+    """The legend explained three statuses and omitted the fourth, so a lookup
+    that errored was left to read as "this protein has no targetable site" -- a
+    measured negative the run never made.
+    """
+
+    def test_the_failed_lookup_status_is_explained(self, tmp_path: Path) -> None:
+        html = render_run(_make_run(tmp_path)).read_text(encoding="utf-8")
+
+        assert "surface_bind_lookup_failed" in html
+        assert "errored" in html
+
+    def test_every_status_the_pipeline_emits_appears_in_the_legend(self, tmp_path: Path) -> None:
+        """Discovered from the pipeline's own status set, so a status added later
+        cannot be the one nobody documented."""
+        import re
+
+        source = (
+            Path(__file__).resolve().parents[1] / "bindsight" / "pipelines" / "discover.py"
+        ).read_text(encoding="utf-8")
+        statuses = set(re.findall(r'"(surface_bind_[a-z_]+|no_surface_bind_site)"', source))
+        assert statuses, "no epitope statuses found in the pipeline"
+
+        html = render_run(_make_run(tmp_path)).read_text(encoding="utf-8")
+
+        missing = sorted(s for s in statuses if s not in html)
+        assert not missing, f"epitope statuses absent from the report's legend: {missing}"
+
+
+class TestTheVolcanoIsReadable:
+    """Every significant gene was text-labelled. On a real cohort that is ~4,400
+    overlapping annotations, which renders as a black bar and identifies nothing.
+    """
+
+    def test_only_the_strongest_points_are_labelled(self, tmp_path: Path, monkeypatch) -> None:
+        import pandas as pd
+
+        from bindsight.report.html import _MAX_VOLCANO_LABELS, _render_volcano
+
+        n = _MAX_VOLCANO_LABELS * 5
+        deg = pd.DataFrame(
+            {
+                "gene_id": [f"ENSG{i:011d}" for i in range(n)],
+                "symbol": [f"SYM{i}" for i in range(n)],
+                "log2fc": [3.0 + i * 0.01 for i in range(n)],
+                "padj": [1e-10] * n,
+                "significant": [True] * n,
+            }
+        )
+        axes = _capture_axes(monkeypatch)
+
+        _render_volcano(deg, fdr_threshold=0.05, log2fc_threshold=1.0)
+
+        assert axes
+        assert len(axes[0].texts) == _MAX_VOLCANO_LABELS, (
+            f"{len(axes[0].texts)} labels drawn for {n} significant genes; the cap "
+            f"is {_MAX_VOLCANO_LABELS}"
+        )
+
+    def test_the_labelled_points_are_the_strongest_ones(self, tmp_path: Path, monkeypatch) -> None:
+        """A cap that kept an arbitrary twenty would hide the genes worth naming."""
+        import pandas as pd
+
+        from bindsight.report.html import _MAX_VOLCANO_LABELS, _render_volcano
+
+        n = _MAX_VOLCANO_LABELS * 3
+        deg = pd.DataFrame(
+            {
+                "gene_id": [f"ENSG{i:011d}" for i in range(n)],
+                "symbol": [f"SYM{i}" for i in range(n)],
+                "log2fc": [1.0 + i for i in range(n)],  # strongest last
+                "padj": [1e-5] * n,
+                "significant": [True] * n,
+            }
+        )
+        axes = _capture_axes(monkeypatch)
+
+        _render_volcano(deg, fdr_threshold=0.05, log2fc_threshold=1.0)
+
+        drawn = {t.get_text() for t in axes[0].texts}
+        assert f"SYM{n - 1}" in drawn, "the strongest gene is not labelled"
+        assert "SYM0" not in drawn, "the weakest gene is labelled over stronger ones"

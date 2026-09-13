@@ -197,3 +197,148 @@ def test_an_input_missing_from_this_machine_does_not_break_the_export(
         names = set(zf.namelist())
     assert "inputs/counts.tsv.gz" not in names
     assert "inputs/design.tsv" in names, "the input that is present must still travel"
+
+
+# ---------------------------------------------------------------------------
+# The crate is a citation record, so it must credit the right software
+# ---------------------------------------------------------------------------
+REPO = Path(__file__).resolve().parents[1]
+
+
+class TestTheBibliographyCreditsTheToolsThatDidTheWork:
+    """software.bib is deposited to Zenodo as the run's citation record. It named
+    ``bindsight.design.rfdiff_mpnn`` and ``bindsight.validate.boltz2`` -- both
+    bindsight's own wrappers, at bindsight's version, under bindsight's AGPL --
+    so it credited none of RFdiffusion, ProteinMPNN or Boltz-2, and asserted a
+    copyleft licence over BSD-3 and MIT work.
+    """
+
+    def test_a_run_using_a_wrapper_cites_what_the_wrapper_ran(self) -> None:
+        from bindsight.export.ro_crate import _build_software_bib
+
+        run = REPO / "runs" / "join"
+        if not (run / "run_manifest.jsonld").is_file():
+            pytest.skip("committed run not present")
+        bib = _build_software_bib(run)
+
+        for tool in ("RFdiffusion", "ProteinMPNN", "Boltz-2"):
+            assert tool in bib, f"software.bib does not credit {tool}"
+
+    def test_no_upstream_tool_is_relicensed_as_bindsight(self) -> None:
+        """Attribution, not pedantry: BSD-3 and MIT both require it, and the
+        crate is the artifact a depositor points a licence question at."""
+        from bindsight.export.ro_crate import _build_software_bib
+
+        run = REPO / "runs" / "join"
+        if not (run / "run_manifest.jsonld").is_file():
+            pytest.skip("committed run not present")
+        bib = _build_software_bib(run)
+
+        for entry in bib.split("@software")[1:]:
+            title = entry.split("title = {", 1)[1].split("}", 1)[0]
+            licence = entry.split("license = {", 1)[1].split("}", 1)[0]
+            if title.startswith("bindsight"):
+                continue
+            assert "AGPL" not in licence, (
+                f"{title} is credited under {licence}; that is bindsight's licence, not this tool's"
+            )
+
+    def test_every_registry_licence_matches_the_licensing_document(self) -> None:
+        """LICENSING.md is the authority and states when its upstream LICENSE
+        files were last re-verified. A second copy of those terms in code is only
+        safe while something checks the two agree.
+        """
+        from bindsight.export.ro_crate import _upstream_tools
+
+        licensing = (REPO / "LICENSING.md").read_text(encoding="utf-8")
+        checked = 0
+        for entries in _upstream_tools().values():
+            for entry in entries:
+                row = [
+                    line
+                    for line in licensing.splitlines()
+                    if line.startswith("|") and entry["url"] in line
+                ]
+                if not row:
+                    continue  # not listed by URL; covered by the tools-table test
+                checked += 1
+                assert entry["license"].split(";")[0].strip() in row[0], (
+                    f"{entry['name']} is cited as {entry['license']!r}, which does "
+                    f"not appear in its LICENSING.md row:\n  {row[0]}"
+                )
+        assert checked >= 3, f"only {checked} registry entries cross-checked"
+
+    def test_the_registry_pins_track_the_runner_constants(self) -> None:
+        """A bumped commit pin must move the citation with it, not leave the
+        crate citing a tree the run did not use."""
+        from bindsight.export.ro_crate import _upstream_tools
+        from bindsight.runners import tools as T
+
+        entries = {e["name"]: e for es in _upstream_tools().values() for e in es}
+
+        assert entries["RFdiffusion"]["version"] == T.RFDIFF_COMMIT
+        assert entries["ProteinMPNN"]["version"] == T.PROTEINMPNN_COMMIT
+        assert entries["BoltzGen"]["version"] == T.BOLTZGEN_COMMIT
+
+    def test_every_shipped_designer_and_validator_has_a_citation(self) -> None:
+        """Discovered from the plugin registries, so a backend added later cannot
+        ship without one."""
+        from bindsight.export.ro_crate import _upstream_tools
+
+        registry = _upstream_tools()
+        for module in ("design", "validate"):
+            for name in _plugin_names(module):
+                key = f"bindsight.{module}.{name}"
+                assert key in registry, (
+                    f"{key} runs upstream software with no citation entry, so a "
+                    "crate from a run using it would credit only bindsight"
+                )
+
+
+def _plugin_names(module: str) -> list[str]:
+    """Shipped plugin names, read from the entry-point table in pyproject."""
+    import tomllib
+
+    data = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+    groups = data.get("project", {}).get("entry-points", {})
+    group = groups.get(f"bindsight.{'designers' if module == 'design' else 'validators'}", {})
+    return sorted(group)
+
+
+class TestTheCrateDoesNotAssertItsOwnDigest:
+    """`bindsight export` sealed the zip, hashed it, then wrote that hash into the
+    run manifest -- a copy of which is already inside the zip. The crate's own
+    manifest therefore named a digest that was not the crate's.
+    """
+
+    def test_the_export_stage_records_no_digested_crate(self, tmp_path: Path) -> None:
+        import ast
+
+        source = (REPO / "bindsight" / "cli.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "record"):
+                continue
+            kwargs = {kw.arg: kw.value for kw in node.keywords}
+            name = kwargs.get("name")
+            if not (isinstance(name, ast.Constant) and name.value == "export"):
+                continue
+            outputs = kwargs.get("outputs")
+            assert isinstance(outputs, ast.Dict), "the export stage's outputs is not a literal"
+            assert not outputs.keys, (
+                "the export stage records a digested output again; a crate cannot "
+                "contain its own sha256"
+            )
+            assert "notes" in kwargs, "the omission is unexplained in the manifest"
+            return
+        raise AssertionError("no export stage record found in the CLI")
+
+    def test_the_note_tells_a_reader_where_the_digest_lives(self) -> None:
+        source = (REPO / "bindsight" / "cli.py").read_text(encoding="utf-8")
+
+        assert "SHA256SUMS" in source, (
+            "nothing points the reader at where the crate's digest is published"
+        )

@@ -191,10 +191,13 @@ def score_run(
     # Build a uniprot -> _Hit lookup from the candidates.
     rank_by_uniprot: dict[str, _Hit] = {}
     n_candidates = 0
+    candidates_available = False
     # A frame that loaded but carries no accession column is as unusable as one
-    # that never loaded: neither can say whether an antigen was ranked.
-    candidates_available = cands is not None and "uniprot_id" in cands.columns
-    if candidates_available:
+    # that never loaded: neither can say whether an antigen was ranked. Narrowed
+    # in the ``if`` rather than stored in a flag first, because a flag is opaque
+    # to the type checker and ``cands`` is Optional on the very next line.
+    if cands is not None and "uniprot_id" in cands.columns:
+        candidates_available = True
         n_candidates = int(cands["uniprot_id"].notna().sum())
         ranked = cands.dropna(subset=["uniprot_id"]).copy()
         # Prefer an explicit 'rank' column; otherwise rank by row order.
@@ -319,10 +322,18 @@ def render_benchmark_html(
             for k in ks
         )
         indication = e(s.tumor_type) if s.tumor_type else "<span class='miss'>unknown</span>"
+        # A run whose candidate table could not be read has no "found" count and
+        # no candidate count. The recall columns already render n/a for it; these
+        # two printed a hard 0, which reads as a measured miss.
+        unread = s.recall_basis == "candidates_unavailable"
+        found_cell = (
+            "<td class='miss'>n/a</td>" if unread else f"<td>{s.n_found}/{s.n_on_indication}</td>"
+        )
+        candidates_cell = "<td class='miss'>n/a</td>" if unread else f"<td>{s.n_candidates}</td>"
         summary_rows += (
             f"<tr><td class='name'>{e(s.run_name)}</td><td>{indication}</td>"
-            f"<td>{s.n_found}/{s.n_on_indication}</td><td>{s.n_cross_indication}</td>"
-            f"<td>{s.n_candidates}</td>{cells}</tr>"
+            f"{found_cell}<td>{s.n_cross_indication}</td>"
+            f"{candidates_cell}{cells}</tr>"
         )
     recall_headers = "".join(f"<th>recall@{k}</th>" for k in ks)
 

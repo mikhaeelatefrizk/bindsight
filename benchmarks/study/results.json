@@ -1548,6 +1548,7 @@
     "n_scored_pairs": 0,
     "n_antigen_standings": 25,
     "mean_standing_off_indication": 0.41841785416838273,
+    "mean_standing_off_indication_is_unclustered": true,
     "off_indication_interval": {
       "point": 0.4172114883002832,
       "low": 0.28186783266064447,
@@ -1559,6 +1560,7 @@
       "confidence": 0.95
     },
     "mean_standing_in_own_indication": 0.7382188660333444,
+    "mean_standing_in_own_indication_is_unclustered": true,
     "n_own_indication": 22,
     "own_indication_interval": {
       "point": 0.765414860221819,

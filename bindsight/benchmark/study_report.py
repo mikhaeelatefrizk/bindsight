@@ -23,6 +23,7 @@ The page is generated, never hand-edited, so it cannot drift from the artifacts.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from bindsight.benchmark import outcomes as O
@@ -61,7 +62,7 @@ _CLASS_NOTE = {
 }
 
 
-def _interval_phrase(interval: dict[str, object] | None) -> str:
+def _interval_phrase(interval: Mapping[str, Any] | None) -> str:
     """Render an interval as ``(95% CI a–b, n antigens)``, or empty when absent.
 
     Written to degrade rather than fail: an artifact produced before the study
@@ -82,7 +83,7 @@ def _interval_phrase(interval: dict[str, object] | None) -> str:
     return f" ({inside})"
 
 
-def _paired_phrase(paired: dict[str, object] | None) -> str:
+def _paired_phrase(paired: Mapping[str, Any] | None) -> str:
     """The within-antigen contrast, which is the comparison the sentence makes.
 
     The two means share antigens, so their difference is not the difference of
@@ -97,9 +98,12 @@ def _paired_phrase(paired: dict[str, object] | None) -> str:
     n = paired.get("n_clusters")
     spans_zero = float(low) <= 0.0 <= float(high)
     tail = ", an interval that includes zero" if spans_zero else ", an interval that excludes zero"
+    # Read, not assumed: the artifact records the confidence level, and printing
+    # "95%" over a block computed at another level would misstate it.
+    confidence = float(paired.get("confidence") or 0.95)
     return (
         f" — a within-antigen difference of **{_fmt(point, 3)}** "
-        f"(95% CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
+        f"({confidence * 100:g}% CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
         f"{'s' if n and int(n) != 1 else ''}{tail})"
     )
 
@@ -416,6 +420,12 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             off_ci = calib.get("off_indication_interval") or {}
             own_ci = calib.get("own_indication_interval") or {}
             paired = calib.get("paired_difference") or {}
+            # The interval's own point, not the flat mean beside it. The flat
+            # mean counts an antigen once per cohort and the interval counts it
+            # once, so pairing them printed 0.738 with bounds around 0.765 --
+            # a point estimate and an interval for two different estimators.
+            off = off_ci.get("point", off)
+            own = own_ci.get("point", own)
             lines += [
                 "**Calibration.** "
                 + ", ".join(str(x).removeprefix("TCGA-") for x in calib.get("projects", []))

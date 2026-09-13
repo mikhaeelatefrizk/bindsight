@@ -243,10 +243,19 @@ def _deg_cache_key(inputs: list[InputRef], params: dict[str, Any]) -> str:
     """
     import hashlib
 
+    # The tool that produced the table is part of the work, not context around
+    # it. Without it an upgraded pydeseq2 hits the old cache and the manifest
+    # records the reused bytes under the NEW version -- a completed stage
+    # attributing one tool's output to another. The design cache already folds
+    # its code identity in for exactly this reason; this one did not.
+    from bindsight.validate.protocol import UNRECORDED_VERSION, installed_version
+
+    tool_identity = f"pydeseq2:{installed_version('pydeseq2') or UNRECORDED_VERSION}"
     material = "|".join(
         [
             *(f"{i.role}:{i.sha256}" for i in sorted(inputs, key=lambda x: x.role)),
             json.dumps(params, sort_keys=True, default=str),
+            tool_identity,
         ]
     )
     return hashlib.sha256(material.encode()).hexdigest()

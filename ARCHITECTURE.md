@@ -117,8 +117,8 @@ yet and nothing in the codebase depends on it.
 | Sequences | FASTA | Universal |
 | Structures | mmCIF (preferred), PDB (fallback) | mmCIF handles >9999 residues and modern naming |
 | Per-stage params | YAML | Human-editable |
-| Provenance | PROV-O JSON-LD | Run | W3C standard, plays with RO-Crate |
-| Final bundle | RO-Crate zip | Run | FAIR, Zenodo-friendly |
+| Provenance | PROV-O JSON-LD | W3C standard, plays with RO-Crate |
+| Final bundle | RO-Crate zip | FAIR, Zenodo-friendly |
 
 ---
 
@@ -366,11 +366,10 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 |---|---|---|---|
 | [ProteinDJ](https://www.biorxiv.org/content/10.1101/2025.09.24.678028v2) | Target structure + epitope | Binders (HPC) | We start upstream — could hand off to ProteinDJ |
 | [Ovo](https://www.biorxiv.org/content/10.1101/2025.11.27.691041v1) | Various | General OSS framework | Opinionated narrow vertical, deeply pinned |
-| Designer (premium) | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | A100 (≥32 GB) full; T4 for a reduced target | Prepared | Fits a free T4 only below roughly 250 total residues |
-| [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | Target + interface | Filtered designs | Prepared | AF2-IG step is one opt-in validator |
+| [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | Target + interface | Filtered designs | AF2-IG step is one opt-in validator |
 | [Tamarind.bio](https://www.tamarind.bio/) | Target | Binders (SaaS) | Open, reproducible, license-defensible |
 | [nf-binder-design](https://github.com/Australian-Protein-Design-Initiative/nf-binder-design) | Target | Binders (Nextflow) | Targets non-HPC users + adds genomics front-end |
-| [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | UniProt ID | Sites + seeds | Run | Data dependency, not competitor |
+| [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | UniProt ID | Sites + seeds | Data dependency, not competitor |
 | **`bindsight`** | **RNA-seq counts** | **Ranked binders + provenance** | **Only one that starts at counts** |
 
 ---
@@ -463,10 +462,12 @@ backend, so they are listed unchecked rather than folded into the tick above.
   committed.
   Artifacts in `benchmarks/designer_benchmark/RESULTS.md`. **That success rate
   is withdrawn as a measure of design quality**: a paired control folded each
-  design alongside a shuffle of its own sequence, and the two cleared 0.65 at
-  the same rate (40% and 40%, paired difference +0.030, exact sign-flip
-  p = 0.57). The validator was also running unseeded with one diffusion draw
-  per design, which is fixed; see `benchmarks/calibration/README.md`. The
+  design alongside a shuffle of its own sequence, and under a seeded validator
+  averaging five diffusion draws the shuffles pass more often than the designs —
+  50% against 30%, a paired difference of -0.043
+  (95% CI -0.142 to +0.054, exact sign-flip p = 0.40). The first
+  paired run used an unseeded validator at one draw and found a tie; that run is
+  superseded. See `benchmarks/calibration/README.md`. The
   target chain was
   held fixed, and that is verified rather than asserted: all 20 designs carry a
   chain byte-identical to the native 142-residue domain IV. A superseded run on

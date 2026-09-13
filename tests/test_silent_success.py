@@ -627,3 +627,353 @@ class TestAnUnreadCandidateTableIsNotAMiss:
 
         assert "candidate table could not be read" in html
         assert "not a rediscovery rate of zero" in html.lower()
+
+    def test_the_summary_row_does_not_print_a_measured_zero(self, tmp_path: Path) -> None:
+        """The detail block explained itself while the summary table above it
+        still printed "0/1 found" and "0 candidates" in the same report."""
+        from bindsight.benchmark import core
+
+        unread = core.render_benchmark_html(
+            [self._score(self._run_dir(tmp_path / "a", write_candidates=False))]
+        )
+        readable = core.render_benchmark_html(
+            [self._score(self._run_dir(tmp_path / "b", write_candidates=True))]
+        )
+
+        summary = unread.split("<tbody>", 1)[1].split("</tbody>", 1)[0]
+        assert "<td>0/1</td>" not in summary, (
+            "the summary row reports a measured miss for a run nothing was read from"
+        )
+        assert summary.count("n/a") >= 2, summary
+        # The readable run must still print its counts, or the guard is just
+        # blanking the column.
+        readable_summary = readable.split("<tbody>", 1)[1].split("</tbody>", 1)[0]
+        assert "<td>1/1</td>" in readable_summary, readable_summary
+
+
+# ---------------------------------------------------------------------------
+# Configured parameters must reach the work, on every path
+# ---------------------------------------------------------------------------
+#: Parameters that decide what a design job actually produces. Passing none of
+#: them leaves ``make_spec``'s own defaults in the spec, and the spec is what the
+#: executor reads -- so the run is performed under numbers nobody chose.
+_SPEC_PARAMS = ("seed", "binder_length_min", "binder_length_max")
+
+
+def _make_spec_call_sites() -> list[tuple[int, set[str]]]:
+    """Every ``make_spec(...)`` call in the CLI, with the keywords it passes.
+
+    Found by parsing, not by grepping a remembered list of functions: the launch
+    path threaded these and the notebook path did not, and the notebook path is
+    the one the DEFAULT backend uses.
+    """
+    import ast
+
+    root = Path(__file__).resolve().parents[1]
+    tree = ast.parse((root / "bindsight" / "cli.py").read_text(encoding="utf-8"))
+    sites: list[tuple[int, set[str]]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Attribute) and func.attr == "make_spec":
+            sites.append((node.lineno, {kw.arg for kw in node.keywords if kw.arg}))
+    return sites
+
+
+class TestEveryDesignPathCarriesTheConfiguredParameters:
+    """``bindsight design`` on the default backend (colab) wrote notebooks whose
+    embedded spec carried ``make_spec``'s defaults, not the run's configuration.
+    A run declaring ``seed: 42`` shipped a notebook designing at seed 0, and the
+    manifest recorded 0 as though it had been asked for.
+    """
+
+    def test_the_scan_finds_the_call_sites(self) -> None:
+        """Guards the guard: a parser that matched nothing would pass silently."""
+        sites = _make_spec_call_sites()
+
+        assert len(sites) >= 2, (
+            f"expected at least two make_spec call sites in the CLI; found {sites}"
+        )
+
+    def test_every_call_site_passes_every_spec_parameter(self) -> None:
+        for lineno, keywords in _make_spec_call_sites():
+            missing = [p for p in _SPEC_PARAMS if p not in keywords]
+            assert not missing, (
+                f"bindsight/cli.py:{lineno} calls make_spec without {missing}; the "
+                "spec would carry the plugin's defaults rather than the run's "
+                "configuration"
+            )
+
+    def test_the_parameters_come_from_the_run_not_from_literals(self) -> None:
+        """Passing `seed=0` would satisfy the check above and reintroduce the bug."""
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse((root / "bindsight" / "cli.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not (isinstance(node.func, ast.Attribute) and node.func.attr == "make_spec"):
+                continue
+            for kw in node.keywords:
+                if kw.arg in _SPEC_PARAMS:
+                    assert not isinstance(kw.value, ast.Constant), (
+                        f"bindsight/cli.py:{node.lineno} passes a literal for "
+                        f"{kw.arg}; it must come from the run's configuration"
+                    )
+
+
+class TestTheDegCacheKeyCoversTheToolThatProducedTheTable:
+    """Cache keys here mean "the same key is the same work". The DEG key covered
+    the inputs and the parameters but not pydeseq2's version, so upgrading the
+    library hit the old entry and the manifest recorded the reused bytes under
+    the new version's name.
+    """
+
+    @staticmethod
+    def _key(monkeypatch, version: str | None):
+        from bindsight.pipelines import discover
+        from bindsight.provenance.manifest import InputRef
+
+        monkeypatch.setattr(
+            "bindsight.validate.protocol.installed_version",
+            lambda dist: version,
+        )
+        inputs = [InputRef(role="counts", path="counts.tsv", sha256="a" * 64, bytes=10)]
+        return discover._deg_cache_key(inputs, {"fdr_threshold": 0.05})
+
+    def test_a_different_pydeseq2_version_is_different_work(self, monkeypatch) -> None:
+        first = self._key(monkeypatch, "0.5.4")
+        second = self._key(monkeypatch, "0.6.0")
+
+        assert first != second, (
+            "the DEG cache key is unchanged across pydeseq2 versions, so an "
+            "upgraded library would be served the previous library's table"
+        )
+
+    def test_the_same_version_still_hits(self, monkeypatch) -> None:
+        """The key must stay stable, or caching stops working entirely."""
+        assert self._key(monkeypatch, "0.5.4") == self._key(monkeypatch, "0.5.4")
+
+    def test_an_unrecorded_version_is_not_silently_equal_to_a_known_one(self, monkeypatch) -> None:
+        assert self._key(monkeypatch, None) != self._key(monkeypatch, "0.5.4")
+
+
+class TestTheSnakemakeFrontEndWritesTheEffectiveConfig:
+    """``<run>/config.yaml`` is the only channel by which the seed, the binder
+    length bounds and the validate thresholds reach the design half. The CLI path
+    wrote it; the Snakemake path did not, so the two front-ends ran the same
+    configuration differently and only one of them said so.
+    """
+
+    def test_the_front_end_writes_the_config(self) -> None:
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "scripts" / "run_discover.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        called = {
+            node.func.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        }
+
+        assert "_write_run_config" in called, (
+            "scripts/run_discover.py does not write <run>/config.yaml, so every "
+            "design parameter is silently defaulted on the Snakemake path"
+        )
+
+    def test_both_front_ends_use_the_same_writer(self) -> None:
+        """Two implementations of "the effective config" would drift."""
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        for rel in ("scripts/run_discover.py", "bindsight/pipelines/discover.py"):
+            source = (root / rel).read_text(encoding="utf-8")
+            assert "_write_run_config" in source, rel
+            if rel.startswith("scripts/"):
+                tree = ast.parse(source)
+                imported = {
+                    alias.name
+                    for node in ast.walk(tree)
+                    if isinstance(node, ast.ImportFrom)
+                    and node.module == "bindsight.pipelines.discover"
+                    for alias in node.names
+                }
+                assert "_write_run_config" in imported, (
+                    "the Snakemake front-end defines its own config writer instead "
+                    "of importing the one the CLI path uses"
+                )
+
+
+# ---------------------------------------------------------------------------
+# A count that could not be taken is not a count
+# ---------------------------------------------------------------------------
+class TestTheTargetCountIsCountedNotAssumed:
+    """``_count_top_targets`` returned a hard-coded 5 for a missing or unreadable
+    epitopes table. That 5 was printed as ``targets: 5`` and fed to the cost
+    estimate, so a run with no targets quoted a GPU cost for designing five of
+    them, with nothing on screen saying the number was invented.
+    """
+
+    def test_a_missing_table_is_unknown_not_five(self, tmp_path: Path, caplog) -> None:
+        import logging
+
+        from bindsight.cli import _count_top_targets
+
+        with caplog.at_level(logging.WARNING):
+            count = _count_top_targets(tmp_path / "absent.parquet")
+
+        assert count is None
+        assert any("unknown" in r.getMessage() for r in caplog.records), [
+            r.getMessage() for r in caplog.records
+        ]
+
+    def test_an_unreadable_table_is_unknown_not_five(self, tmp_path: Path, caplog) -> None:
+        import logging
+
+        from bindsight.cli import _count_top_targets
+
+        broken = tmp_path / "epitopes.parquet"
+        broken.write_bytes(b"not a parquet file")
+
+        with caplog.at_level(logging.WARNING):
+            count = _count_top_targets(broken)
+
+        assert count is None
+        assert any("could not read" in r.getMessage() for r in caplog.records)
+
+    def test_a_readable_table_is_still_counted(self, tmp_path: Path) -> None:
+        import pandas as pd
+
+        from bindsight.cli import _count_top_targets
+
+        path = tmp_path / "epitopes.parquet"
+        pd.DataFrame({"uniprot_id": ["P1", "P2", "P3"]}).to_parquet(path, index=False)
+
+        assert _count_top_targets(path) == 3
+
+    def test_it_matches_the_shape_of_its_sibling(self) -> None:
+        """``_count_designs`` already returned None for "not countable" and said
+        in its docstring that the caller must not quote a made-up number. The two
+        helpers answer the same kind of question and must answer it the same way.
+        """
+        import inspect
+
+        from bindsight.cli import _count_designs, _count_top_targets
+
+        for fn in (_count_designs, _count_top_targets):
+            assert "int | None" in str(inspect.signature(fn)), fn.__name__
+
+    def test_the_cost_estimate_is_skipped_rather_than_guessed(self) -> None:
+        """Pricing an unknown amount of work produces a plausible dollar figure
+        for work whose size nobody knows."""
+        source = (Path(__file__).resolve().parents[1] / "bindsight" / "cli.py").read_text(
+            encoding="utf-8"
+        )
+
+        assert "cost estimate is skipped" in source, (
+            "the design command no longer explains that it skipped the estimate"
+        )
+
+
+class TestAFailedPluginImportSaysWhatFailed:
+    """A registered entry point that raised on import was swallowed and reported
+    as "unknown plugin" -- the opposite of the cause, sending the reader to check
+    a name that was correct.
+    """
+
+    def test_a_broken_entry_point_is_reported_as_broken(self, monkeypatch, caplog) -> None:
+        import logging
+
+        from bindsight import plugins
+
+        class _Broken:
+            name = "rfdiff_mpnn"
+
+            def load(self):
+                raise ImportError("torch is not installed")
+
+        monkeypatch.setattr(plugins, "entry_points", lambda group: [_Broken()])
+
+        with caplog.at_level(logging.WARNING):
+            plugins._load("bindsight.designers", "rfdiff_mpnn")
+
+        messages = [r.getMessage() for r in caplog.records]
+        assert any("failed to load" in m for m in messages), messages
+        assert any("torch is not installed" in m for m in messages), messages
+
+    def test_a_genuinely_unknown_name_still_says_unknown(self, monkeypatch) -> None:
+        from bindsight import plugins
+
+        monkeypatch.setattr(plugins, "entry_points", lambda group: [])
+
+        with pytest.raises(ValueError, match="unknown"):
+            plugins._load("bindsight.designers", "no_such_designer")
+
+
+class TestAnUnattendedStageFailureKeepsItsTraceback:
+    """``full_run`` runs the whole pipeline without a human watching. All five of
+    its stage failures logged at WARNING with the traceback discarded, while the
+    discover pipeline logs the same class of event with the traceback kept.
+    """
+
+    def test_every_stage_failure_logs_its_traceback(self) -> None:
+        """Discovered by parsing, so a stage added later cannot quietly drop it."""
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse(
+            (root / "bindsight" / "pipelines" / "full_run.py").read_text(encoding="utf-8")
+        )
+
+        offenders = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name)):
+                continue
+            if func.value.id != "LOG" or not node.args:
+                continue
+            first = node.args[0]
+            if not (isinstance(first, ast.Constant) and "stage failed" in str(first.value)):
+                continue
+            keeps_traceback = func.attr == "exception" or any(
+                kw.arg == "exc_info" for kw in node.keywords
+            )
+            if not keeps_traceback:
+                offenders.append(f"line {node.lineno}: LOG.{func.attr}")
+        assert not offenders, f"stage failures logged without a traceback: {offenders}"
+
+    def test_there_are_stage_failures_to_check(self) -> None:
+        """Guards the guard: a renamed message would make the scan vacuous."""
+        source = (
+            Path(__file__).resolve().parents[1] / "bindsight" / "pipelines" / "full_run.py"
+        ).read_text(encoding="utf-8")
+
+        assert source.count("stage failed") >= 5, (
+            "the full-run pipeline no longer logs five stage failures; the scan "
+            "above may be checking nothing"
+        )
+
+
+class TestTheValidatorNoteCountsWhatItParsed:
+    """The note said "parsed confidence=N sample(s)" where N counted the files
+    found. A directory of unreadable JSON reported the same count as a directory
+    of good ones, and the row carried no trace of the difference.
+    """
+
+    def test_unreadable_files_are_not_counted_as_parsed(self, tmp_path: Path) -> None:
+        from bindsight.validate.boltz2 import parse_boltz_output
+
+        predictions = tmp_path / "predictions" / "run"
+        predictions.mkdir(parents=True)
+        (predictions / "confidence_a.json").write_text('{"iptm": 0.8}', encoding="utf-8")
+        (predictions / "confidence_b.json").write_text("not json", encoding="utf-8")
+
+        result = parse_boltz_output(output_dir=tmp_path, binder_id="b1", target_uniprot="P04626")
+
+        assert "parsed confidence=1 of 2 file(s)" in (result.notes or ""), result.notes
+        assert result.iptm == pytest.approx(0.8)

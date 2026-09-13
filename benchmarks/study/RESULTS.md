@@ -113,7 +113,7 @@ Antigens ranked in their own indication versus a permuted assignment. The statis
 
 Excluded, several indications each: CLDN18, EGFR, ERBB2, MET, TACSTD2. The test assigns one cohort per antigen, so an antigen with four indications has no single 'own' cohort to hold fixed.
 
-**Calibration.** KICH, THCA carry no panel antigen and were run to show what no signal looks like on this scale. Panel antigens land at a mean standing of **0.418** (95% CI 0.282–0.567, 13 antigens) there — the middle of the eligible surfaceome — against **0.738** (95% CI 0.648–0.871, 13 antigens) in their own indication — a within-antigen difference of **0.348** (95% CI 0.188–0.513 over 13 antigens, an interval that excludes zero). Neither cohort contributes a scored pair (0), because inventing an expectation for a cohort chosen for having none is the error they exist to avoid.
+**Calibration.** KICH, THCA carry no panel antigen and were run to show what no signal looks like on this scale. Panel antigens land at a mean standing of **0.417** (95% CI 0.282–0.567, 13 antigens) there — the middle of the eligible surfaceome — against **0.765** (95% CI 0.648–0.871, 13 antigens) in their own indication — a within-antigen difference of **0.348** (95% CI 0.188–0.513 over 13 antigens, an interval that excludes zero). Neither cohort contributes a scored pair (0), because inventing an expectation for a cohort chosen for having none is the error they exist to avoid.
 
 Excluded, not scored in every cohort: CEACAM5. A complete matrix is required, or the observed statistic and the permuted one would be built from different sets of cohorts.
 

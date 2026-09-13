@@ -44,14 +44,55 @@ def test_cli_discover_rejects_invalid_config(tmp_path) -> None:
     assert isinstance(r.exception, ValidationError)
 
 
-def test_cli_design_dry_run_prints_cost_and_exits_zero(tmp_path) -> None:
-    """``design --dry-run`` prints a cost estimate and exits cleanly without launching."""
+def _run_with_targets(tmp_path, n: int = 3):
+    """A run directory carrying an epitopes table, so the target count is known."""
+    import pandas as pd
+
     run = tmp_path / "run"
-    run.mkdir()
+    (run / "epitopes").mkdir(parents=True)
+    pd.DataFrame(
+        {
+            "uniprot_id": [f"P{i:05d}" for i in range(n)],
+            "symbol": [f"SYM{i}" for i in range(n)],
+            "chain": ["A"] * n,
+            "residues": [[] for _ in range(n)],
+            "structure_path": [""] * n,
+            "epitope_status": ["surface_bind_not_configured"] * n,
+        }
+    ).to_parquet(run / "epitopes" / "epitopes.parquet", index=False)
+    return run
+
+
+def test_cli_design_dry_run_prints_cost_and_exits_zero(tmp_path) -> None:
+    """``design --dry-run`` prints a cost estimate and exits cleanly without launching.
+
+    The run now carries an epitopes table. It did not before, and the command
+    still printed a cost — because the target count fell back to a hard-coded 5.
+    This test was asserting that a run with no targets is priced as though it had
+    five, which is the defect, not the feature.
+    """
+    run = _run_with_targets(tmp_path)
     r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal", "--dry-run"])
     assert r.exit_code == 0
     assert "Cost estimate" in r.output
     assert "modal" in r.output
+
+
+def test_cli_design_without_a_target_count_prices_nothing(tmp_path) -> None:
+    """A run with no epitopes table has an unknown number of targets, and an
+    unknown amount of work cannot be costed. Saying so beats a plausible figure."""
+    run = tmp_path / "run"
+    run.mkdir()
+    r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal", "--dry-run"])
+    # Rich wraps at the terminal width and emits ANSI styling, and the reset
+    # sequence lands between "targets:" and its value. Strip both before
+    # comparing, or the assertion tests the renderer rather than the message.
+    import re as _re
+
+    flat = " ".join(_re.sub(r"\[[0-9;]*m", "", r.output).split()).lower()
+    assert "targets: unknown" in flat, flat[:300]
+    assert "cost estimate is skipped" in flat, flat[:300]
+    assert "cost estimate ─" not in flat, "a cost panel was rendered for an unknown amount of work"
 
 
 def test_cli_design_without_targets_exits_2(tmp_path) -> None:
@@ -60,7 +101,6 @@ def test_cli_design_without_targets_exits_2(tmp_path) -> None:
     run.mkdir()
     r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal"])
     assert r.exit_code == 2
-    assert "Cost estimate" in r.output
     assert "nothing to do" in r.output.lower()
 
 

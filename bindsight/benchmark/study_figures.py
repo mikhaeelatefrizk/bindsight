@@ -75,7 +75,14 @@ def plot_surfaced_ranks(summary: dict[str, Any], out_path: Path) -> Path | None:
     ax.set_yticks(list(y))
     ax.set_yticklabels(labels, fontsize=9)
     ax.set_xlabel("Position in the candidate shortlist (lower is better)")
-    ax.set_title("Where each surfaced antigen ranked, against the list it was ranked within")
+    # Scope named, as the outcome figure's is. These two sit side by side and
+    # count different panels: this one plots every surfaced antigen, that one
+    # counts the pre-registered denominator only.
+    ax.set_title(
+        "Where each surfaced antigen ranked, against the list it was ranked within\n"
+        "(every scored pair; the outcome figure counts the pre-registered denominator)",
+        fontsize=11,
+    )
     ax.set_xlim(0, max(shortlists) * 1.18)
     ax.legend(loc="lower right", frameon=False, fontsize=9)
     ax.spines[["top", "right"]].set_visible(False)

@@ -343,17 +343,19 @@ The web demo is hosted as a Hugging Face Space at
 % --------------------------------------------------------------------
 \section{Discussion and future work}
 
-\paragraph{Limitations of v0.1.0.} The CPU half of the pipeline (differential
-expression through structural pre-flight) is fully validated; the GPU half
-(design and validation) has been written following the canonical install
-and inference patterns from the upstream tools (ColabDesign,
-\texttt{dl\_binder\_design}, the Boltz-2 README) but has not yet been
-smoke-tested by the author on a real GPU. The first user with GPU access
-who runs \texttt{bindsight design --backend colab} provides the first
-end-to-end real-hardware validation; the codebase is open to issue reports
-that will be addressed promptly. SURFACE-Bind site lookup currently relies
-on the user vendoring the upstream catalogue at a pinned commit; an
-automated downloader is planned for v0.2.
+\paragraph{Limitations of v0.2.2.} The CPU half of the pipeline
+(differential expression through structural pre-flight) is fully validated. Of
+the GPU half, one path is executed end to end and the rest is not.
+RFdiffusion $\to$ ProteinMPNN $\to$ Boltz-2 produced the twenty committed ERBB2
+binders on a free Kaggle T4, and that is the path the binder benchmark used.
+BindCraft, BoltzGen, Chai-1r and AF2-IG are dispatched by the executor, but no
+shipped backend builds an environment in which that dispatch succeeds, so they
+are prepared rather than demonstrated; the CLI refuses those combinations
+locally rather than spending GPU quota discovering it. Modal is prepared and not
+executed, and Colab is an interactive on-ramp rather than a reproducibility
+path, because Google's API does not permit launching a free-tier notebook from a
+command line. SURFACE-Bind site lookup relies on the user vendoring the upstream
+catalogue at a pinned commit; an automated downloader is not implemented.
 
 \paragraph{Rediscovery study.} A companion report
 (\texttt{paper/validation/manuscript.md}, with reproducible artifacts under

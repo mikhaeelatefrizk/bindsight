@@ -862,3 +862,67 @@ class TestTheCalibrationContrastCarriesItsUncertainty:
 
         assert "degenerate" in lone.method
         assert lone.low == lone.high == lone.point
+
+
+class TestAPointEstimateAndItsIntervalAreTheSameEstimator:
+    """The calibration sentence printed the flat mean over every standing (0.738)
+    with the bounds of the cluster bootstrap (computed around 0.765). Both
+    numbers were correct; pairing them was not. The flat mean counts an antigen
+    once per cohort and the bootstrap counts it once, so they are estimates of
+    different things and their uncertainty is not interchangeable.
+    """
+
+    def test_the_artifact_marks_its_unclustered_means_as_such(self, summary: dict) -> None:
+        calib = summary.get("null_calibration")
+        if not calib:
+            pytest.skip("no null calibration in the artifact")
+        for key in ("mean_standing_off_indication", "mean_standing_in_own_indication"):
+            if key not in calib:
+                continue
+            assert calib.get(f"{key}_is_unclustered") is True, (
+                f"{key} is a flat mean and the artifact does not say so; a reader "
+                "pairing it with the clustered interval repeats the original error"
+            )
+
+    def test_the_flat_and_clustered_means_really_do_differ(self, summary: dict) -> None:
+        """If they ever coincided this guard would be vacuous, and the distinction
+        it protects would look like pedantry rather than arithmetic."""
+        calib = summary.get("null_calibration") or {}
+        flat = calib.get("mean_standing_in_own_indication")
+        clustered = (calib.get("own_indication_interval") or {}).get("point")
+        if flat is None or clustered is None:
+            pytest.skip("artifact does not carry both means")
+
+        assert flat != clustered, (
+            "the flat and clustered means coincide in this artifact, so this "
+            "guard proves nothing about the current data"
+        )
+
+    def test_the_report_states_the_interval_own_point_not_the_flat_mean(
+        self, summary: dict
+    ) -> None:
+        """Read off the rendered page, because the pairing is a rendering choice."""
+        calib = summary.get("null_calibration")
+        if not calib:
+            pytest.skip("no null calibration in the artifact")
+        text = " ".join(_doc("benchmarks/study/RESULTS.md").split())
+        head = text[text.index("**Calibration.**") :][:1200]
+
+        for interval_key, flat_key in (
+            ("off_indication_interval", "mean_standing_off_indication"),
+            ("own_indication_interval", "mean_standing_in_own_indication"),
+        ):
+            block = calib.get(interval_key)
+            if not block:
+                continue
+            stated = f"**{block['point']:.3f}**"
+            assert stated in head, (
+                f"the calibration sentence does not state {interval_key}'s own point "
+                f"{stated}; it must not pair an interval with another estimator"
+            )
+            flat = calib.get(flat_key)
+            if flat is not None and f"{flat:.3f}" != f"{block['point']:.3f}":
+                assert f"**{flat:.3f}**" not in head, (
+                    f"the sentence states the unclustered mean {flat:.3f} beside "
+                    f"{interval_key}, whose bounds are around {block['point']:.3f}"
+                )

@@ -152,7 +152,7 @@ cut is recorded there as excluded by the cut.
 
 For every pair, we report where the antigen **would** have ranked with all gates
 removed: its position by the combined score among the eligible surfaceome, a
-median of 2,174 tested genes per cohort. A low counterfactual rank beside no
+median of 3,674 accessions per cohort. A low counterfactual rank beside no
 shortlist rank means a gate excluded an antigen the ranking would have placed
 well; a high one means the ranking itself placed it low. Ranking is over the
 whole eligible set with no sign restriction, so the value stays defined for the
@@ -226,8 +226,9 @@ Four cases are individually informative:
   removing it was what made that result circular.
 - **NECTIN4 in bladder** measures log2fc 1.52 at an adjusted p of 0.0526, missing
   the threshold by 0.0026 with only 19 matched pairs available.
-- **FOLR1 in endometrial** is significant at log2fc 1.51 and still excluded,
-  ranking 379th of 2,140 when the enrichment cut takes 300.
+- **FOLR1 in endometrial** is significant at log2fc 1.51 and still
+  excluded, ranking 669th of 3,631 when the
+  enrichment cut takes 300.
 - **CA9 in clear-cell renal** was, under the original surfaceome reference,
   unreachable at any expression level. See §3.4.
 

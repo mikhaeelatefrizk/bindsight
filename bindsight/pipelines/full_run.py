@@ -99,7 +99,10 @@ def _parquet_has_rows(path: Path) -> bool:
     try:
         import pyarrow.parquet as pq
 
-        return pq.ParquetFile(path).metadata.num_rows > 0
+        # ``ParquetFile`` is untyped upstream, so the comparison's result is
+        # ``Any``; bool() makes the declared return type true rather than
+        # asserted. This is the one mypy error that predates this branch.
+        return bool(pq.ParquetFile(path).metadata.num_rows > 0)  # type: ignore[no-untyped-call]
     except Exception:  # unreadable or not parquet: not a completed stage
         return False
 
@@ -218,7 +221,7 @@ def run(
                 prescreen_top_k=config.params.design.prescreen_top_k,
             )
         except Exception as e:
-            LOG.warning("design stage failed: %s", e)
+            LOG.exception("design stage failed")
             design_stage.mark_failed(repr(e))
     if design_stage.status == "running":
         if design_tarball.exists():
@@ -254,7 +257,7 @@ def run(
 
                 _finalize_validate(out)
             except Exception as e:
-                LOG.warning("validate stage failed: %s", e)
+                LOG.exception("validate stage failed")
                 validate_stage.mark_failed(repr(e))
         if validate_stage.status == "running":
             # Rows, not bytes. A zero-row parquet still carries its schema
@@ -300,7 +303,7 @@ def run(
             rank_run(out, weights=config.params.rank.weights)
             rank_stage.mark_completed(outputs=_outputs(out, [(ranking_path, "ranking")]))
         except Exception as e:
-            LOG.warning("rank stage failed: %s", e)
+            LOG.exception("rank stage failed")
             rank_stage.mark_failed(repr(e))
     manifest.append(rank_stage)
     manifest.write(manifest_path)
@@ -331,7 +334,7 @@ def run(
             report_path = render_run(out)
             report_stage.mark_completed(outputs=_outputs(out, [(report_path, "report")]))
         except Exception as e:
-            LOG.warning("report stage failed: %s", e)
+            LOG.exception("report stage failed")
             report_stage.mark_failed(repr(e))
     manifest.append(report_stage)
     manifest.write(manifest_path)
@@ -364,7 +367,7 @@ def run(
             crate_path = export_ro_crate(out)
             export_stage.mark_completed(outputs=_outputs(out, [(crate_path, "ro_crate")]))
         except Exception as e:
-            LOG.warning("export stage failed: %s", e)
+            LOG.exception("export stage failed")
             export_stage.mark_failed(repr(e))
     manifest.write(manifest_path)
 

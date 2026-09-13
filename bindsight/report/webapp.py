@@ -24,6 +24,7 @@ import path. Styling and brand constants come from
 from __future__ import annotations
 
 import json
+import statistics
 import sys
 import tempfile
 import time
@@ -604,6 +605,16 @@ def _page_results() -> None:
                 ("not_reachable", "outside the instrument"),
                 ("infrastructure", "invalid, must re-run"),
             )
+            # These count the pre-registered denominator, not every scored pair.
+            # Unlabelled, they read as a breakdown of the pair table below them,
+            # which has more rows -- the same confusion the docs page had.
+            tiers = " + ".join(study.primary_tiers) or "pre-registered"
+            in_denominator = sum(counts.values())
+            st.caption(
+                f"Counted over the **{tiers}**-tier denominator "
+                f"({in_denominator} of {study.n_scored} scored pairs). The table "
+                "below lists every pair."
+            )
             for col, (key, label) in zip(oc, labels, strict=False):
                 col.metric(label, counts.get(key, 0))
 
@@ -724,19 +735,42 @@ def _page_results() -> None:
         if best is not None and best.iptm is not None:
             cols[1].metric("Best ipTM", f"{best.iptm:.2f}")
         if designer.success_rate is not None:
+            interval = designer.success_interval
+            bounds = (
+                f" (95% CI {interval[0] * 100:.0f}-{interval[1] * 100:.0f}%, "
+                "clustered over backbones)"
+                if interval
+                else ""
+            )
             cols[2].metric(
                 "Success @ ipTM 0.65",
-                f"{designer.success_rate * 100:.0f}%",
+                f"{designer.n_success}/{designer.n_designs}"
+                if designer.n_success is not None
+                else f"{designer.success_rate * 100:.0f}%",
                 help=(
-                    "Withdrawn as a measure of design quality: a paired control "
-                    "found shuffles of these designs' own sequences clearing "
-                    "0.65 at the same rate (40% vs 40%, paired difference "
-                    "+0.030, p = 0.57). See benchmarks/calibration/README.md."
+                    f"{designer.success_rate * 100:.0f}%{bounds}. Withdrawn as a "
+                    "measure of design quality: a paired control found shuffles of "
+                    "these designs' own sequences clearing 0.65 MORE often than the "
+                    "designs under a seeded validator averaging five diffusion "
+                    "draws. See benchmarks/calibration/README.md for the figures."
                 ),
             )
         paes = [b.pae_interaction for b in designer.binders if b.pae_interaction is not None]
         if paes:
-            cols[3].metric("Mean PAE-int", f"{sum(paes) / len(paes):.1f} Å")
+            # Averaged over the designs that carry a measurement, which is not
+            # necessarily all of them. A mean whose denominator is unstated
+            # cannot be compared with anything.
+            spread = (
+                f", SD {statistics.stdev(paes):.1f}" if len(paes) > 1 else ", single measurement"
+            )
+            cols[3].metric(
+                "Mean PAE-int",
+                f"{statistics.fmean(paes):.1f} Å",
+                help=(
+                    f"Mean over the {len(paes)} of {len(designer.binders)} designs "
+                    f"that carry a measured PAE-interaction{spread}."
+                ),
+            )
 
         # -- 3D viewer ----------------------------------------------------
         with_struct = designer.with_structures()
@@ -856,9 +890,13 @@ def _page_results() -> None:
         if coords:
             st.markdown("### Sequence space (ESM-2 → PCA)")
             st.markdown(
-                "Each design's mean-pooled ESM-2 embedding projected to two dimensions — "
-                "a *pre-GPU* triage that shows which designs cluster and which are outliers "
-                "before spending compute on validation."
+                "Each design's mean-pooled ESM-2 embedding projected to two "
+                "dimensions. The embedding and the projection are available "
+                "before any GPU validation, which is what makes the screen "
+                "useful as triage — but the colour here is ipTM, which only "
+                "exists *after* validation. So this plot is the retrospective "
+                "check: did position in sequence space predict the score? It is "
+                "not the pre-GPU view a triage run would see."
             )
             st.scatter_chart(
                 pd.DataFrame(

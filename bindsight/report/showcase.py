@@ -549,12 +549,12 @@ def headline_stats() -> list[Headline]:
                     # The caveat rides on the card itself. A reader who sees
                     # only this number sees the one thing the calibration showed
                     # it does not support: shuffles of the designs' own
-                    # sequences clear 0.65 at the same rate.
+                    # sequences clear 0.65 more often than the designs do.
                     detail=(
                         f"{counted}{bounds}"
                         f"validated with {designer.validator or 'Boltz-2'}; "
                         "withdrawn as a design-quality measure — shuffled "
-                        "sequences clear this bar at the same rate"
+                        "sequences clear this bar more often (50% against 30%)"
                     ),
                 )
             )

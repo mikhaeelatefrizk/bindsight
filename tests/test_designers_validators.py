@@ -347,7 +347,10 @@ class TestEveryDiffusionDrawIsCounted:
         root = self._out(tmp_path, [0.9, 0.6, 0.5])
         row = parse_boltz_output(output_dir=root, binder_id="b0", target_uniprot="P04626")
         assert row.iptm_n_samples == 3
-        assert "3 sample(s)" in (row.notes or "")
+        # The note now reports files parsed of files found, because counting the
+        # files present reported the same number whether or not they were
+        # readable. Three of three is what this fixture wrote.
+        assert "parsed confidence=3 of 3 file(s)" in (row.notes or ""), row.notes
 
     def test_the_spread_across_draws_is_recorded(self, tmp_path: Path) -> None:
         """The metric's own noise, measured on one input in one job."""

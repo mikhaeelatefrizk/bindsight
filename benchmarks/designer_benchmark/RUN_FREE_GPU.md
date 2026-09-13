@@ -76,7 +76,7 @@ the run's `design/` directory — the designed binder PDBs and FASTAs plus the p
 - **ipTM** (Boltz-2 interface confidence) is the primary de novo binder-quality metric;
   **success@0.65** is the standard fraction of designs with ipTM ≥ 0.65.
   It is **withdrawn as a measure of design quality**: shuffles of these
-  designs' own sequences clear it at the same rate. See
+  designs' own sequences clear it MORE often (50% against 30%). See
   `benchmarks/calibration/README.md`.
 - **Affinity is N/A** for protein binders: Boltz-2 affinity prediction is *ligand-only*,
   so `affinity_pred_value` is blank. ipTM + plDDT are the protein–protein metrics.

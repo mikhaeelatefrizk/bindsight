@@ -150,12 +150,14 @@ def parse_boltz_output(
     iptm_samples: list[float] = []
     pae_samples: list[float] = []
 
+    n_parsed = 0
     for path in confidence_paths:
         try:
             cdata = json.loads(path.read_text())
         except (json.JSONDecodeError, OSError) as e:
             LOG.warning("failed to parse %s: %s", path, e)
             continue
+        n_parsed += 1
         value = _safe_float(cdata.get("iptm"))
         if value is not None:
             iptm_samples.append(value)
@@ -188,7 +190,10 @@ def parse_boltz_output(
         validator_name="boltz2",
         validator_version=installed_boltz_version() or UNRECORDED_VERSION,
         notes=(
-            f"parsed confidence={len(confidence_paths)} sample(s), "
+            # Files parsed, of files found. This counted the files present, so a
+            # directory of unreadable JSON reported the same sample count as a
+            # directory of good ones and the row carried no trace of it.
+            f"parsed confidence={n_parsed} of {len(confidence_paths)} file(s), "
             f"affinity={'yes' if affinity_path else 'no'}"
         ),
     )

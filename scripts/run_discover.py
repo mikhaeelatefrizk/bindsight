@@ -25,7 +25,11 @@ def main() -> int:
     # are missing in a different env.
     from bindsight.config import RunConfig, TargetDiscoveryParams
     from bindsight.pipelines.caveats import caveat_summary
-    from bindsight.pipelines.discover import _do_discover, _resolve_surface_bind_client
+    from bindsight.pipelines.discover import (
+        _do_discover,
+        _resolve_surface_bind_client,
+        _write_run_config,
+    )
     from bindsight.provenance.fragments import artifact_ref, write_fragment
     from bindsight.provenance.manifest import _now_iso
 
@@ -73,6 +77,13 @@ def main() -> int:
     out_targets.parent.mkdir(parents=True, exist_ok=True)
     out_epitopes.parent.mkdir(parents=True, exist_ok=True)
     out_taxonomy.parent.mkdir(parents=True, exist_ok=True)
+
+    # The effective configuration, written where the design half looks for it.
+    # `params.design.seed`, the binder-length bounds and every validate threshold
+    # reach the executor only through `<run>/config.yaml`; the CLI path writes it
+    # and this one did not, so a Snakemake run silently designed at seed 0 and
+    # recorded seed 0 as if it had been asked for.
+    _write_run_config(cfg, out_targets.parent.parent)
     candidates_df.to_parquet(out_targets, index=False)
     epitopes_df.to_parquet(out_epitopes, index=False)
     taxonomy_df.to_parquet(out_taxonomy, index=False)
