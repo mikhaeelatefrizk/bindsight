@@ -172,12 +172,46 @@ pairing was load-bearing for a reason it was not chosen for. Both arms now go in
 one payload: same target, same validator, same card, same session, same
 installed version. The only difference inside a pair is the residue order.
 
-## What this does not yet control for
+## The specificity control
 
-**The target.** A scramble control asks whether the *sequence* matters. It does
-not ask whether the *target* matters — the same designs folded against an
-unrelated receptor would answer that, and nothing here does it yet. A design
-that scores well against everything is not a binder for anything.
+**Stated before the data**, like the scramble control above.
+
+A shuffle asks whether the binder's *sequence* matters. It cannot ask whether
+the *target* matters, and a design that scores as well against an unrelated
+receptor is not a binder for either one.
+
+**The decoy.** NECTIN4's Ig-like V-type domain, residues 32-144 of Q96NY8, from
+UniProt's own annotation. Four reasons, all checkable:
+
+- **Unrelated.** An Ig V-set fold; ERBB2 domain IV is cysteine-rich furin-like.
+  No shared family, fold or ligand — sequence similarity 0.15.
+- **Size-matched.** 113 residues against 142, so the complex is comparable and
+  neither fold cost nor the VRAM ceiling changes between arms.
+- **Real and antibody-accessible.** The membrane-distal domain enfortumab
+  vedotin targets clinically. A decoy nothing could bind would prove nothing.
+- **In this project's own panel**, so the control also asks whether binders
+  designed for one panel antigen score spuriously against another.
+
+| if | then |
+|---|---|
+| designs score the same against both targets | ipTM is not reading the design-target pair at all, and the metric cannot support target selection — which is the entire premise of the discovery half |
+| designs score clearly lower against the decoy | the metric does respond to the target, and the scramble result is about *sequence* specificity alone rather than about ipTM being uninformative |
+| designs score *higher* against the decoy | something is wrong with the native-target arm that neither control has isolated |
+
+The middle row is the one that would rescue something from the scramble result,
+which is exactly why it is written down before the numbers arrive.
+
+**What it cannot be.** A spec carries one target, so this necessarily spans two
+jobs. Both arms use the same forty sequences, the same pinned `boltz==2.0.3`,
+the same seeded derivation and five draws each, so the difference between them
+is the target and the run. The refold-drift figure is what bounds the second
+part, and it has to be read alongside.
+
+## What this still does not control for
+
+**Whether any of it predicts binding.** Every number here is a structure
+predictor's opinion. No wet-lab measurement exists for any of these designs, and
+nothing in this directory can substitute for one.
 
 This is a real remaining gap, not a detail. It cannot be folded into the same
 job, because a spec carries one target, so it necessarily crosses runs — which
