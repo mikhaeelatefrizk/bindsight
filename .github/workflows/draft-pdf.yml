@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Compile JOSS paper.md to PDF
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build draft PDF
         uses: openjournals/openjournals-draft-action@master
         with:
