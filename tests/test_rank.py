@@ -259,7 +259,7 @@ class TestTiedScoresRankReproducibly:
     """
 
     @staticmethod
-    def _tied(order: list[str]) -> "pd.DataFrame":
+    def _tied(order: list[str]) -> pd.DataFrame:
         return pd.DataFrame(
             [
                 {

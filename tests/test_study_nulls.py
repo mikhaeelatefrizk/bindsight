@@ -19,6 +19,8 @@ beside every nominal hit, and the named exclusions beside the panel statistic.
 from __future__ import annotations
 
 import json
+import math
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -197,11 +199,45 @@ class TestTheCommittedStudyPublishesItsNulls:
         assert floor is not None, "the permutation floor is not reported"
         assert spec["p_value"] >= floor
         if spec.get("exact"):
-            # Enumerated: the identity permutation is always counted, so the
-            # floor is one over the permutation count with no add-one term.
-            assert floor == pytest.approx(1.0 / spec["n_permutations"])
+            # Enumerated. The identity permutation is always counted, but it is
+            # not counted once: antigens sharing a cohort are interchangeable,
+            # so every distinct assignment is reproduced by one permutation per
+            # ordering within each shared cohort. This panel has FOLH1 and
+            # STEAP1 both on PRAD, so the smallest p it can express is 2/5040.
+            #
+            # Asserting 1/n! here pinned the defect: the published p sat exactly
+            # on the true floor while the report claimed a floor half that size,
+            # which silenced the "p equals its floor" warning on the one result
+            # in the study that is not a negative control. The multiplicity is
+            # derived from the committed pairs, so a panel change cannot leave
+            # this stale.
+            tested = set(spec["antigens"])
+            own: dict[str, str] = {}
+            for row in summary["pairs"]:
+                if row["symbol"] in tested:
+                    own.setdefault(row["symbol"], row["project"])
+            assert set(own) == tested, sorted(tested - set(own))
+            repeats = math.prod(math.factorial(k) for k in Counter(own.values()).values())
+            assert floor == pytest.approx(repeats / spec["n_permutations"])
         else:
             assert floor == pytest.approx(1.0 / (spec["n_permutations"] + 1))
+
+    def test_the_floor_actually_accounts_for_a_shared_cohort(self, summary: dict[str, Any]) -> None:
+        """Guards the guard: if no antigen shared a cohort the check above would
+        reduce to the 1/n! it replaced, and prove nothing."""
+        spec = summary["specificity_null"]
+        tested = set(spec["antigens"])
+        own: dict[str, str] = {}
+        for row in summary["pairs"]:
+            if row["symbol"] in tested:
+                own.setdefault(row["symbol"], row["project"])
+
+        shared = {c: n for c, n in Counter(own.values()).items() if n > 1}
+
+        assert shared, (
+            "no tested antigen shares a cohort, so the multiplicity correction is "
+            "untested by the committed panel; add a case that exercises it"
+        )
 
     def test_the_specificity_null_is_enumerated_not_sampled(self, summary: dict[str, Any]) -> None:
         """Seven antigens give 5,040 permutations, so there is an exact answer.

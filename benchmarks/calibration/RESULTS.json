@@ -205,17 +205,20 @@
   },
   "inputs": {
     "committed_metrics": {
-      "bytes": "7317",
+      "bytes": "7297",
+      "normalisation": "line endings normalised to LF before hashing",
       "path": "benchmarks/designer_benchmark/binders/metrics.jsonl",
-      "sha256": "c8eff8fd4aa0ce34514fce4df17253039856e083d5879a05268c160890d481a7"
+      "sha256": "8f4b6881923b5b835ce33916bd6f0bd2580b14cf47aa3030c181efa3521a19b7"
     },
     "decoy_metrics": {
       "bytes": "17122",
+      "normalisation": "line endings normalised to LF before hashing",
       "path": "runs/_design/7ebadd46261efc1bb707ccd6e0f8111952a64de68b0d091af78244e2dcde2160/metrics.jsonl",
       "sha256": "37fd41aaf584099f4260dfb7c8c2969b240755e82196f3b30204b69b554ae459"
     },
     "metrics": {
       "bytes": "17144",
+      "normalisation": "line endings normalised to LF before hashing",
       "path": "runs/_design/8a67100169e5bb3814951f90f704fffad3e855555f454dc5701eb27ed2b69d0b/metrics.jsonl",
       "sha256": "1fb40c314f725f00072b408440618907ac3771f8dde8bc65bd1da0090afa8b75"
     }

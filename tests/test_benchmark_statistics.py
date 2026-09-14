@@ -9,6 +9,8 @@ whose tests only confirm it does what it does is worth nothing.
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from bindsight.benchmark import statistics as st
@@ -480,3 +482,67 @@ class TestBenjaminiHochberg:
     def test_rejects_values_outside_the_unit_interval(self) -> None:
         with pytest.raises(ValueError, match=r"\[0, 1\]"):
             st.benjamini_hochberg([0.5, 1.5])
+
+
+class TestTheExactFloorCountsRepeatedAssignments:
+    """Antigens sharing a cohort are interchangeable, so each distinct
+    assignment is reproduced by several permutations. The floor has to count
+    them, or a p sitting exactly on the floor reads as a measured value.
+
+    This is not hypothetical: the committed panel has FOLH1 and STEAP1 both on
+    PRAD, its observed p is 2/5040, and the floor was reported as 1/5040 --
+    which silenced the report's own "p equals its floor" warning on the one
+    result in the project that is not a negative control.
+    """
+
+    @staticmethod
+    def _panel(assignment: dict[str, str]) -> dict[str, dict[str, float]]:
+        cohorts = sorted(set(assignment.values()) | {"AAA", "BBB"})
+        scores = {a: dict.fromkeys(cohorts, 0.1) for a in assignment}
+        for antigen, cohort in assignment.items():
+            scores[antigen][cohort] = 0.9
+        return scores
+
+    def test_no_shared_cohort_keeps_the_floor_at_one_permutation(self) -> None:
+        assignment = {"A": "c1", "B": "c2", "C": "c3", "D": "c4"}
+        result = st.permutation_null_p(self._panel(assignment), assignment)
+
+        assert result["exact"] is True
+        assert result["p_value_floor"] == pytest.approx(1 / math.factorial(4))
+
+    def test_one_shared_cohort_doubles_the_floor(self) -> None:
+        assignment = {"A": "c1", "B": "c2", "C": "c3", "D": "c3"}
+        result = st.permutation_null_p(self._panel(assignment), assignment)
+
+        assert result["p_value_floor"] == pytest.approx(2 / math.factorial(4))
+
+    def test_three_on_one_cohort_gives_six(self) -> None:
+        assignment = {"A": "c1", "B": "c2", "C": "c2", "D": "c2"}
+        result = st.permutation_null_p(self._panel(assignment), assignment)
+
+        assert result["p_value_floor"] == pytest.approx(6 / math.factorial(4))
+
+    def test_a_perfect_assignment_lands_on_its_floor_not_below_it(self) -> None:
+        """The property that matters: p can never be smaller than the floor,
+        and when nothing beats the observation it must be equal to it."""
+        assignment = {"A": "c1", "B": "c2", "C": "c3", "D": "c3"}
+        result = st.permutation_null_p(self._panel(assignment), assignment)
+
+        assert result["p_value"] == pytest.approx(result["p_value_floor"])
+
+    def test_the_committed_panel_shape_reproduces_the_published_floor(self) -> None:
+        """Seven antigens, two of them prostate -- the panel as committed."""
+        assignment = {
+            "CA9": "KIRC",
+            "FGFR2": "STAD",
+            "FOLH1": "PRAD",
+            "FOLR1": "UCEC",
+            "GPC3": "LIHC",
+            "NECTIN4": "BLCA",
+            "STEAP1": "PRAD",
+        }
+        result = st.permutation_null_p(self._panel(assignment), assignment)
+
+        assert result["n_permutations"] == 5040
+        assert result["p_value_floor"] == pytest.approx(2 / 5040)
+        assert result["p_value"] == pytest.approx(2 / 5040)

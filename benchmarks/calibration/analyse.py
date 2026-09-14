@@ -302,8 +302,17 @@ def _input_provenance(metrics: Path, committed: Path, decoy_metrics: Path | None
             relative = path.as_posix()
         entry = {"path": relative}
         if path.is_file():
-            entry["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-            entry["bytes"] = str(path.stat().st_size)
+            # Hash the content git stores, not the bytes this checkout happens
+            # to hold. ``.gitattributes`` declares ``* text=auto eol=lf``, so
+            # the blob is LF; a Windows working copy can still carry CRLF.
+            # Hashing the working copy recorded a digest that matched on the
+            # machine that produced the report and on no other, which made the
+            # integrity check unverifiable for every reader — the exact
+            # opposite of what recording a digest is for.
+            raw = path.read_bytes().replace(b"\r\n", b"\n")
+            entry["sha256"] = hashlib.sha256(raw).hexdigest()
+            entry["bytes"] = str(len(raw))
+            entry["normalisation"] = "line endings normalised to LF before hashing"
         return entry
 
     return {

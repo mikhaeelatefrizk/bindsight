@@ -920,6 +920,53 @@ class TestTheCalibrationReportNamesWhatItRead:
             )
             assert len(entry.get("sha256", "")) == 64, role
 
+    def test_the_recorded_digest_matches_what_git_stores(self) -> None:
+        """The digest has to be reproducible by someone who only has the clone.
+
+        ``test_the_recorded_files_still_hold_what_they_held`` compares the
+        report against this working copy, so it passes on any machine that is
+        self-consistent -- including the one that recorded a digest nobody else
+        can compute. This compares the report against the blob git actually
+        carries, which is what a reader materialises. ``.gitattributes``
+        declares ``* text=auto eol=lf``, so a Windows checkout can hold CRLF
+        while the blob holds LF; hashing the working copy recorded 7,317 bytes
+        where every clone sees 7,297, and the published integrity check failed
+        for everyone but its author.
+
+        Inputs under ``runs/`` are not committed, so there is no blob to compare
+        and they are reported rather than silently passed.
+        """
+        import hashlib
+        import subprocess
+
+        repo = Path(__file__).resolve().parents[1]
+        checked = 0
+        uncommitted: list[str] = []
+        for role, entry in (self._report().get("inputs") or {}).items():
+            if entry is None:
+                continue
+            rel = entry["path"]
+            blob = subprocess.run(
+                ["git", "-C", str(repo), "cat-file", "-p", f"HEAD:{rel}"],
+                capture_output=True,
+            )
+            if blob.returncode != 0:
+                uncommitted.append(rel)
+                continue
+            digest = hashlib.sha256(blob.stdout).hexdigest()
+            assert digest == entry["sha256"], (
+                f"{role} ({rel}): the report records {entry['sha256'][:16]}..., but the "
+                f"committed blob hashes to {digest[:16]}.... A reader who clones this "
+                "repository cannot reproduce the recorded digest, which is the whole "
+                "point of recording one. Re-run analyse.py."
+            )
+            assert int(entry["bytes"]) == len(blob.stdout), (
+                f"{role} ({rel}): recorded {entry['bytes']} bytes, blob is {len(blob.stdout)}"
+            )
+            checked += 1
+
+        assert checked, f"no recorded input is committed, so nothing was verified: {uncommitted}"
+
     def test_the_recorded_files_still_hold_what_they_held(self) -> None:
         """A path without a digest check is a path that may have been rewritten."""
         import hashlib
@@ -937,7 +984,11 @@ class TestTheCalibrationReportNamesWhatItRead:
                 # it went unverified while the run still reported green.
                 missing.append(entry["path"])
                 continue
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            # Normalised the same way ``analyse.py`` records it. Hashing the
+            # working copy made this pass only where the report was produced:
+            # ``.gitattributes`` stores the blob LF, so a Windows checkout with
+            # CRLF hashed differently and every reader's verification failed.
+            digest = hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
             assert digest == entry["sha256"], (
                 f"{role} ({entry['path']}) no longer matches the digest the report "
                 "was computed from; re-run analyse.py"

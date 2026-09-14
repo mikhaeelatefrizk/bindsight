@@ -36,6 +36,8 @@ from pathlib import Path
 
 import requests
 
+from bindsight.surfaceome import SURFY_PROTEIN_COUNT
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "bindsight" / "surfaceome" / "data" / "surfy_v1.uniprot.txt"
 
@@ -47,8 +49,6 @@ UNIPROT_SEARCH = "https://rest.uniprot.org/uniprotkb/search"
 # a second literal here could disagree with the constant the package checks the
 # file against — and the generator would happily produce a list the loader then
 # rejects.
-from bindsight.surfaceome import SURFY_PROTEIN_COUNT
-
 EXPECTED_COUNT = SURFY_PROTEIN_COUNT
 CITATION = (
     "Bausch-Fluck et al., 'The in silico human surfaceome', PNAS 2018, doi:10.1073/pnas.1808790115"

@@ -15,7 +15,7 @@ dependencies:
   # release can change the numbers a run reports. envs/constraints.txt carries
   # the exact versions this release was tested against.
   - pandas>=2.2,<3
-    - openpyxl>=3.1   # parse the SURFY surfaceome .xlsx
+  - openpyxl>=3.1   # parse the SURFY surfaceome .xlsx
   - pyarrow>=16,<25
   - numpy>=1.26,<3
   - scipy>=1.11,<2

@@ -18,7 +18,6 @@ Targetable-site lookup is a different question and lives in
 """
 
 from bindsight.surfaceome.surfy import (
-    surfaceome_source,
     SURFY_PROTEIN_COUNT,
     is_surface_protein,
     load_surfaceome,
@@ -27,11 +26,11 @@ from bindsight.surfaceome.surfy import (
     load_surfy,
     load_surfy_gene_map,
     populate_surfy_cache,
+    surfaceome_source,
 )
 
 __all__ = [
     "SURFY_PROTEIN_COUNT",
-    "surfaceome_source",
     "is_surface_protein",
     "load_surfaceome",
     "load_surfaceome_extension",
@@ -39,4 +38,5 @@ __all__ = [
     "load_surfy",
     "load_surfy_gene_map",
     "populate_surfy_cache",
+    "surfaceome_source",
 ]

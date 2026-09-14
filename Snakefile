@@ -13,7 +13,7 @@
 # not call. On a clean checkout both invocations below therefore fail with a
 # missing-input error before any work starts. Fetch first, then run:
 #
-#   bindsight discover --config examples/tcga_luad.yaml --out runs/luad  # downloads
+#   bindsight discover examples/tcga_luad.yaml --out runs/luad  # downloads
 #   snakemake --configfile examples/tcga_luad.yaml --cores 4 --use-conda
 #   snakemake --configfile examples/demo/config.yaml --config backend=mock --cores 4
 #   snakemake --configfile examples/tcga_luad.yaml --until discover --cores 4

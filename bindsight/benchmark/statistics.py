@@ -43,6 +43,7 @@ from __future__ import annotations
 import itertools
 import math
 import random
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -551,10 +552,23 @@ def permutation_null_p(
         extreme = sum(1 for order in itertools.permutations(range(n)) if _as_extreme(_stat(order)))
         # Exact: the identity permutation is always counted, so this can never
         # be zero and needs no add-one correction.
+        #
+        # But the identity is not counted *once*. Antigens sharing a cohort are
+        # interchangeable, so each distinct assignment is reproduced by one
+        # permutation per ordering within each shared cohort -- the product of
+        # the factorials of the cohort multiplicities. With seven antigens of
+        # which two are prostate, every assignment appears twice, and the
+        # smallest p this design can express is 2/5040, not 1/5040.
+        #
+        # Reporting 1/total understated the floor by exactly that factor, and
+        # because the panel's observed p sat on the true floor, the report's
+        # own "p equals its floor" warning -- built for precisely this case --
+        # never fired on the one result that needed it.
+        repeats = math.prod(math.factorial(k) for k in Counter(assigned).values())
         return {
             "observed": observed,
             "p_value": extreme / total,
-            "p_value_floor": 1.0 / total,
+            "p_value_floor": repeats / total,
             "n_permutations": total,
             "exact": True,
         }

@@ -23,8 +23,10 @@ DOI and the retracted novelty claim verbatim while describing their removal.
 
 from __future__ import annotations
 
+import functools
 import json
 import re
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -134,21 +136,61 @@ BINDER_FIGURE_DOCS = (
     "benchmarks/designer_benchmark/RESULTS.md",
     "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
     # Found by the completeness sweep below; the hand-written list had gone
-    # stale by five documents, every one of them quoting the run's figures.
+    # stale by four documents, every one of them quoting the run's figures.
     "benchmarks/RUN_ON_KAGGLE.md",
     "benchmarks/calibration/README.md",
-    "benchmarks/designer_benchmark/run_t4/RESULTS.md",
     "docs/positioning.md",
     "paper/README.md",
 )
 
 
+@functools.lru_cache(maxsize=1)
+def _tracked_files() -> frozenset[str] | None:
+    """Every path git tracks, as repo-relative POSIX strings.
+
+    ``PROSE_TREES`` includes ``benchmarks``, which is also where the GPU runs
+    land their build products. Those are gitignored, so they exist on the
+    machine that produced them and nowhere else — and a sweep that rglobs the
+    tree cannot tell the difference. That is how
+    ``benchmarks/designer_benchmark/run_t4/RESULTS.md`` entered a hand-written
+    list of public documents and took three tests red on every fresh clone
+    while passing here.
+
+    Returns ``None`` when git cannot answer, in which case the callers fall
+    back to the old behaviour rather than silently sweeping nothing.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "-z"],
+            capture_output=True,
+            check=True,
+            timeout=60,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return frozenset(part.decode("utf-8") for part in out.split(b"\0") if part)
+
+
+def _is_public(path: Path) -> bool:
+    """A file is public when it is on disk *and* git carries it."""
+    if not path.is_file():
+        return False
+    tracked = _tracked_files()
+    if tracked is None:
+        return True
+    return path.relative_to(ROOT).as_posix() in tracked
+
+
 def _collect_prose_files() -> list[Path]:
-    """Every public text document, resolved from the trees above."""
+    """Every public text document, resolved from the trees above.
+
+    Filtered through ``_is_public`` so a local build product can never be
+    swept in as though a reader could see it.
+    """
     files = [ROOT / rel for rel in NAMED_PROSE]
     for tree in PROSE_TREES:
         files.extend(sorted(p for p in (ROOT / tree).rglob("*") if p.suffix in PROSE_SUFFIXES))
-    return [p for p in files if p.is_file()]
+    return [p for p in files if _is_public(p)]
 
 
 PROSE_FILES = _collect_prose_files()
@@ -643,6 +685,11 @@ def _documents_stating_the_success_rate() -> list[str]:
         for path in base.rglob("*.md"):
             rel = path.relative_to(root).as_posix()
             if any(skip in rel for skip in _NOT_PUBLISHED):
+                continue
+            # A gitignored GPU build product is not a shipped document. Without
+            # this the sweep parametrised two tests over a file no clone has,
+            # which passed here and failed everywhere else.
+            if not _is_public(path):
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
             if any(marker in text for marker in _SUCCESS_RATE_MARKERS):
@@ -1274,7 +1321,7 @@ class TestTheSurfaceomeSizesAgreeWithTheData:
     def test_the_constant_matches_the_vendored_list(self) -> None:
         from bindsight.surfaceome import SURFY_PROTEIN_COUNT
 
-        assert SURFY_PROTEIN_COUNT == self._sizes()["core"]
+        assert self._sizes()["core"] == SURFY_PROTEIN_COUNT
 
     def test_the_generator_does_not_keep_its_own_copy(self) -> None:
         """``scripts/build_surfy_list.py`` writes the file the package checks; a
@@ -1410,3 +1457,49 @@ def test_the_documented_runner_protocol_matches_the_code() -> None:
     assert documented == real, (
         f"ARCHITECTURE documents {sorted(documented)}; the Protocol declares {sorted(real)}"
     )
+
+
+def test_every_named_document_is_one_a_reader_can_clone() -> None:
+    """Each hand-written path must be tracked by git, not merely present here.
+
+    Three tests failed on a fresh clone because a gitignored GPU build product
+    sat in ``BINDER_FIGURE_DOCS``: it exists on the machine that produced it,
+    so the suite was green here and red for everyone else. The completeness
+    sweep put it there, because rglob over ``benchmarks/`` cannot tell a
+    published document from a local artifact.
+
+    This is the cheapest possible check for the most embarrassing possible
+    failure: a stranger clones the repository and the first thing they see is
+    a red test suite.
+    """
+    tracked = _tracked_files()
+    if tracked is None:
+        pytest.skip("git is unavailable, so trackedness cannot be established")
+
+    named: set[str] = set()
+    for group in (NAMED_PROSE, BINDER_FIGURE_DOCS, PRIORITY_CLAIM_DOCS, BIB_FILES):
+        named.update(group)
+    named.add(MANUSCRIPT_TEX)
+
+    untracked = sorted(rel for rel in named if rel not in tracked)
+
+    assert not untracked, (
+        f"named as public documents but not tracked by git: {untracked}. "
+        "These pass here and fail on every fresh clone. Either commit the file "
+        "or stop naming it."
+    )
+
+
+def test_the_prose_sweep_excludes_untracked_build_products() -> None:
+    """Guards the guard: the filter must actually be doing something.
+
+    Without this, ``_is_public`` could be reduced to ``is_file`` and every test
+    above would still pass on this machine.
+    """
+    tracked = _tracked_files()
+    if tracked is None:
+        pytest.skip("git is unavailable")
+
+    for path in PROSE_FILES:
+        rel = path.relative_to(ROOT).as_posix()
+        assert rel in tracked, f"{rel} is swept as public prose but git does not track it"
