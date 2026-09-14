@@ -6,7 +6,129 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.3.0]
+
+Prepared for publication as a fresh repository. The work below is of three kinds:
+defects that were invisible because they only manifested on other people's
+machines, claims the project's own controls had refuted, and a front door that
+sent visitors somewhere else.
+
+### Fixed — six defects that worked only on the machine that wrote them
+
+The worst class a repository can carry: the author cannot see them, and the
+first stranger to clone it sees nothing else.
+
+- **Three tests failed on a fresh clone.** The prose guards rglob `benchmarks/`,
+  which is also where GPU runs leave gitignored build products, so
+  `run_t4/RESULTS.md` had entered a hand-written list of public documents. File
+  discovery is now git-aware, and a guard asserts every hand-written path is
+  tracked. Collected tests are identical with and without the local artifact.
+- **The calibration integrity check could never pass for a reader.** It recorded
+  the digest of a Windows working copy (7,317 bytes); git stores the blob LF, so
+  every clone holds 7,297. The generator now hashes LF-normalised bytes, and a
+  new guard compares the recorded digest against the blob git carries rather
+  than against the local checkout.
+- **Every generator wrote the platform's line endings**, so "run the generator;
+  it should not change" — the one reproducibility check a reader can run in
+  seconds — reported a spurious failure on Windows. Sixteen `write_text` calls
+  across nine generators now pin LF. Verified from a real clone: regenerating
+  produces zero changes.
+- **`mamba env create -f envs/discover.yaml` failed.** `openpyxl` was indented
+  under `pandas`, so YAML fused them into one invalid spec and the library that
+  parses the SURFY `.xlsx` silently vanished.
+- **The `Snakefile` documented `--config`**, which Click rejects; `config` is
+  positional. **The published reproduce command could not run**: `score_run.py`
+  is a scorer and requires the archive a GPU run produces.
+- **`ruff check bindsight tests scripts` was already red** — five errors in
+  committed code, so the CI lint gate was failing before any of this began.
+
+### Fixed — the study's positive result sat on a mis-computed floor
+
+FOLH1 and STEAP1 both map to PRAD, so antigens are interchangeable within a
+cohort and every distinct assignment is enumerated twice. The smallest p the
+design can express is 2/5040 — exactly the observed value. Reporting 1/5040
+silenced the report's own "p equals its floor" warning on the only result in the
+study that is not a negative control. It now reads as the resolution limit it
+is. One field of 1,295 changed; the science is untouched.
+
+### Added — both null models, published
+
+Neither reached a reader. `StudyShowcase` had no field for either, so every
+generated surface was structurally incapable of rendering the study's primary
+null (a negative) or its strongest positive result. Both now appear on the
+results page and in the app, with equal room:
+
+- **Decoy null, negative** — 3 of 22 nominally significant, none surviving
+  Benjamini-Hochberg, reported beside the panel's resolution: the smallest
+  adjusted value it could have produced is 0.022. Under 0.05, so a pair could
+  genuinely have survived. A measurement, not a foregone conclusion, and not a
+  sensitive one.
+- **Specificity null, positive** — within-antigen difference 0.348 (95% CI
+  0.188–0.513), interval excluding zero, exact permutation p at its floor.
+
+A guard refuses a Fisher combination of the decoy p-values: it returns 0.006 and
+is wrong, because ERBB2 and EGFR each appear in four cohorts and these are 13
+antigens rather than 22 independent tests.
+
+### Changed — nothing untrue on any surface
+
+`success@0.65` is withdrawn as a measure of design quality, and the surfaces
+that still stated it as an achievement no longer do: the README lede and roadmap
+bullet, the landing cards in the web app, and the social preview card — which is
+served as `og:image` on every documentation page and, being a raster, could not
+carry the withdrawal beside it. Its tiles now state the instrument's scope, read
+from the artifacts rather than typed.
+
+Both manuscripts said "structurally-validated" binder candidates and mentioned
+the calibration nowhere; they now say "structure-scored" and state the control's
+numbers in the abstract. The glossary no longer tells readers that ipTM 0.65
+"and up is promising" or that Boltz-2 judges "whether a design would actually
+bind". The calibration report leads with its final answer rather than its
+chronology, so a reader who stops early cannot leave with a superseded tie.
+
+### Changed — the front page is a map
+
+Eleven of thirteen first-screen calls to action used to leave the repository.
+The README now opens with a "Start here" table of in-repo links, one install
+command in place of fifteen conflicting entry points, what the evidence does and
+does not show, three reproduction tiers with what each costs, and a repository
+map where every path is clickable. Nine directory READMEs were added — only
+`paper/` had one.
+
+Added issue forms (including one for a published number that does not
+reproduce), a PR template requiring new guards to be mutation-tested,
+`dependabot.yml` that deliberately ignores the scientific stack, `CODEOWNERS`
+and `SUPPORT.md`.
+
+### Changed — recorded artifact fields and identity
+
+- Version 0.3.0 across `pyproject.toml`, `CITATION.cff`, `.zenodo.json` and
+  `codemeta.json`. The concept DOI is `10.5281/zenodo.PENDING` — deliberately
+  not a valid identifier — with `scripts/set_doi.py` to write the minted value
+  into every file at once. Recorded provenance is untouched: `benchmarks/**` and
+  the run manifests still say 0.2.2, because that is the code that produced
+  them.
+- The Hugging Face Space now ships `benchmarks/`. `showcase.py` claimed it
+  "deploys the full repository"; it does not, and the Real results page had been
+  rendering nothing while the README promised twenty binders in 3-D.
+- Eight orphaned figures removed, dated five weeks before the artifacts they
+  depicted were re-scored.
+
+### Notes
+
+1,607 tests pass locally and 1,601 from a clean clone with nothing failing;
+`ruff` and `mypy` are clean across `bindsight`, `tests` and `scripts`. Every fix
+was mutation-tested: the defect reintroduced, the guard confirmed to fail, the
+tree restored.
+
+Two claims were checked and **not** published because they did not survive
+inspection: that the decoy null's negative was forced by the panel's design (it
+was not — the bound is 0.022), and the Fisher combination above. A finding that
+fails verification is a result too.
+
+---
+
+## [Unreleased — folded into 0.3.0]
 
 ### Fixed — a 130-finding audit, and a CI gate that was already red
 
@@ -913,9 +1035,11 @@ already claimed to do, and corrects claims the evidence did not support.
   generator stay in sync (`tests/test_docs_results.py` enforces that).
 
 ### Fixed — every citation pointed at the wrong Zenodo record
-- All 17 in-repo references cited `10.5281/zenodo.20121496`, the **v0.1.0 version DOI** — an
-  MIT-licensed snapshot containing neither the benchmarks nor the manuscripts. Anyone
-  following the citation landed on a record that does not contain the work being cited.
+- All 17 in-repo references cited a **version DOI** rather than the concept DOI — a
+  snapshot under a different licence, containing neither the benchmarks nor the
+  manuscripts. Anyone following the citation landed on a record that does not contain
+  the work being cited. The specific identifier is not repeated here: it belongs to a
+  deposit this repository does not have, and naming it would send a reader to it.
 - Every reference now uses the **concept DOI `10.5281/zenodo.PENDING`**, which always
   resolves to the latest archived version and is the correct identifier for citing "the
   software" rather than one release. Updated in the README badges, citation block and BibTeX,
