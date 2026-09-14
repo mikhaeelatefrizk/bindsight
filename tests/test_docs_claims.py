@@ -897,22 +897,49 @@ def test_the_success_card_states_its_count_and_interval() -> None:
     assert str(high) in card, f"the card omits the upper bound {high}%: {card[:400]}"
 
 
-def test_the_generated_success_card_carries_the_same_interval() -> None:
-    """The hand-written landing page and the generated card must not diverge."""
-    from bindsight.report.showcase import headline_stats, load_designer_benchmark
+def test_no_landing_card_states_the_retracted_rate() -> None:
+    """The landing cards must not headline a figure the control withdrew.
 
-    designer = load_designer_benchmark(ROOT / "benchmarks")
-    if designer is None or designer.success_rate is None:
-        pytest.skip("designer benchmark artifact not present")
+    This test used to assert the opposite -- that a `success@0.65` card exists
+    and carries its interval and the word "withdrawn". That was the right guard
+    for a page that stated the rate: an interval-less rate claims a precision
+    twenty designs from ten backbones do not carry.
 
-    cards = [h for h in headline_stats() if "success" in h.label]
-    assert cards, "the showcase no longer renders a success card"
-    detail = cards[0].detail
+    But a caveat underneath a number does not travel with the number, and the
+    landing cards are exactly where a reader takes away a figure without its
+    caption. The rate is gone from them, and reported in full on the Real
+    results page beside the control that withdrew it -- which
+    ``test_the_report_surfaces_carry_the_withdrawal_too`` checks.
 
-    assert f"{designer.n_success} of {designer.n_designs}" in detail, detail
-    assert "95%" in detail, detail
-    assert "clustered over backbones" in detail, detail
-    assert "withdrawn" in detail, detail
+    So the property inverts: no landing card may state it.
+    """
+    from bindsight.report.showcase import headline_stats
+
+    for card in headline_stats():
+        blob = f"{card.value} {card.label} {card.detail}".lower()
+        for spelling in ("success @", "success@"):
+            assert spelling not in blob, (
+                f"a landing card headlines the retracted success rate: {card}"
+            )
+        assert "iptm 0.65" not in blob, f"a landing card headlines the withdrawn threshold: {card}"
+
+
+def test_the_landing_cards_carry_their_denominators() -> None:
+    """Every figure on the landing page must be interpretable where it stands.
+
+    A rank without the size of the list it sits in, or a difference without its
+    interval, is the shape of claim this project exists not to make.
+    """
+    from bindsight.report.showcase import headline_stats
+
+    cards = headline_stats()
+    assert cards, "the landing page states no figures at all"
+
+    for card in cards:
+        detail = card.detail or ""
+        assert detail.strip(), f"{card.label} is stated with no context at all"
+        if card.value.startswith("rank "):
+            assert " of " in detail, f"{card.label}: a rank without its shortlist size"
 
 
 #: Designers the README states no shipped backend can execute. The three-way

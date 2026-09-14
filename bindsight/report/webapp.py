@@ -521,6 +521,92 @@ def _render_complex(cif_path: Path, height: int = 420) -> bool:
     return True
 
 
+def _render_study_nulls(study: showcase.StudyShowcase) -> None:
+    """Both null models, given equal room.
+
+    Neither reached this app before: ``StudyShowcase`` had no field for them, so
+    the screen a visitor actually looks at could not render the study's own
+    primary null (a negative) or its strongest positive result. A tool that
+    argues from disconfirming evidence has to show it where people look.
+    """
+    spec = study.specificity_null
+    gap = study.indication_gap
+    if not spec and not study.decoy_rows:
+        return
+
+    st.markdown("### Is the ranking doing anything?")
+    st.caption(
+        "Two null models, pointing different ways. Both are shown, because "
+        "showing only the flattering one would make the other the finding."
+    )
+
+    left, right = st.columns(2)
+
+    with left:
+        st.markdown("**Against matched decoys — negative**")
+        if study.decoy_rows:
+            st.metric(
+                "Survive Benjamini-Hochberg",
+                f"{study.decoy_surviving_correction} of {len(study.decoy_rows)}",
+                help=(
+                    "Each antigen compared with genes matched to it on abundance "
+                    "and dispersion quintile, ranked by the same counterfactual "
+                    "score: would a gene that merely looks like this antigen have "
+                    "ranked as well?"
+                ),
+            )
+            st.caption(
+                f"{study.decoy_nominal} of {len(study.decoy_rows)} are nominally "
+                "significant at 0.05; none survives correction for the size of the "
+                "panel. Against background matched this way, no antigen here is "
+                "distinguishable."
+            )
+            bound = study.smallest_attainable_decoy_bh
+            if bound is not None:
+                st.caption(
+                    f"Read it with the panel's resolution in mind: the smallest "
+                    f"adjusted value this panel could have produced is {bound:.3f}. "
+                    "Under 0.05, so a pair genuinely could have survived — but only "
+                    "one sitting essentially on its floor. A measurement, not a "
+                    "foregone conclusion, and not a sensitive one."
+                )
+
+    with right:
+        st.markdown("**Against a permuted indication — positive**")
+        if gap.get("point") is not None:
+            st.metric(
+                "Within-antigen difference",
+                f"{gap['point']:.3f}",
+                help=(
+                    "An antigen's mean standing in its own indication minus its "
+                    "standing in cohorts carrying no panel antigen. Each antigen is "
+                    "its own control."
+                ),
+            )
+            st.caption(
+                f"95% CI {gap['low']:.3f}–{gap['high']:.3f} over "
+                f"{gap.get('n_clusters', gap.get('n', '?'))} antigens — the interval "
+                "excludes zero."
+            )
+        if spec.get("p_value") is not None:
+            floor_note = (
+                " — the floor for this many permutations, so it is as extreme as an "
+                "exhaustive enumeration of this panel can show rather than "
+                "vanishingly small"
+                if study.specificity_is_at_its_floor
+                else ""
+            )
+            st.caption(
+                f"Exact permutation p = {spec['p_value']:.2e} over "
+                f"{spec.get('n_permutations')} enumerated orderings{floor_note}."
+            )
+
+    st.caption(
+        "The second is the strongest claim this study supports, and it is a claim "
+        "about the ordering — not about any individual hit."
+    )
+
+
 def _page_results() -> None:
     """Show the real, committed benchmark results."""
     import pandas as pd
@@ -589,6 +675,8 @@ def _page_results() -> None:
             "denominator and recompute.",
             icon="ℹ️",
         )
+
+        _render_study_nulls(study)
 
         counts = study.outcome_counts or {}
         if counts:

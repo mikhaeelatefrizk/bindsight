@@ -30,6 +30,13 @@ COPY src/ ./src/
 # == /app.  Copy the shipped demo cohort to /app/examples/ so the fallback
 # finds the data.
 COPY examples/ ./examples/
+# The Real results page reads committed artifacts through
+# bindsight.report.showcase.benchmarks_root(), which walks up for a benchmarks/
+# directory. Without this COPY it returns None and the page renders nothing,
+# while the README promises 20 binders rendered in 3-D. 6.8 MB, and it is the
+# difference between a demo that shows the evidence and one that claims to.
+COPY benchmarks/ ./benchmarks/
+
 # Streamlit reads its config from $CWD/.streamlit/config.toml, and WORKDIR is
 # /app, so this is what makes the navy theme and gatherUsageStats=false apply
 # to the hosted demo rather than only to local clones.

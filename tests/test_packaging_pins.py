@@ -374,3 +374,45 @@ class TestThePythonVersionsAgreeAcrossTheProject:
         assert not untested_claim, (
             f"CI tests {sorted(untested_claim)} but the classifiers do not list them"
         )
+
+
+def test_the_space_ships_what_its_pages_render() -> None:
+    """The Space image must carry the artifacts its Real results page reads.
+
+    ``bindsight/report/showcase.py`` locates evidence by walking up for a
+    ``benchmarks/`` directory, and the README tells visitors the Space renders
+    twenty binders in 3-D. The Dockerfile copies a named set of paths and
+    ``benchmarks/`` was not one of them, so ``benchmarks_root()`` returned
+    ``None``, the page rendered nothing, and the module docstring asserted the
+    opposite -- that the Space "deploys the full repository".
+
+    A promise on the front page about a hosted demo is the one claim a reader
+    can check in ten seconds without installing anything.
+    """
+    dockerfile = (REPO_ROOT / ".huggingface" / "Dockerfile").read_text(encoding="utf-8")
+
+    copied = {
+        line.split()[1].rstrip("/")
+        for line in dockerfile.splitlines()
+        if line.strip().startswith("COPY ") and len(line.split()) >= 3
+    }
+
+    assert "benchmarks" in copied, (
+        "the Space image does not copy benchmarks/, so its Real results page "
+        f"renders nothing. It copies: {sorted(copied)}"
+    )
+    assert "examples" in copied, "the demo cohort is not shipped"
+
+
+def test_the_showcase_docstring_does_not_claim_a_full_deploy() -> None:
+    """Guards the guard: the docstring was the reason nobody looked."""
+    source = (REPO_ROOT / "bindsight" / "report" / "showcase.py").read_text(encoding="utf-8")
+
+    # Flattened, because the sentence wrapped across two lines and a
+    # substring check on the raw text would miss it for that reason alone.
+    flattened = " ".join(source.split())
+
+    assert "deploys the full repository" not in flattened, (
+        "showcase.py claims the Space deploys the full repository; it deploys "
+        "the paths .huggingface/Dockerfile names"
+    )

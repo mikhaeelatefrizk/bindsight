@@ -20,9 +20,16 @@ numbers on screen can never drift from the numbers in ``benchmarks/``.
 
 Everything here is read-only, network-free, and degrades to ``None`` rather
 than raising: ``benchmarks/`` is not packaged into the wheel
-(``pyproject.toml`` ships only the ``bindsight`` package), so an installed-from
--PyPI user has no such tree. The Hugging Face Space deploys the
-full repository and therefore gets the real thing.
+(``pyproject.toml`` ships only the ``bindsight`` package), so a user who
+installed from a wheel has no such tree and sees the page degrade.
+
+The Hugging Face Space does **not** deploy the full repository -- its image is
+built from ``.huggingface/Dockerfile``, which copies a named set of paths. That
+docstring used to claim otherwise, and the claim was false: ``benchmarks/`` was
+not among them, so ``benchmarks_root()`` returned ``None`` on the Space and the
+Real results page rendered nothing while the README promised twenty binders in
+3-D. The Dockerfile now copies it, and
+``tests/test_packaging_pins.py`` checks that it still does.
 
 Only the standard library is imported at module scope, so this stays importable
 without pandas or Streamlit.
@@ -428,7 +435,21 @@ class DesignerShowcase:
 
     @property
     def success_rate(self) -> float | None:
-        """Reported fraction of designs at or above the ipTM 0.65 criterion."""
+        """Fraction of designs at or above the ipTM 0.65 criterion, as recorded.
+
+        **Withdrawn as a measure of design quality.** The rate is a real count
+        of a real artifact, and it is reported for comparability with published
+        de novo work — but a paired control folded each design beside a shuffle
+        of its own sequence, and the shuffles cleared the same bar more often
+        (50% against 30%; paired difference -0.043, 95% CI -0.142 to +0.054).
+
+        Any surface rendering this must carry that with it, adjacently, and
+        ``bindsight.report.webapp`` does. It is deliberately not a headline
+        statistic anywhere: a caveat underneath a number does not travel with
+        the number.
+
+        See ``benchmarks/calibration/``.
+        """
         for d in self.designers:
             rate = _as_float(d.get("success_rate"))
             if rate is not None:
@@ -596,48 +617,35 @@ def headline_stats() -> list[Headline]:
                 )
             )
 
+    # The fourth card used to be `success@0.65`, with the withdrawal riding in
+    # its caption. That is the same shape as a retracted headline on a front
+    # page: the number is what a reader takes away, and a caveat underneath does
+    # not travel with it. The rate is still reported in full on the Real results
+    # page, beside the control that withdrew it.
     designer = load_designer_benchmark()
-    if designer is not None:
-        best = designer.best
-        if best is not None and best.iptm is not None:
+    if designer is not None and designer.n_designs:
+        stats.append(
+            Headline(
+                value=f"{designer.n_designs} binders",
+                label="designed and folded",
+                detail=(
+                    f"on {designer.gpu or 'a free GPU'}, structures committed; "
+                    "interface confidence is a triage order, not binding evidence"
+                ),
+            )
+        )
+
+    # The study's one positive result, which no surface carried until now.
+    if study is not None:
+        gap = study.indication_gap
+        if gap.get("point") is not None and gap.get("low") is not None:
             stats.append(
                 Headline(
-                    value=f"{best.iptm:.2f}",
-                    label="best ipTM",
-                    detail=f"{designer.n_designs} de novo binders on {designer.gpu or 'a free GPU'}",
-                )
-            )
-        rate = designer.success_rate
-        if rate is not None:
-            # ``success_interval`` existed, said in its own docstring that a page
-            # printing the rate without it "claims a precision twenty designs
-            # from ten backbones do not carry", and was not read here. The card
-            # next to this one carries its 95% CI; this one did not.
-            interval = designer.success_interval
-            counted = (
-                f"{designer.n_success} of {designer.n_designs} — "
-                if designer.n_success is not None and designer.n_designs is not None
-                else ""
-            )
-            bounds = (
-                f"{interval[0] * 100:.0f}–{interval[1] * 100:.0f}% at 95%, "
-                "clustered over backbones — "
-                if interval
-                else ""
-            )
-            stats.append(
-                Headline(
-                    value=f"{rate * 100:.0f}%",
-                    label="success @ ipTM 0.65",
-                    # The caveat rides on the card itself. A reader who sees
-                    # only this number sees the one thing the calibration showed
-                    # it does not support: shuffles of the designs' own
-                    # sequences clear 0.65 more often than the designs do.
+                    value=f"{gap['point']:.2f}",
+                    label="indication-specific gap",
                     detail=(
-                        f"{counted}{bounds}"
-                        f"validated with {designer.validator or 'Boltz-2'}; "
-                        "withdrawn as a design-quality measure — shuffled "
-                        "sequences clear this bar more often (50% against 30%)"
+                        f"95% CI {gap['low']:.2f}–{gap['high']:.2f}, excludes zero — "
+                        "antigens rank higher in the cancer they are actually used in"
                     ),
                 )
             )
