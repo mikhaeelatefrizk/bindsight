@@ -52,7 +52,7 @@ jobs:
     name: Push Space assets + rebuild
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for a token
         id: gate
