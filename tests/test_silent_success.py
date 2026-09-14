@@ -977,3 +977,210 @@ class TestTheValidatorNoteCountsWhatItParsed:
 
         assert "parsed confidence=1 of 2 file(s)" in (result.notes or ""), result.notes
         assert result.iptm == pytest.approx(0.8)
+
+
+# ---------------------------------------------------------------------------
+# A manifest must describe paths the way it says it does
+# ---------------------------------------------------------------------------
+class TestARecordedPathIsRunRelative:
+    """``OutputRef.path`` says "Path relative to the run root". The writer stored
+    ``str(path)`` unchanged, which produced repository-relative paths in the
+    launching platform's separators -- ``runs\\join\\deg\\results.parquet``. A
+    manifest read on another machine then described a layout that machine does
+    not have, and the field's own description was false.
+    """
+
+    def test_an_output_inside_the_run_is_recorded_relative_and_posix(self, tmp_path: Path) -> None:
+        from bindsight.provenance.append import output_ref
+
+        run = tmp_path / "run"
+        (run / "deg").mkdir(parents=True)
+        artifact = run / "deg" / "results.parquet"
+        artifact.write_bytes(b"x")
+
+        ref = output_ref("deg_table", artifact, run_dir=run)
+
+        assert ref is not None
+        assert ref.path == "deg/results.parquet", ref.path
+        assert "\\" not in ref.path
+
+    def test_an_input_is_recorded_the_same_way(self, tmp_path: Path) -> None:
+        """Both sides of the graph must describe paths identically."""
+        from bindsight.provenance.append import input_ref
+
+        run = tmp_path / "run"
+        (run / "targets").mkdir(parents=True)
+        artifact = run / "targets" / "candidates.parquet"
+        artifact.write_bytes(b"x")
+
+        ref = input_ref("candidates", artifact, run_dir=run)
+
+        assert ref is not None
+        assert ref.path == "targets/candidates.parquet"
+
+    def test_a_file_outside_the_run_keeps_its_own_path(self, tmp_path: Path) -> None:
+        """A carried-in cohort is not under the run root; inventing a relative
+        path for it would assert a relationship that does not hold."""
+        from bindsight.provenance.append import output_ref
+
+        run = tmp_path / "run"
+        run.mkdir()
+        outside = tmp_path / "cohort.tsv"
+        outside.write_bytes(b"x")
+
+        ref = output_ref("counts", outside, run_dir=run)
+
+        assert ref is not None
+        assert "cohort.tsv" in ref.path
+
+    def test_a_recorded_stage_carries_the_inputs_it_read(self, tmp_path: Path) -> None:
+        """``record()`` had no inputs parameter at all, so every stage the CLI
+        recorded through it carried an empty ``prov:used`` -- a provenance graph
+        with no incoming edges cannot answer "what produced this"."""
+        import json
+
+        from bindsight.provenance import append as provenance
+
+        from bindsight.provenance import new_manifest
+
+        run = tmp_path / "run"
+        (run / "validate").mkdir(parents=True)
+        (run / "rank").mkdir(parents=True)
+        # record() appends to an existing manifest; a run with no root has
+        # nothing to append to, which it warns about rather than inventing one.
+        new_manifest(name="guard").write(run / "run_manifest.jsonld")
+        source = run / "validate" / "validated.parquet"
+        source.write_bytes(b"x")
+        out = run / "rank" / "ranking.parquet"
+        out.write_bytes(b"y")
+
+        path = provenance.record(
+            run,
+            name="rank",
+            tool="bindsight.rank",
+            inputs={"validated": source},
+            outputs={"ranking": out},
+        )
+
+        assert path is not None
+        stage = next(
+            st
+            for st in json.loads(path.read_text(encoding="utf-8"))["stages"]
+            if st["name"] == "rank"
+        )
+        assert stage["inputs"], "the stage recorded no inputs"
+        assert stage["inputs"][0]["path"] == "validate/validated.parquet"
+        assert len(stage["inputs"][0]["sha256"]) == 64
+
+
+class TestTheRankStageRecordsWhatOrderedIt:
+    """A ranking without its weights is underdetermined: the manifest names the
+    output and not the only parameter that decides the order."""
+
+    def test_the_cli_records_the_weights(self) -> None:
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse((root / "bindsight" / "cli.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "record"):
+                continue
+            kwargs = {kw.arg for kw in node.keywords}
+            name = next((kw.value for kw in node.keywords if kw.arg == "name"), None)
+            if isinstance(name, ast.Constant) and name.value == "rank":
+                assert "params" in kwargs, "the rank stage records no parameters"
+                assert "inputs" in kwargs, "the rank stage records no inputs"
+                return
+        raise AssertionError("no rank stage record found in the CLI")
+
+
+class TestTheFragmentStatusVocabularyComesFromTheModel:
+    """An unrecognised status was rewritten to "completed" against a hand-copied
+    set. That is the worst direction for drift: a stage that failed in a way this
+    module did not know about was recorded as having succeeded.
+    """
+
+    def test_the_vocabulary_matches_the_model(self) -> None:
+        from typing import get_args
+
+        from bindsight.provenance.fragments import _STATUS_VALUES
+        from bindsight.provenance.manifest import StageRecord
+
+        assert _STATUS_VALUES == frozenset(get_args(StageRecord.model_fields["status"].annotation))
+
+    def test_an_unknown_status_is_not_recorded_as_success(self, caplog) -> None:
+        import logging
+
+        from bindsight.provenance.fragments import stage_record_from_fragment
+
+        tool = {"name": "x", "version": "1", "license": "MIT"}
+        with caplog.at_level(logging.WARNING):
+            record = stage_record_from_fragment(
+                {"stage": "deg", "status": "exploded", "tool": tool}
+            )
+
+        assert record.status != "completed", (
+            "an unrecognised status was recorded as a completed stage"
+        )
+        assert any("unrecognised status" in r.getMessage() for r in caplog.records)
+
+    def test_a_known_status_is_preserved(self) -> None:
+        from bindsight.provenance.fragments import stage_record_from_fragment
+
+        tool = {"name": "x", "version": "1", "license": "MIT"}
+        for status in ("completed", "failed", "skipped", "skipped_cache"):
+            assert (
+                stage_record_from_fragment({"stage": "deg", "status": status, "tool": tool}).status
+                == status
+            )
+
+
+class TestEveryPinnedDistributionIsClassified:
+    """``SCIENTIFIC_STACK`` decides what a run records about the software that
+    produced its numbers. It was hand-written and had fallen six behind the pins,
+    including ``formulaic`` — pydeseq2's design-matrix engine, whose release can
+    move a log2 fold change on its own.
+    """
+
+    @staticmethod
+    def _pinned() -> set[str]:
+        import re
+
+        root = Path(__file__).resolve().parents[1]
+        return {
+            m.group(1).lower()
+            for line in (root / "envs" / "constraints.txt").read_text(encoding="utf-8").splitlines()
+            if (m := re.match(r"([A-Za-z0-9_.-]+)==", line.strip()))
+        }
+
+    def test_the_pins_are_readable(self) -> None:
+        """Guards the guard: an unparsed constraints file makes this vacuous."""
+        assert len(self._pinned()) >= 10, sorted(self._pinned())
+
+    def test_every_pin_is_either_recorded_or_declared_presentation_only(self) -> None:
+        from bindsight.provenance.manifest import PRESENTATION_ONLY, SCIENTIFIC_STACK
+
+        classified = {n.lower() for n in (*SCIENTIFIC_STACK, *PRESENTATION_ONLY)}
+        unclassified = sorted(self._pinned() - classified)
+
+        assert not unclassified, (
+            f"pinned but neither recorded in the manifest nor declared "
+            f"presentation-only: {unclassified}. A pin nothing records cannot "
+            "help anyone re-derive a published number."
+        )
+
+    def test_the_deg_engine_is_recorded(self) -> None:
+        """The specific omission that motivated this: formulaic is what turns the
+        design formula into the matrix the fit runs on."""
+        from bindsight.provenance.manifest import SCIENTIFIC_STACK
+
+        assert "formulaic" in {n.lower() for n in SCIENTIFIC_STACK}
+
+    def test_nothing_is_in_both_lists(self) -> None:
+        from bindsight.provenance.manifest import PRESENTATION_ONLY, SCIENTIFIC_STACK
+
+        overlap = {n.lower() for n in SCIENTIFIC_STACK} & {n.lower() for n in PRESENTATION_ONLY}
+        assert not overlap, overlap

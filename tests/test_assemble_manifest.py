@@ -84,10 +84,17 @@ def test_assemble_derives_stage_name_from_parent_dir(tmp_path: Path) -> None:
 
 
 def test_assemble_normalizes_unknown_status(tmp_path: Path) -> None:
+    """An unrecognised status becomes "failed", not "completed".
+
+    This asserted "completed". A Snakemake fragment whose status this code does
+    not recognise is a stage in an unknown state, and recording an unknown state
+    as a success is the one direction the normalisation must never take: it turns
+    a stage that may have failed into one the manifest says finished.
+    """
     mod = _load_assembler()
     frag = _write_fragment(tmp_path, "deg", {"stage": "deg", "status": "weird", "metrics": {}})
     manifest = mod.assemble([frag])
-    assert manifest.stages[0].status == "completed"
+    assert manifest.stages[0].status == "failed"
 
 
 def test_assembled_manifest_round_trips_on_disk(tmp_path: Path) -> None:

@@ -25,11 +25,28 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from bindsight.provenance.manifest import Manifest, OutputRef, StageRecord, ToolRef, sha256_file
+from bindsight.provenance.manifest import (
+    InputRef,
+    Manifest,
+    OutputRef,
+    StageRecord,
+    ToolRef,
+    sha256_file,
+)
 
 LOG = logging.getLogger(__name__)
 
-__all__ = ["MANIFEST_NAME", "append_stage", "output_ref", "stage_tool"]
+#: ``record`` is the entry point every caller uses (the CLI imports this
+#: module as ``provenance`` and calls it five times); it was absent from
+#: ``__all__`` while four helpers nothing outside this module calls were in it.
+__all__ = [
+    "MANIFEST_NAME",
+    "append_stage",
+    "input_ref",
+    "output_ref",
+    "record",
+    "stage_tool",
+]
 
 #: The manifest filename inside a run directory.
 MANIFEST_NAME = "run_manifest.jsonld"
@@ -47,21 +64,36 @@ def stage_tool(name: str, version: str | None = None) -> ToolRef:
     )
 
 
-def output_ref(role: str, path: Path) -> OutputRef | None:
+def output_ref(role: str, path: Path, *, run_dir: Path | str | None = None) -> OutputRef | None:
     """An OutputRef for a file that exists, or ``None``.
 
     Returning ``None`` for an absent file keeps a manifest from asserting an
     artifact that was never written, which is the same class of error as
     reporting a lookup that never ran.
+
+    ``path`` is recorded relative to ``run_dir`` in POSIX form, because that is
+    what :class:`OutputRef` says it is: "Path relative to the run root". It used
+    to store ``str(path)`` unchanged, which produced repository-relative paths in
+    the launching platform's separator style -- ``runs\\join\\deg\\results.parquet``
+    on Windows. A manifest read on another machine then described a layout that
+    machine does not have, and the field's own description was false.
     """
     path = Path(path)
     if not path.is_file():
         return None
     from bindsight.provenance.fragments import media_type_for
 
+    recorded = path
+    if run_dir is not None:
+        try:
+            recorded = path.resolve().relative_to(Path(run_dir).resolve())
+        except ValueError:
+            # Outside the run directory (a carried-in cohort, say). Keep the path
+            # as given rather than inventing a relationship that does not hold.
+            recorded = path
     return OutputRef(
         role=role,
-        path=str(path),
+        path=recorded.as_posix(),
         sha256=sha256_file(path),
         bytes=path.stat().st_size,
         media_type=media_type_for(path),
@@ -113,15 +145,55 @@ def record(
     name: str,
     tool: str,
     outputs: dict[str, Path],
+    inputs: dict[str, Path] | None = None,
     params: dict[str, Any] | None = None,
     notes: str | None = None,
 ) -> Path | None:
     """Build and append a completed stage record in one call.
 
-    Outputs that do not exist on disk are omitted rather than asserted.
+    Outputs that do not exist on disk are omitted rather than asserted, and so
+    are inputs: a manifest must not claim to have consumed a file that is not
+    there.
+
+    ``inputs`` exists because it did not. Every stage the CLI recorded through
+    this helper carried an empty ``prov:used``, so the provenance graph had no
+    edge from a stage to the artifacts it read -- and a graph whose whole purpose
+    is "show me what produced this" cannot answer that with no incoming edges.
     """
     stage = StageRecord(name=name, tool=stage_tool(tool), params=params or {})
     stage.notes = notes
-    refs = [ref for role, path in outputs.items() if (ref := output_ref(role, path)) is not None]
+    stage.inputs = [
+        ref
+        for role, path in (inputs or {}).items()
+        if (ref := input_ref(role, path, run_dir=run_dir)) is not None
+    ]
+    refs = [
+        ref
+        for role, path in outputs.items()
+        if (ref := output_ref(role, path, run_dir=run_dir)) is not None
+    ]
     stage.mark_completed(outputs=refs)
     return append_stage(run_dir, stage)
+
+
+def input_ref(role: str, path: Path, *, run_dir: Path | str | None = None) -> InputRef | None:
+    """An InputRef for a file that exists, or ``None``.
+
+    The mirror of :func:`output_ref`, and recorded the same way, so the two sides
+    of the provenance graph describe paths identically.
+    """
+    path = Path(path)
+    if not path.is_file():
+        return None
+    recorded = path
+    if run_dir is not None:
+        try:
+            recorded = path.resolve().relative_to(Path(run_dir).resolve())
+        except ValueError:
+            recorded = path
+    return InputRef(
+        role=role,
+        path=recorded.as_posix(),
+        sha256=sha256_file(path),
+        bytes=path.stat().st_size,
+    )

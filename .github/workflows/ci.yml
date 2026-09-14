@@ -31,9 +31,11 @@ jobs:
         run: ruff format --check bindsight tests scripts
       # Blocking. pyproject sets strict = true and CI swallowed the result with
       # `|| true`, so 53 errors accumulated unnoticed -- including the arity bug
-      # that left the Snakemake front-end dead for five weeks.
+      # that left the Snakemake front-end dead for five weeks. That front-end is
+      # scripts/, which this step did not check: the justification named a
+      # directory outside its own scope.
       - name: mypy
-        run: mypy bindsight
+        run: mypy bindsight scripts
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
@@ -42,7 +44,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.11", "3.12"]
+        # 3.13 is here because the hosted demo Space runs it. An interpreter
+        # the project deploys on and does not test is an untested claim.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

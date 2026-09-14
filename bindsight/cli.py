@@ -509,11 +509,19 @@ def rank(run_dir: Path) -> None:
             )
         )
         sys.exit(2)
+    # The weights are what turn four metrics into one ordering, and they are
+    # configurable. Recording the ranking without them left the published order
+    # underdetermined: nothing in the manifest says which weighting produced it.
+    from bindsight.config import RankWeights
+
+    weights = RankWeights()
     provenance.record(
         run_dir,
         name="rank",
         tool="bindsight.rank",
+        inputs={"validated": run_dir / "validate" / "validated.parquet"},
         outputs={"ranking": out},
+        params={"weights": weights.model_dump()},
     )
     console.print(
         Panel(
@@ -841,16 +849,19 @@ def ui(port: int, no_browser: bool) -> None:
     import subprocess
     import sys as _sys
 
-    repo_root = Path(__file__).parent.parent
-    entry = repo_root / "streamlit_app.py"
-    if not entry.exists():
-        # Editable installs: try CWD as a fallback.
-        entry = Path("streamlit_app.py").resolve()
-    if not entry.exists():
+    # The packaged module, not a repository file. This looked for a root-level
+    # streamlit_app.py, which the wheel does not contain, so `bindsight ui`
+    # worked only from a source checkout. The sibling path --
+    # `report --format streamlit` -- already imports the packaged module, so the
+    # same file had one correct and one incorrect way of finding the same app.
+    from bindsight.report import streamlit_app
+
+    entry = Path(streamlit_app.__file__)
+    if not entry.exists():  # pragma: no cover - a module without a file on disk
         console.print(
             Panel(
-                "[red]streamlit_app.py not found.[/red] Re-install from the repo root: "
-                "[bold]pip install -e .[/bold]",
+                "[red]The packaged Streamlit entry point is missing.[/red] "
+                "Re-install: [bold]pip install bindsight[report][/bold]",
                 title="ui: missing entrypoint",
                 border_style="red",
             )
@@ -1970,6 +1981,12 @@ def demo(out_dir: Path, no_report: bool) -> None:
     # Resolve the bundled config relative to the package install root.
     repo_root = Path(__file__).parent.parent
     cfg_path = repo_root / "examples" / "demo" / "config.yaml"
+    if not cfg_path.exists():
+        # Installed wheels put it in shared-data under sys.prefix (pyproject's
+        # [tool.hatch.build.targets.wheel.shared-data]). Without this candidate
+        # `bindsight demo` could only ever run from a source checkout, which is
+        # the one situation the one-button demo is not for.
+        cfg_path = Path(sys.prefix) / "bindsight_demo" / "config.yaml"
     if not cfg_path.exists():
         # Editable installs: try CWD as a fallback.
         cfg_path = Path("examples/demo/config.yaml")

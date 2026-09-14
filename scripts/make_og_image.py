@@ -36,7 +36,9 @@ def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     try:
         return ImageFont.truetype(str(base / name), size)
     except OSError:  # pragma: no cover - environment without the bundled fonts
-        return ImageFont.load_default()
+        # ``load_default`` is typed as the base ImageFont; every caller here only
+        # renders text, which both classes do.
+        return ImageFont.load_default()  # type: ignore[return-value]
 
 
 def _background() -> Image.Image:
@@ -73,7 +75,7 @@ def _mark(size: int) -> Image.Image:
     cap_w, cap_h = int(s * 0.15), int(s * 0.32)
     cap = Image.new("RGBA", (cap_w, cap_h), (0, 0, 0, 0))
     ImageDraw.Draw(cap).rounded_rectangle((0, 0, cap_w - 1, cap_h - 1), cap_w // 2, fill=TEAL)
-    cap = cap.rotate(-45, expand=True, resample=Image.BICUBIC)
+    cap = cap.rotate(-45, expand=True, resample=Image.Resampling.BICUBIC)
 
     # Seat the capsule slightly inside the ring radius so it reads as docked
     # into the open site rather than floating beside it.
@@ -82,7 +84,7 @@ def _mark(size: int) -> Image.Image:
     by = int(cy - radius * 0.707) - cap.height // 2
     layer.alpha_composite(cap, (bx, by))
 
-    return layer.resize((size, size), Image.LANCZOS)
+    return layer.resize((size, size), Image.Resampling.LANCZOS)
 
 
 def main() -> int:

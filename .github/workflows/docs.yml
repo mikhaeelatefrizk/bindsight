@@ -40,7 +40,7 @@ jobs:
       # so the results generator reaches report/showcase.py without pulling in
       # pandas or jinja2. tests/test_report_lazy_import.py guards that.
       - name: Install docs deps
-        run: pip install -e "." "mkdocs-material>=9.5,<10"
+        run: pip install -e ".[docs]"   # the extra exists for exactly this; one place holds the bound
       - name: Regenerate the results page from benchmarks/
         run: python scripts/build_docs_results.py
       # --strict fails the build on broken internal links. It caught nine

@@ -23,8 +23,9 @@ a Snakemake run is as auditable as a CLI run.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 from bindsight.provenance.manifest import (
     InputRef,
@@ -48,6 +49,14 @@ _MEDIA_TYPES = {
     ".pdb": "chemical/x-pdb",
     ".yaml": "application/yaml",
 }
+
+
+LOG = logging.getLogger(__name__)
+
+
+#: The statuses :class:`~bindsight.provenance.manifest.StageRecord` accepts, read
+#: from the model so the two cannot disagree.
+_STATUS_VALUES: frozenset[str] = frozenset(get_args(StageRecord.model_fields["status"].annotation))
 
 
 def media_type_for(path: Path | str) -> str | None:
@@ -171,8 +180,19 @@ def stage_record_from_fragment(payload: dict[str, Any]) -> StageRecord:
     """
     name = str(payload.get("stage") or "unknown")
     status = str(payload.get("status") or "completed")
-    if status not in {"running", "completed", "failed", "skipped", "skipped_cache"}:
-        status = "completed"
+    # Derived from StageRecord's own Literal rather than restated here. The
+    # hand-copied set could fall behind the model, and an unrecognised status
+    # being rewritten to "completed" is the worst possible direction for that
+    # drift: a stage that failed in a way this file does not know about would be
+    # recorded as having succeeded.
+    if status not in _STATUS_VALUES:
+        LOG.warning(
+            "fragment for stage %r carries unrecognised status %r; recording it as "
+            "failed rather than completed, because an unknown state is not success",
+            name,
+            status,
+        )
+        status = "failed"
 
     tool_payload = payload.get("tool") or default_tool()
     notes = payload.get("notes")

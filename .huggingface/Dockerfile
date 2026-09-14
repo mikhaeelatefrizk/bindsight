@@ -9,7 +9,10 @@
 # `.github/workflows/sync-hf-space.yml` uploads this file and that config to the
 # Space on every release, so the two can no longer drift.
 
-FROM python:3.13.5-slim
+# Digest-pinned, like the root Dockerfile. A floating tag means the public
+# demo can be rebuilt onto a different base than the one it was tested on,
+# and nothing records which base produced a given deployment.
+FROM python:3.13.5-slim@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
 
 WORKDIR /app
 

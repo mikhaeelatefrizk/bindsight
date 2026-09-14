@@ -442,8 +442,11 @@ def test_fragment_preserves_skipped_status() -> None:
         {"stage": "design", "status": "skipped", "tool": default_tool(), "notes": "no GPU"}
     )
     assert record.status == "skipped"
-    # Unknown statuses still normalise, as before.
-    assert stage_record_from_fragment({"stage": "design", "status": "bogus"}).status == "completed"
+    # An unrecognised status normalises to "failed", not "completed". This
+    # asserted "completed" — so a stage that failed in a way this module does not
+    # know about was recorded as having succeeded, which is the one direction
+    # this normalisation must never take.
+    assert stage_record_from_fragment({"stage": "design", "status": "bogus"}).status == "failed"
 
 
 # ---------------------------------------------------------------------------

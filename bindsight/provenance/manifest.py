@@ -436,12 +436,29 @@ SCIENTIFIC_STACK: tuple[str, ...] = (
     "pandas",
     "pyarrow",
     "pydeseq2",
+    # pydeseq2's design-matrix engine: it turns ``~ case_barcode + condition``
+    # into the matrix the fit runs on, so its release can move a log2 fold change
+    # without anything else changing. It was pinned in envs/constraints.txt and
+    # absent from this list, which is the combination that makes a pin useless --
+    # constrained at install time, unrecorded in the artifact.
+    "formulaic",
+    "formulaic-contrasts",
     "biopython",
     "scikit-learn",
     "anndata",
+    # anndata's on-disk backends. A release that changes how a matrix round-trips
+    # changes the numbers read back out of it.
+    "h5py",
+    "zarr",
+    "numcodecs",
     "torch",
     "transformers",
 )
+
+#: Pinned distributions that cannot change a reported number: they render, they
+#: do not compute. Listed explicitly rather than left out, so that every pin is
+#: accounted for and a new one has to be classified rather than silently omitted.
+PRESENTATION_ONLY: tuple[str, ...] = ("matplotlib",)
 
 
 def _capture_libraries() -> dict[str, str | None]:

@@ -29,7 +29,9 @@ WORKDIR /app
 COPY . /app
 # Constraints pin the scientific stack to the versions this release was tested
 # against, so the image and a local `pip install -c envs/constraints.txt` agree.
-RUN pip install --no-cache-dir -c envs/constraints.txt -e ".[discover,report]"
+# `workflow` is here because this image's own header promises the Snakemake
+# front-end runs in it; without the extra, snakemake is simply absent.
+RUN pip install --no-cache-dir -c envs/constraints.txt -e ".[discover,report,workflow]"
 
 ENTRYPOINT ["bindsight"]
 CMD ["--help"]

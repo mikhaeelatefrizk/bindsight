@@ -280,8 +280,42 @@ def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
             path = ref.get("path")
             sha = ref.get("sha256")
             if path and sha:
-                digests[PurePosixPath(Path(path).as_posix()).name] = sha
+                # Keyed by the run-relative path, which is what the docstring
+                # above promises. Keying on the basename made two files called
+                # ``metrics.jsonl`` in different stages one entry, and left every
+                # file whose basename the manifest did not record undigested.
+                digests[PurePosixPath(Path(path).as_posix()).as_posix()] = sha
     return digests
+
+
+def _digest_for(digests: dict[str, str], wanted: str) -> str | None:
+    """Find an artifact's recorded digest, precisely where possible.
+
+    Three steps, narrowing to broadening:
+
+    1. The exact run-relative path, which is what the map is keyed by.
+    2. A recorded path that ends with it — manifests written before paths were
+       normalised stored repository-relative ones such as
+       ``runs/join/deg/results.parquet``.
+    3. The basename, but **only when exactly one recorded path has it**. This map
+       used to be keyed by basename outright, which silently merged two files
+       called ``metrics.jsonl`` into one entry and attached whichever digest won
+       to both. Requiring uniqueness keeps the convenience without the collision:
+       an ambiguous basename yields no digest rather than a wrong one.
+    """
+    exact = digests.get(wanted)
+    if exact is not None:
+        return exact
+
+    suffix_matches = [v for k, v in digests.items() if k.endswith("/" + wanted)]
+    if len(suffix_matches) == 1:
+        return suffix_matches[0]
+
+    base = PurePosixPath(wanted).name
+    by_base = [v for k, v in digests.items() if PurePosixPath(k).name == base]
+    if len(by_base) == 1:
+        return by_base[0]
+    return None
 
 
 def _build_metadata(
@@ -313,7 +347,7 @@ def _build_metadata(
             "name": p.name,
             "contentSize": p.stat().st_size,
         }
-        sha = digests.get(p.name)
+        sha = _digest_for(digests, p.relative_to(run).as_posix())
         if sha:
             # schema.org has no sha256 term; this is the RO-Crate convention.
             entry["sha256"] = sha
@@ -331,7 +365,10 @@ def _build_metadata(
                 "patient barcodes it started from."
             ),
         }
-        sha = digests.get(src.name)
+        # A carried-in input lives outside the run, so it has no run-relative
+        # path; the manifest recorded it however the run was launched. The
+        # resolver's unambiguous-basename fallback is what matches it.
+        sha = _digest_for(digests, src.name)
         if sha:
             input_entry["sha256"] = sha
         file_entries.append(input_entry)
@@ -361,7 +398,10 @@ def _build_metadata(
                     "url": "https://github.com/mikhaeelatefrizk/bindsight",
                     "license": "AGPL-3.0-or-later",
                 },
-                "hasPart": [{"@id": e["@id"]} for e in file_entries],
+                # software.bib is packaged and described below, so it belongs
+                # here too: a conforming RO-Crate reader walks hasPart, and a
+                # file absent from it is a file the crate does not declare.
+                "hasPart": [{"@id": e["@id"]} for e in file_entries] + [{"@id": "software.bib"}],
                 "bindsight:run_id": manifest.get("run_id", ""),
             },
             *file_entries,

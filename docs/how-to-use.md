@@ -35,7 +35,7 @@ bindsight verify-licenses     # see the per-component license inventory
 tells you what's installed, what's cached, and what's missing.
 
 Optional extras: `.[runners]` (Modal/Kaggle clients), `.[workflow]` (the
-Snakemake front-end). `.[all]` installs everything.
+Snakemake front-end). `.[all]` installs `discover`, `report`, `runners`, `workflow` — not `docs` or `embed`, which are separate because they are large and optional (the ESM-2 pre-screen and the docs site build respectively).
 
 ---
 

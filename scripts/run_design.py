@@ -12,8 +12,15 @@ and can't run unattended in a DAG.
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-snakemake = snakemake  # type: ignore[name-defined]  # noqa: F821
+if TYPE_CHECKING:  # pragma: no cover - the Snakemake runtime injects this
+    # Declared rather than self-assigned: ``snakemake = snakemake`` reads as
+    # undefined to a type checker, which is why scripts/ could not be added
+    # to the mypy gate that exists because of a bug in scripts/.
+    snakemake: Any
+else:
+    snakemake = snakemake  # noqa: F821
 
 logging.basicConfig(
     filename=str(snakemake.log[0]),
