@@ -52,6 +52,11 @@ DEFAULT_IPTM_SUCCESS = 0.65
 #: One string, referenced by every surface that renders the rate, so the caveat
 #: cannot survive in one place and go stale in another. A test fails if a
 #: document states the rate without it.
+#: The designer-benchmark summary schema. Named because two writers emit it —
+#: this module and benchmarks/designer_benchmark/score_run.py — and a bumped
+#: version in one would silently disagree with the other.
+DESIGNER_BENCHMARK_SCHEMA = "bindsight-designer-benchmark/1"
+
 IPTM_CALIBRATION_CAVEAT = (
     "> **This success rate is withdrawn as a measure of design quality.** "
     "A paired control folded each of these twenty designs in one job alongside "
@@ -239,13 +244,27 @@ def _read_metrics(metrics_jsonl: Path) -> list[dict[str, Any]]:
     if not metrics_jsonl.exists():
         return []
     rows = []
-    for line in metrics_jsonl.read_text().splitlines():
+    skipped: list[int] = []
+    for lineno, line in enumerate(metrics_jsonl.read_text().splitlines(), start=1):
         line = line.strip()
-        if line:
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            # Named, not swallowed. Every dropped line changes n_designs, the
+            # mean ipTM and the success rate, and the old ``continue`` left no
+            # trace of it anywhere: a truncated file scored as a smaller run.
+            skipped.append(lineno)
+    if skipped:
+        LOG.warning(
+            "%s: %d unparseable line(s) skipped (line %s); n_designs and every "
+            "rate below are computed over the %d that parsed",
+            metrics_jsonl,
+            len(skipped),
+            ", ".join(str(n) for n in skipped[:10]),
+            len(rows),
+        )
     return rows
 
 
@@ -521,7 +540,7 @@ def run_designer_benchmark(
         if archives:
             stage_binder_artifacts(archives, out_dir)
     summary = {
-        "schema": "bindsight-designer-benchmark/1",
+        "schema": DESIGNER_BENCHMARK_SCHEMA,
         "generated_utc": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         "bindsight_version": __version__,
         "backend": backend,

@@ -145,11 +145,16 @@ yet and nothing in the codebase depends on it.
 
 ```python
 class GPURunner(Protocol):
-    def submit(self, spec: DesignSpec) -> JobHandle: ...
+    def estimate_cost(self, spec_size: int) -> CostEstimate: ...
+    def submit(self, spec_path: Path, *, results_dir: Path) -> JobHandle: ...
     def poll(self, handle: JobHandle) -> JobStatus: ...
     def fetch(self, handle: JobHandle) -> Path: ...  # returns local path to results.tar.gz
-    def estimate_cost(self, spec: DesignSpec) -> CostEstimate: ...
 ```
+
+Copied from `bindsight/runners/protocol.py`, and checked against it by
+`tests/test_docs_claims.py`: this block used to show `submit(spec: DesignSpec)`
+and `estimate_cost(spec: DesignSpec)`, neither of which is the real signature, in
+the document that presents itself as the interface contract.
 
 Implementations:
 

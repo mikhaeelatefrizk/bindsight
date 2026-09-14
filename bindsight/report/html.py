@@ -107,6 +107,9 @@ def render_run(
         # ``candidates_table|length``, which is capped at 20, so every run with
         # more than twenty candidates published "20" as its candidate count.
         n_candidates=len(candidates_df) if candidates_df is not None else 0,
+        # "could not be read" and "read, and empty" are different findings, and
+        # the template said the second for both.
+        candidates_unreadable=candidates_df is None,
         n_epitopes=len(epitopes_df) if epitopes_df is not None else 0,
         binders_table=_binders_table(ranking_df, run_dir, include_sequences=include_binders),
         n_binders=len(ranking_df) if ranking_df is not None else 0,

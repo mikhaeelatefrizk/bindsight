@@ -84,7 +84,12 @@ You can drive the exact same pipeline two ways:
   or `bindsight run <config>` for the whole chain.
 - **Snakemake** (optional, `pip install -e ".[workflow]"`): `snakemake
   --configfile <config> --cores 4`. Each rule calls the same `bindsight.*`
-  functions, so artifacts are identical.
+  functions, so the artifacts each stage writes match — but the DAG is shorter:
+  `export` exists only on the CLI, so the Snakemake path terminates at
+  `report.html` and produces no RO-Crate. Treat the CLI as the reference, as
+  [ARCHITECTURE](https://github.com/mikhaeelatefrizk/bindsight/blob/main/ARCHITECTURE.md)
+  does; this page used to say the two produce identical artifacts, which is true
+  of each stage and not of the run.
 
 ---
 

@@ -61,6 +61,19 @@ _force_utf8_io()
 
 LOG_CLI = logging.getLogger(__name__)
 
+
+def _default_known_antigens() -> Path:
+    """The shipped known-antigen set, resolved from the source tree if present.
+
+    The default was the bare relative path ``benchmarks/known.tsv``, which only
+    exists when the command is run from a repository checkout — and Click checks
+    ``exists=True`` against it, so from a pip install the option failed before
+    the command ran, naming a path the user has no reason to expect.
+    """
+    candidate = Path(__file__).resolve().parent.parent / "benchmarks" / "known.tsv"
+    return candidate if candidate.is_file() else Path("benchmarks/known.tsv")
+
+
 from bindsight.benchmark.core import DEFAULT_KS  # noqa: E402
 from bindsight.provenance import append as provenance  # noqa: E402
 
@@ -793,9 +806,13 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     "--known-antigens",
     "known_antigens",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    default=Path("benchmarks/known.tsv"),
+    default=_default_known_antigens(),
     show_default=True,
-    help="TSV of held-out known antigens (symbol, uniprot, tumor_type, ...).",
+    help=(
+        "TSV of held-out known antigens (symbol, uniprot, tumor_type, ...). "
+        "The default ships with the source tree, not with the wheel: from a pip "
+        "install there is no benchmarks/ directory, so pass this explicitly."
+    ),
 )
 @click.option(
     "--out",

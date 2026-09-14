@@ -103,8 +103,108 @@ class TestMirrorIsExact:
             )
 
 
+#: Distributions whose import name differs from the name pip installs. Only the
+#: handful that differ; everything else maps to itself.
+_IMPORT_NAMES: dict[str, str] = {
+    "pyyaml": "yaml",
+    "scikit-learn": "sklearn",
+    "biopython": "Bio",
+    "pydantic-settings": "pydantic_settings",
+    "python-dateutil": "dateutil",
+    "pillow": "PIL",
+    "typing-extensions": "typing_extensions",
+    "formulaic-contrasts": "formulaic_contrasts",
+}
+
+#: Declared dependencies that no module imports directly, each with its reason.
+#: A dependency reaches the environment for a purpose; when that purpose is not
+#: an import, the purpose is written down here rather than left to be guessed.
+_INDIRECT: dict[str, str] = {
+    "openpyxl": "pandas.read_excel's engine for the SURFY .xlsx; imported by pandas",
+    "pyarrow": "pandas' parquet engine; imported by pandas, not by bindsight",
+}
+
+
+def _imported_top_level_modules() -> set[str]:
+    """Every third-party module the package imports, found by parsing."""
+    import ast
+
+    found: set[str] = set()
+    for path in (REPO / "bindsight").rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                found.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                found.add(node.module.split(".")[0])
+    return found
+
+
 class TestNoDeadDependencies:
-    """Every declared dependency should be imported by something."""
+    """Every declared dependency should be imported by something.
+
+    This class asserted that three historically-removed names stay removed. That
+    keeps three packages out; it says nothing about the dozens declared now, so a
+    dependency added and never used would sit in every user's environment
+    unnoticed — which is exactly how the three got there.
+    """
+
+    def test_the_import_scan_finds_the_obvious_ones(self) -> None:
+        """Guards the guard: a parse that found nothing would pass everything."""
+        imported = _imported_top_level_modules()
+
+        assert {"pandas", "pydantic", "click"} <= imported, sorted(imported)[:20]
+
+    @staticmethod
+    def _all_declared() -> set[str]:
+        """The mirrored extras **and** the base dependencies.
+
+        ``_pyproject_requirements`` covers only the extras it mirrors into
+        requirements.txt, so ``project.dependencies`` — the set every single
+        install receives — was outside this check entirely.
+        """
+        import tomllib
+
+        data = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+        base = {spec.split("#", 1)[0].strip() for spec in data["project"]["dependencies"]}
+        return base | _pyproject_requirements()
+
+    def test_the_scan_covers_the_base_dependencies(self) -> None:
+        """Guards the guard: the extras-only scope is what let this miss them."""
+        import tomllib
+
+        data = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+        base = {_name(spec) for spec in data["project"]["dependencies"]}
+        covered = {_name(spec) for spec in self._all_declared()}
+
+        assert base, "pyproject declares no base dependencies"
+        assert base <= covered, sorted(base - covered)
+
+    def test_every_declared_dependency_is_imported_or_explained(self) -> None:
+        imported = _imported_top_level_modules()
+        unexplained: list[str] = []
+        for spec in self._all_declared():
+            name = _name(spec)
+            module = _IMPORT_NAMES.get(name, name.replace("-", "_"))
+            # Case-insensitively: PyPI names are case-insensitive and pip
+            # normalises them, so the distribution `py3Dmol` is declared as
+            # `py3dmol` while the module it installs is `py3Dmol`.
+            if module.lower() in {m.lower() for m in imported} or name in _INDIRECT:
+                continue
+            unexplained.append(name)
+
+        assert not unexplained, (
+            f"declared but never imported, and with no stated indirect use: "
+            f"{unexplained}. Add the import, drop the dependency, or record why "
+            "it is needed in _INDIRECT."
+        )
+
+    def test_the_indirect_list_has_no_stale_entries(self) -> None:
+        """An entry for a dependency that no longer exists hides the next one."""
+        declared = {_name(spec) for spec in self._all_declared()}
+        stale = sorted(set(_INDIRECT) - declared)
+
+        assert not stale, f"_INDIRECT explains dependencies that are gone: {stale}"
 
     def test_the_removed_three_stay_removed(self) -> None:
         """gql, seaborn and pydantic-settings were declared and never imported.

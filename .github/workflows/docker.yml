@@ -34,8 +34,12 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          # A version tag on tag pushes. The workflow triggers on `v*` and
+          # published only `:latest` and `:<sha>`, so a release produced no
+          # tag anyone could pin to — and `:latest` moved under them instead.
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ startsWith(github.ref, 'refs/tags/') && format('{0}:{1}', env.IMAGE, github.ref_name) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -130,6 +130,11 @@
     <a href="#incomplete">above</a>). The filters were never reached, so loosening
     them would be answering a question that was never asked.
   </p>
+  {% elif candidates_unreadable %}
+  <p class="note err">
+    The candidate table could not be read, so how many candidates survived is
+    unknown. This is not the same as none surviving: nothing was measured.
+  </p>
   {% else %}
   <p class="note">No candidates survived the filters. Loosen thresholds in the config and re-run.</p>
   {% endif %}

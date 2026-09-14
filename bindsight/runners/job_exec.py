@@ -982,8 +982,17 @@ def materialise_target(spec: dict[str, Any], spec_dir: Path, work_dir: Path) -> 
     work_dir.mkdir(parents=True, exist_ok=True)
     dst = work_dir / "target.pdb"
     if not src or not Path(src).exists():
-        LOG.warning("target structure not found (%s); designer will fail without it", src)
-        return
+        # Raise rather than warn-and-continue. This logged that the designer
+        # "will fail without it" and then let the job run anyway, so the GPU
+        # session was spent reaching an unrelated-looking error somewhere
+        # downstream instead of stopping here, where the cause is known.
+        raise FileNotFoundError(
+            f"target structure not found: {src!r}. It is resolved from "
+            "extra_params['target_structure_name'] relative to the spec "
+            "directory, then from target_structure_path. Re-run "
+            "`bindsight design` so the structure ships with the spec, or place "
+            "the file at that path before submitting."
+        )
     src = Path(src)
     if src.suffix.lower() in {".cif", ".mmcif"}:
         _cif_to_pdb(src, dst)

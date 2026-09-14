@@ -55,9 +55,13 @@ dry-run of the real job: it uses the production plugin stack
 
 ## Target set
 
-Defaults to the held-out known antigens (`benchmarks/known.tsv`): ERBB2, EGFR,
-MSLN, CD33, IL3RA. Epitope residues are left empty (whole-target design) by
-default — valid per `DesignSpec`. The committed ERBB2 result instead targets the
+Defaults to **ERBB2 alone** (`DEFAULT_TARGETS` in
+`bindsight/benchmark/designer_bench.py`). This page used to say the default was
+the five held-out antigens in `benchmarks/known.tsv` — ERBB2, EGFR, MSLN, CD33,
+IL3RA — which is the benchmark's *known set*, not its design target set; running
+the harness on that expectation would have cost five times the GPU budgeted.
+Epitope residues are left empty (whole-target design) by default — valid per
+`DesignSpec`. The committed ERBB2 result instead targets the
 extracellular **domain IV** (the trastuzumab epitope) via `prepare_erbb2_target.py`.
 
 ## Step 0 — CPU smoke test (no GPU, no network)

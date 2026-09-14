@@ -1251,3 +1251,162 @@ def test_the_binder_figure_list_is_complete() -> None:
     assert not missing, (
         f"documents quoting the binder figures but absent from BINDER_FIGURE_DOCS: {missing}"
     )
+
+
+# ---------------------------------------------------------------------------
+# The surfaceome sizes are stated in prose and in code; the data decides
+# ---------------------------------------------------------------------------
+class TestTheSurfaceomeSizesAgreeWithTheData:
+    """2,886 / 1,915 / 4,801 appear across five code and prose locations with
+    nothing checking them against the lists they describe. They are load-bearing:
+    the extension exists because SURFY omits CA9 and STEAP1, and the study's
+    eligible denominators come from it.
+    """
+
+    @staticmethod
+    def _sizes() -> dict[str, int]:
+        from bindsight.surfaceome import load_surfaceome
+
+        core = load_surfaceome(extended=False)
+        full = load_surfaceome(extended=True)
+        return {"core": len(core), "total": len(full), "added": len(full) - len(core)}
+
+    def test_the_constant_matches_the_vendored_list(self) -> None:
+        from bindsight.surfaceome import SURFY_PROTEIN_COUNT
+
+        assert SURFY_PROTEIN_COUNT == self._sizes()["core"]
+
+    def test_the_generator_does_not_keep_its_own_copy(self) -> None:
+        """``scripts/build_surfy_list.py`` writes the file the package checks; a
+        second literal there could produce a list the loader then rejects."""
+        source = (ROOT / "scripts" / "build_surfy_list.py").read_text(encoding="utf-8")
+
+        assert "EXPECTED_COUNT = 2886" not in source
+        assert "SURFY_PROTEIN_COUNT" in source
+
+    def test_every_document_stating_a_size_states_the_real_one(self) -> None:
+        """Any of the three figures appearing in shipped prose must be the
+        measured one. A document may omit them; it may not state a different one."""
+        import re
+
+        sizes = self._sizes()
+        wrong: list[str] = []
+        # "accessions" is the word the surfaceome sizes are written with;
+        # SURFACE-Bind's coverage is written as "proteins", and matching that
+        # too swept in a different quantity entirely.
+        pattern = re.compile(r"\b([1-9],?\d{3})\s+accessions")
+        # The list sizes, plus every eligible-surfaceome size the study
+        # measured (the validation manuscript quotes their median). Both are
+        # measured quantities; a figure matching neither is one nothing
+        # produced.
+        measured = set(sizes.values())
+        study = ROOT / "benchmarks" / "study" / "results.json"
+        if study.is_file():
+            import statistics
+
+            eligible = [
+                v["n_eligible_surfaceome"]
+                for v in json.loads(study.read_text(encoding="utf-8"))[
+                    "set_sizes_by_cohort"
+                ].values()
+            ]
+            measured |= set(eligible) | {int(statistics.median(eligible))}
+        allowed = {f"{v:,}" for v in measured} | {str(v) for v in measured}
+        for path in _shipped_documents():
+            if path.suffix not in {".md", ".tex"} or path.name == "CHANGELOG.md":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if "surfaceome" not in text.lower() and "SURFY" not in text:
+                continue
+            for match in pattern.findall(text):
+                if match not in allowed:
+                    wrong.append(f"{path.relative_to(ROOT).as_posix()}: {match!r}")
+        assert not wrong, (
+            f"documents stating a surfaceome size that is not {sorted(allowed)}: {wrong}"
+        )
+
+    def test_the_arithmetic_the_prose_states_holds(self) -> None:
+        """ "1,915 further accessions, 4,801 in total" is a sum, and sums can rot."""
+        sizes = self._sizes()
+
+        assert sizes["core"] + sizes["added"] == sizes["total"]
+
+
+def test_the_colab_recipe_pins_and_seeds_like_the_pipeline() -> None:
+    """The Colab how-to installed ``boltz==2.*`` and ran ``boltz predict`` with
+    neither ``--seed`` nor ``--diffusion_samples`` — a floating version and a
+    single unseeded draw, in a document teaching the same measurement the
+    pipeline takes care to pin and seed.
+    """
+    from bindsight.validate.boltz2 import PINNED_BOLTZ2_VERSION
+
+    text = _read("docs/colab-design-howto.md")
+
+    installs = [ln for ln in text.splitlines() if "pip install" in ln and "boltz" in ln]
+    assert installs, "the recipe installs no Boltz-2"
+    for line in installs:
+        assert f"boltz=={PINNED_BOLTZ2_VERSION}" in line, (
+            f"the recipe installs a version that is not the pinned one: {line.strip()}"
+        )
+    # Checked on the install lines rather than the whole document: the comment
+    # explaining why the floating spec was replaced necessarily contains it.
+    assert "--seed" in text, "the recipe runs the validator unseeded"
+    assert "--diffusion_samples" in text, "the recipe takes a single draw"
+
+
+def test_the_benchmark_schema_identifier_has_one_definition() -> None:
+    """Two writers emitted the same string independently, so a bumped version in
+    one would disagree with the other while both claimed the same schema."""
+    import re
+
+    from bindsight.benchmark.designer_bench import DESIGNER_BENCHMARK_SCHEMA
+
+    literals: list[str] = []
+    for rel in (
+        "bindsight/benchmark/designer_bench.py",
+        "benchmarks/designer_benchmark/score_run.py",
+    ):
+        source = (ROOT / rel).read_text(encoding="utf-8")
+        literals += [
+            f"{rel}:{m}" for m in re.findall(r'"(bindsight-designer-benchmark/\d+)"', source)
+        ]
+
+    assert len(literals) == 1, (
+        f"the schema identifier is written as a literal in {literals}; it should be "
+        f"defined once ({DESIGNER_BENCHMARK_SCHEMA}) and imported"
+    )
+
+
+def test_the_documented_runner_protocol_matches_the_code() -> None:
+    """ARCHITECTURE prints the GPURunner Protocol as the interface contract, and
+    showed ``submit(spec: DesignSpec)`` and ``estimate_cost(spec: DesignSpec)`` —
+    neither of which is the real signature. A plugin author reading the document
+    that presents itself as the contract would implement the wrong interface.
+
+    ARCHITECTURE now says this block is checked here, so it is.
+    """
+    import inspect
+
+    from bindsight.runners.protocol import GPURunner
+
+    architecture = _read("ARCHITECTURE.md")
+    block_start = architecture.index("class GPURunner(Protocol):")
+    block = architecture[block_start : architecture.index("```", block_start)]
+
+    for name in ("estimate_cost", "submit", "poll", "fetch"):
+        method = getattr(GPURunner, name)
+        params = [p for p in inspect.signature(method).parameters if p != "self"]
+        assert f"def {name}(" in block, f"ARCHITECTURE omits {name} from the Protocol"
+        for param in params:
+            assert param in block, (
+                f"ARCHITECTURE's {name}() does not show the {param!r} parameter; "
+                f"the real signature is {inspect.signature(method)}"
+            )
+
+    documented = set(re.findall(r"def (\w+)\(", block))
+    real = {
+        n for n, _ in inspect.getmembers(GPURunner, inspect.isfunction) if not n.startswith("_")
+    }
+    assert documented == real, (
+        f"ARCHITECTURE documents {sorted(documented)}; the Protocol declares {sorted(real)}"
+    )

@@ -96,7 +96,10 @@ In the ColabDesign diffusion notebook:
 Add a new cell after ProteinMPNN finishes:
 
 ```python
-!pip install -q boltz==2.* 2>/dev/null
+# Pinned to the version the pipeline pins. `boltz==2.*` floats, so this
+# recipe could install a different Boltz-2 than every committed number
+# was produced with.
+!pip install -q boltz==2.0.3 2>/dev/null
 
 from pathlib import Path
 import yaml
@@ -114,11 +117,18 @@ for pdb in Path("outputs").glob("*.pdb"):
     }
     cfg_path = pdb.with_suffix(".yaml")
     cfg_path.write_text(yaml.safe_dump(cfg))
-    !boltz predict {cfg_path} --use_msa_server --out_dir boltz_out
+    # --seed and --diffusion_samples, as the pipeline passes them. Boltz-2
+    # builds structures by diffusion: without a seed each ipTM is one
+    # unrepeatable draw, and with one sample it is a draw rather than a
+    # measurement. The project's own calibration measured a median ipTM
+    # movement of 0.172 between refolds of the same sequence.
+    !boltz predict {cfg_path} --use_msa_server --out_dir boltz_out \n        --seed 0 --diffusion_samples 5
 ```
 
 This gives you an iPTM and a predicted affinity per design. Sort by either
-to rank.
+to rank — but read `benchmarks/calibration/README.md` first: shuffles of these
+designs' own sequences clear the 0.65 bar more often than the designs do, so the
+rate is not a measure of design quality.
 
 ---
 

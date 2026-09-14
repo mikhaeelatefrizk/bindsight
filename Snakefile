@@ -7,6 +7,13 @@
 #
 # Usage (needs a headless backend for the GPU stages — mock/modal/local_docker/
 # kaggle; use the CLI's `--backend colab` for interactive Colab runs):
+# The cohort must already be on disk. Snakemake resolves a rule's declared
+# inputs before running anything, and no rule here fetches the counts/design
+# tables -- the auto-download lives in `bindsight discover`, which this DAG does
+# not call. On a clean checkout both invocations below therefore fail with a
+# missing-input error before any work starts. Fetch first, then run:
+#
+#   bindsight discover --config examples/tcga_luad.yaml --out runs/luad  # downloads
 #   snakemake --configfile examples/tcga_luad.yaml --cores 4 --use-conda
 #   snakemake --configfile examples/demo/config.yaml --config backend=mock --cores 4
 #   snakemake --configfile examples/tcga_luad.yaml --until discover --cores 4

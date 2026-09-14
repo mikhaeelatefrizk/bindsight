@@ -36,9 +36,12 @@ from pathlib import Path
 from bindsight import __version__
 from bindsight.benchmark.designer_bench import (
     DEFAULT_IPTM_SUCCESS,
+    DESIGNER_BENCHMARK_SCHEMA,
     DesignerScore,
+    _backbone_of,
     _render_md,
     _score_dict,
+    _success_intervals,
 )
 
 
@@ -94,6 +97,22 @@ def _score(designer: str, rows: list[dict]) -> DesignerScore:
         s.mean_iptm = round(statistics.fmean(iptm), 4)
         s.median_iptm = round(statistics.median(iptm), 4)
         s.success_rate = round(sum(v >= DEFAULT_IPTM_SUCCESS for v in iptm) / len(iptm), 4)
+        s.n_success = sum(v >= DEFAULT_IPTM_SUCCESS for v in iptm)
+        s.n_scored = len(iptm)
+        # The clustered interval and the backbone counts, from the same helper
+        # the library path uses. This function computed neither, so re-scoring a
+        # real run through this script produced a summary missing exactly the
+        # fields the published table reports an interval from -- and the table
+        # would have rendered the rate with no interval beside it.
+        outcomes: dict[str, list[bool]] = {}
+        for row in rows:
+            value = row.get("iptm")
+            if not isinstance(value, (int, float)):
+                continue
+            backbone = _backbone_of(str(row.get("binder_id") or ""))
+            outcomes.setdefault(backbone, []).append(value >= DEFAULT_IPTM_SUCCESS)
+        for field, value in _success_intervals(outcomes).items():
+            setattr(s, field, value)
     if pae:
         s.mean_pae_interaction = round(statistics.fmean(pae), 4)
     if aff:
@@ -129,7 +148,9 @@ def main() -> None:
     validator, validator_version = _derive_validator(rows, args.tarball)
     score = _score(args.designer, rows)
     summary = {
-        "schema": "bindsight-designer-benchmark/1",
+        # From the module that defines it: the two writers typed the same
+        # identifier independently, so one could be bumped without the other.
+        "schema": DESIGNER_BENCHMARK_SCHEMA,
         "generated_utc": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "bindsight_version": __version__,
         "backend": args.backend,

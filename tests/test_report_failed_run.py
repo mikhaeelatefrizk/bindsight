@@ -124,10 +124,24 @@ def _make_failed_run(tmp_path: Path) -> Path:
 
 
 def _make_completed_empty_run(tmp_path: Path) -> Path:
-    """A run directory that genuinely finished and surfaced no candidates."""
+    """A run directory that genuinely finished and surfaced no candidates.
+
+    It writes an **empty** candidates table rather than none at all, because
+    that is what a completed discover produces: the write at
+    ``bindsight/pipelines/discover.py`` is unconditional once the stage runs.
+    The fixture used to omit the file, which is indistinguishable from a table
+    that could not be read — and the report now says so, correctly, for that
+    case. Omitting it here was testing the wrong finding.
+    """
+    import pandas as pd
+
     run = tmp_path / "empty_run"
     (run / "deg").mkdir(parents=True)
+    (run / "targets").mkdir(parents=True)
     _deg_frame().to_parquet(run / "deg" / "results.parquet", index=False)
+    pd.DataFrame(
+        {"gene_id": [], "symbol": [], "uniprot_id": [], "log2fc": [], "padj": []}
+    ).to_parquet(run / "targets" / "candidates.parquet", index=False)
     _completed_manifest().write(run / "run_manifest.jsonld")
     return run
 
@@ -358,6 +372,25 @@ def test_report_for_a_crashed_run_is_marked_incomplete(tmp_path: Path) -> None:
     # The filters were never reached, so loosening them answers nothing.
     assert "Loosen thresholds in the config" not in text
     assert "The filters were never reached" in text
+
+
+def test_report_for_an_unreadable_candidates_table_says_so(tmp_path: Path) -> None:
+    """ "Could not be read" and "read, and empty" are different findings.
+
+    A completed discover always writes candidates.parquet, so an absent or
+    corrupt file means something went wrong — and the report told the reader
+    "No candidates survived the filters. Loosen thresholds", which is a
+    scientific conclusion drawn from a table nobody read.
+    """
+    run = _make_completed_empty_run(tmp_path)
+    (run / "targets" / "candidates.parquet").write_bytes(b"not a parquet file")
+
+    text = report_html.render_run(run).read_text(encoding="utf-8")
+
+    assert "could not be read" in text
+    assert "Loosen thresholds in the config and re-run." not in text, (
+        "an unreadable table is reported as a filter that excluded everything"
+    )
 
 
 def test_report_for_a_completed_empty_run_still_advises_loosening(tmp_path: Path) -> None:

@@ -43,7 +43,13 @@ SURFY_IDS_URL = "https://wollscheidlab.org/SURFY/surfaceome_ids.txt"
 UNIPROT_STREAM = "https://rest.uniprot.org/uniprotkb/stream"
 UNIPROT_SEARCH = "https://rest.uniprot.org/uniprotkb/search"
 
-EXPECTED_COUNT = 2886
+# Imported, not retyped. This generator writes the file the package vendors, so
+# a second literal here could disagree with the constant the package checks the
+# file against — and the generator would happily produce a list the loader then
+# rejects.
+from bindsight.surfaceome import SURFY_PROTEIN_COUNT
+
+EXPECTED_COUNT = SURFY_PROTEIN_COUNT
 CITATION = (
     "Bausch-Fluck et al., 'The in silico human surfaceome', PNAS 2018, doi:10.1073/pnas.1808790115"
 )
