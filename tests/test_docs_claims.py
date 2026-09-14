@@ -1735,3 +1735,87 @@ def test_every_published_figure_is_regenerated_by_the_build() -> None:
         assert image.stem in builder or "FIG_DIR" in builder, (
             f"{image.name} is published but no generator copies it"
         )
+
+
+#: Scripts whose output is committed. Discovered by what they write, not listed:
+#: any module under scripts/ or benchmarks/ that calls ``write_text`` on a path
+#: it also commits is in scope.
+_GENERATORS = (
+    "scripts/build_docs_results.py",
+    "scripts/make_og_image.py",
+    "scripts/build_surfaceome_extension.py",
+    "scripts/build_surfy_gene_map.py",
+    "scripts/build_surfy_list.py",
+    "scripts/set_doi.py",
+    "benchmarks/run_study.py",
+    "benchmarks/build_eval_set.py",
+    "benchmarks/calibration/analyse.py",
+    "benchmarks/designer_benchmark/score_run.py",
+)
+
+
+def test_every_generator_pins_its_line_endings() -> None:
+    """``write_text`` translates newlines to the platform's, so a generator
+    that does not pin them produces different bytes on Windows than on Linux.
+
+    Git stores these artifacts LF. A Windows user following the README's
+    instruction -- "run the generator; it should not change" -- got a whole-file
+    diff that was pure line endings, so the one reproducibility check a reader
+    can run in seconds reported a failure that was not real. Verified from a
+    fresh clone: ``docs/results.md`` and ``docs/glossary.md`` came back dirty.
+
+    Same class as the calibration digest: correct on the machine that wrote it,
+    wrong everywhere else.
+    """
+    import ast
+
+    offenders: list[str] = []
+    for rel in _GENERATORS:
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not isinstance(func, ast.Attribute) or func.attr != "write_text":
+                continue
+            if not any(kw.arg == "newline" for kw in node.keywords):
+                offenders.append(f"{rel}:{node.lineno}")
+
+    assert not offenders, (
+        "these write_text calls do not pin a newline, so their output differs by "
+        f'platform: {offenders}. Pass newline="\\n".'
+    )
+
+
+def test_the_generated_pages_match_what_git_stores() -> None:
+    """The artifacts must be byte-identical to the blob, not merely equal in content.
+
+    This is the check a reader performs without knowing they are performing it:
+    they clone, run the generator, and look at ``git status``.
+    """
+    import hashlib
+    import subprocess
+
+    generated = (
+        "docs/results.md",
+        "docs/glossary.md",
+    )
+    for rel in generated:
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        blob = subprocess.run(
+            ["git", "-C", str(ROOT), "cat-file", "-p", f"HEAD:{rel}"],
+            capture_output=True,
+        )
+        if blob.returncode != 0:
+            pytest.skip(f"{rel} is not committed at HEAD")
+        on_disk = path.read_bytes()
+        assert b"\r\n" not in on_disk, f"{rel} holds CRLF; git stores it LF"
+        assert hashlib.sha256(on_disk).hexdigest() == hashlib.sha256(blob.stdout).hexdigest(), (
+            f"{rel} differs from the committed blob. Re-run "
+            "scripts/build_docs_results.py and commit the result."
+        )

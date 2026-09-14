@@ -1002,9 +1002,9 @@ def main(argv: list[str] | None = None) -> int:
     report = analyse(args.metrics, args.committed, decoy_metrics=args.decoy_metrics)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "RESULTS.json").write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
     )
-    (args.out / "CALIBRATION.md").write_text(render(report), encoding="utf-8")
+    (args.out / "CALIBRATION.md").write_text(render(report), encoding="utf-8", newline="\n")
     print(render(report))
     return 0
 

@@ -98,7 +98,9 @@ def main() -> int:
         f"# {len(rows)} pairs covering {len(surfaceome) - len(unresolved)}"
         f" of {len(surfaceome)} accessions.\n"
     )
-    OUT.write_text(header + "\n".join(f"{g}\t{a}" for g, a in rows) + "\n", encoding="utf-8")
+    OUT.write_text(
+        header + "\n".join(f"{g}\t{a}" for g, a in rows) + "\n", encoding="utf-8", newline="\n"
+    )
     print(f"wrote {OUT}: {len(rows)} pairs", file=sys.stderr)
     if unresolved:
         # Named rather than hidden: an accession with no gene id can never be

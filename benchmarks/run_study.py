@@ -129,7 +129,9 @@ def score_all(config: ST.StudyConfig) -> dict[str, Any]:
     summary["cohorts_not_yet_run"] = missing
     summary["surfaceome_size"] = len(surfaceome)
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-    (ARTIFACT_DIR / "results.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (ARTIFACT_DIR / "results.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8", newline="\n"
+    )
     LOG.info("wrote %s", ARTIFACT_DIR / "results.json")
 
     # The written page and its figures come from the same summary object, so a
@@ -137,7 +139,9 @@ def score_all(config: ST.StudyConfig) -> dict[str, Any]:
     from bindsight.benchmark.study_figures import render_figures
     from bindsight.benchmark.study_report import render_markdown
 
-    (ARTIFACT_DIR / "RESULTS.md").write_text(render_markdown(summary), encoding="utf-8")
+    (ARTIFACT_DIR / "RESULTS.md").write_text(
+        render_markdown(summary), encoding="utf-8", newline="\n"
+    )
     figures = render_figures(summary, ARTIFACT_DIR / "figures")
     LOG.info("wrote RESULTS.md and %d figure(s)", len(figures))
     return summary
@@ -186,7 +190,9 @@ def main(argv: list[str] | None = None) -> int:
             LOG.info("=== %s ===", project)
             records.append(run_project(project, config))
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-        (ARTIFACT_DIR / "run_log.json").write_text(json.dumps(records, indent=2), encoding="utf-8")
+        (ARTIFACT_DIR / "run_log.json").write_text(
+            json.dumps(records, indent=2), encoding="utf-8", newline="\n"
+        )
         failed = [r["project"] for r in records if r["status"] != "ok"]
         if failed:
             LOG.warning("failed cohorts: %s", ", ".join(failed))

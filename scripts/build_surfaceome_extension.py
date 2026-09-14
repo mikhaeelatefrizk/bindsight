@@ -118,7 +118,9 @@ def main() -> int:
         "#\n"
         "accession\tsymbol\tensembl_genes\tsource\n"
     )
-    OUT.write_text(header + "\n".join("\t".join(r) for r in rows) + "\n", encoding="utf-8")
+    OUT.write_text(
+        header + "\n".join("\t".join(r) for r in rows) + "\n", encoding="utf-8", newline="\n"
+    )
     print(f"wrote {OUT}: {len(rows)} accessions ({len(added)} newly reachable)", file=sys.stderr)
 
     # Name the antigens this was built to reach, so the run says whether it worked.

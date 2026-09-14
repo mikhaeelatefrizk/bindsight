@@ -499,7 +499,7 @@ def main() -> int:
         w.writerows(binder_rows)
 
     fasta_path = HERE / "binders.fasta"
-    fasta_path.write_text("\n".join(fasta_lines) + "\n")
+    fasta_path.write_text("\n".join(fasta_lines) + "\n", newline="\n")
 
     # ---- sources.json (provenance: SHA-256 + retrieval metadata) ----
     n_struct = sum(1 for r in binder_rows if r["sequence_source"].startswith("PDB:"))
@@ -525,7 +525,7 @@ def main() -> int:
             for p in (known_path, binders_path, fasta_path)
         },
     }
-    (HERE / "sources.json").write_text(json.dumps(sources, indent=2) + "\n")
+    (HERE / "sources.json").write_text(json.dumps(sources, indent=2) + "\n", newline="\n")
 
     print(f"known antigens : {len(KNOWN_ANTIGENS)} -> {known_path.name}")
     print(f"binders        : {len(binder_rows)} -> {binders_path.name}")

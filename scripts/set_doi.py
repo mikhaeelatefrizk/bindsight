@@ -77,7 +77,7 @@ def apply(doi: str) -> int:
         text = path.read_text(encoding="utf-8")
         if PLACEHOLDER not in text:
             continue
-        path.write_text(text.replace(PLACEHOLDER, doi), encoding="utf-8")
+        path.write_text(text.replace(PLACEHOLDER, doi), encoding="utf-8", newline="\n")
         print(f"  {path.relative_to(ROOT).as_posix()}")
         changed += 1
 

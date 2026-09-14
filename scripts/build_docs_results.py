@@ -558,8 +558,8 @@ def main() -> int:
         return 1
 
     n = _copy_figures(study)
-    OUT_MD.write_text(build(), encoding="utf-8")
-    OUT_GLOSSARY.write_text(build_glossary(), encoding="utf-8")
+    OUT_MD.write_text(build(), encoding="utf-8", newline="\n")
+    OUT_GLOSSARY.write_text(build_glossary(), encoding="utf-8", newline="\n")
     print(
         f"wrote {OUT_MD.relative_to(ROOT)} + {OUT_GLOSSARY.relative_to(ROOT)} "
         f"and copied {n} figure(s)"

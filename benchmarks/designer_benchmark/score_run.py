@@ -169,7 +169,9 @@ def main() -> None:
         "designers": [_score_dict(score)],
     }
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (args.out / "results.json").write_text(
+        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
 
     md = _render_md(summary)
     md += (
@@ -197,7 +199,7 @@ def main() -> None:
         "`<binder_id>_complex.cif` (the actual folded binder–target complex behind each ipTM), "
         "alongside the ProteinMPNN FASTAs, per-design `metrics.jsonl`, and `results.json`.\n"
     )
-    (args.out / "RESULTS.md").write_text(md, encoding="utf-8")
+    (args.out / "RESULTS.md").write_text(md, encoding="utf-8", newline="\n")
 
     # Stage the ProteinMPNN FASTAs plus the real Boltz-2 *predicted complex* structures
     # (validate/<id>/*_model_0.cif) — the actual folded binder–target complex behind each
@@ -227,7 +229,7 @@ def main() -> None:
                 (binders / Path(name).name).write_bytes(data.read())
     # Also keep the raw per-design metrics next to the binders.
     (binders / "metrics.jsonl").write_text(
-        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8", newline="\n"
     )
 
     print(

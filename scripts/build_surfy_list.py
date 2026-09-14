@@ -178,7 +178,7 @@ def main() -> int:
         )
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(render(accessions, looked_up), encoding="utf-8")
+    OUT.write_text(render(accessions, looked_up), encoding="utf-8", newline="\n")
     print(f"wrote {len(accessions)} accessions to {OUT.relative_to(ROOT)}")
     return 0
 
