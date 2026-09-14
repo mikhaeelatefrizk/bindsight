@@ -257,12 +257,18 @@ def variance_decomposition(
         return None
 
     between_sd = math.sqrt(between)
+    # ``between`` is clamped at zero above, so when the measured sampling
+    # variance exceeds the total the two shares stopped summing to one: the
+    # published split read e.g. 112% / 0%. Clamping the sampling share the same
+    # way keeps them complementary, and the raw variances are reported beside
+    # them so the clamp is visible rather than hidden.
+    sampling_share = min(sampling / total, 1.0)
     return {
         "paired_sd": paired_sd,
         "sampling_variance": sampling,
         "between_pair_variance": between,
-        "sampling_share": sampling / total,
-        "between_pair_share": between / total,
+        "sampling_share": sampling_share,
+        "between_pair_share": 1.0 - sampling_share,
         "between_pair_sd": between_sd,
         # The floor more draws cannot cross: even with the sampling term driven
         # to zero, this much pair-to-pair spread remains.

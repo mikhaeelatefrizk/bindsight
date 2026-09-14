@@ -596,7 +596,7 @@
   "threshold": 0.65,
   "variance_decomposition": {
     "between_pair_sd": 0.2119463063298412,
-    "between_pair_share": 0.8528005303045566,
+    "between_pair_share": 0.8528005303045567,
     "between_pair_variance": 0.04492123676686289,
     "paired_sd": 0.22951026873200128,
     "pairs_needed": [

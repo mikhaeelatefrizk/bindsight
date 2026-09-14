@@ -934,3 +934,40 @@ class TestAPointEstimateAndItsIntervalAreTheSameEstimator:
                     f"the sentence states the unclustered mean {flat:.3f} beside "
                     f"{interval_key}, whose bounds are around {block['point']:.3f}"
                 )
+
+
+class TestStrataAreNamedForWhatTheyAre:
+    """The decoy-matching strata were published as ``base_mean_decile`` and
+    ``dispersion_decile`` while the binning uses five bins, so the labels 0-4 are
+    quintiles. The name told a reader the matching was ten times finer than it is.
+    """
+
+    def test_no_published_field_claims_a_decile(self, summary: dict) -> None:
+        offenders = sorted(
+            {key for pair in summary["pairs"] for key in pair if key.endswith("_decile")}
+        )
+
+        assert not offenders, f"fields named for deciles: {offenders}"
+
+    def test_the_code_does_not_emit_a_decile_field(self) -> None:
+        """The artifact check above only sees the committed run; a rename in the
+        code would not reach it until the study is re-scored, so the source is
+        checked too."""
+        source = (REPO / "bindsight" / "benchmark" / "study.py").read_text(encoding="utf-8")
+        emitted = re.findall(r'"([a-z]+(?:_[a-z]+)*_decile)"', source)
+
+        assert not emitted, f"study.py emits {emitted} while binning into _DECOY_STRATA_BINS strata"
+
+    def test_the_strata_labels_fit_the_declared_bin_count(self, summary: dict) -> None:
+        from bindsight.benchmark.study import _DECOY_STRATA_BINS
+
+        seen = {
+            value
+            for pair in summary["pairs"]
+            for key, value in pair.items()
+            if key.endswith("_stratum") and isinstance(value, int)
+        }
+        assert seen, "no stratum labels in the artifact"
+        assert max(seen) < _DECOY_STRATA_BINS, (
+            f"stratum label {max(seen)} exceeds the {_DECOY_STRATA_BINS} declared bins"
+        )

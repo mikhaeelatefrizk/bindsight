@@ -135,8 +135,14 @@ def rank_validated(
             weight_sum = weight_sum + (mask.astype(float) * w)
     df["score"] = composite / weight_sum.replace(0.0, pd.NA)
 
-    # Sort + add rank
-    df = df.sort_values("score", ascending=False, na_position="last").reset_index(drop=True)
+    # Sort + add rank. ``kind="mergesort"`` because pandas' default is not
+    # stable: two binders with the same composite score were ordered by numpy's
+    # introsort internals, so the published rank among ties could differ between
+    # runs and between platforms for identical inputs. Stable means ties keep the
+    # order they arrived in, which is reproducible and explainable.
+    df = df.sort_values("score", ascending=False, na_position="last", kind="mergesort").reset_index(
+        drop=True
+    )
     df["rank"] = range(1, len(df) + 1)
 
     return df

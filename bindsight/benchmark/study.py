@@ -270,6 +270,9 @@ def run_cohort(project: str, config: StudyConfig) -> Path:
 #: which is still a meaningful match, and buy an order of magnitude of
 #: resolution. Every pair reports its own floor so the trade is visible per
 #: antigen rather than assumed.
+#: Strata the decoy matching bins into. Five, so the published fields are
+#: named "_stratum": they were called "_decile" while carrying quintiles 0-4,
+#: which told a reader the matching was ten times finer than it is.
 _DECOY_STRATA_BINS = 5
 
 
@@ -295,14 +298,14 @@ def _decoy_strata(ordered: Any) -> Any:
         ordered: the eligible ranking, carrying ``baseMean`` and ``lfc_se``.
 
     Returns:
-        The frame with ``base_mean_decile`` and ``dispersion_decile`` columns.
+        The frame with ``base_mean_stratum`` and ``dispersion_stratum`` columns.
         Either is ``-1`` where the underlying column is missing or unusable, which
         collapses those genes into one stratum rather than dropping them.
     """
     import pandas as pd
 
     out = ordered.copy()
-    for column, label in (("baseMean", "base_mean_decile"), ("lfc_se", "dispersion_decile")):
+    for column, label in (("baseMean", "base_mean_stratum"), ("lfc_se", "dispersion_stratum")):
         if column not in out.columns:
             out[label] = -1
             continue
@@ -367,11 +370,11 @@ def _decoy_null_by_gene(
         return out
 
     grouped = {
-        key: frame for key, frame in labelled.groupby(["base_mean_decile", "dispersion_decile"])
+        key: frame for key, frame in labelled.groupby(["base_mean_stratum", "dispersion_stratum"])
     }
     for row in wanted.itertuples(index=False):
         gene = str(row.gene_id)
-        stratum = grouped.get((row.base_mean_decile, row.dispersion_decile))
+        stratum = grouped.get((row.base_mean_stratum, row.dispersion_stratum))
         if stratum is None:
             continue
         pool = stratum[stratum["gene_id"].astype(str) != gene]
@@ -384,8 +387,8 @@ def _decoy_null_by_gene(
                 "decoy_pool_size": 0,
                 "decoy_n_used": 0,
                 "decoy_exact": False,
-                "base_mean_decile": int(row.base_mean_decile),
-                "dispersion_decile": int(row.dispersion_decile),
+                "base_mean_stratum": int(row.base_mean_stratum),
+                "dispersion_stratum": int(row.dispersion_stratum),
             }
             continue
 
@@ -398,16 +401,16 @@ def _decoy_null_by_gene(
             records = [
                 {
                     "uniprot": str(g),
-                    "base_mean_decile": int(row.base_mean_decile),
-                    "dispersion_decile": int(row.dispersion_decile),
+                    "base_mean_stratum": int(row.base_mean_stratum),
+                    "dispersion_stratum": int(row.dispersion_stratum),
                     "counterfactual_rank": int(r),
                 }
                 for g, r in zip(pool["gene_id"], pool["counterfactual_rank"], strict=True)
             ]
             target = {
                 "uniprot": gene,
-                "base_mean_decile": int(row.base_mean_decile),
-                "dispersion_decile": int(row.dispersion_decile),
+                "base_mean_stratum": int(row.base_mean_stratum),
+                "dispersion_stratum": int(row.dispersion_stratum),
             }
             drawn = S.match_decoys(records, target, n_decoys=n_decoys, seed=seed)
             ranks = [int(d["counterfactual_rank"]) for d in drawn]
@@ -421,8 +424,8 @@ def _decoy_null_by_gene(
             "decoy_pool_size": available,
             "decoy_n_used": len(ranks),
             "decoy_exact": exact,
-            "base_mean_decile": int(row.base_mean_decile),
-            "dispersion_decile": int(row.dispersion_decile),
+            "base_mean_stratum": int(row.base_mean_stratum),
+            "dispersion_stratum": int(row.dispersion_stratum),
         }
     return out
 

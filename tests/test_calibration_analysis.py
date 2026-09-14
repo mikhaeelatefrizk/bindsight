@@ -946,3 +946,41 @@ class TestTheCalibrationReportNamesWhatItRead:
         if not checked and missing:
             pytest.skip(f"no recorded input is present in this checkout: {missing}")
         assert checked, "no input files were checked"
+
+
+class TestTheVarianceSharesAreComplementary:
+    """``between_pair_share`` was clamped at zero and ``sampling_share`` was not,
+    so when the measured sampling variance exceeded the total the published split
+    read as something like 112% / 0% — two shares of one quantity that do not sum
+    to it.
+    """
+
+    def test_the_committed_split_sums_to_one(self) -> None:
+        report = json.loads((CALIBRATION_DIR / "RESULTS.json").read_text(encoding="utf-8"))
+        split = report.get("variance_decomposition")
+        if not split:
+            pytest.skip("no variance decomposition in the artifact")
+
+        total = split["sampling_share"] + split["between_pair_share"]
+
+        assert total == pytest.approx(1.0), f"the shares sum to {total}, not 1"
+
+    def test_an_oversized_sampling_variance_does_not_exceed_the_whole(self) -> None:
+        """The case that produced the impossible split: measured per-draw noise
+        larger than the paired spread it is a component of."""
+        noise = {"standard_error_of_reported_mean": 1.0}
+
+        split = calib.variance_decomposition(0.1, noise)
+
+        assert split is not None
+        assert 0.0 <= split["sampling_share"] <= 1.0
+        assert 0.0 <= split["between_pair_share"] <= 1.0
+        assert split["sampling_share"] + split["between_pair_share"] == pytest.approx(1.0)
+
+    def test_the_raw_variances_are_still_reported(self) -> None:
+        """The clamp must stay visible: a reader has to be able to see that the
+        measured sampling variance was larger than the total."""
+        split = calib.variance_decomposition(0.1, {"standard_error_of_reported_mean": 1.0})
+
+        assert split is not None
+        assert split["sampling_variance"] > split["paired_sd"] ** 2

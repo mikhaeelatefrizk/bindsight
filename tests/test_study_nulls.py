@@ -105,7 +105,7 @@ class TestTheDecoyNullRuns:
         ordered = _ranking().drop(columns=["baseMean", "lfc_se"])
         out = ST._decoy_null_by_gene(ordered, gene_ids={"G000"}, n_decoys=1000, seed=0)
         assert out["G000"]["p_decoy"] is not None
-        assert out["G000"]["base_mean_decile"] == -1
+        assert out["G000"]["base_mean_stratum"] == -1
 
 
 class TestTheCorrectionTravelsWithTheNominalHits:

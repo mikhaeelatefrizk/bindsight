@@ -255,17 +255,17 @@ class TestDecoyMatching:
     @staticmethod
     def _pool() -> list[dict[str, object]]:
         return [
-            {"uniprot": f"P{i:05d}", "base_mean_decile": i % 10, "dispersion_decile": i % 3}
+            {"uniprot": f"P{i:05d}", "base_mean_stratum": i % 10, "dispersion_stratum": i % 3}
             for i in range(300)
         ]
 
     def test_decoys_share_the_target_strata(self) -> None:
-        target = {"uniprot": "TARGET", "base_mean_decile": 4, "dispersion_decile": 1}
+        target = {"uniprot": "TARGET", "base_mean_stratum": 4, "dispersion_stratum": 1}
         decoys = st.match_decoys(self._pool(), target, n_decoys=5, seed=2)
         assert decoys
         for d in decoys:
-            assert d["base_mean_decile"] == 4
-            assert d["dispersion_decile"] == 1
+            assert d["base_mean_stratum"] == 4
+            assert d["dispersion_stratum"] == 1
 
     def test_the_target_is_never_its_own_decoy(self) -> None:
         pool = self._pool()
@@ -275,10 +275,10 @@ class TestDecoyMatching:
 
     def test_a_thin_stratum_degrades_to_sampling_with_replacement(self) -> None:
         pool = [
-            {"uniprot": "P1", "base_mean_decile": 9, "dispersion_decile": 9},
-            {"uniprot": "P2", "base_mean_decile": 9, "dispersion_decile": 9},
+            {"uniprot": "P1", "base_mean_stratum": 9, "dispersion_stratum": 9},
+            {"uniprot": "P2", "base_mean_stratum": 9, "dispersion_stratum": 9},
         ]
-        target = {"uniprot": "T", "base_mean_decile": 9, "dispersion_decile": 9}
+        target = {"uniprot": "T", "base_mean_stratum": 9, "dispersion_stratum": 9}
         decoys = st.match_decoys(pool, target, n_decoys=10, seed=1)
         assert len(decoys) == 10
 

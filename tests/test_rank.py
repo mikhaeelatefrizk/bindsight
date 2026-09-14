@@ -249,3 +249,72 @@ class TestOneRowPerAccession:
             f"candidate tables now contain duplicate accessions: {collisions}. "
             "The tie-break in _one_row_per_accession is now load-bearing."
         )
+
+
+class TestTiedScoresRankReproducibly:
+    """The published ``rank`` came from ``sort_values`` with pandas' default
+    kind, which is not stable. Two binders on the same composite score were
+    ordered by numpy's introsort internals, so the rank among ties could differ
+    between runs and between platforms for byte-identical inputs.
+    """
+
+    @staticmethod
+    def _tied(order: list[str]) -> "pd.DataFrame":
+        return pd.DataFrame(
+            [
+                {
+                    "binder_id": b,
+                    "target_uniprot": "P04626",
+                    "iptm": 0.7,
+                    "pae_interaction": 6.0,
+                    "affinity_pred_value": -7.0,
+                    "sequence_recovery": 0.5,
+                    "validator_name": "boltz2",
+                    "validator_version": "2.0.3",
+                }
+                for b in order
+            ]
+        )
+
+    def test_tied_groups_keep_their_input_order(self) -> None:
+        """Groups of ties among distinct scores, not one all-equal block.
+
+        An all-equal frame does not expose this: numpy's introsort happens to
+        leave identical elements alone, so the first version of this test passed
+        against ``kind="quicksort"`` and proved nothing. Partitioning only moves
+        tied elements when there is something to partition around.
+        """
+        import random
+
+        rng = random.Random(0)
+        ids = [f"b{i:04d}" for i in range(60)]
+        frame = self._tied(ids)
+        # Three score levels, so most rows are tied with several others.
+        frame["iptm"] = [rng.choice([0.9, 0.5, 0.1]) for _ in ids]
+
+        ranked = rank_validated(frame)
+
+        for level in (0.9, 0.5, 0.1):
+            expected = [b for b, v in zip(ids, frame["iptm"], strict=True) if v == level]
+            actual = [b for b in ranked["binder_id"] if b in set(expected)]
+            assert actual == expected, (
+                f"binders tied at ipTM {level} were reordered; the published rank "
+                "is not reproducible for identical inputs"
+            )
+
+    def test_the_same_frame_ranks_the_same_way_twice(self) -> None:
+        frame = self._tied([f"b{i}" for i in range(20)])
+
+        first = list(rank_validated(frame.copy())["binder_id"])
+        second = list(rank_validated(frame.copy())["binder_id"])
+
+        assert first == second
+
+    def test_a_real_difference_still_wins_over_input_order(self) -> None:
+        """Stability must not override the score itself."""
+        frame = self._tied(["low", "high"])
+        frame.loc[frame["binder_id"] == "high", "iptm"] = 0.95
+
+        ranked = rank_validated(frame)
+
+        assert ranked.iloc[0]["binder_id"] == "high"

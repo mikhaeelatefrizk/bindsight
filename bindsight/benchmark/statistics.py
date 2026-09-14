@@ -423,7 +423,7 @@ def match_decoys(
     target: dict[str, Any],
     *,
     n_decoys: int = 1000,
-    strata: Sequence[str] = ("base_mean_decile", "dispersion_decile"),
+    strata: Sequence[str] = ("base_mean_stratum", "dispersion_stratum"),
     seed: int = 0,
 ) -> list[dict[str, Any]]:
     """Draw decoys from the same abundance and dispersion strata as ``target``.
