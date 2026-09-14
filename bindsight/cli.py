@@ -110,7 +110,11 @@ def main() -> None:
 )
 @click.option(
     "--top-n",
-    type=int,
+    # Ranged, because this value is assigned straight onto the pydantic model
+    # (``cfg.params.target_discovery.top_n = top_n``) and assignment does not
+    # re-validate. ``--top-n 0`` therefore reached the pipeline and produced an
+    # empty shortlist that looked like a finding.
+    type=click.IntRange(min=1),
     default=None,
     help="Override params.target_discovery.top_n in the config.",
 )
@@ -196,15 +200,20 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
 )
 @click.option(
     "--trajectories",
-    type=int,
+    type=click.IntRange(min=1),
     default=50,
     show_default=True,
-    help="Number of independent design trajectories per target.",
+    help=(
+        "Number of independent design trajectories per target. The default shown "
+        "here only applies when the run's config.yaml does not set "
+        "params.design.n_trajectories; when it does, that value wins unless you "
+        "pass this flag explicitly."
+    ),
 )
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Estimate compute cost and print the DAG without launching jobs.",
+    help="Estimate compute cost without launching jobs.",
 )
 def design(
     run_dir: Path,
@@ -253,12 +262,16 @@ def design(
             "cost estimate is skipped.[/yellow] Run `bindsight discover` first."
         )
     else:
+        # gpu_type included, as `run` already does. Without it this quoted A100
+        # prices for a run configured for a T4 -- the estimate was for different
+        # hardware than the one the job would ask for.
         d_cost, _v_cost, _c_cost = estimate_full_run(
             backend=backend,
             designer=designer,
             validator=validator,
             n_targets=n_targets,
             n_trajectories=trajectories,
+            gpu_type=_gpu_type_from_run(run_dir),
         )
         _print_cost_panel(d_cost, label=f"design ({designer})")
 
@@ -592,12 +605,15 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
 
         app_path = Path(streamlit_app.__file__)
         console.print(f"[dim]launching Streamlit:[/dim] {app_path} {run_dir}")
+        # ``-m streamlit`` is run through this interpreter, so a missing module
+        # exits non-zero rather than raising FileNotFoundError; that handler was
+        # unreachable and a missing dependency surfaced as a bare traceback.
         try:
             subprocess.run(
                 [_sys.executable, "-m", "streamlit", "run", str(app_path), "--", str(run_dir)],
                 check=True,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, subprocess.CalledProcessError):
             console.print(
                 Panel(
                     "[yellow]Streamlit not installed.[/yellow] Install the report extras:\n"
@@ -628,7 +644,7 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
 @click.option("--designer", type=click.Choice(["rfdiff_mpnn", "bindcraft", "boltzgen"]))
 @click.option("--validator", type=click.Choice(["boltz2", "chai1r", "af2_ig"]))
 @click.option("--cheap", is_flag=True, help="Use the --cheap profile (T4-friendly defaults).")
-@click.option("--dry-run", is_flag=True, help="Print DAG and cost estimate, don't execute.")
+@click.option("--dry-run", is_flag=True, help="Print a cost estimate, don't execute.")
 def run(
     config: Path,
     out_dir: Path,
@@ -640,9 +656,11 @@ def run(
 ) -> None:
     """Run the full discover → design → validate → rank → report → export pipeline.
 
-    CPU stages (discover, rank, report, export) always execute. GPU stages
-    (design, validate) run only if the corresponding outputs are already
-    present from a previous GPU session — this command is the
+    CPU stages (discover, rank, report, export) always execute. The GPU stages
+    (design, validate) **launch real work** when the configured backend is
+    headless (mock, modal, kaggle, local_docker) — this help used to say they
+    only reuse outputs from a previous session, which is true for ``colab`` and
+    false for every other backend, on a command that spends GPU quota — this command is the
     single-entry-point version of running each stage in turn. To produce those
     outputs, run ``bindsight design`` against a GPU backend first; ``--backend
     kaggle`` is the verified free path.
@@ -661,6 +679,16 @@ def run(
         cfg.params.validate_.validator = validator  # type: ignore[assignment]
     if cheap:
         _apply_cheap_profile(cfg)
+
+    # The same refusal `design` performs. This command launches the GPU half on
+    # a headless backend, so skipping the check meant `run` could spend quota
+    # discovering a designer/backend combination `design` would have refused
+    # locally and for free.
+    _preflight_backend(
+        cfg.backend,
+        designer=cfg.params.design.designer,
+        validator=cfg.params.validate_.validator,
+    )
 
     if dry_run:
         from bindsight.cost import estimate_full_run
@@ -781,7 +809,7 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     "--k",
     "ks",
     multiple=True,
-    type=int,
+    type=click.IntRange(min=1),
     help=(
         "Top-k cutoffs for recall@k (repeatable). Default: "
         + ", ".join(str(k) for k in DEFAULT_KS)
@@ -838,7 +866,7 @@ def benchmark(
 @main.command()
 @click.option(
     "--port",
-    type=int,
+    type=click.IntRange(min=1, max=65535),
     default=8501,
     show_default=True,
     help="Port for the local Streamlit server.",
@@ -902,8 +930,14 @@ def ui(port: int, no_browser: bool) -> None:
             border_style="green",
         )
     )
+    # ``check=False`` meant a Streamlit that failed to start still left this
+    # command exiting 0, having just printed "Launching bindsight UI" -- a
+    # success message and a success code for a UI that is not running.
     try:
-        subprocess.run(cmd, check=False)
+        completed = subprocess.run(cmd, check=False)
+        if completed.returncode != 0:
+            console.print(f"[red]Streamlit exited with status {completed.returncode}.[/red]")
+            sys.exit(completed.returncode)
     except FileNotFoundError:
         console.print(
             Panel(
@@ -1265,6 +1299,27 @@ def _validator_params_from_run(run_dir: Path) -> tuple[int | None, int, int]:
     if samples != 1:
         log.info("using diffusion_samples=%d from %s", samples, cfg_path)
     return (int(top_k) if top_k else None), samples, parallel
+
+
+def _gpu_type_from_run(run_dir: Path) -> str | None:
+    """The GPU the run was configured for, or ``None`` when unrecorded.
+
+    ``bindsight run`` already passes ``params.design.gpu_type`` to the cost
+    estimate; ``design --dry-run`` did not, so it quoted A100 prices for a run
+    configured for a T4 -- an estimate for different hardware than the job would
+    ask for, printed with no indication that the two differ.
+    """
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return None
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        return (params.get("design") or {}).get("gpu_type")
+    except Exception as e:  # pragma: no cover - a malformed config is the user's
+        LOG_CLI.warning("could not read %s (%s); pricing without a gpu_type", cfg_path, e)
+        return None
 
 
 def _design_spec_params_from_run(run_dir: Path) -> tuple[int, int, int]:

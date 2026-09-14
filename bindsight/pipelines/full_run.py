@@ -4,7 +4,10 @@
 
 Drives the complete chain: discover → design → validate → rank → report → export.
 
-Each stage is opt-out via flags (e.g. skip GPU stages with ``--no-design``).
+Each stage is opt-out through this module's ``skip_*`` parameters. There is
+no CLI flag for them. This docstring used to offer a no-design flag in the
+option syntax, which no command exposes, so a reader following it got an
+unknown-option error.
 The orchestrator emits one combined manifest; failures in any stage are
 recorded but downstream stages still attempt to run on whatever upstream
 artifacts are available, so partial successes still produce a useful report.

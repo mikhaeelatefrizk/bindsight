@@ -181,8 +181,8 @@ def test_the_published_overexpression_rule_states_the_configured_thresholds() ->
     """
     from bindsight.config import DEGParams
 
-    assert R.OVEREXPRESSION_FDR == DEGParams.model_fields["fdr_threshold"].default
-    assert R.OVEREXPRESSION_LOG2FC == DEGParams.model_fields["log2fc_threshold"].default
+    assert DEGParams.model_fields["fdr_threshold"].default == R.OVEREXPRESSION_FDR
+    assert DEGParams.model_fields["log2fc_threshold"].default == R.OVEREXPRESSION_LOG2FC
 
 
 def test_the_rule_is_not_rebuilt_from_literals() -> None:

@@ -156,3 +156,192 @@ def test_cli_validate_af2_ig_shows_license_banner(tmp_path) -> None:
     run_dir.mkdir()
     r = CliRunner().invoke(main, ["validate", str(run_dir), "--validator", "af2_ig"])
     assert "non-commercial" in r.output
+
+
+# ---------------------------------------------------------------------------
+# Help text is a claim about behaviour
+# ---------------------------------------------------------------------------
+REPO = Path(__file__).resolve().parents[1]
+
+
+def _cli_source() -> str:
+    return (REPO / "bindsight" / "cli.py").read_text(encoding="utf-8")
+
+
+class TestTheHelpDescribesWhatTheCommandDoes:
+    """``bindsight run --help`` said the GPU stages "run only if the
+    corresponding outputs are already present from a previous GPU session".
+    ``full_run`` calls ``_launch_design`` whenever the backend is headless, so on
+    every backend but colab the command spends GPU quota the help says it will
+    not spend.
+    """
+
+    def test_run_does_not_claim_it_only_reuses_gpu_outputs(self) -> None:
+        from bindsight.cli import run
+
+        doc = " ".join((run.__doc__ or "").split())
+
+        assert "run only if the corresponding outputs are already" not in doc, doc
+        assert "launch real work" in doc, (
+            "the help does not say that the GPU stages launch work on a headless "
+            "backend, which is what this command does"
+        )
+
+    def test_run_still_launches_the_gpu_half(self) -> None:
+        """The premise. If this stops being true the help must change with it."""
+        source = (REPO / "bindsight" / "pipelines" / "full_run.py").read_text(encoding="utf-8")
+
+        assert "_launch_design" in source
+
+    def test_no_dry_run_help_promises_a_dag(self) -> None:
+        """Two --dry-run options promised to "print the DAG"; no code path does."""
+        source = _cli_source()
+        promises = [
+            line for line in source.splitlines() if "help=" in line and "DAG" in line.upper()
+        ]
+
+        assert not promises, f"--dry-run help still promises a DAG: {promises}"
+
+    def test_full_run_documents_no_flag_that_does_not_exist(self) -> None:
+        """Its docstring offered ``--no-design``; no command exposes it."""
+        import re
+
+        from bindsight.pipelines import full_run
+
+        doc = full_run.__doc__ or ""
+        flags = set(re.findall(r"``(--[a-z-]+)``", doc))
+        source = _cli_source()
+        missing = sorted(f for f in flags if f'"{f}"' not in source)
+
+        assert not missing, f"full_run's docstring documents absent flags: {missing}"
+
+
+class TestTheGpuPreflightIsNotSkipped:
+    """``design`` refuses an unsupported designer/backend pair locally, for free.
+    ``run`` launches the same GPU half and never called that check.
+    """
+
+    def test_every_command_that_launches_gpu_work_preflights(self) -> None:
+        import ast
+
+        tree = ast.parse(_cli_source())
+        for node in tree.body:
+            if not isinstance(node, ast.FunctionDef) or node.name not in {"run", "design"}:
+                continue
+            calls = {
+                n.func.id
+                for n in ast.walk(node)
+                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+            }
+            assert "_preflight_backend" in calls, (
+                f"`bindsight {node.name}` launches GPU work without the preflight "
+                "refusal that exists to stop it spending quota on a combination "
+                "no backend can run"
+            )
+
+
+class TestNumericOptionsCannotSmuggleInvalidValues:
+    """These values are assigned straight onto the pydantic model, and assignment
+    does not re-validate. ``--top-n 0`` reached the pipeline and produced an empty
+    shortlist that read as a finding.
+    """
+
+    def test_no_option_accepts_an_unbounded_integer(self) -> None:
+        import re
+
+        source = _cli_source()
+        bare = [match.start() for match in re.finditer(r"^\s*type=int,\s*$", source, re.M)]
+
+        assert not bare, (
+            f"{len(bare)} click option(s) still take a bare `type=int`; use "
+            "click.IntRange so a value the schema forbids is refused at the "
+            "boundary rather than assigned past it"
+        )
+
+    def test_a_zero_top_n_is_refused(self) -> None:
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        result = CliRunner().invoke(main, ["discover", "--help"])
+        assert result.exit_code == 0
+
+    def test_the_range_is_enforced_end_to_end(self, tmp_path) -> None:
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        run = tmp_path / "run"
+        run.mkdir()
+        result = CliRunner().invoke(
+            main, ["design", str(run), "--backend", "mock", "--trajectories", "0", "--dry-run"]
+        )
+
+        assert result.exit_code != 0
+        assert "0" in result.output
+
+
+class TestTheDryRunPricesTheConfiguredHardware:
+    """``run`` passed ``gpu_type`` to the estimate; ``design --dry-run`` did not,
+    so it quoted A100 prices for a run configured for a T4."""
+
+    def test_every_cost_estimate_names_the_gpu(self) -> None:
+        import ast
+
+        tree = ast.parse(_cli_source())
+        sites = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "estimate_full_run"
+        ]
+        assert sites, "no cost estimates found in the CLI"
+        for node in sites:
+            assert "gpu_type" in {kw.arg for kw in node.keywords}, (
+                f"bindsight/cli.py:{node.lineno} prices a run without naming the GPU, "
+                "so the figure may be for different hardware than the job requests"
+            )
+
+
+class TestAFailedLaunchDoesNotExitZero:
+    """`bindsight ui` printed "Launching bindsight UI" and exited 0 whatever
+    Streamlit did, because the subprocess ran with ``check=False`` and its status
+    was discarded."""
+
+    def test_the_ui_propagates_the_exit_status(self, monkeypatch) -> None:
+        """Driven, not grepped. A source check for "completed.returncode" passes
+        against `if False:` — the strings stay and the behaviour goes."""
+        import subprocess
+
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        def _fake_run(cmd, **kwargs):
+            return subprocess.CompletedProcess(cmd, returncode=3)
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+
+        result = CliRunner().invoke(main, ["ui", "--no-browser"])
+
+        assert result.exit_code == 3, (
+            f"Streamlit exited 3 and the command exited {result.exit_code}; a UI "
+            "that failed to start must not report success"
+        )
+
+    def test_the_ui_exits_zero_when_streamlit_does(self, monkeypatch) -> None:
+        """The guard must not turn every launch into a failure."""
+        import subprocess
+
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        monkeypatch.setattr(
+            subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0)
+        )
+
+        result = CliRunner().invoke(main, ["ui", "--no-browser"])
+
+        assert result.exit_code == 0, result.output
