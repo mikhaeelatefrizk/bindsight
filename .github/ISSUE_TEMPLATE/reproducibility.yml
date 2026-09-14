@@ -1,0 +1,68 @@
+name: A published number does not reproduce
+description: You followed the documented steps and got a different figure.
+labels: ["reproducibility", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project's whole argument is that its claims are checkable, so a
+        number that does not reproduce is a serious bug, not a support question.
+        Please report it even if you suspect you did something wrong — an
+        instruction that is easy to follow incorrectly is also a defect.
+
+  - type: input
+    id: figure
+    attributes:
+      label: Which number
+      description: The figure as published, and where you read it.
+      placeholder: "recall@20 = 1 of 17, in benchmarks/study/RESULTS.md"
+    validations:
+      required: true
+
+  - type: input
+    id: got
+    attributes:
+      label: What you got instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Exactly what you ran
+      description: >-
+        Every command, in order. If you followed a document, link it and say
+        which step you started from.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Which reproduction tier
+      description: See "Reproducing the results" in the README.
+      options:
+        - "1 — regenerate a published page from committed artifacts (offline)"
+        - "2 — re-run the rediscovery study (network, CPU-hours)"
+        - "3 — re-run the binder design (GPU)"
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit you ran at
+      description: "Output of `git rev-parse --short HEAD`."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: >-
+        `bindsight doctor` output, plus the GPU if tier 3. For tier 2, whether
+        `data/gdc_cache/` was already populated — a stale cache is the most
+        common cause of a moved number.
+      render: shell

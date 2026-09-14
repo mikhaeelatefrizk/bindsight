@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling:
+        patterns: ["ruff", "mypy", "pytest*", "types-*"]
+    # The scientific stack is pinned with upper bounds on purpose: these are the
+    # libraries whose release can move a number a run reports. Their updates
+    # should be deliberate and accompanied by a re-scored artifact, not merged
+    # because CI went green.
+    ignore:
+      - dependency-name: "pydeseq2"
+      - dependency-name: "pandas"
+      - dependency-name: "numpy"
+      - dependency-name: "scipy"
+      - dependency-name: "formulaic"
+      - dependency-name: "formulaic-contrasts"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

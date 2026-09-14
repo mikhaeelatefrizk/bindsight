@@ -1444,6 +1444,11 @@ def _doi_bearing_files() -> tuple[str, ...]:
             continue
         if rel.startswith("benchmarks/") or "CHANGELOG" in rel:
             continue  # recorded history, not a current citation
+        if rel == "scripts/set_doi.py":
+            # The filler itself, not a citation: its usage text shows an example
+            # DOI so the reader knows what to pass. Including it would make the
+            # tool that enforces agreement the reason agreement fails.
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):  # pragma: no cover

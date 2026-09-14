@@ -1,0 +1,85 @@
+name: Bug report
+description: Something does not work, or works differently from what the docs say.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The most useful bug reports for this project say
+        what you ran, what happened, and whether it happens on a clean clone —
+        that last one matters, because the defect class this repository keeps
+        finding is code that works only on the machine that wrote it.
+
+  - type: textarea
+    id: what-you-ran
+    attributes:
+      label: The command you ran
+      description: Paste it exactly, including flags and the config file if there was one.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Paste the error or the wrong output. Full traceback if there is one.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-expected
+    attributes:
+      label: What you expected instead
+      description: If a document told you to expect something else, link it.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Output of `bindsight --version`."
+      placeholder: "0.3.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`bindsight doctor` output"
+      description: >-
+        This reports your dependencies, caches and vendored data, and resolves
+        most environment questions in one paste.
+      render: shell
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed it
+      options:
+        - "git clone + pip install -e"
+        - "conda/mamba from envs/discover.yaml"
+        - "Docker"
+        - "Hugging Face Space"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Python version
+      placeholder: "Windows 11, Python 3.12"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: clean-clone
+    attributes:
+      label: Does it happen on a clean clone?
+      options:
+        - label: >-
+            I tried it in a fresh clone with a fresh virtualenv (or I cannot,
+            and have said why above).
