@@ -98,3 +98,80 @@ def test_the_readme_states_the_seed_gap_rather_than_hiding_it(manifest: dict) ->
         "the manifest omits the seed and the note beside it does not say so"
     )
     assert "42" in readme, "the note does not say which seed was actually used"
+
+
+class TestTheWalkMatchesWhatTheCloneCarries:
+    """The README exhibits a seven-step walk from binder to patient samples.
+
+    It used to open by saying a reviewer could do that "reading committed
+    artifacts and running nothing". Only the first three steps are in the
+    committed manifest: the gene identifier, the cohort and the patient
+    barcodes live in the 74 MB crate, which is not committed, and ``runs/`` is
+    gitignored in full. The walk was genuinely performed -- the transcript is
+    real -- but a reader with only the clone can confirm half of it.
+
+    These tests hold both halves of that statement true: the steps claimed as
+    checkable must actually be checkable, and the claim must not creep back.
+    """
+
+    @staticmethod
+    def _committed_text() -> str:
+        import json
+
+        root = Path(__file__).resolve().parents[1] / "benchmarks" / "provenance_join"
+        parts = []
+        for name in ("run_manifest.jsonld", "ro-crate-metadata.json"):
+            parts.append(json.dumps(json.loads((root / name).read_text(encoding="utf-8"))))
+        return "".join(parts)
+
+    @staticmethod
+    def _readme() -> str:
+        root = Path(__file__).resolve().parents[1] / "benchmarks" / "provenance_join"
+        return (root / "README.md").read_text(encoding="utf-8")
+
+    def test_the_first_three_steps_resolve_from_the_committed_manifest(self) -> None:
+        """The part the README says a clone can check, it must be able to check."""
+        text = self._committed_text()
+
+        for step, needle in (
+            ("1 — the ranked binder", "P32970_binder_6_seq0"),
+            ("2 — its target", "P32970"),
+            ("3 — the structure it was built against", "AF-P32970"),
+        ):
+            assert needle in text, (
+                f"step {step} is claimed to be verifiable from this directory, but "
+                f"{needle!r} is in neither committed file"
+            )
+
+    def test_the_readme_does_not_claim_the_whole_walk_from_a_clone(self) -> None:
+        """The later steps are genuinely absent; the text must keep saying so."""
+        text = self._committed_text()
+        readme = self._readme()
+
+        absent = [n for n in ("ENSG00000125726", "TCGA-A3-", "TCGA-KIRC") if n in text]
+        if absent:
+            pytest.skip(f"the committed files now carry {absent}; widen the claim")
+
+        assert "are not" in readme or "cannot" in readme, (
+            "the manifest carries only the first three steps, and the README no "
+            "longer tells the reader which half of the walk they can check"
+        )
+        assert "74 MB" in readme
+        assert "not committed" in readme
+
+    def test_the_barcodes_quoted_are_open_access_identifiers(self) -> None:
+        """The README names TCGA cases, so it must say what they are.
+
+        They are pseudonymous study identifiers from the GDC open-access tier,
+        not patient identifiers -- a distinction a reader in a clinical setting
+        will want made explicitly rather than assumed.
+        """
+        readme = self._readme()
+        if "TCGA-A3-" not in readme:
+            pytest.skip("no barcode is quoted")
+
+        lowered = readme.lower()
+        assert "open-access" in lowered or "open access" in lowered, (
+            "patient barcodes are quoted without stating their access tier"
+        )
+        assert "pseudonymous" in lowered or "not patient identifiers" in lowered

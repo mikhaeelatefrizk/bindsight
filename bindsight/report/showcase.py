@@ -170,6 +170,86 @@ class StudyShowcase:
     set_sizes: dict[str, dict[str, int]]
     surfaceome_size: int
     figures: dict[str, Path]
+    #: The indication-specificity permutation null. The strongest claim the
+    #: study supports, and until this field existed no generated surface could
+    #: render it: it lived only in ``benchmarks/study/RESULTS.md``, absent from
+    #: every README, docs page and manuscript.
+    specificity_null: dict[str, Any] = field(default_factory=dict)
+    #: The abundance- and dispersion-matched decoy null. Its headline is a
+    #: negative, which is exactly why it has to travel with the positive one.
+    decoy_null: dict[str, Any] = field(default_factory=dict)
+    #: Cohorts carrying no panel antigen, run to show what no signal looks like.
+    null_calibration: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def specificity_is_at_its_floor(self) -> bool:
+        """Whether the permutation p is the smallest this design can express.
+
+        Seven antigens give 5,040 orderings, and two of them are prostate, so
+        every distinct assignment is enumerated twice: the floor is 2/5040 and
+        the observed p sits on it. A surface that prints the p without saying so
+        implies a precision the design does not have.
+        """
+        spec = self.specificity_null
+        p_value, floor = spec.get("p_value"), spec.get("p_value_floor")
+        if p_value is None or floor is None:
+            return False
+        return bool(p_value <= floor * 1.000001)
+
+    @property
+    def indication_gap(self) -> dict[str, Any]:
+        """The within-antigen difference between own and off indication.
+
+        The paired contrast, not the two means side by side: each antigen is its
+        own control, which is what makes the interval meaningful at this panel
+        size.
+        """
+        return dict(self.null_calibration.get("paired_difference") or {})
+
+    @property
+    def decoy_rows(self) -> list[dict[str, Any]]:
+        """Pairs carrying a decoy-null p, best first. The null lives per pair."""
+        rows = [p for p in self.pairs if p.get("p_decoy") is not None]
+        return sorted(rows, key=lambda r: r["p_decoy"])
+
+    @property
+    def decoy_nominal(self) -> int:
+        """Pairs nominally significant against abundance-matched decoys."""
+        return sum(1 for r in self.decoy_rows if r["p_decoy"] < 0.05)
+
+    @property
+    def decoy_surviving_correction(self) -> int:
+        """Pairs surviving Benjamini-Hochberg across the panel."""
+        return sum(
+            1 for r in self.decoy_rows if r.get("p_decoy_bh") is not None and r["p_decoy_bh"] < 0.05
+        )
+
+    @property
+    def smallest_attainable_decoy_bh(self) -> float | None:
+        """The smallest BH-adjusted p any pair in this panel could have produced.
+
+        Each pair's decoy p is bounded below by its own stratum size, so the
+        panel's best possible adjusted value follows from the design rather than
+        from the data. When that bound already exceeds 0.05, "none survives
+        correction" was settled before a single number was computed, and
+        reporting it as a finding overstates what the experiment could ever have
+        shown. The study's headline negative is exactly this case.
+        """
+        rows = self.decoy_rows
+        if not rows:
+            return None
+        floors = sorted(r["p_decoy_floor"] for r in rows if r.get("p_decoy_floor") is not None)
+        if not floors:
+            return None
+        n = len(rows)
+        # Benjamini-Hochberg at its most generous: every pair sits on its floor.
+        return min(float(floors[i] * n) / (i + 1) for i in range(len(floors)))
+
+    @property
+    def decoy_negative_was_forced_by_design(self) -> bool:
+        """True when no pair could have survived correction whatever the data."""
+        bound = self.smallest_attainable_decoy_bh
+        return bound is not None and bound >= 0.05
 
     @property
     def surfaced(self) -> list[dict[str, Any]]:
@@ -279,6 +359,9 @@ def load_study(root: Path | None = None) -> StudyShowcase | None:
         set_sizes=dict(data.get("set_sizes_by_cohort") or {}),
         surfaceome_size=int(data.get("surfaceome_size") or 0),
         figures=figures,
+        specificity_null=dict(data.get("specificity_null") or {}),
+        decoy_null=dict(data.get("decoy_null") or {}),
+        null_calibration=dict(data.get("null_calibration") or {}),
     )
 
 

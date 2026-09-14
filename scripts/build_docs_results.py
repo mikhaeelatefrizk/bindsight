@@ -108,6 +108,98 @@ def _fmt(value: object, spec: str = "") -> str:
     return str(value)
 
 
+def _nulls_section(st: showcase.StudyShowcase) -> list[str]:
+    """Both null models, with the positive and the negative given equal room.
+
+    Until this existed neither reached a reader. The decoy null -- the study's
+    own primary null, and a negative -- and the indication-specificity null --
+    the strongest claim the study supports -- lived only in
+    ``benchmarks/study/RESULTS.md``, absent from every README, docs page and
+    manuscript. A project whose credibility rests on volunteering disconfirming
+    evidence was volunteering it in one file.
+    """
+    spec = st.specificity_null
+    gap = st.indication_gap
+    if not spec and not st.decoy_rows:
+        return []
+
+    lines: list[str] = [
+        "### Is the ranking doing anything? Two nulls, pointing different ways",
+        "",
+        "Both are reported because reporting only the flattering one would make "
+        "the other the finding.",
+        "",
+    ]
+
+    if st.decoy_rows:
+        nominal = st.decoy_nominal
+        survived = st.decoy_surviving_correction
+        bound = st.smallest_attainable_decoy_bh
+        lines += [
+            "**Against matched decoys — negative.** Each antigen is compared with "
+            "genes matched to it on abundance and dispersion quintile, drawn from the "
+            "same eligible surfaceome and ranked by the same counterfactual score: "
+            "would a gene that merely *looks* like this antigen have ranked as well? "
+            f"Of {len(st.decoy_rows)} pairs, **{nominal} are nominally significant at "
+            f"0.05 and {survived} survive Benjamini-Hochberg** across the panel. "
+            "Against background matched this way, no antigen here is distinguishable "
+            "once the panel is corrected for its own size.",
+            "",
+        ]
+        if bound is not None:
+            lines += [
+                "Read that with the panel's resolution in mind. Each pair's p is "
+                "bounded below by the size of its own decoy stratum, so the smallest "
+                f"BH-adjusted value this panel could have produced is **{bound:.3f}** "
+                "— under 0.05, so a pair genuinely could have survived, but only one "
+                "sitting essentially on its floor. The negative is a measurement, not "
+                "a foregone conclusion; it is also not a sensitive one.",
+                "",
+            ]
+
+    if spec:
+        observed = spec.get("observed")
+        p_value = spec.get("p_value")
+        n_perm = spec.get("n_permutations")
+        lines += [
+            "**Against a permuted indication — positive.** The same antigens, ranked "
+            "in the cancer they are actually used in against a permuted assignment to "
+            "the other cohorts. This asks a different question: not whether any single "
+            "antigen beats its lookalikes, but whether the ordering knows which "
+            "disease it is looking at.",
+            "",
+        ]
+        if observed is not None and p_value is not None:
+            floor_note = (
+                " — the floor for this many permutations, so it is as extreme as an "
+                "exhaustive enumeration of this panel can show rather than vanishingly "
+                "small"
+                if st.specificity_is_at_its_floor
+                else ""
+            )
+            lines += [
+                f"- Observed mean standing **{observed:.3f}**, where 1.0 is the top of "
+                "the eligible surfaceome and 0.0 the bottom",
+                f"- p = **{p_value:.2e}** over {n_perm} enumerated permutations{floor_note}",
+            ]
+        if gap.get("point") is not None:
+            lines += [
+                f"- Within-antigen difference **{gap['point']:.3f}** "
+                f"(95% CI {gap['low']:.3f}–{gap['high']:.3f}) between an antigen's "
+                "standing in its own indication and in cohorts carrying no panel "
+                "antigen — each antigen is its own control, and the interval excludes "
+                "zero",
+            ]
+        lines += [
+            "",
+            "This is the strongest claim the study supports, and it is a claim about "
+            "the ordering, not about any individual hit.",
+            "",
+        ]
+
+    return lines
+
+
 def _study_section(st: showcase.StudyShowcase) -> list[str]:
     """Render the rediscovery-study section.
 
@@ -178,6 +270,8 @@ def _study_section(st: showcase.StudyShowcase) -> list[str]:
         for cutoff, w in sensitivity.items():
             lines.append(f"| {cutoff} | {w.get('numerator')}/{w.get('denominator')} |")
         lines.append("")
+
+    lines += _nulls_section(st)
 
     # Both frames, side by side. A single unlabelled column of the
     # approved-only counts read as a total of the pair table printed below it.

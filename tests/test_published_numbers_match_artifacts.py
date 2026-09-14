@@ -971,3 +971,88 @@ class TestStrataAreNamedForWhatTheyAre:
         assert max(seen) < _DECOY_STRATA_BINS, (
             f"stratum label {max(seen)} exceeds the {_DECOY_STRATA_BINS} declared bins"
         )
+
+
+class TestBothNullsReachAReader:
+    """The study's two null models must appear on the page readers are sent to.
+
+    Before this, both lived only in ``benchmarks/study/RESULTS.md``: the decoy
+    null -- the study's own primary null, and a negative -- and the
+    indication-specificity null -- the strongest claim the study supports.
+    Neither was in any README, docs page or manuscript, because
+    ``StudyShowcase`` had no field for either and every generated surface was
+    therefore structurally incapable of rendering them.
+
+    A project whose credibility rests on publishing its own disconfirming
+    evidence cannot publish it in one file and omit it everywhere a reader
+    actually looks.
+    """
+
+    @staticmethod
+    def _page() -> str:
+        return (REPO / "docs" / "results.md").read_text(encoding="utf-8")
+
+    @staticmethod
+    def _study() -> dict:
+        import json
+
+        return json.loads(
+            (REPO / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8")
+        )
+
+    def test_the_negative_null_is_on_the_page(self) -> None:
+        page = self._page()
+
+        assert "Benjamini" in page, (
+            "the results page does not mention the decoy null's correction; its "
+            "headline is a negative and omitting it makes the page selective"
+        )
+        assert "decoy" in page.lower()
+
+    def test_the_positive_null_is_on_the_page_with_its_interval(self) -> None:
+        page = self._page()
+        study = self._study()
+        gap = (study.get("null_calibration") or {}).get("paired_difference") or {}
+
+        assert "permut" in page.lower(), "the specificity null is not on the page"
+        if gap.get("point") is not None:
+            assert f"{gap['point']:.3f}" in page, (
+                "the within-antigen difference is stated without its own value"
+            )
+            note = (
+                "the within-antigen difference appears without its interval; at this "
+                "panel size the interval is the finding"
+            )
+            assert f"{gap['low']:.3f}" in page, note
+            assert f"{gap['high']:.3f}" in page, note
+
+    def test_a_permutation_p_on_its_floor_says_so(self) -> None:
+        """A floor reported as a measurement implies precision the design lacks."""
+        page = self._page()
+        spec = self._study().get("specificity_null") or {}
+        p_value, floor = spec.get("p_value"), spec.get("p_value_floor")
+        if p_value is None or floor is None:
+            pytest.skip("no specificity null in the artifact")
+
+        if p_value <= floor * 1.000001:
+            assert "floor" in page, (
+                "the published permutation p sits on the smallest value its design "
+                "can express, and the page does not say so"
+            )
+
+    def test_the_page_does_not_combine_correlated_pairs(self) -> None:
+        """Guards against a tempting overclaim.
+
+        Combining the 22 decoy p-values with Fisher's method returns 0.006, which
+        is a much better-looking number than "none survives correction". It is
+        also wrong: ERBB2 appears in four cohorts and EGFR in four, so the pairs
+        are 13 antigens rather than 22 independent tests, and Fisher over
+        correlated tests is anti-conservative. The study's own machinery
+        clusters over antigens for exactly this reason.
+        """
+        page = self._page().lower()
+
+        assert "fisher" not in page, (
+            "the results page reports a Fisher combination over pairs that repeat "
+            "antigens; use a clustered estimator or report the pairs as they are"
+        )

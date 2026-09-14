@@ -1,13 +1,23 @@
 # The provenance chain, run end to end
 
 The claim this project rests on is that a reviewer can start at a ranked binder
-and reach the patients it came from, reading committed artifacts and running
-nothing. Until this run, no manifest and no crate had ever been committed, so
-the claim had never been exhibited.
+and reach the patients it came from. This directory exhibits that walk, performed
+once end to end on a target the discovery half chose for itself.
 
-This directory holds the run's manifest, the crate's RO-Crate metadata, and the
-checksum of the full crate. The crate itself is 74 MB and is not committed; see
-**Regenerating** below.
+**What you can check from this clone, and what you cannot.** This directory holds
+three committed files: the run's manifest (`run_manifest.jsonld`), the crate's
+RO-Crate metadata (`ro-crate-metadata.json`), and the crate's checksum
+(`SHA256SUMS`). The crate itself is 74 MB and is not committed, and `runs/` is
+gitignored in full.
+
+So of the seven steps below, **the first three are verifiable by reading the
+files in this directory** — the binder id, its target, and the structure and
+design range it was built against are all in the committed manifest. **Steps 4
+to 7 are not.** The gene identifier, the cohort, and the patient barcodes live
+in the crate, which you have to rebuild. The walk was genuinely performed
+against the full crate, and the transcript below is that walk — but a reader
+with only this clone can confirm half of it, and this file previously implied
+otherwise. See **Regenerating**.
 
 ## The run
 
@@ -22,7 +32,10 @@ checksum of the full crate. The crate itself is 74 MB and is not committed; see
 | GPU | free Kaggle Tesla T4, 3h17m for CA9 and 1h29m for CD70 |
 | Designs | 40, all with distinct ids |
 
-## The walk, as performed against the crate
+## The walk, as performed against the full crate
+
+Steps 1–3 are reproducible from the committed manifest in this directory.
+Steps 4–7 require the rebuilt crate.
 
     1. ranked binder   P32970_binder_6_seq0   rank 1, ipTM 0.946
     2. target          P32970 (CD70)
@@ -37,6 +50,11 @@ Every step reads a file the crate carries. The cohort files sit outside the run
 directory, where real cohorts live, and the exporter resolves them from the
 manifest — an earlier crate of this same run shipped 31 artifacts with no
 cohort in it at all, which broke the walk at step 5.
+
+The barcodes above are TCGA case identifiers from the open-access tier of the
+NCI Genomic Data Commons. They are pseudonymous study identifiers, not patient
+identifiers, and they are quoted here because naming what the chain reaches is
+the entire point of exhibiting it.
 
 ## What this manifest does not carry
 

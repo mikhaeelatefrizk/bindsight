@@ -46,6 +46,22 @@ The headline counts only antigens whose targeting agent is approved. That exclud
 | recall@50 | 4/22 |
 | recall@100 | 4/22 |
 
+### Is the ranking doing anything? Two nulls, pointing different ways
+
+Both are reported because reporting only the flattering one would make the other the finding.
+
+**Against matched decoys — negative.** Each antigen is compared with genes matched to it on abundance and dispersion quintile, drawn from the same eligible surfaceome and ranked by the same counterfactual score: would a gene that merely *looks* like this antigen have ranked as well? Of 22 pairs, **3 are nominally significant at 0.05 and 0 survive Benjamini-Hochberg** across the panel. Against background matched this way, no antigen here is distinguishable once the panel is corrected for its own size.
+
+Read that with the panel's resolution in mind. Each pair's p is bounded below by the size of its own decoy stratum, so the smallest BH-adjusted value this panel could have produced is **0.022** — under 0.05, so a pair genuinely could have survived, but only one sitting essentially on its floor. The negative is a measurement, not a foregone conclusion; it is also not a sensitive one.
+
+**Against a permuted indication — positive.** The same antigens, ranked in the cancer they are actually used in against a permuted assignment to the other cohorts. This asks a different question: not whether any single antigen beats its lookalikes, but whether the ordering knows which disease it is looking at.
+
+- Observed mean standing **0.858**, where 1.0 is the top of the eligible surfaceome and 0.0 the bottom
+- p = **3.97e-04** over 5040 enumerated permutations — the floor for this many permutations, so it is as extreme as an exhaustive enumeration of this panel can show rather than vanishingly small
+- Within-antigen difference **0.348** (95% CI 0.188–0.513) between an antigen's standing in its own indication and in cohorts carrying no panel antigen — each antigen is its own control, and the interval excludes zero
+
+This is the strongest claim the study supports, and it is a claim about the ordering, not about any individual hit.
+
 ### Four outcomes, never merged
 
 An antigen the surfaceome reference does not contain, one a stated filter excluded, one the ranking placed low, and one whose lookup failed are four different findings about four different parts of the system. The first column is the pre-registered approved-agent denominator; the second is every scored pair, matching the table below.
