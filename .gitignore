@@ -127,3 +127,6 @@ paper/biorxiv/*.pdf
 # The wheel built for the remote job lives here too and is a build product.
 benchmarks/designer_benchmark/run/
 benchmarks/designer_benchmark/run_t4/
+
+# Editor and agent tooling, not part of the project.
+.claude/
