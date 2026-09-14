@@ -63,14 +63,17 @@ def _list_projects() -> None:
     print(f"{len(scored)} scored antigen-cohort pairs across {len(by_project)} projects\n")
     for project in sorted(by_project):
         normals = P.PROJECT_NORMALS.get(project, 0)
-        pairs = P.PROJECT_MATCHED_PAIRS.get(project, 0)
+        # Through the accessor, not the map. ``AntigenCohort.n_matched_pairs``
+        # existed for exactly this and nothing called it, so the property and
+        # the two sites that need the number could have diverged.
+        pairs = P.matched_pairs_for(project)
         print(
             f"  {project:12} {pairs:>3} matched pairs ({normals:>3} normals)  "
             f"{', '.join(sorted(by_project[project]))}"
         )
     print("\nnull-calibration projects (no antigen attached):")
     for project in P.NULL_CALIBRATION_PROJECTS:
-        print(f"  {project:12} {P.PROJECT_MATCHED_PAIRS.get(project, 0):>3} matched pairs")
+        print(f"  {project:12} {P.matched_pairs_for(project):>3} matched pairs")
     print("\npublished but excluded from every denominator:")
     for c in P.EXCLUDED:
         print(f"  {c.project:12} {c.symbol:9} {c.usable}")

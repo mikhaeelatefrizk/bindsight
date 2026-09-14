@@ -60,6 +60,7 @@ from bindsight.surfaceome import (
     load_surfaceome,
     load_surfaceome_gene_map,
     load_surfy,
+    surfaceome_source,
 )
 from bindsight.targets.gtex import GTExTissueExpression
 from bindsight.targets.open_targets import OpenTargetsClient
@@ -394,7 +395,15 @@ def _stage_discover(
                 media_type="application/x-parquet",
             )
         ],
-        params=config.params.target_discovery.model_dump(),
+        params=config.params.target_discovery.model_dump()
+        | {
+            # Which surfaceome list this run actually resolved. The choice
+            # between a user-refreshed cache and the vendored list is made
+            # inside load_surfy and was recorded nowhere, so two runs could use
+            # different lists -- different eligible denominators, different
+            # counterfactual ranks -- with nothing in either manifest saying so.
+            "surfaceome_source": surfaceome_source(),
+        },
     )
 
     for _title, _body in DISCOVERY_LIMITATIONS:

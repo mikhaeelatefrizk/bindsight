@@ -178,7 +178,18 @@ class AntigenCohort:
     @property
     def n_matched_pairs(self) -> int:
         """Patients contributing both arms, which the paired design uses."""
-        return PROJECT_MATCHED_PAIRS.get(self.project, 0)
+        return matched_pairs_for(self.project)
+
+
+def matched_pairs_for(project: str) -> int:
+    """Patients contributing both a tumour and a normal arm in ``project``.
+
+    One reader for the table. ``AntigenCohort.n_matched_pairs`` wrapped it and
+    was never called, while the two places that actually need the number indexed
+    ``PROJECT_MATCHED_PAIRS`` directly -- so the accessor could have changed its
+    default or its lookup without either caller noticing.
+    """
+    return PROJECT_MATCHED_PAIRS.get(project, 0)
 
 
 PANEL: list[AntigenCohort] = [

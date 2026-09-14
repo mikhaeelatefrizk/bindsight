@@ -1202,3 +1202,107 @@ class TestEveryPinnedDistributionIsClassified:
 
         overlap = {n.lower() for n in SCIENTIFIC_STACK} & {n.lower() for n in PRESENTATION_ONLY}
         assert not overlap, overlap
+
+
+# ---------------------------------------------------------------------------
+# Which reference data a run used is part of the result
+# ---------------------------------------------------------------------------
+class TestTheRunRecordsWhichSurfaceomeItUsed:
+    """``load_surfy`` chooses between a user-refreshed cache and the vendored
+    list silently. Two runs on two machines could use different surfaceome lists
+    — different eligible denominators, different counterfactual ranks — and
+    nothing in either manifest would say which.
+    """
+
+    def test_the_source_is_reportable(self) -> None:
+        from bindsight.surfaceome import surfaceome_source
+
+        source = surfaceome_source()
+
+        assert source in {"vendored", "bundled fallback (ten proteins)"} or source.startswith(
+            "user cache ("
+        ), source
+
+    def test_the_discover_stage_records_it(self) -> None:
+        """Recorded, not merely reportable: the finding was that nothing wrote
+        it down."""
+        import ast
+
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "bindsight" / "pipelines" / "discover.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        called = {
+            node.func.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        }
+
+        assert "surfaceome_source" in called, (
+            "the discover stage does not record which surfaceome list it resolved"
+        )
+        assert '"surfaceome_source"' in source
+
+    def test_a_populated_cache_is_reported_as_the_cache(self, tmp_path, monkeypatch) -> None:
+        """The distinction only matters if it is actually detected."""
+        from bindsight.surfaceome import surfy
+
+        cache = tmp_path / "surfy_v1.uniprot.txt"
+        cache.write_text("\n".join(f"P{i:05d}" for i in range(50)), encoding="utf-8")
+        monkeypatch.setattr(surfy, "_surfy_cache_path", lambda: cache)
+
+        assert surfy.surfaceome_source().startswith("user cache (")
+
+
+class TestTheMatchedPairTableHasOneReader:
+    """``AntigenCohort.n_matched_pairs`` wrapped the table and was never called,
+    while the two places that need the number indexed the dict directly — so the
+    accessor could have changed its default or its lookup with nothing noticing.
+    """
+
+    def test_the_accessor_and_the_property_agree(self) -> None:
+        from bindsight.benchmark.panel import PANEL, matched_pairs_for
+
+        assert PANEL
+        for cohort in PANEL:
+            assert cohort.n_matched_pairs == matched_pairs_for(cohort.project)
+
+    def test_nothing_indexes_the_table_directly(self) -> None:
+        """One reader, so a change to the lookup reaches every caller."""
+        root = Path(__file__).resolve().parents[1]
+        offenders = []
+        for rel in ("benchmarks/run_study.py", "bindsight/benchmark/study.py"):
+            path = root / rel
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if "PROJECT_MATCHED_PAIRS" in text:
+                offenders.append(rel)
+
+        assert not offenders, (
+            f"{offenders} index the matched-pair table directly instead of using "
+            "matched_pairs_for()"
+        )
+
+    def test_an_unknown_project_is_zero_not_an_error(self) -> None:
+        from bindsight.benchmark.panel import matched_pairs_for
+
+        assert matched_pairs_for("TCGA-NOPE") == 0
+
+    def test_the_property_shares_the_accessor_default(self) -> None:
+        """Comparing the two over PANEL alone proves nothing about the default:
+        every project there is in the table, so the fallback never fires. An
+        unknown project is where a divergent default would show."""
+        from bindsight.benchmark.panel import AntigenCohort, matched_pairs_for
+
+        unknown = AntigenCohort(
+            project="TCGA-NOPE",
+            symbol="NONE",
+            uniprot="P00000",
+            ensembl="ENSG00000000000",
+            agent="none",
+            tier="approved",
+            usable=True,
+            note="",
+        )
+
+        assert unknown.n_matched_pairs == matched_pairs_for("TCGA-NOPE") == 0

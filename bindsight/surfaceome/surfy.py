@@ -226,6 +226,23 @@ def load_surfy_gene_map() -> dict[str, str]:
     return mapping
 
 
+def surfaceome_source() -> str:
+    """Which list ``load_surfy`` would resolve, as a recordable label.
+
+    The choice between a user-refreshed cache and the vendored list is made
+    silently inside ``load_surfy``. Two runs on two machines could therefore use
+    different surfaceome lists -- different eligible denominators, different
+    counterfactual ranks -- and nothing in either manifest would say so. This
+    reports the decision so the discover stage can record it.
+    """
+    cache_path = _surfy_cache_path()
+    if cache_path.exists() and _parse_accessions(cache_path.read_text(encoding="utf-8")):
+        return f"user cache ({cache_path})"
+    if load_vendored_surfy() is not None:
+        return "vendored"
+    return "bundled fallback (ten proteins)"
+
+
 def load_surfy(*, allow_offline_fallback: bool = True) -> frozenset[str]:
     """Return the set of UniProt accessions classified as surface by SURFY.
 
