@@ -63,7 +63,45 @@ def test_the_log_names_the_card_it_was_measured_on() -> None:
     assert "15360" in text
 
 
-@pytest.mark.parametrize("doc", [CAPACITY_README, RUN_FREE_GPU])
+def _documents_stating_the_peak() -> list[Path]:
+    """Every shipped document that states the measured peak, found by sweeping.
+
+    Two paths were named here by hand while a third document published the same
+    figure and was checked by nothing — the failure mode this whole file exists
+    to prevent, one level up.
+    """
+    root = Path(__file__).resolve().parents[1]
+    peak = _peak_mib()
+    needles = (f"{peak:,}", str(peak))
+    out: list[Path] = []
+    for path in root.rglob("*.md"):
+        if set(path.relative_to(root).parts) & {".git", "site", "runs", "node_modules"}:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "VRAM" not in text and "MiB" not in text:
+            continue
+        if any(n in text for n in needles):
+            out.append(path)
+    return sorted(out)
+
+
+def test_the_peak_sweep_finds_every_document_that_states_it() -> None:
+    """Guards the guard.
+
+    Two documents state the measured peak today, and the hand-written list this
+    replaced happened to name both — the audit's claim that a third was
+    unchecked did not hold when the figure was grepped for. The list is replaced
+    anyway: being accidentally complete is not the same as staying complete, and
+    the next document to quote the figure joins this parametrize by existing.
+    """
+    found = {p.name for p in _documents_stating_the_peak()}
+
+    assert found >= {"README.md", "RUN_FREE_GPU.md"}, (
+        f"the sweep no longer sees both documents that state the peak: {found}"
+    )
+
+
+@pytest.mark.parametrize("doc", _documents_stating_the_peak(), ids=lambda p: p.name)
 def test_the_published_figure_matches_the_log(doc: Path) -> None:
     peak = _peak_mib()
     text = doc.read_text(encoding="utf-8")

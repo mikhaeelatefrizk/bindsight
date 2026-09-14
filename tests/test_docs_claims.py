@@ -69,7 +69,16 @@ MPNN_CHAIN_FLAG = "--pdb_path_chains"
 #: at least one of them.
 BINDER_FIGURES = re.compile(r"0\.88|40\s?%")
 #: The withdrawn ones. Permitted only in a sentence that retracts them.
-WITHDRAWN_BINDER_FIGURES = re.compile(r"0\.84|50\s?%\s*success|50%")
+#: The withdrawn pre-fix figures: ipTM 0.84 and a 50% success@0.65 rate. The
+#: bare alternative ``|50%`` used to be here and matched any 50% at all --
+#: including the calibration's scramble pass rate, which is a current
+#: measurement, so a document reporting it was accused of republishing a
+#: retracted one. The rate must appear next to what it is a rate OF.
+WITHDRAWN_BINDER_FIGURES = re.compile(
+    r"0\.84"
+    r"|50\s?%[^\n]{0,40}success"
+    r"|success[^\n]{0,40}\b50\s?%"
+)
 RETRACTION_WORDS = (
     "withdraw",
     "supersed",
@@ -110,6 +119,12 @@ PRIORITY_CLAIM_DOCS = (
 # ``tests/test_docs_results.py::test_generated_page_is_up_to_date``), so the
 # caveat has to come from the generator; regenerating the page cannot drop it
 # without failing here.
+#: Documents that quote the binder headline figures and must therefore carry the
+#: protocol caveat beside them. Listed rather than swept because the three tests
+#: below make per-document demands that a broader scope would misapply — a page
+#: that merely names the metric is not a page quoting the run's numbers.
+#: The list cannot go stale silently: ``test_the_binder_figure_list_is_complete``
+#: sweeps for the figures and fails if any document stating them is missing here.
 BINDER_FIGURE_DOCS = (
     "README.md",
     "docs/index.md",
@@ -118,6 +133,13 @@ BINDER_FIGURE_DOCS = (
     "CHANGELOG.md",
     "benchmarks/designer_benchmark/RESULTS.md",
     "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
+    # Found by the completeness sweep below; the hand-written list had gone
+    # stale by five documents, every one of them quoting the run's figures.
+    "benchmarks/RUN_ON_KAGGLE.md",
+    "benchmarks/calibration/README.md",
+    "benchmarks/designer_benchmark/run_t4/RESULTS.md",
+    "docs/positioning.md",
+    "paper/README.md",
 )
 
 
@@ -1193,4 +1215,39 @@ def test_generated_reports_do_not_emit_a_command_for_a_missing_file() -> None:
 
     assert not offenders, "generators emitting a command for a missing file:\n  " + "\n  ".join(
         sorted(set(offenders))
+    )
+
+
+def test_the_binder_figure_list_is_complete() -> None:
+    """A document quoting the committed run's figures must be in the list above.
+
+    The list is a list, which is the pattern that has gone stale repeatedly in
+    this repository. It stays honest by being checked against a sweep for the
+    artifact's own numbers rather than by being remembered.
+    """
+    import json
+
+    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+    if not artifact.is_file():
+        pytest.skip("designer benchmark artifact not present")
+    arm = json.loads(artifact.read_text(encoding="utf-8"))["designers"][0]
+    forms = (
+        f"{arm['success_rate']:.0%}",
+        f"{arm['n_success']}/{arm['n_designs']}",
+        f"{arm['n_success']} of {arm['n_designs']}",
+    )
+
+    quoting = set()
+    for path in _shipped_documents():
+        if path.suffix != ".md":
+            continue
+        text = _flat(path.read_text(encoding="utf-8", errors="replace"))
+        if "success@0.65" not in text and "success @ ipTM" not in text:
+            continue
+        if any(form in text for form in forms):
+            quoting.add(path.relative_to(ROOT).as_posix())
+
+    missing = sorted(quoting - set(BINDER_FIGURE_DOCS))
+    assert not missing, (
+        f"documents quoting the binder figures but absent from BINDER_FIGURE_DOCS: {missing}"
     )

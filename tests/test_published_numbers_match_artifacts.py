@@ -118,13 +118,21 @@ class TestTheWithdrawnHeadlineStaysWithdrawn:
     figure means the repository is again publishing two results.
     """
 
-    SURFACES = (
-        "README.md",
-        "docs/index.md",
-        "docs/results.md",
-        "paper/paper.md",
-        "paper/validation/manuscript.md",
-        "ARCHITECTURE.md",
+    #: Discovered, not listed. This was a six-path tuple and the module docstring
+    #: above names the bioRxiv draft as one of the six surfaces that carried the
+    #: withdrawn headline — and that draft was not in the tuple, so the one
+    #: manuscript most likely to be read by a reviewer was checked by nothing.
+    SURFACES = tuple(
+        sorted(
+            p.relative_to(REPO).as_posix()
+            for p in [
+                *REPO.glob("*.md"),
+                *(REPO / "docs").rglob("*.md"),
+                *(REPO / "paper").rglob("*.md"),
+                *(REPO / "paper").rglob("*.tex"),
+            ]
+            if p.is_file() and "CHANGELOG" not in p.name
+        )
     )
 
     @pytest.mark.parametrize("rel", SURFACES)

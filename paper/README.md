@@ -189,7 +189,8 @@ To stay honest:
 - **GPU half: partially executed.** This bullet described v0.1.0, when the
   GPU stages were templated notebooks that had never been run. That is no
   longer accurate. The `rfdiff_mpnn` + `boltz2` path has since been executed
-  end-to-end on a free Kaggle T4, under the corrected ProteinMPNN protocol,
+  end-to-end on a free Kaggle T4, under the corrected ProteinMPNN protocol
+  (the target chain held fixed, so only the binder is redesigned),
   and produced the 20 committed ERBB2 binders (best ipTM 0.88, 8/20 = 40%
   success@0.65, 95% CI 15–70% clustered over backbones — withdrawn as a
   measure of design quality; shuffles of the designs' own sequences clear it more

@@ -609,6 +609,25 @@ class TestAnUnreadCandidateTableIsNotAMiss:
             assert row["found"] is None, row
             assert all(v is None for k, v in row.items() if k.startswith("in_top_")), row
 
+    def test_a_table_without_an_accession_column_is_also_unavailable(self, tmp_path: Path) -> None:
+        """The other half of the guard. A frame that loaded but carries no
+        accession column cannot say whether an antigen was ranked either, and
+        deleting that half of the condition left the suite green.
+        """
+        import pandas as pd
+
+        run = tmp_path / "run"
+        (run / "targets").mkdir(parents=True)
+        pd.DataFrame({"symbol": ["ERBB2"], "rank": [1]}).to_parquet(
+            run / "targets" / "candidates.parquet", index=False
+        )
+
+        score = self._score(run)
+
+        assert score.recall_basis == "candidates_unavailable"
+        assert score.recall_at == {}
+        assert score.per_antigen[0]["found"] is None
+
     def test_a_readable_table_still_scores_exactly_as_before(self, tmp_path: Path) -> None:
         """The change must not touch the case that was working."""
         score = self._score(self._run_dir(tmp_path, write_candidates=True))

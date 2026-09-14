@@ -7,6 +7,8 @@ Two specific gaps:
 
 - **`DEFAULT_IPTM_SUCCESS = 0.65`** carries the project's headline figure —
   "40% success@0.65" — and arrived as a bare constant with no citation.
+  (That figure comes from the run with the target chain held fixed; the
+  earlier run that redesigned the target too is superseded.)
 - **An ipTM of 0.88 has no scale attached.** High relative to what?
 
 Neither is answerable by argument. Both need a control: something that should

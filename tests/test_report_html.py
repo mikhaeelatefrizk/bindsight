@@ -260,13 +260,40 @@ class TestTheReportShowsTheDesignedBinders:
         assert "No designed binders in this run" in html
 
     def test_the_cli_flag_reaches_the_renderer(self, tmp_path: Path) -> None:
-        """The regression: the flag existed and changed nothing."""
-        import inspect
+        """The regression was "the flag existed and changed nothing", and this
+        test asserted only that ``render_run`` has the parameter — which is
+        exactly the state the regression was in: a signature that accepts a value
+        and ignores it would pass.
 
-        from bindsight.report import render_run
+        ``test_sequences_are_embedded_only_when_asked_for`` already drives the
+        renderer directly, so what is checked here is the half nothing else
+        covers: that ``bindsight report --include-binders`` actually reaches it.
+        """
+        import tarfile
 
-        assert "include_binders" in inspect.signature(render_run).parameters, (
-            "render_run takes no include_binders, so the CLI flag cannot do anything"
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        run = self._run(tmp_path)
+        targets = run / "design" / "_targets"
+        targets.mkdir(parents=True)
+        fasta = tmp_path / "P32970_binder_6_seq0.fasta"
+        fasta.write_text(">P32970_binder_6_seq0\nMKTAYIAKQRQISFVKSHFSRQ\n")
+        with tarfile.open(targets / "P32970.tar.gz", "w:gz") as tf:
+            tf.add(fasta, arcname="design/P32970_binder_6_seq0.fasta")
+
+        runner = CliRunner()
+        assert runner.invoke(main, ["report", str(run)]).exit_code == 0
+        without = (run / "report.html").read_text(encoding="utf-8")
+
+        assert runner.invoke(main, ["report", str(run), "--include-binders"]).exit_code == 0
+        with_sequences = (run / "report.html").read_text(encoding="utf-8")
+
+        assert "MKTAYIAKQRQISFVKSHFSRQ" not in without
+        assert "MKTAYIAKQRQISFVKSHFSRQ" in with_sequences, (
+            "`report --include-binders` did not reach the renderer, which is the "
+            "defect this test is named for"
         )
 
 

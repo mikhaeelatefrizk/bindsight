@@ -926,16 +926,23 @@ class TestTheCalibrationReportNamesWhatItRead:
 
         repo = Path(__file__).resolve().parents[1]
         checked = 0
+        missing: list[str] = []
         for role, entry in (self._report().get("inputs") or {}).items():
             if entry is None:
                 continue
             path = repo / entry["path"]
             if not path.is_file():
-                pytest.skip(f"{role} input not present in this checkout: {entry['path']}")
+                # ``continue``, not ``skip``: a skip here aborted the whole test
+                # on the first absent input, so the digests of everything after
+                # it went unverified while the run still reported green.
+                missing.append(entry["path"])
+                continue
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             assert digest == entry["sha256"], (
                 f"{role} ({entry['path']}) no longer matches the digest the report "
                 "was computed from; re-run analyse.py"
             )
             checked += 1
+        if not checked and missing:
+            pytest.skip(f"no recorded input is present in this checkout: {missing}")
         assert checked, "no input files were checked"
