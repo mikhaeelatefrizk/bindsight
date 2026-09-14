@@ -21,7 +21,7 @@ so on the release that introduces it, not before.
 
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
-- The Zenodo concept DOI [10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495)
+- The Zenodo concept DOI [10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING)
   resolves to the latest archived release; every tagged release gets its own
   version DOI on publish via the GitHub–Zenodo integration (CERN-operated).
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are

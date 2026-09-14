@@ -916,7 +916,7 @@ already claimed to do, and corrects claims the evidence did not support.
 - All 17 in-repo references cited `10.5281/zenodo.20121496`, the **v0.1.0 version DOI** — an
   MIT-licensed snapshot containing neither the benchmarks nor the manuscripts. Anyone
   following the citation landed on a record that does not contain the work being cited.
-- Every reference now uses the **concept DOI `10.5281/zenodo.20121495`**, which always
+- Every reference now uses the **concept DOI `10.5281/zenodo.PENDING`**, which always
   resolves to the latest archived version and is the correct identifier for citing "the
   software" rather than one release. Updated in the README badges, citation block and BibTeX,
   `CITATION.cff` (now also carrying `doi:` and `identifiers:`), `docs/index.md`,

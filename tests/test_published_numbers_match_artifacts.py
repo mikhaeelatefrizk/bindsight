@@ -162,6 +162,50 @@ def bench() -> dict:
     return json.loads(BENCH.read_text(encoding="utf-8"))
 
 
+def _shipped_surfaces() -> tuple[str, ...]:
+    """Every shipped prose document, discovered.
+
+    Two classes below carried hand-written tuples of three and five names. That
+    is the defect class this repository keeps finding: the list cannot express
+    "wherever this figure is quoted", which is the property that matters, and it
+    silently stops covering a document the moment one is added or a claim moves.
+
+    ``CHANGELOG.md`` is excluded: it records what figures *were*, by design.
+    """
+    root = REPO
+    paths = [
+        *root.glob("*.md"),
+        *(root / "docs").rglob("*.md"),
+        *(root / "paper").rglob("*.md"),
+        *(root / "paper").rglob("*.tex"),
+        *(root / "benchmarks").rglob("*.md"),
+    ]
+    tracked = _tracked()
+    return tuple(
+        sorted(
+            rel
+            for rel in (p.relative_to(root).as_posix() for p in paths if p.is_file())
+            if "CHANGELOG" not in rel and (tracked is None or rel in tracked)
+        )
+    )
+
+
+def _tracked() -> frozenset[str] | None:
+    """Paths git carries, so a local build product is never treated as shipped."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(REPO), "ls-files", "-z"],
+            capture_output=True,
+            check=True,
+            timeout=60,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return frozenset(part.decode("utf-8") for part in out.split(b"\0") if part)
+
+
 class TestTheDesignerBenchmarkMatchesTheArtifact:
     """The binder figures quoted in prose must come from the committed run.
 
@@ -173,7 +217,7 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
     """
 
     #: Surfaces that quote the binder numbers.
-    SURFACES = ("README.md", "docs/index.md", "docs/results.md")
+    SURFACES = _shipped_surfaces()
 
     @staticmethod
     def _arm(bench: dict) -> dict:
@@ -187,9 +231,13 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
         assert bench["backend"] != "mock"
 
     def test_the_design_count_is_stated_as_written(self, bench: dict) -> None:
+        """Wherever the run is described, its size must be the artifact's."""
         n = self._arm(bench)["n_designs"]
-        for rel in self.SURFACES:
-            assert str(n) in _doc(rel), f"{rel} does not state {n} designs"
+        stating = [rel for rel in self.SURFACES if "designer benchmark" in _doc(rel).lower()]
+
+        assert stating, "no shipped document describes the designer benchmark"
+        for rel in stating:
+            assert str(n) in _doc(rel), f"{rel} describes the run without stating {n} designs"
 
     def test_the_best_iptm_matches(self, bench: dict) -> None:
         """Prose quotes the best ipTM to two decimals; it must be the artifact's."""
@@ -201,14 +249,58 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
             for ln in metrics.read_text(encoding="utf-8").splitlines()
             if ln.strip() and json.loads(ln).get("iptm") is not None
         )
+        # Wherever a best ipTM is quoted it must be the artifact's. Requiring
+        # every surface to quote one forced the figure onto the README, which
+        # deliberately no longer reports design performance: the rate that
+        # framed it is withdrawn, and a front page stating it is advertising a
+        # retracted result however carefully it is caveated.
+        pattern = re.compile(r"best\s+(?:ipTM|iPTM)\s*\*{0,2}\s*(\d\.\d{2})")
+        seen = 0
         for rel in self.SURFACES:
-            assert f"{best:.2f}" in _doc(rel), f"{rel} does not state best ipTM {best:.2f}"
+            lines = _doc(rel).splitlines()
+            for i, line in enumerate(lines):
+                # Read the window a reader reads, not the line a regex matched.
+                # ARCHITECTURE.md wraps "A superseded run on / a P100 reported
+                # best ipTM 0.84" across two lines, putting the framing above
+                # the figure, and a line-scoped check called that a live claim.
+                window = " ".join(lines[max(0, i - 2) : i + 2]).lower()
+                if any(w in window for w in ("superseded", "withdraw", "earlier run", "predates")):
+                    continue  # the retracted 0.84 is allowed to say 0.84
+                for match in pattern.finditer(line):
+                    seen += 1
+                    assert match.group(1) == f"{best:.2f}", (
+                        f"{rel} states best ipTM {match.group(1)}; the artifact says {best:.2f}"
+                    )
+        assert seen, "no shipped document quotes the run's best ipTM"
 
     def test_the_success_rate_matches(self, bench: dict) -> None:
+        """Wherever a success@0.65 rate is quoted, it must be the artifact's.
+
+        Requiring every surface to state it made the rate mandatory on pages
+        that deliberately do not report design performance at all -- and once
+        the surface list became a discovery, that included CODE_OF_CONDUCT.md.
+        The property is "no surface states a different rate", not "every surface
+        states this one".
+        """
         rate = self._arm(bench)["success_rate"]
         pct = f"{rate * 100:g}"
+        pattern = re.compile(
+            r"(\d{1,3})\s?%\s*success@0\.65"
+            r"|success@0\.65[^\n]{0,20}?(\d{1,3})\s?%"
+        )
+        seen = 0
         for rel in self.SURFACES:
-            assert pct in _doc(rel), f"{rel} does not state success rate {pct}%"
+            for line in _doc(rel).splitlines():
+                low = line.lower()
+                if "superseded" in low or "withdraw" in low or "earlier" in low:
+                    continue  # the retracted 50% is allowed to say 50%
+                for match in pattern.finditer(line):
+                    stated = match.group(1) or match.group(2)
+                    seen += 1
+                    assert stated == pct, (
+                        f"{rel} states success@0.65 of {stated}%; the artifact says {pct}%"
+                    )
+        assert seen, "no shipped document quotes the run's success rate"
 
     def test_the_gpu_is_named_consistently(self, bench: dict) -> None:
         """The card a result was produced on is part of the result."""
@@ -349,14 +441,7 @@ class TestTheDerivedFiguresMatchTheArtifact:
     correct half lends the wrong half its authority.
     """
 
-    SURFACES = (
-        "README.md",
-        "ARCHITECTURE.md",
-        "docs/index.md",
-        "docs/results.md",
-        "docs/positioning.md",
-        "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md",
-    )
+    SURFACES = _shipped_surfaces()
 
     @staticmethod
     def _arm(bench: dict) -> dict:
@@ -396,7 +481,12 @@ class TestTheDerivedFiguresMatchTheArtifact:
                     f"{rel} states mean PAE-interaction {match.group(1)}; "
                     f"the artifact says {expected}"
                 )
-        assert seen, "no surface quotes a mean PAE-interaction"
+        if not seen:
+            pytest.skip(
+                "no shipped document quotes a mean PAE-interaction in prose; the "
+                "designer benchmark reports it in a table column, which "
+                "test_the_designer_table_matches_the_artifact covers"
+            )
 
     def test_every_quoted_interval_is_the_artifact_interval(self, bench: dict) -> None:
         """The bounds were unpinned while the rate they qualify was pinned."""

@@ -101,8 +101,8 @@ on GitHub for the full text and per-component commercial-use audit.
 ## Citation
 
 If you use bindsight in research, please cite the Zenodo concept DOI
-[10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495), which
-always resolves to the latest archived version (v0.2.2 at the time of
+[10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING), which
+always resolves to the latest archived version (v0.3.0 at the time of
 writing).
 
 A JOSS software paper and a bioRxiv preprint are drafted but not yet

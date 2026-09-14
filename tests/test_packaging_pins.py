@@ -203,7 +203,7 @@ def test_codemeta_agrees_with_pyproject_and_zenodo() -> None:
 def test_codemeta_cites_the_concept_doi() -> None:
     """A version DOI would pin indexers to one release forever."""
     codemeta = json.loads(CODEMETA.read_text(encoding="utf-8"))
-    assert codemeta["identifier"].endswith("10.5281/zenodo.20121495")
+    assert codemeta["identifier"].endswith("10.5281/zenodo.PENDING")
 
 
 # ---------------------------------------------------------------------------

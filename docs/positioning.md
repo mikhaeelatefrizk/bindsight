@@ -55,7 +55,7 @@ reproducible.
 
 ## Roadmap
 
-- **v0.2.2 (now)** — discovery half end-to-end on CPU; design + validation
+- **v0.3.0 (now)** — discovery half end-to-end on CPU; design + validation
   **demonstrated on a free Kaggle T4** under the corrected ProteinMPNN protocol:
   20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65 (8/20, 95% CI 15–70% over backbones — **withdrawn as a
   measure of design quality**: shuffles of the designs' own sequences clear 0.65 more

@@ -189,7 +189,7 @@ minutes and cover: the Pydantic v2 manifest schema, every API client
 to-end with mocked GPU runners, the rank module, the RO-Crate exporter, and
 the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
 runs the suite on Linux, macOS, and Windows for both Python 3.11 and 3.12;
-the v0.2.2 release is green across all six platforms.
+the v0.3.0 release is green across all six platforms.
 
 # Acknowledgements
 

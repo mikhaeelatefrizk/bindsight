@@ -37,11 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # --- The exact strings the E-docs fixes turned on ----------------------------
 
-# 10.5281/zenodo.20121496 is the v0.1.0 *version* DOI: an MIT-labelled snapshot
-# with neither the benchmarks nor the manuscripts in it. ...495 is the concept
-# DOI, which always redirects to the latest archived release.
-STALE_VERSION_DOI = "10.5281/zenodo.20121496"
-CONCEPT_DOI = "10.5281/zenodo.20121495"
+CONCEPT_DOI = "10.5281/zenodo.PENDING"
 
 # The Boltz-2 preprint DOI that returns HTTP 404, and the record it moved to.
 DEAD_BOLTZ2_DOI = "10.1101/2025.01.20.633574"
@@ -128,7 +124,12 @@ PRIORITY_CLAIM_DOCS = (
 #: The list cannot go stale silently: ``test_the_binder_figure_list_is_complete``
 #: sweeps for the figures and fails if any document stating them is missing here.
 BINDER_FIGURE_DOCS = (
-    "README.md",
+    # README.md is deliberately absent. The front page no longer quotes the
+    # designer run's figures at all: ``success@0.65`` is withdrawn as a measure
+    # of design quality, and a front page that states the rate is advertising a
+    # retracted result however carefully it is caveated two lines later. The
+    # completeness sweep below re-adds any document that *does* quote them, so
+    # this cannot become a way to hide a figure — only a way to not state one.
     "docs/index.md",
     "docs/results.md",
     "ARCHITECTURE.md",
@@ -233,14 +234,6 @@ def test_prose_inventory_resolves_the_public_documents() -> None:
 # --- P5: the Zenodo DOI -------------------------------------------------------
 
 
-@pytest.mark.parametrize("path", PROSE_FILES, ids=PROSE_IDS)
-def test_no_public_document_cites_the_superseded_version_doi(path: Path) -> None:
-    assert STALE_VERSION_DOI not in _read(path), (
-        f"{path.relative_to(ROOT).as_posix()} still cites the v0.1.0 version DOI; "
-        f"use the concept DOI {CONCEPT_DOI}"
-    )
-
-
 @pytest.mark.parametrize("rel", ["README.md", "CITATION.cff"])
 def test_readme_and_citation_carry_the_concept_doi(rel: str) -> None:
     assert CONCEPT_DOI in _read(rel)
@@ -319,10 +312,20 @@ def test_every_surviving_priority_claim_is_hedged(rel: str) -> None:
 
 
 def test_readme_headline_hedges_the_priority_claim() -> None:
-    """The hedge sits in the lede itself, not further down the page."""
+    """A priority claim is optional; hedging one is not.
+
+    The README no longer makes it. An unverifiable "first" is the claim a domain
+    expert tests first, and the positioning it carried now lives in "What's
+    distinctive" — a checkable comparison rather than an assertion about the
+    state of the world. The sweep above still catches an unhedged priority claim
+    in any shipped document; this keeps the front page honest if it returns.
+    """
     lede = "\n".join(_read("README.md").splitlines()[:12])
-    assert "as far as we are aware, the first open-source tool" in lede
-    assert "both halves end-to-end" in lede
+
+    bare = "the first open-source tool"
+    hedged = "as far as we are aware, the first open-source tool"
+    if bare in lede:
+        assert hedged in lede, "the README lede claims priority without hedging it"
 
 
 # --- BINDER-BENCHMARK: provenance of the headline figures ---------------------
@@ -385,7 +388,7 @@ def test_version_agrees_across_pyproject_citation_and_zenodo() -> None:
 
 
 #: ``bindsight --version`` shown with its output, e.g. in a fenced example:
-#:     bindsight --version           # 0.2.2
+#:     bindsight --version           # 0.3.0
 #: Release notes elsewhere name old versions on purpose, so only text presented
 #: as this command's own output is checked.
 _DOCUMENTED_VERSION_OUTPUT = re.compile(r"bindsight\s+--version[^\n]*?#\s*v?(\d+\.\d+\.\d+)")
@@ -1424,6 +1427,35 @@ def test_the_benchmark_schema_identifier_has_one_definition() -> None:
     )
 
 
+#: Every shipped file that names a Zenodo concept DOI, discovered rather than
+#: listed. Twelve files carried the previous identifier and a hand-written list
+#: is how one of them gets left behind.
+def _doi_bearing_files() -> tuple[str, ...]:
+    import re as _re
+
+    pattern = _re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
+    tracked = _tracked_files()
+    out: list[str] = []
+    for path in sorted(ROOT.rglob("*")):
+        if path.is_dir() or path.suffix not in {".md", ".cff", ".json", ".py", ".toml", ".tex"}:
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        if tracked is not None and rel not in tracked:
+            continue
+        if rel.startswith("benchmarks/") or "CHANGELOG" in rel:
+            continue  # recorded history, not a current citation
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):  # pragma: no cover
+            continue
+        if pattern.search(text):
+            out.append(rel)
+    return tuple(out)
+
+
+DOI_BEARING_FILES = _doi_bearing_files()
+
+
 def test_the_documented_runner_protocol_matches_the_code() -> None:
     """ARCHITECTURE prints the GPURunner Protocol as the interface contract, and
     showed ``submit(spec: DesignSpec)`` and ``estimate_cost(spec: DesignSpec)`` —
@@ -1548,3 +1580,126 @@ def test_the_social_card_reads_its_numbers_from_the_artifacts() -> None:
         "the social card should read its figures from the committed study rather "
         "than carry literals that a re-scored run leaves behind"
     )
+
+
+def test_the_concept_doi_is_the_same_everywhere() -> None:
+    """Every file that names a concept DOI must name the same one.
+
+    A DOI cannot exist before its deposit, so this repository ships
+    ``10.5281/zenodo.PENDING`` and ``scripts/set_doi.py`` replaces it once the
+    record is minted. The failure worth guarding is not the placeholder -- it is
+    a half-finished replacement, where some files cite the new identifier and
+    others still cite the old one, and a reader following the wrong one lands on
+    a different piece of software.
+
+    So this asserts agreement, not a particular value: green with the
+    placeholder in place, green after it is filled, red the moment they diverge.
+    """
+    import re as _re
+
+    pattern = _re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
+    found: dict[str, set[str]] = {}
+    for rel in DOI_BEARING_FILES:
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        dois = set(pattern.findall(path.read_text(encoding="utf-8")))
+        if dois:
+            found[rel] = dois
+
+    assert found, "no shipped file names a concept DOI at all"
+
+    everything = set().union(*found.values())
+    assert len(everything) == 1, (
+        f"shipped files name {len(everything)} different DOIs: "
+        + "; ".join(f"{rel} -> {sorted(d)}" for rel, d in sorted(found.items()))
+    )
+
+
+def test_the_doi_filler_covers_every_file_that_names_one() -> None:
+    """``scripts/set_doi.py`` has a list of files, and a list goes stale.
+
+    If a new document starts citing the DOI and the script does not know about
+    it, minting the real identifier leaves that one document behind -- which is
+    the divergence the test above would then catch, one commit too late.
+    """
+    import re as _re
+
+    script = _read("scripts/set_doi.py")
+    listed = set(_re.findall(r'^\s*"([^"]+)",$', script, _re.M))
+
+    missing = sorted(rel for rel in DOI_BEARING_FILES if rel not in listed)
+
+    assert not missing, (
+        f"these files name the concept DOI but scripts/set_doi.py will not update them: {missing}"
+    )
+
+
+def test_no_published_figure_is_orphaned() -> None:
+    """Every image under ``docs/assets/figures/`` must be rendered by some page.
+
+    Eight lived there referenced by nothing, dated five weeks before the
+    artifacts they depicted were re-scored -- including ``recall_at_k.png`` and
+    ``antigen_rank.png``, which show exactly the quantities that moved. An
+    unreferenced figure in a served assets directory is one a reader can still
+    open by URL and, worse, one the author can still paste into a slide.
+
+    The two that remain are copied in by ``scripts/build_docs_results.py`` from
+    the study's own output, so they cannot drift from the artifact.
+    """
+    figures = ROOT / "docs" / "assets" / "figures"
+    if not figures.is_dir():
+        pytest.skip("no published figures directory")
+
+    referenced: set[str] = set()
+    for tree in ("docs", "overrides"):
+        base = ROOT / tree
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if path.suffix not in {".md", ".html", ".yml", ".css"}:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for image in figures.iterdir():
+                if image.name in text:
+                    referenced.add(image.name)
+    for extra in (ROOT / "mkdocs.yml", ROOT / "README.md"):
+        if extra.is_file():
+            text = extra.read_text(encoding="utf-8", errors="replace")
+            for image in figures.iterdir():
+                if image.name in text:
+                    referenced.add(image.name)
+
+    present = {p.name for p in figures.iterdir() if p.is_file()}
+    orphaned = sorted(present - referenced)
+
+    assert not orphaned, (
+        f"published but rendered by no page: {orphaned}. Either reference them or "
+        "remove them; a stale figure nobody links is one that outlives the numbers "
+        "it shows."
+    )
+
+
+def test_every_published_figure_is_regenerated_by_the_build() -> None:
+    """Guards the guard: a referenced figure must also be reproducible.
+
+    Referencing a figure keeps the test above quiet without making the image
+    current. These two are copied from ``benchmarks/study/figures/`` by the
+    docs build, so re-scoring the study and rebuilding refreshes them.
+    """
+    figures = ROOT / "docs" / "assets" / "figures"
+    if not figures.is_dir():
+        pytest.skip("no published figures directory")
+
+    builder = _read("scripts/build_docs_results.py")
+    source = ROOT / "benchmarks" / "study" / "figures"
+
+    for image in sorted(figures.iterdir()):
+        if not image.is_file():
+            continue
+        assert (source / image.name).is_file(), (
+            f"{image.name} is published but the study does not produce it"
+        )
+        assert image.stem in builder or "FIG_DIR" in builder, (
+            f"{image.name} is published but no generator copies it"
+        )

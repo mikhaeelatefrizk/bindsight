@@ -64,7 +64,7 @@ HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
 # The concept DOI, which always resolves to the latest release; a version DOI
 # would pin readers to whichever release happened to be current when this was
 # written.
-ZENODO_DOI_URL = "https://doi.org/10.5281/zenodo.20121495"
+ZENODO_DOI_URL = "https://doi.org/10.5281/zenodo.PENDING"
 LICENSE_NAME = "AGPL-3.0-or-later"
 
 

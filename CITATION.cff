@@ -21,10 +21,10 @@ repository-code: "https://github.com/mikhaeelatefrizk/bindsight"
 url: "https://github.com/mikhaeelatefrizk/bindsight"
 # Zenodo concept DOI — always resolves to the latest archived version, which is
 # the DOI to cite for "the software" rather than one specific release.
-doi: "10.5281/zenodo.20121495"
+doi: "10.5281/zenodo.PENDING"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.20121495"
+    value: "10.5281/zenodo.PENDING"
     description: "Concept DOI for all versions of bindsight"
 license: AGPL-3.0-or-later
 keywords:
@@ -42,5 +42,5 @@ keywords:
   - RO-Crate
   - target-discovery
   - cancer-immunotherapy
-version: 0.2.2
+version: 0.3.0
 date-released: "2026-08-09"

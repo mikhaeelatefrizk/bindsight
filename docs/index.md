@@ -158,7 +158,7 @@ how to add a designer / validator / runner plugin.
 
 bindsight is AGPL-3.0-or-later and archived on Zenodo with a DOI. If it helps
 your work, please cite the concept DOI
-[10.5281/zenodo.20121495](https://doi.org/10.5281/zenodo.20121495) — it always
+[10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING) — it always
 resolves to the latest archived version, which is what you want when citing the
 software rather than one specific release. Ready-made entries are in
 [`CITATION.cff`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CITATION.cff).

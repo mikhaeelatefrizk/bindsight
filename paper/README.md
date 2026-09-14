@@ -21,7 +21,7 @@ paper/
 > in the tree. It has been removed. Compile a fresh one from `manuscript.tex`
 > (Step 1 below) at submission time, and do not commit the output.
 
-Both cite the software by its Zenodo **concept DOI** `10.5281/zenodo.20121495`,
+Both cite the software by its Zenodo **concept DOI** `10.5281/zenodo.PENDING`,
 which always resolves to the latest archived version — the right thing to cite
 for "the software"; use a version DOI only to pin an exact release.
 Same author (Mikhaeel Atef Rizk Wahba, ORCID `0009-0006-1069-9558`). Same code
@@ -55,9 +55,9 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** the current tagged release (`v0.2.2` at time of writing)
+   - **Version:** the current tagged release (`v0.3.0` at time of writing)
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
-   - **Software archive:** `https://doi.org/10.5281/zenodo.20121495`
+   - **Software archive:** `https://doi.org/10.5281/zenodo.PENDING`
 4. Submit. The JOSS editor assigns a handling editor and at least two
    reviewers. Reviewers open issues in your GitHub repo with comments;
    you address them; the editor publishes when the criteria are met.
@@ -132,7 +132,7 @@ compile.
    - **Competing interests:** None
    - **Data availability:** "All source code, data, and materials are
      available at https://github.com/mikhaeelatefrizk/bindsight and
-     archived at Zenodo (concept DOI 10.5281/zenodo.20121495)."
+     archived at Zenodo (concept DOI 10.5281/zenodo.PENDING)."
 8. Review and submit. bioRxiv editors do an initial check (typically
    within 48 hours) and assign a DOI like `10.1101/2026.05.11.NNNNNN`.
 
