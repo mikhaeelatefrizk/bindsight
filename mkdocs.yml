@@ -7,6 +7,14 @@ repo_name: mikhaeelatefrizk/bindsight
 copyright: "© 2026 Mikhaeel Atef Rizk Wahba — AGPL-3.0-or-later"
 docs_dir: docs
 
+# README.md is for GitHub, not for the site. A visitor clicking into docs/ on
+# GitHub gets a map of what is in there and which two pages are generated;
+# MkDocs, which treats every file under docs_dir as a page, sees it collide with
+# index.md and -- under `mkdocs build --strict` -- makes that warning fatal.
+# Excluding it keeps both audiences served by the file each one actually reads.
+exclude_docs: |
+  README.md
+
 theme:
   name: material
   custom_dir: overrides

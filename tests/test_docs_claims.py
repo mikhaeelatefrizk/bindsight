@@ -1819,3 +1819,57 @@ def test_the_generated_pages_match_what_git_stores() -> None:
             f"{rel} differs from the committed blob. Re-run "
             "scripts/build_docs_results.py and commit the result."
         )
+
+
+def test_every_docs_file_is_a_page_or_explicitly_excluded() -> None:
+    """MkDocs treats every file under ``docs/`` as a page.
+
+    ``docs/README.md`` exists for GitHub: a visitor clicking into the folder
+    gets a map instead of a file list. MkDocs saw it collide with ``index.md``,
+    and ``mkdocs build --strict`` turns that warning into a failed build — so a
+    file added purely to help human navigation took the documentation site down,
+    and nothing local caught it. CI did, which is the right backstop but the
+    slow one.
+
+    Every markdown file under ``docs/`` must therefore be either in the nav or
+    named in ``exclude_docs``.
+    """
+
+    config_text = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+    # mkdocs.yml uses Python-specific YAML tags the safe loader rejects, so the
+    # two keys this test needs are read without executing any of them.
+    excluded = set()
+    in_exclude = False
+    for line in config_text.splitlines():
+        if line.startswith("exclude_docs:"):
+            in_exclude = True
+            continue
+        if in_exclude:
+            if line.startswith(" ") and line.strip():
+                excluded.add(line.strip())
+                continue
+            in_exclude = False
+    nav_names = set(re.findall(r"([A-Za-z0-9_\-]+\.md)", config_text))
+
+    docs = ROOT / "docs"
+    if not docs.is_dir():
+        pytest.skip("no docs directory")
+
+    orphans = []
+    for path in sorted(docs.rglob("*.md")):
+        rel = path.relative_to(docs).as_posix()
+        if rel in excluded or path.name in excluded:
+            continue
+        if path.name in nav_names:
+            continue
+        orphans.append(rel)
+
+    assert not orphans, (
+        f"these files under docs/ are neither in the nav nor excluded: {orphans}. "
+        "MkDocs will build them as pages; if that is not intended, add them to "
+        "exclude_docs in mkdocs.yml, or --strict will fail the site build."
+    )
+    assert "README.md" in excluded, (
+        "docs/README.md must stay excluded — it collides with index.md and takes "
+        "the strict build down"
+    )
