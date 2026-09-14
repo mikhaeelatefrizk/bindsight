@@ -39,7 +39,7 @@ class BindCraftDesigner:
         epitope_residues: list[int],
         epitope_chain: str = "A",
         design_ranges: list[tuple[int, int]] | None = None,
-        n_trajectories: int = 10,
+        n_trajectories: int = 50,
         seed: int = 0,
         binder_length_min: int = 50,
         binder_length_max: int = 100,

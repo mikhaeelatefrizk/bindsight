@@ -1134,3 +1134,63 @@ def test_no_shipped_table_has_a_row_the_header_cannot_hold(rel: str) -> None:
     bad = _malformed_table_rows(ROOT / rel)
 
     assert not bad, f"{rel} has table rows the header cannot hold:\n  " + "\n  ".join(bad)
+
+
+# ---------------------------------------------------------------------------
+# An instruction that names a file must name one that exists
+# ---------------------------------------------------------------------------
+#: ``python <path>`` / ``bash <path>`` / ``sh <path>`` inside a shipped document
+#: or emitted by a generator. The rediscovery report told readers to run
+#: ``python benchmarks/run_validation.py``, a script deleted when the study
+#: replaced it, so the one command on the page could not work.
+_RUNS_A_FILE = re.compile(
+    r"(?:python3?|bash|sh)\s+((?:benchmarks|scripts|tests|examples)/[\w./-]+\.(?:py|sh))"
+)
+
+
+def _commands_naming_a_repo_file() -> list[tuple[str, str]]:
+    """Every (document, path) a shipped document tells the reader to execute."""
+    found: list[tuple[str, str]] = []
+    for path in _shipped_documents():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel == "CHANGELOG.md":
+            continue  # a record of what commands existed at each release
+        for named in _RUNS_A_FILE.findall(path.read_text(encoding="utf-8", errors="replace")):
+            found.append((rel, named))
+    return found
+
+
+def test_the_command_scan_finds_real_instructions() -> None:
+    """Guards the guard: a pattern that matched nothing would prove nothing."""
+    found = _commands_naming_a_repo_file()
+
+    assert len(found) >= 5, f"the scan found only {len(found)} runnable commands: {found}"
+
+
+def test_every_documented_command_names_a_file_that_exists() -> None:
+    missing = sorted(
+        {
+            f"{doc} -> {named}"
+            for doc, named in _commands_naming_a_repo_file()
+            if not (ROOT / named).is_file()
+        }
+    )
+
+    assert not missing, (
+        "documents telling the reader to run a file that is not there:\n  " + "\n  ".join(missing)
+    )
+
+
+def test_generated_reports_do_not_emit_a_command_for_a_missing_file() -> None:
+    """The generators, not only their committed output: a report regenerated
+    tomorrow must not print an instruction that cannot work."""
+    offenders: list[str] = []
+    for module in sorted((ROOT / "bindsight").rglob("*.py")):
+        text = module.read_text(encoding="utf-8", errors="replace")
+        for named in _RUNS_A_FILE.findall(text):
+            if not (ROOT / named).is_file():
+                offenders.append(f"{module.relative_to(ROOT).as_posix()} -> {named}")
+
+    assert not offenders, "generators emitting a command for a missing file:\n  " + "\n  ".join(
+        sorted(set(offenders))
+    )

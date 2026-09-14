@@ -61,6 +61,7 @@ _force_utf8_io()
 
 LOG_CLI = logging.getLogger(__name__)
 
+from bindsight.benchmark.core import DEFAULT_KS  # noqa: E402
 from bindsight.provenance import append as provenance  # noqa: E402
 
 # Rich console; legacy-windows mode off so box-drawing chars work after the
@@ -781,7 +782,11 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     "ks",
     multiple=True,
     type=int,
-    help="Top-k cutoffs for recall@k (repeatable). Default: 5, 10, 20.",
+    help=(
+        "Top-k cutoffs for recall@k (repeatable). Default: "
+        + ", ".join(str(k) for k in DEFAULT_KS)
+        + "."
+    ),
 )
 def benchmark(
     run_dirs: tuple[Path, ...],
@@ -798,7 +803,11 @@ def benchmark(
     """
     from bindsight.benchmark import run_benchmark
 
-    cutoffs = tuple(ks) if ks else (5, 10, 20)
+    # One source for the cutoffs. They were written as a literal here, again in
+    # the help text above, and a third time as DEFAULT_KS in the benchmark
+    # module -- three places to change, and a help string that could describe a
+    # default the command does not use.
+    cutoffs = tuple(ks) if ks else DEFAULT_KS
     out, scores = run_benchmark(list(run_dirs), known_antigens, out_html=out_path, ks=cutoffs)
 
     table = Table(title="rediscovery benchmark", show_lines=False, title_style="bold")

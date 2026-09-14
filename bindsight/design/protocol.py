@@ -15,6 +15,14 @@ from typing import Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# A real import, not a TYPE_CHECKING one. ``submit`` annotates this type, and
+# the annotation was previously silenced with ``# type: ignore[name-defined]``
+# plus ``# noqa: F821`` -- which quieted two checkers rather than telling either
+# what the name is, so ``typing.get_type_hints`` on this Protocol raised and
+# nothing could introspect the contract. ``bindsight.runners.protocol`` imports
+# nothing from this package, so there is no cycle to avoid.
+from bindsight.runners.protocol import GPURunner
+
 
 class DesignSpec(BaseModel):
     """Inputs to a single design job (one target × N trajectories)."""
@@ -89,6 +97,6 @@ class Designer(Protocol):
         """Build a designer-specific DesignSpec from generic inputs."""
         ...
 
-    def submit(self, spec: DesignSpec, runner: GPURunner) -> DesignResult:  # type: ignore[name-defined]  # noqa: F821
+    def submit(self, spec: DesignSpec, runner: GPURunner) -> DesignResult:
         """Execute the design job (synchronous from the caller's POV)."""
         ...

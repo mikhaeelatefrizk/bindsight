@@ -152,10 +152,11 @@ class DesignerScore:
     # staged after the run. Excluded from the serialised summary: a local scratch
     # path is not a published result.
     archives: list[Path] = field(default_factory=list)
-    cost_usd: float | None = None
-    gpu_hours: float | None = None
     #: Estimated by :mod:`bindsight.cost` before the run, not measured.
     #: :attr:`wall_seconds` is the measurement; the table says which is which.
+    cost_usd: float | None = None
+    gpu_hours: float | None = None
+    #: Measured: this designer's own wall-clock for its whole pass.
     wall_seconds: float | None = None
     error: str | None = None
 

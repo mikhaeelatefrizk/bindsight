@@ -520,3 +520,78 @@ class TestTheChaiValidatorMatchesTheBoltzDiscipline:
 
         with pytest.raises(ValueError, match="negative"):
             tools.build_chai_cmd(fasta_path=Path("x.fa"), out_dir=Path("o"), seed=-1)
+
+
+# ---------------------------------------------------------------------------
+# A Protocol's signature is a contract, defaults included
+# ---------------------------------------------------------------------------
+class TestEveryDesignerMatchesItsProtocol:
+    """BindCraft's ``make_spec`` declared ``n_trajectories: int = 10`` where the
+    Designer protocol declares 50. Nothing depended on it — every call site
+    passes the value — so it was a latent contradiction rather than a live bug,
+    and latent is exactly how it survived.
+    """
+
+    @staticmethod
+    def _defaults(func: object) -> dict[str, object]:
+        import inspect
+
+        return {
+            name: param.default
+            for name, param in inspect.signature(func).parameters.items()
+            if param.default is not inspect.Parameter.empty
+        }
+
+    @staticmethod
+    def _shipped_designers() -> dict[str, type]:
+        import tomllib
+
+        from bindsight.plugins import get_designer
+
+        root = Path(__file__).resolve().parents[1]
+        data = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        names = data["project"]["entry-points"]["bindsight.designers"]
+        return {name: type(get_designer(name)) for name in sorted(names)}
+
+    def test_the_registry_is_not_empty(self) -> None:
+        """Guards the guard: an empty registry would check nothing."""
+        assert len(self._shipped_designers()) >= 3, self._shipped_designers()
+
+    def test_every_designer_declares_the_protocol_defaults(self) -> None:
+        from bindsight.design.protocol import Designer
+
+        expected = self._defaults(Designer.make_spec)
+        assert expected, "the Designer protocol declares no defaults to compare against"
+
+        for name, cls in self._shipped_designers().items():
+            actual = self._defaults(cls.make_spec)
+            for param, value in expected.items():
+                assert actual.get(param) == value, (
+                    f"{name}.make_spec declares {param}={actual.get(param)!r} where the "
+                    f"Designer protocol declares {value!r}; a caller relying on the "
+                    "protocol's contract would get different work from different plugins"
+                )
+
+    def test_every_designer_accepts_every_protocol_parameter(self) -> None:
+        """A missing parameter is the same contract break, one step earlier."""
+        import inspect
+
+        from bindsight.design.protocol import Designer
+
+        expected = set(inspect.signature(Designer.make_spec).parameters)
+        for name, cls in self._shipped_designers().items():
+            actual = set(inspect.signature(cls.make_spec).parameters)
+            missing = expected - actual
+            assert not missing, f"{name}.make_spec does not accept {sorted(missing)}"
+
+    def test_the_protocol_annotations_are_resolvable(self) -> None:
+        """``submit`` annotated ``GPURunner`` with the name never imported, and
+        silenced both checkers rather than telling either what it is — so
+        ``get_type_hints`` raised and nothing could introspect the contract."""
+        import typing
+
+        from bindsight.design.protocol import Designer
+
+        hints = typing.get_type_hints(Designer.submit)
+
+        assert "runner" in hints

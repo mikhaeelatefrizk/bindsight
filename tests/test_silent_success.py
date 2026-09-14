@@ -1040,7 +1040,6 @@ class TestARecordedPathIsRunRelative:
         import json
 
         from bindsight.provenance import append as provenance
-
         from bindsight.provenance import new_manifest
 
         run = tmp_path / "run"
@@ -1109,7 +1108,7 @@ class TestTheFragmentStatusVocabularyComesFromTheModel:
         from bindsight.provenance.fragments import _STATUS_VALUES
         from bindsight.provenance.manifest import StageRecord
 
-        assert _STATUS_VALUES == frozenset(get_args(StageRecord.model_fields["status"].annotation))
+        assert frozenset(get_args(StageRecord.model_fields["status"].annotation)) == _STATUS_VALUES
 
     def test_an_unknown_status_is_not_recorded_as_success(self, caplog) -> None:
         import logging

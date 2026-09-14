@@ -26,8 +26,6 @@ PAGE_ICON = "🧬"
 #: Literal, not a bare str: st.set_page_config types this parameter as
 #: Literal["centered", "wide"], so a plain str fails strict type checking.
 PAGE_LAYOUT: Literal["centered", "wide"] = "wide"
-#: Back-compat alias.
-
 
 TAGLINE = (
     "RNA-seq counts → ranked de novo protein binder candidates, "

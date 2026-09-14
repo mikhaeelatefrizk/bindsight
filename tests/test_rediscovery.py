@@ -170,3 +170,26 @@ def test_build_config_is_valid() -> None:
     assert cfg.params.validate_.validator == "boltz2"
     assert cfg.params.target_discovery.top_n == 20
     assert cfg.params.target_discovery.require_tractable_modality == []
+
+
+def test_the_published_overexpression_rule_states_the_configured_thresholds() -> None:
+    """The rule string is what a reader is told the run applied.
+
+    Its fold-change half came from a constant and its FDR half was typed as a
+    literal 0.05 beside it, so a run configured with another FDR published a rule
+    it had not applied. Both halves now come from the same place.
+    """
+    from bindsight.config import DEGParams
+
+    assert R.OVEREXPRESSION_FDR == DEGParams.model_fields["fdr_threshold"].default
+    assert R.OVEREXPRESSION_LOG2FC == DEGParams.model_fields["log2fc_threshold"].default
+
+
+def test_the_rule_is_not_rebuilt_from_literals() -> None:
+    """A literal threshold inside the rule string is how the two halves drifted."""
+    import re
+
+    source = Path(R.__file__).read_text(encoding="utf-8")
+    literals = re.findall(r'"[^"]*FDR<0\.\d+[^"]*"', source)
+
+    assert not literals, f"the published rule hardcodes a threshold: {literals}"

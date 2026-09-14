@@ -65,7 +65,7 @@ def stage_tool(name: str, version: str | None = None) -> ToolRef:
 
 
 def output_ref(role: str, path: Path, *, run_dir: Path | str | None = None) -> OutputRef | None:
-    """An OutputRef for a file that exists, or ``None``.
+    r"""An OutputRef for a file that exists, or ``None``.
 
     Returning ``None`` for an absent file keeps a manifest from asserting an
     artifact that was never written, which is the same class of error as
@@ -163,14 +163,14 @@ def record(
     stage = StageRecord(name=name, tool=stage_tool(tool), params=params or {})
     stage.notes = notes
     stage.inputs = [
-        ref
+        in_ref
         for role, path in (inputs or {}).items()
-        if (ref := input_ref(role, path, run_dir=run_dir)) is not None
+        if (in_ref := input_ref(role, path, run_dir=run_dir)) is not None
     ]
     refs = [
-        ref
+        out_ref
         for role, path in outputs.items()
-        if (ref := output_ref(role, path, run_dir=run_dir)) is not None
+        if (out_ref := output_ref(role, path, run_dir=run_dir)) is not None
     ]
     stage.mark_completed(outputs=refs)
     return append_stage(run_dir, stage)

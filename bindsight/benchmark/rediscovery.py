@@ -80,6 +80,11 @@ KS: tuple[int, ...] = (5, 10, 20)
 # Uniform, pre-stated rules for classifying each antigen by the *measured* data
 # (not by a hoped-for label), so the validation is transparent and not gamed.
 OVEREXPRESSION_LOG2FC = 1.0  # the pipeline's own DE effect-size threshold
+#: The FDR half of the same rule, read from the config's default rather
+#: than typed again. It was a literal 0.05 inside the published rule
+#: string while the fold-change half came from the constant above, so a
+#: run configured with another FDR published a rule it had not applied.
+OVEREXPRESSION_FDR = DEGParams.model_fields["fdr_threshold"].default
 MIN_NORMALS_FOR_POWER = 8  # below this a tumor-vs-normal contrast is underpowered
 
 
@@ -588,6 +593,16 @@ def run_validation(
 ) -> dict[str, Any]:
     """Run every cohort, score it, and write the legacy validation artifacts.
 
+    **Superseded and unreachable.** Nothing in the repository calls this: its
+    driver, ``benchmarks/run_validation.py``, was removed when the fifteen-project
+    rediscovery study (``benchmarks/run_study.py``) replaced the six-cohort design
+    this implements — a design the validation manuscript withdraws, because its
+    headline cohort was stratified by a classifier keyed on the antigen it then
+    reported discovering. It is kept, rather than deleted, because the helpers it
+    composes are shared with the live re-scoring path and are covered by tests;
+    what is dead is this entry point, and it is marked so that nobody mistakes it
+    for a supported way to produce a result.
+
     Writes ``RESULTS.md``, ``results.json``, ``report.html``, ``provenance.json``
     and ``figures/*.png`` under ``out_dir``. Returns the summary dict.
     """
@@ -715,7 +730,10 @@ def _write_artifacts(
         "cbioportal_study": study_id,
         "known_set": portable_path(known_path),
         "ks": list(KS),
-        "overexpression_rule": f"FDR<0.05 and log2fc>={OVEREXPRESSION_LOG2FC}",
+        # Both halves of the rule from the same place. The FDR was typed as a
+        # literal beside a configured fold-change floor, so a run with a
+        # different FDR published a rule it had not applied.
+        "overexpression_rule": (f"FDR<{OVEREXPRESSION_FDR} and log2fc>={OVEREXPRESSION_LOG2FC}"),
         "recall_at_k": recall,
         "exclusion_consistency_check": _exclusion_consistency_check(results),
         "cohorts": published_results,
@@ -924,9 +942,16 @@ def _render_results_md(summary: dict[str, Any]) -> str:
     a("")
 
     a("## Reproduce\n")
+    a(
+        "> This is the **superseded** six-cohort validation. Its driver script "
+        "(`benchmarks/run_validation.py`) was removed when the fifteen-project "
+        "rediscovery study replaced it; the command below regenerates the study "
+        "that supersedes this report, not this report."
+    )
+    a("")
     a("```bash")
     a('pip install -e ".[discover,report]"')
-    a("python benchmarks/run_validation.py")
+    a("python benchmarks/run_study.py --score-only")
     a("```\n")
 
     a("## Per-antigen results (grouped by measured over-expression)\n")

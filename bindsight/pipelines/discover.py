@@ -71,10 +71,11 @@ LOG = logging.getLogger(__name__)
 # on a real cohort (hundreds) is wasted work; this keeps discovery fast.
 _STRUCTURE_FETCH_CAP = 25
 
-# The enrichment cap now lives in TargetDiscoveryParams.enrich_top_k so it is
-# recorded in the run manifest and can be reported as an explicit gate. This
-# constant is retained only as the documented default and for older callers.
-_ENRICH_TOP_K = 300
+# The enrichment cap lives in TargetDiscoveryParams.enrich_top_k so it is
+# recorded in the run manifest and can be reported as an explicit gate. The
+# module-level constant that used to shadow it is gone: it was retained "for
+# older callers" that do not exist, and it silently duplicated the field's
+# default, so the two could disagree with nothing to notice.
 
 #: Sentinel for a gene with no UniProt mapping (see _do_discover).
 _NO_UNIPROT: str | None = None
@@ -105,7 +106,7 @@ def run(
     # Stage 0: ensure real reference data is present (auto-download TCGA cohort
     # from GDC if configured + missing; populate the full SURFY surfaceome cache
     # for production runs). No-ops when data is already present or injected.
-    _ensure_reference_data(config, surfy=surfy)
+    _ensure_reference_data(config)
     surface_bind_client = _resolve_surface_bind_client(surface_bind_client)
 
     # Persist the effective configuration inside the run. Nothing used to write
@@ -148,7 +149,7 @@ def run(
 # ---------------------------------------------------------------------------
 # Stage 0: ensure real reference data (GDC cohort + SURFY surfaceome)
 # ---------------------------------------------------------------------------
-def _ensure_reference_data(config: RunConfig, *, surfy: frozenset[str] | None) -> None:
+def _ensure_reference_data(config: RunConfig) -> None:
     """Auto-download the real input cohort from NIH/GDC when configured + missing.
 
     Only fires when ``inputs.download`` is set and the counts/design files don't
