@@ -134,7 +134,7 @@ class ModalRunner:
             work = _P(tempfile.mkdtemp(prefix="bindsight_modal_"))
             spec_dir = work / "spec"
             spec_dir.mkdir(parents=True, exist_ok=True)
-            (spec_dir / "spec.json").write_text(spec_json)
+            (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
             for name, data in files.items():
                 (spec_dir / name).write_bytes(data)
             spec = _json.loads(spec_json)
@@ -150,7 +150,7 @@ class ModalRunner:
         handle_id = str(uuid.uuid4())
         tarball = results_dir / f"{handle_id}.tar.gz"
 
-        spec_json = spec_path.read_text()
+        spec_json = spec_path.read_text(encoding="utf-8")
         files = {
             f.name: f.read_bytes()
             for f in spec_path.parent.iterdir()

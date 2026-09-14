@@ -152,7 +152,7 @@ def prepare_cohort(
 
     if counts.exists() and design.exists() and provenance_path.exists():
         LOG.info("%s: reusing the cohort already on disk (%s)", project, counts)
-        return dict(json.loads(provenance_path.read_text()))
+        return dict(json.loads(provenance_path.read_text(encoding="utf-8")))
 
     cases = matched_pair_cases(project)
     if not cases:

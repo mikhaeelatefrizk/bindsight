@@ -85,7 +85,11 @@ def _parse_accessions(text: str) -> frozenset[str]:
 def _read_packaged(filename: str) -> str | None:
     """Read a data file shipped inside the package, or ``None`` if absent."""
     try:
-        return resources.files("bindsight.surfaceome").joinpath("data", filename).read_text("utf-8")
+        return (
+            resources.files("bindsight.surfaceome")
+            .joinpath("data", filename)
+            .read_text(encoding="utf-8")
+        )
     except (FileNotFoundError, ModuleNotFoundError, OSError):
         return None
 
@@ -415,7 +419,9 @@ def populate_surfy_cache(*, url: str = SURFY_XLSX_URL, force: bool = False) -> P
         "# SURFY surfaceome (Bausch-Fluck et al., PNAS 2018; CC-BY).\n"
         f"# {len(accs)} UniProt accessions labelled 'surface'. Source: {url}\n"
         + "\n".join(accs)
-        + "\n"
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
     LOG.info("wrote %d surface accessions to %s", len(accs), cache_path)
     return cache_path

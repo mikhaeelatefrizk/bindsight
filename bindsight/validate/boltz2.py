@@ -111,7 +111,7 @@ def build_boltz_yaml(
 def write_boltz_yaml(spec: dict[str, Any], path: Path) -> Path:
     """Write a Boltz-2 spec dict to disk as YAML."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    path.write_text(yaml.safe_dump(spec, sort_keys=False), encoding="utf-8", newline="\n")
     return path
 
 
@@ -153,7 +153,7 @@ def parse_boltz_output(
     n_parsed = 0
     for path in confidence_paths:
         try:
-            cdata = json.loads(path.read_text())
+            cdata = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             LOG.warning("failed to parse %s: %s", path, e)
             continue
@@ -172,7 +172,7 @@ def parse_boltz_output(
 
     if affinity_path is not None:
         try:
-            adata = json.loads(affinity_path.read_text())
+            adata = json.loads(affinity_path.read_text(encoding="utf-8"))
             affinity_value = _safe_float(adata.get("affinity_pred_value"))
             affinity_prob = _safe_float(adata.get("affinity_probability_binary"))
         except (json.JSONDecodeError, OSError) as e:

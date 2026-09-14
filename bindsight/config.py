@@ -385,5 +385,5 @@ class RunConfig(BaseModel):
     @classmethod
     def from_yaml(cls, path: Path | str) -> RunConfig:
         """Load and validate a config from a YAML file."""
-        text = Path(path).read_text()
+        text = Path(path).read_text(encoding="utf-8")
         return cls.model_validate(yaml.safe_load(text))

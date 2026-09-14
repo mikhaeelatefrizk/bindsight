@@ -233,7 +233,7 @@ def _resolve_structure(
         target.symbol,
     )
     placeholder = scratch / f"{target.uniprot}.pdb"
-    placeholder.write_text(_PLACEHOLDER_PDB, encoding="utf-8")
+    placeholder.write_text(_PLACEHOLDER_PDB, encoding="utf-8", newline="\n")
     return placeholder
 
 
@@ -245,7 +245,7 @@ def _read_metrics(metrics_jsonl: Path) -> list[dict[str, Any]]:
         return []
     rows = []
     skipped: list[int] = []
-    for lineno, line in enumerate(metrics_jsonl.read_text().splitlines(), start=1):
+    for lineno, line in enumerate(metrics_jsonl.read_text(encoding="utf-8").splitlines(), start=1):
         line = line.strip()
         if not line:
             continue
@@ -444,7 +444,7 @@ def stage_binder_artifacts(archives: list[Path], out_dir: Path) -> dict[str, int
         if not Path(archive).is_file():
             LOG.warning("results archive missing, cannot stage: %s", archive)
             continue
-        with tarfile.open(archive, "r:gz") as tf:
+        with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
             for member in tf.getmembers():
                 if not member.isfile():
                     continue
@@ -464,7 +464,9 @@ def stage_binder_artifacts(archives: list[Path], out_dir: Path) -> dict[str, int
                     metrics_lines += [ln for ln in src.read().decode().splitlines() if ln.strip()]
 
     if metrics_lines:
-        (binders / "metrics.jsonl").write_text("\n".join(metrics_lines) + "\n", encoding="utf-8")
+        (binders / "metrics.jsonl").write_text(
+            "\n".join(metrics_lines) + "\n", encoding="utf-8", newline="\n"
+        )
     LOG.info("staged %d binder artifact(s); removed %d superseded", written, removed)
     return {"written": written, "removed": removed}
 
@@ -561,7 +563,7 @@ def run_designer_benchmark(
     }
     if _would_erase_a_real_result(out_dir, summary):
         salvage = out_dir / "results.failed.json"
-        salvage.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        salvage.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n")
         LOG.error(
             "this run produced no designs, and %s records a run that did. Refusing "
             "to overwrite it; the failed run is saved to %s. Fix the cause and "
@@ -572,8 +574,10 @@ def run_designer_benchmark(
         )
         return summary
 
-    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (out_dir / "RESULTS.md").write_text(_render_md(summary), encoding="utf-8")
+    (out_dir / "results.json").write_text(
+        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
+    (out_dir / "RESULTS.md").write_text(_render_md(summary), encoding="utf-8", newline="\n")
     LOG.info("designer benchmark complete; wrote %s", out_dir)
     return summary
 

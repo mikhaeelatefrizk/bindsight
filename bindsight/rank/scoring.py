@@ -129,8 +129,17 @@ def rank_validated(
     weight_sum = pd.Series([0.0] * len(df), index=df.index)
     for col, w in component_cols:
         if col in df.columns:
-            mask = df[col].notna()
+            # Coerce first, then mask. The mask used to be taken from the raw
+            # column while the value was coerced with ``errors="coerce"``, so a
+            # non-numeric but non-null cell -- ``"N/A"``, an empty string, an
+            # object-dtype string surviving a parquet merge -- was ``notna()``
+            # and therefore counted its full weight in the denominator, while
+            # coercing to NaN and contributing 0.0 to the numerator. The binder
+            # was silently penalised by exactly that component's weight, which
+            # is the opposite of what the comment above promises. A value that
+            # is not a number is a missing measurement, and is excluded.
             column = pd.to_numeric(df[col], errors="coerce").astype(float)
+            mask = column.notna()
             composite = composite.add(column.fillna(0.0) * w, fill_value=0.0)
             weight_sum = weight_sum + (mask.astype(float) * w)
     df["score"] = composite / weight_sum.replace(0.0, pd.NA)

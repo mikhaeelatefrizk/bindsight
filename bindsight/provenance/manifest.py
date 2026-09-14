@@ -408,14 +408,16 @@ class Manifest(BaseModel):
         """
         p = Path(path)
         tmp = p.with_suffix(p.suffix + ".tmp")
-        tmp.write_text(json.dumps(self.jsonld(), indent=2, sort_keys=False))
+        tmp.write_text(
+            json.dumps(self.jsonld(), indent=2, sort_keys=False), encoding="utf-8", newline="\n"
+        )
         tmp.replace(p)
         return p
 
     @classmethod
     def read(cls, path: Path | str) -> Manifest:
         """Load a manifest from disk, stripping the JSON-LD framing."""
-        raw = json.loads(Path(path).read_text())
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
         return cls.model_validate(_strip_jsonld(raw))
 
     def append(self, stage: StageRecord) -> None:

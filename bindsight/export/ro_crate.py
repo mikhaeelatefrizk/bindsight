@@ -177,7 +177,7 @@ def _resolve_recorded(path_str: str, run: Path) -> Path | None:
     Returns:
         The resolved file, or None if nothing matching exists.
     """
-    raw = Path(PurePosixPath(path_str.replace("\\", "/")))
+    raw = Path(_posix_key(path_str))
     if raw.is_absolute():
         return raw if raw.is_file() else None
     for base in (run, Path.cwd(), *run.parents):
@@ -284,8 +284,30 @@ def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
                 # above promises. Keying on the basename made two files called
                 # ``metrics.jsonl`` in different stages one entry, and left every
                 # file whose basename the manifest did not record undigested.
-                digests[PurePosixPath(Path(path).as_posix()).as_posix()] = sha
+                #
+                # Separators are normalised the same way ``_resolve_recorded``
+                # normalises them. ``Path(path).as_posix()`` is not enough: on
+                # POSIX a backslash is an ordinary filename character, so a
+                # manifest written on Windows -- which records
+                # ``runs\join\deg\results.parquet`` -- produced a single-segment
+                # key that no lookup in ``_digest_for`` could match. Every
+                # ``sha256`` silently vanished from crates exported on Linux and
+                # macOS, leaving the archive deposited as a run's integrity
+                # record with no integrity record in it. The two functions
+                # disagreeing about this is the whole defect.
+                digests[_posix_key(path)] = sha
     return digests
+
+
+def _posix_key(path_str: str) -> str:
+    """A recorded path as a POSIX key, whatever platform recorded it.
+
+    ``_resolve_recorded`` and ``_manifest_digests`` both consume manifest paths
+    and must agree on what a separator is. They did not: one replaced
+    backslashes, the other relied on ``Path.as_posix()``, which only converts
+    separators on the platform whose separator they are. Both now call this.
+    """
+    return PurePosixPath(path_str.replace("\\", "/")).as_posix()
 
 
 def _digest_for(digests: dict[str, str], wanted: str) -> str | None:

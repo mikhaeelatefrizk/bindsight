@@ -289,7 +289,9 @@ def _design_rfdiff_mpnn(spec: dict[str, Any], work: Path, tools_root: Path) -> l
             # byte-identical file under a different name, each carrying the
             # residues diffusion emitted rather than the ones ProteinMPNN chose.
             tools.write_designed_backbone(backbone, pdb_copy, chain=binder_chain, sequence=seq)
-            (design_dir / f"{binder_id}.fasta").write_text(f">{binder_id}\n{seq}\n")
+            (design_dir / f"{binder_id}.fasta").write_text(
+                f">{binder_id}\n{seq}\n", encoding="utf-8", newline="\n"
+            )
             designs.append(Design(binder_id=binder_id, sequence=seq, pdb_path=pdb_copy))
     return designs
 
@@ -340,6 +342,7 @@ def _design_boltzgen(spec: dict[str, Any], work: Path, tools_root: Path) -> list
             sort_keys=False,
         ),
         encoding="utf-8",
+        newline="\n",
     )
 
     n = int(spec.get("n_trajectories", 5))
@@ -382,7 +385,9 @@ def _design_bindcraft(spec: dict[str, Any], work: Path, tools_root: Path) -> lis
                 ],
                 "number_of_final_designs": int(spec.get("n_trajectories", 5)),
             }
-        )
+        ),
+        encoding="utf-8",
+        newline="\n",
     )
     _run(
         tools.build_bindcraft_cmd(
@@ -571,7 +576,11 @@ def _validate_chai1r(
     for d in designs:
         fasta = chai_root / f"{d.binder_id}.fasta"
         fasta.parent.mkdir(parents=True, exist_ok=True)
-        fasta.write_text(f">protein|T\n{target_seq}\n>protein|{d.binder_id}\n{d.sequence}\n")
+        fasta.write_text(
+            f">protein|T\n{target_seq}\n>protein|{d.binder_id}\n{d.sequence}\n",
+            encoding="utf-8",
+            newline="\n",
+        )
         out_dir = chai_root / d.binder_id
         _run(
             tools.build_chai_cmd(
@@ -687,7 +696,7 @@ def _target_structure_for_design(spec: dict[str, Any], work: Path, chain: str) -
     if ranges == [_chain_span(target_pdb, chain)]:
         return target_pdb
     kept: list[str] = []
-    for line in target_pdb.read_text().splitlines():
+    for line in target_pdb.read_text(encoding="utf-8").splitlines():
         if line.startswith(("ATOM", "HETATM")) and line[21] == chain:
             try:
                 resi = int(line[22:26])
@@ -697,7 +706,7 @@ def _target_structure_for_design(spec: dict[str, Any], work: Path, chain: str) -
                 continue
         kept.append(line)
     trimmed = work / "target_design_region.pdb"
-    trimmed.write_text("\n".join(kept) + "\n")
+    trimmed.write_text("\n".join(kept) + "\n", encoding="utf-8", newline="\n")
     return trimmed
 
 
@@ -705,7 +714,7 @@ def _chain_span(pdb_path: Path, chain: str) -> tuple[int, int]:
     """Return (min, max) residue number for a chain in a PDB (default 1, 9999)."""
     nums: list[int] = []
     if pdb_path.exists():
-        for line in pdb_path.read_text().splitlines():
+        for line in pdb_path.read_text(encoding="utf-8").splitlines():
             if line.startswith(("ATOM", "HETATM")) and line[21] == chain:
                 try:
                     nums.append(int(line[22:26]))
@@ -752,7 +761,11 @@ def load_existing_designs(work: Path) -> list[Design]:
         return designs
     for fasta in sorted(design_dir.glob("*.fasta")):
         binder_id = fasta.stem
-        seq = "".join(ln.strip() for ln in fasta.read_text().splitlines() if not ln.startswith(">"))
+        seq = "".join(
+            ln.strip()
+            for ln in fasta.read_text(encoding="utf-8").splitlines()
+            if not ln.startswith(">")
+        )
         pdb = design_dir / f"{binder_id}.pdb"
         if not seq:
             LOG.warning("skipping %s: no sequence", fasta.name)
@@ -794,7 +807,9 @@ def _collect_designs_from_dir(
             LOG.warning("no chain sequence recovered from %s; skipping", structure)
             pdb_copy.unlink(missing_ok=True)
             continue
-        (design_dir / f"{binder_id}.fasta").write_text(f">{binder_id}\n{seq}\n")
+        (design_dir / f"{binder_id}.fasta").write_text(
+            f">{binder_id}\n{seq}\n", encoding="utf-8", newline="\n"
+        )
         designs.append(Design(binder_id=binder_id, sequence=seq, pdb_path=pdb_copy))
     return designs
 
@@ -824,7 +839,11 @@ def _designer_output_structures(out: Path) -> list[Path]:
 
 
 def _last_chain(pdb_path: Path) -> str:
-    chains = [line[21] for line in pdb_path.read_text().splitlines() if line.startswith("ATOM")]
+    chains = [
+        line[21]
+        for line in pdb_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("ATOM")
+    ]
     return chains[-1] if chains else "A"
 
 
@@ -954,13 +973,15 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
 
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
     if prescreen_note:
-        (work_dir / "prescreen.txt").write_text(prescreen_note + "\n", encoding="utf-8")
+        (work_dir / "prescreen.txt").write_text(
+            prescreen_note + "\n", encoding="utf-8", newline="\n"
+        )
 
     tools.write_metrics_jsonl(metrics, work_dir / "metrics.jsonl")
 
     out_tar = Path(tarball) if tarball else work_dir.with_suffix(".tar.gz")
     out_tar.parent.mkdir(parents=True, exist_ok=True)
-    with tarfile.open(out_tar, "w:gz") as tf:
+    with tarfile.open(out_tar, "w:gz", encoding="utf-8") as tf:
         for sub in ("design", "validate", "metrics.jsonl"):
             p = work_dir / sub
             if p.exists():
@@ -1040,7 +1061,7 @@ def main(argv: list[str] | None = None) -> int:
         print("usage: job_exec <spec.json> <out.tar.gz>", file=sys.stderr)
         return 2
     spec_path, out_tar = Path(args[0]), Path(args[1])
-    spec = json.loads(spec_path.read_text())
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
     work_dir = out_tar.parent / (out_tar.stem.replace(".tar", "") + "_work")
     materialise_target(spec, spec_path.parent, work_dir)
     materialise_designs(spec_path.parent, work_dir)

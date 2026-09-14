@@ -518,3 +518,53 @@ class TestTheStageStatusIsReadNotAsserted:
             "skipped",
             "skipped_cache",
         }
+
+
+class TestAnIntervalIsNeverLabelledWithAnAssumedLevel:
+    """An interval without its confidence level is not publishable.
+
+    Both renderers used ``interval.get("confidence") or 0.95``, printing
+    "95% CI" over an interval whose level nothing had established -- one of them
+    directly beneath a comment saying that doing so "would misstate it". Every
+    committed artifact happens to record 0.95, so the fallback never fired and
+    the defect was invisible to every existing test: reintroducing it changed no
+    output at all.
+
+    So this tests the function rather than the rendered page.
+    """
+
+    @staticmethod
+    def _label(interval):
+        from bindsight.benchmark.study_report import _confidence_label
+
+        return _confidence_label(interval)
+
+    def test_a_recorded_level_is_printed(self) -> None:
+        assert self._label({"confidence": 0.95}) == "95% "
+        assert self._label({"confidence": 0.9}) == "90% "
+
+    def test_an_absent_level_is_not_invented(self) -> None:
+        assert self._label({}) == "", (
+            "a confidence level was assumed for an interval that did not record "
+            "one; the label and the number would come from different places"
+        )
+        assert self._label({"confidence": None}) == ""
+
+    def test_a_recorded_zero_is_not_treated_as_absent(self) -> None:
+        """``or`` was wrong twice: a recorded 0 is falsy and became 0.95."""
+        assert self._label({"confidence": 0}) == "0% "
+
+    def test_the_rendered_study_still_states_its_level(self) -> None:
+        """The artifacts do record it, so the page must still say 95%."""
+        import json
+
+        summary = json.loads(
+            (REPO / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8")
+        )
+        paired = (summary.get("null_calibration") or {}).get("paired_difference") or {}
+        if paired.get("confidence") is None:
+            pytest.skip("the committed artifact records no confidence level")
+
+        rendered = (REPO / "benchmarks" / "study" / "RESULTS.md").read_text(encoding="utf-8")
+        expected = f"{float(paired['confidence']) * 100:g}% CI"
+        assert expected in rendered

@@ -374,13 +374,37 @@ def eligible_ranking(
     if score_column not in eligible.columns:
         if "padj" not in eligible.columns:
             raise ValueError(f"cannot compute {score_column!r}: the table has no 'padj' column")
-        padj = eligible["padj"].astype(float).fillna(1.0).clip(lower=1e-300)
+
+        # A NaN padj means pydeseq2's independent filtering removed the gene
+        # before testing it. That is *not tested*, which this module's opening
+        # paragraph names as a different class from *tested and found null* --
+        # and this line used to merge them: ``fillna(1.0)`` gives
+        # ``-log10(1.0) == 0``, so an untested gene scored exactly 0 and landed
+        # in the middle of the counterfactual ordering, displacing the antigen
+        # it is supposed to be a reference for.
+        #
+        # An untested gene cannot be ranked against tested ones, so it leaves
+        # the ordering. It is counted rather than dropped silently: the count
+        # rides on the frame as an attribute so a caller can report the pool it
+        # actually ranked against.
+        padj_raw = eligible["padj"].astype(float)
+        untested = padj_raw.isna()
+        n_untested = int(untested.sum())
+        eligible = eligible[~untested].copy()
+        if eligible.empty:
+            eligible.attrs["n_untested"] = n_untested
+            return eligible
+        padj = eligible["padj"].astype(float).clip(lower=1e-300)
         eligible[score_column] = eligible["log2fc"].astype(float) * -np.log10(padj)
+        eligible.attrs["n_untested"] = n_untested
 
     ordered = eligible.sort_values(
         by=[score_column, "gene_id"], ascending=[False, True]
     ).reset_index(drop=True)
     ordered["counterfactual_rank"] = ordered.index + 1
+    # ``sort_values``/``reset_index`` do not carry ``attrs`` reliably across
+    # pandas versions, so it is set again on the frame that is returned.
+    ordered.attrs["n_untested"] = int(eligible.attrs.get("n_untested", 0))
     return ordered
 
 

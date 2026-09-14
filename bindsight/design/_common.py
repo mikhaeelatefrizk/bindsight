@@ -143,7 +143,7 @@ def _record_handle(handle_path: Path, handle: object) -> None:
                 type(handle).__name__,
             )
             return
-        handle_path.write_text(dump(indent=2))
+        handle_path.write_text(dump(indent=2), encoding="utf-8", newline="\n")
     except (OSError, TypeError, ValueError) as e:
         LOG.warning(
             "could not record the job handle at %s (%s); a crashed wait will not "
@@ -181,7 +181,7 @@ def _recorded_handle(handle_path: Path, runner: GPURunner) -> JobHandle | None:
     if not handle_path.is_file():
         return None
     try:
-        handle = JobHandle.model_validate_json(handle_path.read_text())
+        handle = JobHandle.model_validate_json(handle_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         LOG.warning("ignoring unreadable job record %s (%s)", handle_path, e)
         return None
@@ -253,7 +253,7 @@ def submit_via_runner(
         update={"extra_params": {**spec.extra_params, "target_structure_name": target_name}}
     )
     spec_path = spec_dir / "spec.json"
-    spec_path.write_text(spec_to_send.model_dump_json(indent=2))
+    spec_path.write_text(spec_to_send.model_dump_json(indent=2), encoding="utf-8", newline="\n")
 
     # Idempotency (ARCHITECTURE.md 4.4): a completed unit of work is identified
     # by its cache key, so a rerun with identical inputs must not pay for the GPU
@@ -318,7 +318,7 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
     if not tar_path.exists():
         return
     try:
-        with tarfile.open(tar_path, "r:gz") as tf:
+        with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
             names = {Path(n).name: n for n in tf.getnames()}
             if member in names:
                 src = tf.extractfile(names[member])

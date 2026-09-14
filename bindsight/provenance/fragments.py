@@ -148,7 +148,7 @@ def write_fragment(
         "ended_at": _now_iso(),
         "error": error,
     }
-    out.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    out.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8", newline="\n")
     return out
 
 

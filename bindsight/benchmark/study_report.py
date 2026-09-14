@@ -76,11 +76,28 @@ def _interval_phrase(interval: Mapping[str, Any] | None) -> str:
     n = interval.get("n_clusters")
     if low is None or high is None:
         return ""
-    confidence = interval.get("confidence") or 0.95
-    inside = f"{float(confidence) * 100:g}% CI {_fmt(low, 3)}–{_fmt(high, 3)}"
+    inside = f"{_confidence_label(interval)}CI {_fmt(low, 3)}–{_fmt(high, 3)}"
     if n:
         inside += f", {n} antigen{'s' if int(n) != 1 else ''}"
     return f" ({inside})"
+
+
+def _confidence_label(interval: Mapping[str, Any]) -> str:
+    """``"95% "`` when the artifact recorded a level, ``""`` when it did not.
+
+    Both callers used ``interval.get("confidence") or 0.95``, which prints
+    "95% CI" over an interval whose level nothing had established -- the second
+    of them directly under a comment saying that doing so "would misstate it".
+    An interval is not publishable without its level, so the level is either
+    read from the artifact or not claimed. It is never assumed.
+
+    ``or`` was also wrong for a recorded ``0``: falsy, so it silently became
+    0.95. Presence is tested, not truthiness.
+    """
+    raw = interval.get("confidence")
+    if raw is None:
+        return ""
+    return f"{float(raw) * 100:g}% "
 
 
 def _paired_phrase(paired: Mapping[str, Any] | None) -> str:
@@ -100,10 +117,9 @@ def _paired_phrase(paired: Mapping[str, Any] | None) -> str:
     tail = ", an interval that includes zero" if spans_zero else ", an interval that excludes zero"
     # Read, not assumed: the artifact records the confidence level, and printing
     # "95%" over a block computed at another level would misstate it.
-    confidence = float(paired.get("confidence") or 0.95)
     return (
         f" — a within-antigen difference of **{_fmt(point, 3)}** "
-        f"({confidence * 100:g}% CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
+        f"({_confidence_label(paired)}CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
         f"{'s' if n and int(n) != 1 else ''}{tail})"
     )
 

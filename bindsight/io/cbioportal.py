@@ -79,7 +79,7 @@ def fetch_pam50_subtypes(
         cache_dir.mkdir(parents=True, exist_ok=True)
         cache_path = cache_dir / f"{study_id}_SUBTYPE.json"
         if cache_path.exists():
-            cached = json.loads(cache_path.read_text())
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
             LOG.info("cBioPortal: using cached subtypes (%d patients)", len(cached["labels"]))
             return dict(cached["labels"])
 
@@ -104,10 +104,10 @@ def fetch_pam50_subtypes(
             "labels": labels,
         }
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        cache_path.write_text(text, encoding="utf-8")
+        cache_path.write_text(text, encoding="utf-8", newline="\n")
         payload_sha = hashlib.sha256(text.encode()).hexdigest()
         (cache_path.parent / f"{study_id}_SUBTYPE.sha256").write_text(
-            payload_sha + "\n", encoding="utf-8"
+            payload_sha + "\n", encoding="utf-8", newline="\n"
         )
 
     return labels

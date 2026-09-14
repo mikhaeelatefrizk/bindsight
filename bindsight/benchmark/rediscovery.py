@@ -411,7 +411,7 @@ def _enforce_one_sample_per_patient(
             design_path, sep="\t", index=False, lineterminator="\n"
         )
         counts_df = pd.read_csv(counts, sep="\t", index_col=0)
-        with gzip.open(counts, "wt", newline="") as fh:
+        with gzip.open(counts, "wt", newline="", encoding="utf-8") as fh:
             counts_df[keep].to_csv(fh, sep="\t")
         samples = [s for s in samples if str(s["sample"]) in kept]
 
@@ -431,7 +431,7 @@ def _enforce_one_sample_per_patient(
                         "sha256": _sha256(path),
                         "bytes": path.stat().st_size,
                     }
-        prov_path.write_text(json.dumps(prov, indent=2) + "\n", encoding="utf-8")
+        prov_path.write_text(json.dumps(prov, indent=2) + "\n", encoding="utf-8", newline="\n")
     return summary
 
 
@@ -463,7 +463,7 @@ def prepare_cohort(
     prov: dict[str, Any]
     if counts.exists() and design.exists():
         LOG.info("%s: cohort already downloaded at %s", cohort.key, cohort_dir)
-        prov = json.loads(prov_path.read_text()) if prov_path.exists() else {}
+        prov = json.loads(prov_path.read_text(encoding="utf-8")) if prov_path.exists() else {}
     else:
         prov = fetch_cohort(
             project=cohort.project,
@@ -511,7 +511,7 @@ def run_and_score_cohort(
     # file UUIDs / barcodes / checksums instead of emitting an empty object.
     run_out.mkdir(parents=True, exist_ok=True)
     (run_out / "gdc_provenance.json").write_text(
-        json.dumps(gdc_prov, indent=2) + "\n", encoding="utf-8"
+        json.dumps(gdc_prov, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
 
     # Score the cohort's own indication (for the side-by-side report) and pull
@@ -677,7 +677,7 @@ def rescore_from_runs(
                 f"{cohort.key}: {gdc_prov_path} is missing, so the achieved cohort size "
                 "cannot be recovered; re-run the cohort with run_validation()"
             )
-        gdc_prov: dict[str, Any] = json.loads(gdc_prov_path.read_text())
+        gdc_prov: dict[str, Any] = json.loads(gdc_prov_path.read_text(encoding="utf-8"))
         achieved = _achieved_sampling(cohort.key, gdc_prov)
         results.append(
             {
@@ -740,12 +740,15 @@ def _write_artifacts(
         "data_limited": DATA_LIMITED,
     }
 
-    (out_dir / "results.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (out_dir / "results.json").write_text(
+        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     (out_dir / "report.html").write_text(
         render_benchmark_html(scores, ks=KS, known_source=portable_path(known_path)),
         encoding="utf-8",
+        newline="\n",
     )
-    (out_dir / "RESULTS.md").write_text(_render_results_md(summary), encoding="utf-8")
+    (out_dir / "RESULTS.md").write_text(_render_results_md(summary), encoding="utf-8", newline="\n")
     _write_provenance(out_dir, summary)
     try:
         _render_figures(out_dir / "figures", results, recall)
@@ -1052,7 +1055,9 @@ def _write_provenance(out_dir: Path, summary: dict[str, Any]) -> None:
             for r in summary["cohorts"]
         ],
     }
-    (out_dir / "provenance.json").write_text(json.dumps(prov, indent=2) + "\n", encoding="utf-8")
+    (out_dir / "provenance.json").write_text(
+        json.dumps(prov, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -199,6 +199,7 @@ def _write_run_config(config: RunConfig, root: Path) -> Path:
         "# Includes any command-line overrides applied to the source config.\n"
         + yaml.safe_dump(payload, sort_keys=False),
         encoding="utf-8",
+        newline="\n",
     )
     return out
 
@@ -339,7 +340,7 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
     try:
         runner = PyDESeq2Runner(config.params.deg)
         metrics = runner.run(counts_p, design_p, out_path)
-        key_path.write_text(cache_key, encoding="utf-8")
+        key_path.write_text(cache_key, encoding="utf-8", newline="\n")
         stage.notes = (
             f"n_samples={metrics['n_samples']}, "
             f"n_genes_tested={metrics['n_genes_tested']}, "

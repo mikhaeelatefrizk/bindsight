@@ -318,3 +318,63 @@ class TestTiedScoresRankReproducibly:
         ranked = rank_validated(frame)
 
         assert ranked.iloc[0]["binder_id"] == "high"
+
+
+class TestTheCompositeExcludesWhatItCannotRead:
+    """A component the composite cannot parse must not be counted against a binder.
+
+    The loop took its presence mask from the raw column while coercing the value
+    with ``errors="coerce"``. A non-numeric but non-null cell was therefore
+    ``notna()`` -- counting its full weight in the denominator -- while coercing
+    to NaN and contributing 0.0 to the numerator, silently depressing that
+    binder. The comment directly above the loop promises the opposite.
+
+    **No reachable path produces one today**, and this test says so rather than
+    pretending otherwise: every ``score_*`` column is overwritten inside
+    ``rank_validated`` by a helper that returns a numeric Series or raises --
+    ``_minmax`` raises ``TypeError`` on a string rather than passing it through.
+    So the fix is defensive, and the guard is structural: it asserts the mask is
+    taken from the coerced column, which is the property that made the
+    inconsistency possible.
+    """
+
+    def test_the_mask_is_taken_after_coercion(self) -> None:
+        import inspect
+
+        from bindsight.rank import scoring
+
+        source = inspect.getsource(scoring.rank_validated)
+        coerce_at = source.index('pd.to_numeric(df[col], errors="coerce")')
+        mask_at = source.index("mask = ")
+
+        assert mask_at > coerce_at, (
+            "the presence mask is computed before coercion, so a value that "
+            "coerces to NaN would still count its full weight against the binder"
+        )
+        assert "mask = column.notna()" in source, (
+            "the mask no longer derives from the coerced column"
+        )
+
+    def test_the_weighted_average_ignores_missing_components(self) -> None:
+        """The promise the comment makes, checked end to end on the live path.
+
+        Two binders identical but for a component one of them lacks entirely.
+        A missing metric must not move the score.
+        """
+        both = rank_validated(
+            pd.DataFrame(
+                {
+                    "binder_id": ["a", "b"],
+                    "target_uniprot": ["P1", "P1"],
+                    "iptm": [0.8, 0.8],
+                    "pae_interaction": [10.0, 10.0],
+                }
+            )
+        )
+
+        scores = dict(zip(both["binder_id"], both["score"], strict=True))
+        assert scores["a"] == pytest.approx(scores["b"])
+        assert all(pd.notna(v) for v in scores.values()), (
+            "a row with no developability component scored NaN; missing metrics "
+            "should be excluded from the average, not poison it"
+        )

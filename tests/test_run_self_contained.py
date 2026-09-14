@@ -218,3 +218,120 @@ def test_crate_metadata_propagates_manifest_digests(tmp_path) -> None:
 
     entry = next(n for n in meta["@graph"] if n.get("@id") == "deg/results.parquet")
     assert entry["sha256"] == digest
+
+
+def test_digests_survive_a_manifest_written_on_another_platform(monkeypatch) -> None:
+    """A manifest written on Windows must still yield digests when exported on POSIX.
+
+    ``test_crate_metadata_propagates_manifest_digests`` above writes the manifest
+    and exports the crate in one call on one machine, so both sides always agree
+    about what a separator is and the disagreement is structurally invisible to
+    it.
+
+    It was a real disagreement. ``_resolve_recorded`` replaced backslashes;
+    ``_manifest_digests`` relied on ``Path.as_posix()``, which converts
+    separators only on the platform whose separator they are. On POSIX a
+    backslash is an ordinary filename character, so a manifest recording a
+    Windows-style path produced a one-segment key that none of ``_digest_for``'s
+    three lookups could match. Every ``sha256`` silently disappeared from crates
+    exported on Linux and macOS -- an archive deposited as a run's integrity
+    record, containing no integrity record, with no error.
+
+    This calls ``_manifest_digests`` directly rather than exporting a crate,
+    because going through the filesystem makes the test platform-dependent in
+    exactly the way the defect is: reintroducing the bug and running the
+    end-to-end version on Windows **passes**, since Windows ``Path`` converts
+    backslashes natively. A guard that only fires on the platform that was never
+    broken is decoration. This one fires everywhere.
+    """
+    from pathlib import PurePosixPath
+
+    from bindsight.export import ro_crate
+    from bindsight.export.ro_crate import _digest_for, _manifest_digests
+
+    # Run the function under POSIX path semantics. Without this the test is
+    # decoration on Windows: the defective expression,
+    # ``PurePosixPath(Path(path).as_posix()).as_posix()``, *also* produces the
+    # right key there, because Windows ``Path`` treats a backslash as a
+    # separator. Reintroducing the bug and running this test on Windows passed.
+    # Substituting ``PurePosixPath`` for the module's ``Path`` makes a backslash
+    # an ordinary character, which is precisely what a Linux runner sees.
+    monkeypatch.setattr(ro_crate, "Path", PurePosixPath)
+
+    sep = chr(92)
+    digest = "b" * 64
+    manifest = {
+        "stages": [
+            {
+                "name": "deg",
+                "outputs": [
+                    {"path": sep.join(["runs", "join", "deg", "results.parquet"]), "sha256": digest}
+                ],
+            }
+        ]
+    }
+
+    digests = _manifest_digests(manifest)
+
+    assert all(sep not in key for key in digests), (
+        f"a recorded path kept its foreign separator as a key: {sorted(digests)}"
+    )
+    assert _digest_for(digests, "deg/results.parquet") == digest, (
+        "a digest recorded with foreign path separators is unreachable; a crate "
+        "exported from this manifest would carry no integrity record"
+    )
+
+
+def test_a_crate_built_from_a_foreign_manifest_carries_its_digest(tmp_path) -> None:
+    """The same property end to end, which is what actually ships.
+
+    Kept alongside the unit test above rather than instead of it: this one only
+    exercises the defect on POSIX, but it is the path a real deposit takes.
+    """
+    run, _ = _make_run_with_structure(tmp_path)
+    digest = "c" * 64
+    sep = chr(92)
+
+    manifest = {
+        "run_id": "r",
+        "name": "t",
+        "stages": [
+            {
+                "name": "deg",
+                "outputs": [
+                    {"path": sep.join(["runs", "join", "deg", "results.parquet"]), "sha256": digest}
+                ],
+            }
+        ],
+    }
+    (run / "run_manifest.jsonld").write_text(json.dumps(manifest), encoding="utf-8", newline="\n")
+    crate = export_ro_crate(run, tmp_path / "out.crate.zip")
+
+    with zipfile.ZipFile(crate) as zf:
+        meta = json.loads(zf.read("ro-crate-metadata.json"))
+
+    entry = next(n for n in meta["@graph"] if n.get("@id") == "deg/results.parquet")
+    assert entry.get("sha256") == digest
+
+
+def test_both_path_consumers_normalise_through_one_function() -> None:
+    """Guards the guard: two functions reading manifest paths must not drift apart.
+
+    The defect above existed because ``_resolve_recorded`` and
+    ``_manifest_digests`` each had their own idea of a separator. One shared
+    normaliser is the fix; this asserts both still use it.
+    """
+    import inspect
+
+    from bindsight.export import ro_crate
+
+    for fn in (ro_crate._resolve_recorded, ro_crate._manifest_digests):
+        source = inspect.getsource(fn)
+        assert "_posix_key" in source, (
+            f"{fn.__name__} no longer normalises manifest paths through _posix_key; "
+            "the two consumers can drift apart again"
+        )
+
+    sep = chr(92)
+    assert ro_crate._posix_key(sep.join(["a", "b", "c.txt"])) == "a/b/c.txt"
+    assert ro_crate._posix_key("a/b/c.txt") == "a/b/c.txt"

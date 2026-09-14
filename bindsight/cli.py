@@ -1116,7 +1116,7 @@ def _count_designs(design_dir: Path) -> int | None:
     n = len({p for p in design_dir.rglob("*.pdb") if "validate" not in p.parts})
     for archive in sorted(design_dir.rglob("*.tar.gz")):
         try:
-            with tarfile.open(archive, "r:gz") as tf:
+            with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
                 # Only the archive's own design/ members; the per-target tarballs
                 # nested inside results.tar.gz are counted from their own files.
                 n += sum(
@@ -1760,7 +1760,7 @@ def _archive_carries_designs(archive: Path) -> bool:
     if not archive.is_file():
         return False
     try:
-        with tarfile.open(archive, "r:gz") as tf:
+        with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
             return any(
                 m.isfile() and m.name.startswith("design/") and m.name.endswith(".fasta")
                 for m in tf.getmembers()
@@ -1816,7 +1816,7 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
         with tempfile.TemporaryDirectory() as tmp:
             staged = Path(tmp) / "design"
             staged.mkdir(parents=True, exist_ok=True)
-            with tarfile.open(tar_path, "r:gz") as tf:
+            with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
                 for m in tf.getmembers():
                     if m.isfile() and m.name.startswith("design/"):
                         src = tf.extractfile(m)
@@ -1858,11 +1858,15 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
             )
         mpath = Path(result.metrics_jsonl_path)
         if mpath.exists():
-            metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]
+            metrics_lines += [
+                ln for ln in mpath.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
         done += 1
 
     if metrics_lines:
-        (design_dir / "metrics.jsonl").write_text("\n".join(metrics_lines) + "\n")
+        (design_dir / "metrics.jsonl").write_text(
+            "\n".join(metrics_lines) + "\n", encoding="utf-8", newline="\n"
+        )
     return done
 
 
@@ -1935,16 +1939,18 @@ def _launch_design(
         )
         mpath = Path(result.metrics_jsonl_path)
         if mpath.exists():
-            metrics_lines += [ln for ln in mpath.read_text().splitlines() if ln.strip()]
+            metrics_lines += [
+                ln for ln in mpath.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
         launched += 1
 
     (design_dir / "metrics.jsonl").write_text(
-        "\n".join(metrics_lines) + ("\n" if metrics_lines else "")
+        "\n".join(metrics_lines) + ("\n" if metrics_lines else ""), encoding="utf-8", newline="\n"
     )
     # A top-level results.tar.gz marks design completion for `bindsight run`.
     import tarfile
 
-    with tarfile.open(design_dir / "results.tar.gz", "w:gz") as tf:
+    with tarfile.open(design_dir / "results.tar.gz", "w:gz", encoding="utf-8") as tf:
         tf.add(design_dir / "metrics.jsonl", arcname="metrics.jsonl")
         tf.add(targets_dir, arcname="_targets")
     return launched
@@ -1965,7 +1971,7 @@ def _finalize_validate(run_dir: Path) -> int:
     if targets_dir.exists():
         for tar_path in targets_dir.glob("*.tar.gz"):
             try:
-                with tarfile.open(tar_path, "r:gz") as tf:
+                with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
                     for m in tf.getmembers():
                         if m.name.startswith("validate/"):
                             tf.extract(m, validate_dir.parent, filter="data")
@@ -1974,7 +1980,11 @@ def _finalize_validate(run_dir: Path) -> int:
 
     metrics_path = design_dir / "metrics.jsonl"
     rows = (
-        [json.loads(ln) for ln in metrics_path.read_text().splitlines() if ln.strip()]
+        [
+            json.loads(ln)
+            for ln in metrics_path.read_text(encoding="utf-8").splitlines()
+            if ln.strip()
+        ]
         if metrics_path.exists()
         else []
     )

@@ -445,6 +445,7 @@ def run_benchmark(
     out.write_text(
         render_benchmark_html(scores, ks=ks, known_source=str(known_antigens_path)),
         encoding="utf-8",
+        newline="\n",
     )
     LOG.info("wrote %s (%d runs, %d known antigens)", out, len(scores), len(known))
     return out, scores

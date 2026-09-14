@@ -123,7 +123,7 @@ def render_run(
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(html, encoding="utf-8")
+    out_path.write_text(html, encoding="utf-8", newline="\n")
     LOG.info("wrote %s", out_path)
     return out_path
 
@@ -159,7 +159,7 @@ def _binder_sequences(run_dir: Path) -> dict[str, str]:
         return sequences
     for archive in sorted(targets_dir.glob("*.tar.gz")):
         try:
-            with tarfile.open(archive) as tf:
+            with tarfile.open(archive, encoding="utf-8") as tf:
                 for member in tf.getmembers():
                     name = PurePosixPath(member.name)
                     if name.suffix != ".fasta" or not member.isfile():

@@ -232,3 +232,49 @@ def test_gate_explanations_cover_every_pipeline_disposition() -> None:
 
     missing = [d for d in TAXONOMY_DISPOSITIONS if d not in O.GATE_EXPLANATIONS]
     assert not missing, f"dispositions with no plain-language explanation: {missing}"
+
+
+class TestAnUntestedGeneIsNotRanked:
+    """pydeseq2 writes ``padj = NaN`` for genes independent filtering removed.
+
+    That is *not tested*, which this module's opening paragraph names as a
+    different class from *tested and found null*. ``eligible_ranking`` used to
+    merge them: ``fillna(1.0)`` gives ``-log10(1.0) == 0``, so an untested gene
+    scored exactly 0 and landed mid-pack in the counterfactual ordering,
+    displacing the antigen it exists to be a reference for.
+
+    No committed cohort is affected -- 0 of 259,297 genes across all fifteen
+    carry a NaN padj -- so no published number moves. A latent defect in the
+    ranking that decides a null model is still worth closing before it fires.
+    """
+
+    @staticmethod
+    def _frame() -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "gene_id": ["strong", "weak", "untested", "down"],
+                "log2fc": [5.0, 0.5, 9.0, -3.0],
+                "padj": [1e-20, 0.4, float("nan"), 1e-10],
+            }
+        )
+
+    def _ranked(self) -> pd.DataFrame:
+        return O.eligible_ranking(
+            self._frame(), eligible_gene_ids={"strong", "weak", "untested", "down"}
+        )
+
+    def test_the_untested_gene_leaves_the_ordering(self) -> None:
+        assert "untested" not in set(self._ranked()["gene_id"]), (
+            "a gene that was never tested is ranked among genes that were"
+        )
+
+    def test_the_count_is_reported_not_discarded(self) -> None:
+        """Dropping them silently would shrink the pool without saying so."""
+        assert self._ranked().attrs.get("n_untested") == 1
+
+    def test_a_tested_but_unimpressive_gene_still_ranks(self) -> None:
+        """Guards the guard: only *untested* leaves, not merely weak."""
+        ordered = self._ranked()
+
+        assert "weak" in set(ordered["gene_id"])
+        assert next(iter(ordered["gene_id"])) == "strong"

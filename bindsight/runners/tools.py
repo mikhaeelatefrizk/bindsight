@@ -631,7 +631,7 @@ def chain_residues_from_pdb(pdb_path: Path, chain: str = "A") -> list[tuple[int,
     """Extract ``(residue number, 1-letter code)`` for a chain (CA atoms, in order)."""
     residues: list[tuple[int, str]] = []
     seen: set[int] = set()
-    for line in Path(pdb_path).read_text().splitlines():
+    for line in Path(pdb_path).read_text(encoding="utf-8").splitlines():
         if line.startswith("ATOM") and line[12:16].strip() == "CA":
             if line[21] != chain:
                 continue
@@ -701,7 +701,7 @@ def write_designed_backbone(backbone: Path, dest: Path, *, chain: str, sequence:
             three = _AA1TO3.get(sequence[position[line[22:27]]].upper(), "UNK")
             line = line[:17] + f"{three:<3}" + line[20:]
         out.append(line)
-    dest.write_text("".join(out), encoding="utf-8")
+    dest.write_text("".join(out), encoding="utf-8", newline="\n")
 
 
 def chain_sequence_from_pdb(pdb_path: Path, chain: str = "A") -> str:
@@ -750,7 +750,7 @@ def chain_sequences_from_cif(cif_path: Path) -> dict[str, str]:
 def pdb_chain_ids(pdb_path: Path) -> list[str]:
     """Chain ids present in a PDB, in first-appearance order (CA atoms)."""
     chains: list[str] = []
-    for line in Path(pdb_path).read_text().splitlines():
+    for line in Path(pdb_path).read_text(encoding="utf-8").splitlines():
         if line.startswith("ATOM") and line[12:16].strip() == "CA":
             ch = line[21]
             if ch not in chains:
@@ -826,7 +826,7 @@ def parse_mpnn_fasta(fasta_path: Path) -> list[tuple[str, str]]:
     records: list[tuple[str, str]] = []
     header: str | None = None
     chunks: list[str] = []
-    for line in Path(fasta_path).read_text().splitlines():
+    for line in Path(fasta_path).read_text(encoding="utf-8").splitlines():
         if line.startswith(">"):
             if header is not None:
                 records.append((header, "".join(chunks)))
@@ -917,7 +917,7 @@ def parse_af2ig_output(
     if not sc.exists():
         reason = f"score file {sc} does not exist"
     else:
-        lines = [ln.split() for ln in sc.read_text().splitlines() if ln.strip()]
+        lines = [ln.split() for ln in sc.read_text(encoding="utf-8").splitlines() if ln.strip()]
         if len(lines) < 2:
             reason = f"score file {sc} has {len(lines)} line(s); expected a header and a row"
         else:
@@ -990,7 +990,7 @@ def write_metrics_jsonl(metrics: list[dict[str, object]], path: Path) -> Path:
     """Write per-design metrics as JSONL (one ValidationResult-shaped row/line)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w") as f:
+    with path.open("w", encoding="utf-8") as f:
         for m in metrics:
             f.write(json.dumps(m) + "\n")
     return path

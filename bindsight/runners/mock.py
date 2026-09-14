@@ -66,7 +66,7 @@ class MockRunner:
         handle_id = str(uuid.uuid4())
         target = "MOCK"
         try:
-            spec = json.loads(Path(spec_path).read_text())
+            spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
             target = str(spec.get("target_uniprot") or "MOCK")
         except (OSError, ValueError) as e:  # a malformed spec must not break CI
             LOG.warning("mock runner could not read %s: %s", spec_path, e)
@@ -106,15 +106,21 @@ class MockRunner:
         metrics = []
         for i in range(2):
             bid = f"{target}_mock_binder_{i}"
-            (design / f"{bid}.pdb").write_text(_MOCK_PDB)
-            (design / f"{bid}.fasta").write_text(f">{bid}\nGSHMSLEQKKGADIISKIL\n")
+            (design / f"{bid}.pdb").write_text(_MOCK_PDB, encoding="utf-8", newline="\n")
+            (design / f"{bid}.fasta").write_text(
+                f">{bid}\nGSHMSLEQKKGADIISKIL\n", encoding="utf-8", newline="\n"
+            )
             vdir = validate / bid
             vdir.mkdir(parents=True, exist_ok=True)
             (vdir / f"confidence_{bid}_model_0.json").write_text(
-                json.dumps({"iptm": 0.70 + 0.05 * i, "pae_interaction": 6.0 - i})
+                json.dumps({"iptm": 0.70 + 0.05 * i, "pae_interaction": 6.0 - i}),
+                encoding="utf-8",
+                newline="\n",
             )
             (vdir / f"affinity_{bid}.json").write_text(
-                json.dumps({"affinity_pred_value": -7.0 - i, "affinity_probability_binary": 0.80})
+                json.dumps({"affinity_pred_value": -7.0 - i, "affinity_probability_binary": 0.80}),
+                encoding="utf-8",
+                newline="\n",
             )
             metrics.append(
                 {
@@ -129,10 +135,12 @@ class MockRunner:
                     "notes": "mock runner — synthetic metrics for CI/orchestration only",
                 }
             )
-        (work / "metrics.jsonl").write_text("\n".join(json.dumps(m) for m in metrics) + "\n")
+        (work / "metrics.jsonl").write_text(
+            "\n".join(json.dumps(m) for m in metrics) + "\n", encoding="utf-8", newline="\n"
+        )
 
         tarball = root / "results.tar.gz"
-        with tarfile.open(tarball, "w:gz") as tf:
+        with tarfile.open(tarball, "w:gz", encoding="utf-8") as tf:
             for sub in ("design", "validate", "metrics.jsonl"):
                 tf.add(work / sub, arcname=sub)
         return tarball

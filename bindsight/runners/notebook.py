@@ -85,7 +85,7 @@ def write_notebook(notebook: dict[str, Any], path: Path) -> Path:
     """Write a notebook dict to ``path`` as JSON. Creates parent dirs."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(notebook, indent=1))
+    path.write_text(json.dumps(notebook, indent=1), encoding="utf-8", newline="\n")
     return path
 
 

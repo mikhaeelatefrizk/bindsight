@@ -286,7 +286,7 @@ def fetch_cohort(
     counts_df.index.name = "gene_id"
     counts_df = counts_df.sort_index()
 
-    with gzip.open(counts_out, "wt", newline="") as fh:
+    with gzip.open(counts_out, "wt", newline="", encoding="utf-8") as fh:
         counts_df.to_csv(fh, sep="\t")
 
     design_df = pd.DataFrame([asdict(s) for s in samples]).set_index("sample")
@@ -313,7 +313,7 @@ def fetch_cohort(
         },
     }
     prov_path = counts_out.parent / "provenance.json"
-    prov_path.write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+    prov_path.write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8", newline="\n")
     LOG.info(
         "GDC: wrote %s (%d genes × %d samples) + %s",
         counts_out,

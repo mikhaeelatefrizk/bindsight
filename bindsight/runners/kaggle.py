@@ -253,7 +253,9 @@ class KaggleRunner:
         # invoked.
         try:
             spec_mode = str(
-                (json.loads(spec_path.read_text()).get("extra_params") or {}).get("mode")
+                (json.loads(spec_path.read_text(encoding="utf-8")).get("extra_params") or {}).get(
+                    "mode"
+                )
                 or "design_and_validate"
             )
         except (OSError, ValueError) as e:  # a spec we cannot read is not a mode claim
@@ -287,10 +289,11 @@ class KaggleRunner:
         # submit should leave no half-built kernel directory behind.
         work = results_dir / f"kaggle_{handle_id}"
         work.mkdir(parents=True, exist_ok=True)
-        (work / "kernel.py").write_text(script, encoding="utf-8")
+        (work / "kernel.py").write_text(script, encoding="utf-8", newline="\n")
         (work / "kernel-metadata.json").write_text(
             json.dumps(kaggle_kernel.build_kernel_metadata(username=user, slug=slug)),
             encoding="utf-8",
+            newline="\n",
         )
         api.kernels_push(str(work))
         LOG.info("kaggle: pushed kernel %s/%s", user, slug)

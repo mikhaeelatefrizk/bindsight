@@ -141,10 +141,10 @@ class OpenTargetsClient:
         """Execute a raw GraphQL query, with on-disk caching by query hash."""
         key = self._cache_key(query, variables)
         if key.exists():
-            cached: dict[str, Any] = json.loads(key.read_text())
+            cached: dict[str, Any] = json.loads(key.read_text(encoding="utf-8"))
             return cached
         data = self._post(query, variables)
-        key.write_text(json.dumps(data))
+        key.write_text(json.dumps(data), encoding="utf-8", newline="\n")
         return data
 
     def get_target(self, ensembl_id: str) -> TargetEvidence | None:

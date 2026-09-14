@@ -82,7 +82,7 @@ class ColabRunner:
         notebook_dest = results_dir / f"{handle_id}.ipynb"
 
         notebook = self._build_notebook(spec_path=spec_path, handle_id=handle_id)
-        notebook_dest.write_text(notebook)
+        notebook_dest.write_text(notebook, encoding="utf-8", newline="\n")
 
         LOG.info(
             "Colab notebook written to %s. Open it in Colab, run all cells, "
@@ -145,7 +145,7 @@ class ColabRunner:
         spec: dict[str, Any] = {}
         if Path(spec_path).exists():
             try:
-                spec = _json.loads(Path(spec_path).read_text())
+                spec = _json.loads(Path(spec_path).read_text(encoding="utf-8"))
             except _json.JSONDecodeError:
                 spec = {}
 
