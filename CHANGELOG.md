@@ -103,11 +103,12 @@ and `SUPPORT.md`.
 ### Changed — recorded artifact fields and identity
 
 - Version 0.3.0 across `pyproject.toml`, `CITATION.cff`, `.zenodo.json` and
-  `codemeta.json`. The concept DOI is `10.5281/zenodo.PENDING` — deliberately
-  not a valid identifier — with `scripts/set_doi.py` to write the minted value
-  into every file at once. Recorded provenance is untouched: `benchmarks/**` and
-  the run manifests still say 0.2.2, because that is the code that produced
-  them.
+  `codemeta.json`. This release is deposited under a new Zenodo concept DOI;
+  until that deposit exists the repository ships a deliberately invalid
+  placeholder, so it cannot be published by accident, and `scripts/set_doi.py`
+  writes the minted value into every file that names one. Recorded provenance is
+  untouched: `benchmarks/**` and the run manifests still say 0.2.2, because that
+  is the code that produced them.
 - The Hugging Face Space now ships `benchmarks/`. `showcase.py` claimed it
   "deploys the full repository"; it does not, and the Real results page had been
   rendering nothing while the README promised twenty binders in 3-D.

@@ -45,6 +45,10 @@ FILES = (
     "tests/test_packaging_pins.py",
     "paper/biorxiv/manuscript.tex",
     "README.md",
+    # The CHANGELOG names the concept DOI in a historical entry describing the
+    # move to it. That statement becomes true once the identifier is real, and
+    # stays a placeholder forever if this file does not reach it.
+    "CHANGELOG.md",
 )
 
 _DOI = re.compile(r"^10\.\d{4,9}/[-._;()/:A-Za-z0-9]+$")
