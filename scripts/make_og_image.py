@@ -54,6 +54,36 @@ def _background() -> Image.Image:
     return img
 
 
+def _facts() -> list[tuple[str, str]]:
+    """Four tiles describing the tool, read from the committed study.
+
+    This card is served as ``og:image`` on every page of the documentation site,
+    so it is what appears whenever anyone shares a link. It used to carry
+    "40% — success @ ipTM 0.65", which the project's own scramble control
+    withdrew as a measure of design quality; an image cannot carry the
+    withdrawal beside it, so the figure travelled alone wherever the link went.
+
+    Nothing here is a performance claim. Each value states the scope of the
+    instrument, and each is read from ``benchmarks/study/results.json`` rather
+    than typed, so a re-scored study cannot leave the card behind.
+    """
+    import json
+
+    root = Path(__file__).resolve().parents[1]
+    summary = json.loads(
+        (root / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8")
+    )
+    cohorts = summary["specificity_null"]["n_cohorts"]
+    surfaceome = summary["surfaceome_size"]
+
+    return [
+        (f"{cohorts}", "TCGA cohorts"),
+        (f"{surfaceome:,}", "surfaceome accessions"),
+        ("PROV-O", "full provenance"),
+        ("AGPL-3.0", "open + citable"),
+    ]
+
+
 def _mark(size: int) -> Image.Image:
     """Render the bindsight mark: open antigen ring with a docked binder."""
     scale = 4
@@ -107,16 +137,29 @@ def main() -> int:
 
     draw.line([(80, 456), (W - 80, 456)], fill=(255, 255, 255, 60), width=2)
 
-    facts = [
-        ("CA9", "surfaced, rank 1 of 291"),
-        ("0.88", "best ipTM, free GPU"),
-        ("40%", "success @ ipTM 0.65"),
-        ("AGPL-3.0", "open + citable"),
+    facts = _facts()
+    # Lay the tiles out from their measured widths rather than on a fixed
+    # pitch. At 268 px the previous spacing fit the old one-word labels and
+    # silently overlapped as soon as a label described what the number meant.
+    value_font = _font(42, bold=True)
+    label_font = _font(21)
+    widths = [
+        max(draw.textlength(value, font=value_font), draw.textlength(label, font=label_font))
+        for value, label in facts
     ]
-    for i, (value, label) in enumerate(facts):
-        x = 80 + i * 268
-        draw.text((x, 492), value, font=_font(42, bold=True), fill=WHITE)
-        draw.text((x, 546), label, font=_font(21), fill=(160, 195, 232))
+    available = (W - 160) - sum(widths)
+    gap = available / (len(facts) - 1) if len(facts) > 1 else 0.0
+    if gap < 24:  # pragma: no cover - a guard against silently overlapping again
+        raise SystemExit(
+            f"tiles do not fit: they need {sum(widths):.0f} px of {W - 160} px, "
+            f"leaving {gap:.0f} px between columns. Shorten a label."
+        )
+
+    x = 80.0
+    for (value, label), width in zip(facts, widths, strict=True):
+        draw.text((x, 492), value, font=value_font, fill=WHITE)
+        draw.text((x, 546), label, font=label_font, fill=(160, 195, 232))
+        x += width + gap
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     img.save(OUT, "PNG", optimize=True)

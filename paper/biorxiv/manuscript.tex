@@ -51,10 +51,17 @@ assumes the user has already chosen the target. Bridging the two —
 and here is a designed binder candidate ranked by predicted affinity''} —
 is currently an ad-hoc, project-specific exercise. We present
 \textbf{\texttt{bindsight}}, an open-source command-line tool and web
-application that ingests RNA-seq counts and outputs ranked, structurally-
-validated \textit{de novo} protein-binder candidates with a complete
+application that ingests RNA-seq counts and outputs ranked,
+structure-scored \textit{de novo} protein-binder candidates with a complete
 PROV-O~/~RO-Crate audit trail back to the patient cohort the targets came
-from. Existing open binder-design workflows begin at a chosen target, and
+from. We write \emph{structure-scored} rather than \emph{validated}
+advisedly: a paired control distributed with the tool folds each design beside
+a shuffle of its own sequence, and on the committed ERBB2 run the shuffles
+cleared the customary ipTM 0.65 threshold more often than the designs
+(50\% against 30\%; paired difference $-0.043$, 95\% CI $-0.142$ to
+$+0.054$). The interface confidences are a triage order for wet-lab work, not
+evidence of binding; the contribution claimed here is the reproducible bridge
+and its provenance. Existing open binder-design workflows begin at a chosen target, and
 existing expression- or surfaceome-based target-discovery workflows end at a
 ranked gene list; to our knowledge \texttt{bindsight} is the first open-source
 tool to run both halves end-to-end and to carry machine-readable provenance

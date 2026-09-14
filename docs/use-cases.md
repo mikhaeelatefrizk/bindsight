@@ -41,8 +41,17 @@ bindsight export   runs/cohort_v01 --format ro-crate --out cohort_v01.crate.zip
 **Wall time:** ~30 min CPU + ~5–10 GPU-hours on Modal A100 (~$25–40), or
 several hours of free Colab.
 
-**Output:** Ranked binders with iPTM > 0.65 against the top-5 surface antigens
-in your cohort, every one traceable back to the patients it came from.
+**Output:** Ranked binder candidates against the top-5 surface antigens in your
+cohort, each carrying its Boltz-2 interface confidence and every one traceable
+back to the patients it came from.
+
+!!! warning "What the confidence does and does not tell you"
+    bindsight reports ipTM against the literature's 0.65 threshold so its runs
+    are comparable with published work. It does **not** claim that clearing 0.65
+    means a design binds: a paired control folding each design beside a shuffle
+    of its own sequence found the shuffles cleared it just as often. The ranking
+    is a triage order for wet-lab work, not a prediction of binding. See
+    [the calibration](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/calibration/README.md).
 
 ---
 

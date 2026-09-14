@@ -1503,3 +1503,48 @@ def test_the_prose_sweep_excludes_untracked_build_products() -> None:
     for path in PROSE_FILES:
         rel = path.relative_to(ROOT).as_posix()
         assert rel in tracked, f"{rel} is swept as public prose but git does not track it"
+
+
+def test_no_generated_image_bakes_in_a_withdrawn_figure() -> None:
+    """A figure rendered into a raster carries no caveat wherever it travels.
+
+    ``docs/assets/og-image.png`` is served as ``og:image`` on every page of the
+    documentation site, so it is what appears in every Slack unfurl, every
+    tweet, every link preview. It shipped "40% -- success @ ipTM 0.65" as one of
+    four headline facts while the scramble control had withdrawn that rate as a
+    measure of design quality, and no text could travel beside it to say so.
+
+    The prose guards cannot see this: they read Markdown. This one reads the
+    generator, which is where the strings actually live.
+    """
+    source = _read("scripts/make_og_image.py")
+
+    # The explanatory docstring is allowed to name what it removed; the tile
+    # data is not. Check the values the renderer actually draws.
+    tiles = re.search(r"def _facts\(\)(.*?)\n\ndef ", source, re.S)
+    assert tiles is not None, "make_og_image.py no longer defines _facts()"
+    body = tiles.group(1)
+    returned = body[body.index("return [") :] if "return [" in body else body
+
+    offenders = [m.group(0) for m in WITHDRAWN_BINDER_FIGURES.finditer(returned)]
+    assert not offenders, (
+        f"the social card renders withdrawn figures {offenders}; an image cannot "
+        "carry the withdrawal notice beside it"
+    )
+
+    for banned in ("success @", "success@", "ipTM 0.65", "iptm 0.65"):
+        assert banned not in returned, (
+            f"the social card renders {banned!r}, a metric this project withdrew "
+            "as a measure of design quality"
+        )
+
+
+def test_the_social_card_reads_its_numbers_from_the_artifacts() -> None:
+    """Typed numbers on a shared image are numbers that go stale invisibly."""
+    source = _read("scripts/make_og_image.py")
+    facts = source[source.index("def _facts()") :]
+
+    assert "results.json" in facts, (
+        "the social card should read its figures from the committed study rather "
+        "than carry literals that a re-scored run leaves behind"
+    )

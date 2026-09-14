@@ -82,6 +82,30 @@ controls the same claim would take. How much larger depends on how correlated
 shuffles of one sequence turn out to be, which this run will show and nothing
 here should guess.
 
+## The result
+
+Stated before the chronology, because the sections below move through three
+readings in the order they were taken, and a reader who stops early would leave
+with a number this document supersedes.
+
+**Under the final protocol — seeded, five diffusion draws per fold, a pinned
+`boltz==2.0.3` the run recorded for itself — the shuffles clear the 0.65 bar
+more often than the designs do: 50% against 30%.** The paired difference is
+**-0.043** (95% CI -0.142 to +0.054), with 9 of 20 designs beating their own
+shuffle where 10 is chance, and an exact sign-flip p of 0.40.
+
+`success@0.65` is therefore withdrawn as a measure of design quality. The ipTM
+values are real Boltz-2 outputs; what does not follow from them is that the rate
+measures the designs.
+
+Two earlier readings appear below and neither is current: the first paired run
+("the same rate, 40% and 40%" — unseeded, a single diffusion draw), and the
+headline that preceded it (a protocol that redesigned the target chain as well
+as the binder). They are kept because how the answer moved, and what moved it,
+is itself the evidence: the first run's apparent tie was an artifact of reading
+one draw from a stochastic model whose per-draw noise is 0.139 — more than three
+times the effect being measured.
+
 ## What happened: the first row of the table
 
 The first outcome, the one that invalidates the metric. Full numbers in

@@ -131,13 +131,20 @@ GLOSSARY: tuple[tuple[str, str], ...] = (
     (
         "Boltz-2",
         "An AI model that predicts the 3-D structure of the binder and target locked "
-        "together, so bindsight can judge whether a design would actually bind before "
-        "anyone runs a wet-lab experiment.",
+        "together, and reports how confident it is in that predicted interface. "
+        "Confidence is not a binding measurement: bindsight's own paired control "
+        "folded each design beside a shuffle of its own sequence, and the shuffles "
+        "scored as well. Treat these numbers as a filter to triage wet-lab work, "
+        "never as evidence that a design binds.",
     ),
     (
         "ipTM",
-        "A 0–1 score of how confident the structure model is that two proteins really "
-        "bind at their interface. Higher is better; roughly 0.65 and up is promising.",
+        "A 0–1 score of how confident the structure model is in the predicted "
+        "interface between two proteins. 0.65 is the threshold the de novo design "
+        "literature commonly uses, and bindsight reports against it for "
+        "comparability — but its own scramble control could not separate real "
+        "designs from shuffles of the same composition at that cutoff, so a value "
+        "above 0.65 is not on its own evidence of a binder. See the calibration.",
     ),
     (
         "PAE (interaction)",

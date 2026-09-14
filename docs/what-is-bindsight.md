@@ -178,8 +178,37 @@ cohort's definition refers to the antigen being sought. Recall at rank 20 is 1 o
 simply not significantly over-expressed in an unstratified bulk contrast, which
 is a limit of the signal rather than of the ranking, and the study says so.
 Reproducible artifacts are in `benchmarks/study/`.
-benchmark is GPU-only; a runnable, CPU-tested harness + protocol ship in
-`benchmarks/designer_benchmark/`.
+
+The discovery half also carries two null models, and they point in opposite
+directions. Against decoys matched on abundance and dispersion, no antigen in
+the panel is distinguishable once the panel is corrected for its own size — a
+negative result, and the study reports it as one. But the ranking *is*
+indication-specific: known antigens sit at mean standing 0.765 in the cancer
+they are actually used in, against 0.417 in cancers that are not theirs, a
+within-antigen difference of **0.348** (95% CI 0.188–0.513) with an exact
+permutation p at the design's floor of 3.97e-04. That is the strongest claim
+this project makes, and it is about the ordering, not about any single hit.
+
+### Validation (the design half — and what it does not show)
+
+The design half runs end-to-end on a free GPU and produces real Boltz-2
+structures. What it does **not** establish is that those designs bind.
+
+A paired control folded each design beside a shuffle of its own sequence —
+same length, same amino-acid composition, only the order destroyed. Under a
+seeded validator averaging five diffusion draws, the shuffles cleared the 0.65
+confidence bar **more** often than the designs: 50% against 30%, a paired
+difference of −0.043 (95% CI −0.142 to +0.054), with 9 of 20 designs beating
+their own shuffle where 10 is chance. `success@0.65` is therefore withdrawn as a
+measure of design quality, and this page will not quote it as one. The full
+control, including the predictions written down before the data arrived, is in
+[`benchmarks/calibration/`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/calibration/README.md).
+
+The three-way designer benchmark that would compare RFdiffusion+ProteinMPNN
+against BindCraft and BoltzGen is GPU-only and not yet run: both alternatives
+need 24–32 GB against anything larger than a small domain, and no shipped
+backend builds an environment where they run. A runnable, CPU-tested harness and
+protocol ship in `benchmarks/designer_benchmark/`.
 
 ### v1.0
 
