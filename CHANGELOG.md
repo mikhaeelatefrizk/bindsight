@@ -8,6 +8,147 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed — a 130-finding audit, and a CI gate that was already red
+
+A twelve-dimension sweep of the repository, every finding verified against the
+files before it was acted on, returned 130 confirmed defects. Two were not the
+low-severity items the sweep was looking for.
+
+**`mypy bindsight` was failing, and eight of its ten errors had been introduced
+by the two commits before this one.** The step is blocking in CI; the habit that
+let it rot was running `ruff` before committing and not `mypy`. It now also
+covers `scripts/`, which is where the bug its own CI comment cites — "the arity
+bug that left the Snakemake front-end dead for five weeks" — actually lived. The
+ten errors blocking that widening are fixed, including declaring the
+Snakemake-injected global rather than self-assigning it.
+
+**Five surfaces published the first calibration run as the current result.** The
+root README, ARCHITECTURE, two benchmark guides and the live Streamlit UI all
+said designs and their own shuffles cleared ipTM 0.65 "at the same rate (40% and
+40%, paired difference +0.030, exact sign-flip p = 0.57)". That run used an
+unseeded validator at one diffusion draw and was declared superseded here months
+ago. The seeded re-run at five draws — the committed artifact — measures the
+shuffles **ahead**: 50% of shuffles clear 0.65 against 30% of designs, a paired
+difference of −0.043 (95% CI −0.142 to +0.054, p = 0.404), with 9 of 20 designs
+beating their own shuffle where 10 is chance. Five further surfaces said "at the
+same rate" in softer words. The sign of a published comparison was inverted on
+the first thing a reader meets.
+
+The guard that should have caught it read two files by name. It now sweeps
+`.md`, `.tex` **and** `.py` — the UI copy was in Python, where no documentation
+sweep would ever have looked — checks the claim as well as the figures, and
+permits the old numbers only in the two files that explicitly frame them as the
+first run.
+
+### Fixed — configured parameters that never reached the work
+
+`bindsight design` on the **default** backend (`colab`) built its spec with the
+plugin's own defaults, so a run configured with `seed: 42` shipped a notebook
+designing at seed 0 and a manifest recording 0 as though it had been asked for.
+The Snakemake front-end never wrote `<run>/config.yaml` at all — the only channel
+by which the seed, the binder-length bounds and every validate threshold reach
+the design half. The DEG cache key omitted pydeseq2's version, so an upgraded
+library was served the previous library's table under the new version's name.
+
+### Fixed — provenance that described things it did not have
+
+`OutputRef.path` says "Path relative to the run root"; the writer stored
+`str(path)`, producing `runs\join\deg\results.parquet` — relative to the
+repository, in the launching platform's separators. `record()` had no `inputs`
+parameter, so every stage the CLI recorded carried an empty `prov:used`: a
+provenance graph with no incoming edges cannot answer "what produced this".
+`bindsight export` hashed the crate and wrote that hash into a manifest sealed
+*inside* it. The RO-Crate keyed its digest map by basename while its own
+docstring said "run-relative artifact path", so two files named `metrics.jsonl`
+merged into one entry. `software.bib` credited bindsight's wrappers, under
+bindsight's AGPL, for work done by BSD-3 RFdiffusion, MIT ProteinMPNN and MIT
+Boltz-2. The fragment reader rewrote any status it did not recognise to
+**completed** — a stage that failed in an unfamiliar way was recorded as having
+succeeded. `SCIENTIFIC_STACK` had fallen six pins behind, including `formulaic`,
+pydeseq2's design-matrix engine, whose release can move a log2 fold change on its
+own.
+
+### Fixed — what the report told a reader
+
+The "candidate targets" KPI counted the length of its own 20-row display table,
+so the committed run published **20** where the truth is **291**. "How to read
+this report" described a candidate ordering the pipeline had abandoned. The
+epitope legend omitted `surface_bind_lookup_failed`, leaving a lookup that
+errored to read as a measured absence of a targetable site. A candidates table
+that could not be read was reported as "No candidates survived the filters.
+Loosen thresholds" — a scientific conclusion drawn from a table nobody read. The
+volcano plot text-labelled every significant gene, which on a real cohort is
+~4,400 overlapping annotations. The web app published a rate with no n, a mean
+over an unstated subset, and four outcome counters over an unnamed denominator.
+
+### Fixed — packaging: commands that only worked from a source checkout
+
+`bindsight ui` launched a root-level `streamlit_app.py` the wheel never ships,
+while its sibling `report --format streamlit` already imported the packaged
+module — one file held both the right and the wrong way to find the same app.
+`bindsight demo` could not find its config from a pip install. The CPU image's
+header promised the Snakemake front-end and its install line omitted the extra
+that provides it. The public demo Space's image was neither digest-pinned nor in
+scope of the container guards, because those read one hard-coded path. The Space
+runs Python 3.13, which the classifiers did not claim and the CI matrix did not
+test; all three now agree.
+
+### Fixed — guards whose scope was typed by hand
+
+The pattern behind most of these findings. The import smoke test read a list of
+53 names against a package of 78 modules, so 25 were unchecked — including
+`bindsight.plugins`, the entry-point loader every backend goes through. The
+withdrawn-headline guard omitted the bioRxiv manuscript its own docstring names
+as one of the six affected surfaces. `BINDER_FIGURE_DOCS` had gone stale by five
+documents. The container checks read one Dockerfile. The "no dead dependencies"
+test grepped for three historically-removed names and said nothing about the
+dozens declared now. Each is replaced by discovery — globbing, AST parsing, or
+introspection of the registry — or, where per-document semantics forbid that,
+kept as a list with a sweep that fails when the list goes stale.
+
+### Changed — recorded artifact fields
+
+Re-scoring is required for these; `python benchmarks/run_study.py --score-only`
+regenerates the study without refetching or re-running DESeq2.
+
+- `base_mean_decile` / `dispersion_decile` are now `base_mean_stratum` /
+  `dispersion_stratum`. `_DECOY_STRATA_BINS` is 5, so the labels 0–4 are
+  quintiles; the old names told a reader the decoy matching was ten times finer
+  than it is.
+- Manifest artifact paths are recorded relative to the run root, in POSIX form.
+- The `export` stage records the crate as a parameter rather than a digested
+  output, because a file cannot contain its own hash. The digest belongs in the
+  `SHA256SUMS` published beside the deposit.
+- The `discover` stage records `surfaceome_source`: which surfaceome list the run
+  resolved. The choice between a user cache and the vendored list was made
+  silently, so two runs could use different lists — different eligible
+  denominators, different counterfactual ranks — with nothing saying which.
+- The designer benchmark summary records its `seed`. An older artifact renders as
+  "Seed: **unrecorded**" rather than as 0, which is a real and different run.
+- The published `rank` now comes from a stable sort, so tied composite scores keep
+  their input order instead of numpy's introsort internals.
+
+### Notes
+
+The suite grew from 1,321 to 1,619 collected tests; 1,610 pass and 9 skip (5 of
+them the Snakemake DAG tests, which need a `snakemake` that will not build on
+Python 3.14 — they run in CI). `ruff` and `mypy` are clean across `bindsight`
+and `scripts`.
+
+Every fix was mutation-tested: the defect reintroduced, the guard confirmed to
+fail, the tree restored. Eight mutations did not catch their defect on the first
+attempt, and each exposed a guard that was decoration — a test asserting a string
+appears in the source rather than driving the behaviour, a tie-ordering test
+whose all-equal fixture no sort would ever reorder, a prose check that accepted
+any interval where three were required, and one case where the prose claimed
+"checked by tests" before that test had been written.
+
+Three of the sweep's own claims were refuted on inspection and are recorded here
+because a refuted finding is also a result: the vendored surfaceome and the
+report templates **do** ship in the wheel; only two documents state the measured
+VRAM peak, not three; and `study.py`'s duplicate-gene handling is sound across
+all five committed cohorts.
+
 ### Fixed — the specificity null compared the observation against a null that excluded it
 
 The panel-level p-value was not a tail probability of the observed statistic
