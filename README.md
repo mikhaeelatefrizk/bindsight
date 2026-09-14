@@ -379,7 +379,7 @@ researcher.
 
 ## License
 
-- **Code:** [GNU AGPL-3.0-or-later](LICENSE). You may use, study, modify, and
+- **Code:** [GNU AGPL-3.0-or-later](LICENSE) — copyright notice in [COPYRIGHT](COPYRIGHT). You may use, study, modify, and
   redistribute bindsight freely; if you distribute a modified version **or run it as
   a network service**, you must make your source available under the same licence,
   with attribution preserved. See [LICENSING.md](LICENSING.md) for component-level

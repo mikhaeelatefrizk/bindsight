@@ -12,7 +12,7 @@ description = "A reproducible bridge from RNA-seq to de novo protein binder desi
 readme = "README.md"
 requires-python = ">=3.11"
 license = "AGPL-3.0-or-later"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "COPYRIGHT"]
 keywords = [
     "protein-design",
     "bioinformatics",

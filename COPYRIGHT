@@ -1,0 +1,24 @@
+bindsight — a reproducible bridge from RNA-seq to de novo protein binder design
+
+Copyright (C) 2026 Mikhaeel Atef Rizk Wahba <mikhaeelatefrizk@proton.me>
+ORCID: https://orcid.org/0009-0006-1069-9558
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+The full licence text is in LICENSE, which holds the verbatim AGPL-3.0 and
+nothing else so that automated licence detection resolves it correctly.
+
+Per-file copyright and licence are also declared as SPDX headers throughout the
+source tree. Component-level terms — bindsight orchestrates external tools that
+keep their own licences, some with non-commercial restrictions — are inventoried
+in LICENSING.md, which is the source of truth for commercial use.
