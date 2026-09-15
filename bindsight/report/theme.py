@@ -64,7 +64,27 @@ HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
 # The concept DOI, which always resolves to the latest release; a version DOI
 # would pin readers to whichever release happened to be current when this was
 # written.
-ZENODO_DOI_URL = "https://doi.org/10.5281/zenodo.PENDING"
+ZENODO_DOI = "10.5281/zenodo.PENDING"
+ZENODO_DOI_URL = f"https://doi.org/{ZENODO_DOI}"
+
+#: Whether the DOI above is still the shipped placeholder. The repository ships
+#: a deliberately invalid identifier until the first Zenodo deposit, and
+#: ``scripts/set_doi.py`` replaces it -- but the app rendered it as a live link
+#: behind a button labelled "Cite", so the one thing a reader is most likely to
+#: click during a demonstration resolved to a 404.
+DOI_IS_PENDING = ZENODO_DOI.endswith("PENDING")
+
+
+def citation_line() -> str:
+    """How to cite, or an honest statement that the DOI does not exist yet."""
+    if DOI_IS_PENDING:
+        return (
+            "DOI pending — assigned at the first Zenodo deposit. "
+            "Cite the repository and its version in the meantime."
+        )
+    return f"[{ZENODO_DOI}]({ZENODO_DOI_URL})"
+
+
 LICENSE_NAME = "AGPL-3.0-or-later"
 
 

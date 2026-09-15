@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time as _time
 from pathlib import Path
 from typing import Any
 
@@ -96,6 +97,13 @@ class TargetEvidence(BaseModel):
     top_disease_associations: list[dict[str, Any]] = Field(default_factory=list)
 
 
+#: How long an Open Targets response may be reused. Their releases are roughly
+#: quarterly and move association scores, which move the ranking; an entry older
+#: than this describes a different release from the one a run claims to have
+#: used. Refetching costs one request against a cache that is otherwise warm.
+CACHE_MAX_AGE_DAYS = 30
+
+
 class OpenTargetsClient:
     """Cached, retrying GraphQL client for Open Targets."""
 
@@ -115,7 +123,28 @@ class OpenTargetsClient:
         )
 
     def _cache_key(self, query: str, variables: dict[str, Any]) -> Path:
-        sig = hashlib.sha256((query + json.dumps(variables, sort_keys=True)).encode()).hexdigest()
+        """Where a response is cached.
+
+        The endpoint is part of the key, and the file records when it was
+        fetched. Neither was true before: the key was a hash of the query text
+        and variables alone, and a hit was returned unconditionally however old
+        it was and whichever endpoint produced it. So a warm cache from an
+        earlier Open Targets release supplied that release's association scores
+        to today's run while the provenance recorded today's date -- two
+        machines, the same command, different candidate rankings, and nothing in
+        either manifest saying which.
+
+        The repository already accepted exactly this reasoning for the
+        surfaceome (``tests/test_silent_success.py`` -- "two runs on two machines
+        could use different surfaceome lists ... and nothing in either manifest
+        would say which"). Open Targets is a larger input to the ranking than
+        the surfaceome is.
+        """
+        payload = json.dumps(
+            {"endpoint": self.endpoint, "query": query, "variables": variables},
+            sort_keys=True,
+        )
+        sig = hashlib.sha256(payload.encode()).hexdigest()
         return self.cache / f"{sig}.json"
 
     @retry(
@@ -138,13 +167,39 @@ class OpenTargetsClient:
         return data
 
     def query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
-        """Execute a raw GraphQL query, with on-disk caching by query hash."""
+        """Execute a raw GraphQL query, with on-disk caching.
+
+        A cached entry older than :data:`CACHE_MAX_AGE_DAYS` is refetched. The
+        cache used to have no expiry at all, so a response fetched months ago
+        was served to a run whose provenance stamped today -- the run was
+        reproducible against that machine's disk and against nothing else.
+        """
         key = self._cache_key(query, variables)
         if key.exists():
-            cached: dict[str, Any] = json.loads(key.read_text(encoding="utf-8"))
-            return cached
+            try:
+                envelope = json.loads(key.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                envelope = None
+            if isinstance(envelope, dict) and "fetched_at" in envelope:
+                age = _time.time() - float(envelope.get("fetched_at") or 0)
+                if age <= CACHE_MAX_AGE_DAYS * 86400:
+                    cached: dict[str, Any] = envelope.get("data") or {}
+                    return cached
+                LOG.info(
+                    "Open Targets cache entry is %.0f days old; refetching",
+                    age / 86400,
+                )
+            else:
+                # An entry from before the cache recorded its age. Its release
+                # is unknown, so it cannot be trusted to describe today's run.
+                LOG.info("Open Targets cache entry predates age recording; refetching")
+
         data = self._post(query, variables)
-        key.write_text(json.dumps(data), encoding="utf-8", newline="\n")
+        key.write_text(
+            json.dumps({"fetched_at": _time.time(), "endpoint": self.endpoint, "data": data}),
+            encoding="utf-8",
+            newline="\n",
+        )
         return data
 
     def get_target(self, ensembl_id: str) -> TargetEvidence | None:

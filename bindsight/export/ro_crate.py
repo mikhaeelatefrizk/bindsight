@@ -104,6 +104,10 @@ _PIPELINE_FILES = (
     "taxonomy/failure_taxonomy.parquet",
     "design/results.tar.gz",
     "design/metrics.jsonl",
+    # Whether the ESM-2 pre-screen actually applied. It fails open, so a run
+    # whose embedding died carries every design under a cache key that says it
+    # kept the top k; this file is the only thing that distinguishes the two.
+    "design/prescreen.txt",
     "validate/validated.parquet",
     "rank/ranking.parquet",
     "report.html",

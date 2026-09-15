@@ -42,14 +42,39 @@ from bindsight.provenance.fragments import artifact_ref
 
 LOG = logging.getLogger(__name__)
 
-# Backends that execute the design+validation job headlessly (vs. `colab`, which
-# only generates a notebook the user runs by hand).
-_HEADLESS_BACKENDS = {"mock", "local_docker", "modal", "kaggle"}
+# Backends that execute the design+validation job headlessly, derived from the
+# runner registry rather than copied from it. `colab` only generates a notebook
+# a human runs by hand, so it is the exception and is named as one: a newly
+# registered runner is headless unless it says otherwise.
+#
+# Copied, these silently stopped covering anything new. A backend absent from
+# the set was treated as non-headless and, worse, `_remote_container_backends()`
+# governs whether a local `docker image inspect` is attempted — so a new remote
+# backend had an inspect run against an image that is not on this machine, took
+# the warning path, and completed green with **no container digest in the
+# manifest**.
+_INTERACTIVE_BACKENDS = frozenset({"colab"})
 
-# Backends whose GPU half runs in a container the orchestrator cannot inspect
-# from here (the image lives on Modal / Kaggle, not on this machine), so no
-# digest can be recorded for them.
-_REMOTE_CONTAINER_BACKENDS = {"modal", "kaggle"}
+
+def _all_backends() -> frozenset[str]:
+    from bindsight import plugins
+
+    return frozenset(plugins._FALLBACK["bindsight.runners"])
+
+
+def _headless_backends() -> frozenset[str]:
+    return _all_backends() - _INTERACTIVE_BACKENDS
+
+
+#: Backends whose GPU half runs in a container this machine cannot inspect: the
+#: image lives on the provider, so no digest can be read locally. Derived as
+#: "remote" — anything that is neither interactive nor executed on this host.
+_LOCAL_BACKENDS = frozenset({"mock", "local_docker"})
+
+
+def _remote_container_backends() -> frozenset[str]:
+    return _headless_backends() - _LOCAL_BACKENDS
+
 
 _REPO_URL = "https://github.com/mikhaeelatefrizk/bindsight"
 
@@ -129,7 +154,7 @@ def _container_ref(backend: str) -> ContainerRef | None:
     it carries no repository digest). A manifest must not claim an image
     identity it could not verify, and a tag is not one.
     """
-    if backend in _REMOTE_CONTAINER_BACKENDS:
+    if backend in _remote_container_backends():
         LOG.info("backend %s runs its container remotely; no local digest to record", backend)
         return None
     if backend != "local_docker":
@@ -207,7 +232,7 @@ def run(
         design_stage.mark_skipped("design skipped by request")
     elif not discover_ok:
         design_stage.mark_skipped("discovery did not complete; nothing to design against")
-    elif config.backend not in _HEADLESS_BACKENDS:
+    elif config.backend not in _headless_backends():
         design_stage.mark_skipped(
             f"backend {config.backend!r} is not headless; run the GPU half by hand"
         )

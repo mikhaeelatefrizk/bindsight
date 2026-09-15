@@ -350,6 +350,20 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
 #: ``mode`` is here because a validate-only job runs no designer at all.
 _RESULT_AFFECTING_PARAMS = (
     "validator",
+    # ``designer`` selects which designer executes -- ``job_exec`` reads it
+    # straight out of ``extra_params`` -- and was not in this tuple. Two jobs
+    # differing only in it shared a key. That they happened not to collide was
+    # incidental: the three adapters pass distinct pinned commits through
+    # ``extra=``, so the keys differed for a reason unrelated to the field that
+    # chose the tool. ``designer_version`` was absent too, and nothing else
+    # carries it, so bumping a designer's version without bumping its pinned
+    # commit produced an identical key and recorded the new version against the
+    # old cached numbers.
+    #
+    # The docstring below already narrates this exact failure happening once,
+    # for ``validator``.
+    "designer",
+    "designer_version",
     "prescreen_top_k",
     "diffusion_samples",
     "max_parallel_samples",

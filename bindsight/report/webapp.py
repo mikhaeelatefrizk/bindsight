@@ -1240,7 +1240,7 @@ def _page_about() -> None:
 
         **License:** {theme.LICENSE_NAME} ·
         **Source:** [GitHub]({theme.GITHUB_URL}) ·
-        **Cite:** [Zenodo DOI]({theme.ZENODO_DOI_URL})
+        **Cite:** {theme.citation_line()}
 
         **Docs:** [What is bindsight?]({theme.docs_url("what-is-bindsight")}) ·
         [How to use]({theme.docs_url("how-to-use")}) ·

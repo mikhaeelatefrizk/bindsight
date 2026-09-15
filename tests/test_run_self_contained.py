@@ -335,3 +335,81 @@ def test_both_path_consumers_normalise_through_one_function() -> None:
     sep = chr(92)
     assert ro_crate._posix_key(sep.join(["a", "b", "c.txt"])) == "a/b/c.txt"
     assert ro_crate._posix_key("a/b/c.txt") == "a/b/c.txt"
+
+
+def test_every_recorded_output_reaches_the_deposit(tmp_path) -> None:
+    """A file the manifest says the run produced must be in the crate.
+
+    ``_PIPELINE_FILES`` is an allowlist -- a tuple of names that alone decides
+    what the deposited archive contains -- and ``grep -rn _PIPELINE_FILES
+    tests/`` returned nothing. No test, no sweep, no discovery. A new stage's
+    artifact would be dropped from every future deposit and nothing would go red.
+
+    Two consequences were already visible when this was written: ``config.yaml``
+    shipped in the crate while being registered as no ``OutputRef``, so it
+    carried no digest; and ``prescreen.txt`` -- the only record of whether the
+    ESM-2 screen actually applied -- was in neither the files nor the trees, and
+    was in fact discarded on the GPU host before the tarball was even built.
+
+    So the property is stated the way it matters: whatever the manifest claims
+    the run produced, the archive must carry.
+    """
+    run, _ = _make_run_with_structure(tmp_path)
+
+    recorded = {
+        "deg/results.parquet": "deg",
+        "targets/candidates.parquet": "discover",
+        "taxonomy/failure_taxonomy.parquet": "discover",
+        "config.yaml": "discover",
+    }
+    manifest = {
+        "run_id": "r",
+        "name": "t",
+        "stages": [
+            {
+                "name": stage,
+                "outputs": [{"path": rel, "sha256": "d" * 64}],
+            }
+            for rel, stage in recorded.items()
+        ],
+    }
+    (run / "run_manifest.jsonld").write_text(json.dumps(manifest), encoding="utf-8", newline="\n")
+
+    crate = export_ro_crate(run, tmp_path / "out.crate.zip")
+    with zipfile.ZipFile(crate) as zf:
+        packed = set(zf.namelist())
+
+    missing = sorted(rel for rel in recorded if rel not in packed)
+
+    assert not missing, (
+        f"the manifest records these outputs but the crate does not carry them: "
+        f"{missing}. _PIPELINE_FILES decides what is deposited and does not "
+        "cover them."
+    )
+
+
+def test_the_deposit_allowlist_is_not_silently_narrowed(tmp_path) -> None:
+    """Guards the guard: shrinking the allowlist must fail something.
+
+    The test above only notices a file it names. This one asserts the list still
+    covers the artifacts a discovery run produces, so removing an entry cannot
+    pass unnoticed just because no test happened to mention it.
+    """
+    from bindsight.export.ro_crate import _PIPELINE_FILES, _PIPELINE_TREES
+
+    required = {
+        "config.yaml",
+        "run_manifest.jsonld",
+        "deg/results.parquet",
+        "targets/candidates.parquet",
+        "design/metrics.jsonl",
+        "design/prescreen.txt",
+    }
+    covered = set(_PIPELINE_FILES)
+    still_missing = sorted(
+        rel
+        for rel in required
+        if rel not in covered and not any(rel.startswith(f"{t}/") for t in _PIPELINE_TREES)
+    )
+
+    assert not still_missing, f"these artifacts are no longer deposited: {still_missing}"

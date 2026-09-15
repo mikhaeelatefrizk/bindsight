@@ -90,7 +90,61 @@ RETRACTION_WORDS = (
 # --- The documents ------------------------------------------------------------
 
 PROSE_SUFFIXES = frozenset({".md", ".tex", ".bib", ".cff"})
-NAMED_PROSE = ("README.md", "SECURITY.md", "CITATION.cff", ".huggingface/README.md")
+
+
+@functools.lru_cache(maxsize=1)
+def _tracked_files() -> frozenset[str] | None:
+    """Every path git tracks, as repo-relative POSIX strings.
+
+    ``PROSE_TREES`` includes ``benchmarks``, which is also where the GPU runs
+    land their build products. Those are gitignored, so they exist on the
+    machine that produced them and nowhere else — and a sweep that rglobs the
+    tree cannot tell the difference. That is how
+    ``benchmarks/designer_benchmark/run_t4/RESULTS.md`` entered a hand-written
+    list of public documents and took three tests red on every fresh clone
+    while passing here.
+
+    Returns ``None`` when git cannot answer, in which case the callers fall
+    back to the old behaviour rather than silently sweeping nothing.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "-z"],
+            capture_output=True,
+            check=True,
+            timeout=60,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return frozenset(part.decode("utf-8") for part in out.split(b"\0") if part)
+
+
+def _root_documents() -> tuple[str, ...]:
+    """Every tracked Markdown file at the repository root, plus the named few.
+
+    ``NAMED_PROSE`` listed four paths and ``PROSE_TREES`` covered ``docs``,
+    ``paper`` and ``benchmarks`` -- so root-level ``ARCHITECTURE.md`` (31 KB),
+    ``CONTRIBUTING.md``, ``LICENSING.md``, ``SUPPORT.md`` and
+    ``CODE_OF_CONDUCT.md`` were in no tree and in no list. The retraction-word,
+    novelty-hedge and licence sweeps never read them. ``ARCHITECTURE.md`` was
+    reached only by two *other* narrowly-scoped lists, which is what disguised
+    the gap.
+    """
+    tracked = _tracked_files()
+    roots = sorted(
+        path.name
+        for path in ROOT.glob("*.md")
+        if path.is_file() and (tracked is None or path.name in tracked)
+    )
+    extra = ("SECURITY.md", "CITATION.cff", ".huggingface/README.md")
+    seen: list[str] = []
+    for rel in [*roots, *extra]:
+        if rel not in seen and (ROOT / rel).is_file():
+            seen.append(rel)
+    return tuple(seen)
+
+
+NAMED_PROSE = _root_documents()
 PROSE_TREES = ("docs", "paper", "benchmarks")
 
 # One bibliography serves both manuscripts; manuscript.tex reaches it via
@@ -143,33 +197,6 @@ BINDER_FIGURE_DOCS = (
     "docs/positioning.md",
     "paper/README.md",
 )
-
-
-@functools.lru_cache(maxsize=1)
-def _tracked_files() -> frozenset[str] | None:
-    """Every path git tracks, as repo-relative POSIX strings.
-
-    ``PROSE_TREES`` includes ``benchmarks``, which is also where the GPU runs
-    land their build products. Those are gitignored, so they exist on the
-    machine that produced them and nowhere else — and a sweep that rglobs the
-    tree cannot tell the difference. That is how
-    ``benchmarks/designer_benchmark/run_t4/RESULTS.md`` entered a hand-written
-    list of public documents and took three tests red on every fresh clone
-    while passing here.
-
-    Returns ``None`` when git cannot answer, in which case the callers fall
-    back to the old behaviour rather than silently sweeping nothing.
-    """
-    try:
-        out = subprocess.run(
-            ["git", "-C", str(ROOT), "ls-files", "-z"],
-            capture_output=True,
-            check=True,
-            timeout=60,
-        ).stdout
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return frozenset(part.decode("utf-8") for part in out.split(b"\0") if part)
 
 
 def _is_public(path: Path) -> bool:
@@ -1082,6 +1109,12 @@ def _calibration_surfaces() -> list[Path]:
     # ``tests`` is excluded because this module necessarily contains the
     # forbidden strings in order to forbid them; no test file is a surface a
     # reader of the project's results ever meets.
+    # Trackedness, not a skip list. The list missed ``venv/``, ``env/``,
+    # ``build/``, ``dist/`` and the ``.*_cache/`` directories, so a contributor
+    # whose virtualenv is named ``venv`` had this sweep walk site-packages. The
+    # prose sweep in this same file already routes through ``_is_public`` for
+    # exactly this reason, and its docstring explains why; the lesson was
+    # applied to one sweep and not this one.
     skip = (".git", "site", "runs", "node_modules", "__pycache__", ".venv", "tests")
     out: list[Path] = []
     for path in ROOT.rglob("*"):

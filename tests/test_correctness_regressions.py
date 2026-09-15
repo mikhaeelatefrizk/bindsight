@@ -2079,3 +2079,99 @@ class TestTwoSitesOfOneTargetDoNotCollide:
         assert (
             _target_artifact_stem({"uniprot": "P04626", "residues": [], "chain": "A"}) == "P04626"
         )
+
+
+def test_every_extra_param_the_executor_reads_is_in_the_key() -> None:
+    """The reverse direction, which nothing checked.
+
+    ``test_the_result_affecting_params_are_all_documented`` asserts every name
+    in ``_RESULT_AFFECTING_PARAMS`` appears in ARCHITECTURE -- list to document.
+    Nothing asserted document to list, or executor to list, so a field
+    ``job_exec`` reads to decide what runs could be absent from the key
+    entirely. ``designer`` was: it selects which designer executes, and two jobs
+    differing only in it shared a cache entry. They did not collide in practice
+    only because the adapters pass distinct pinned commits through a different
+    field.
+
+    This sweeps the executor for what it actually reads out of
+    ``extra_params`` and requires each to be in the key or explicitly excused.
+    """
+    import ast
+
+    from bindsight.design._common import _RESULT_AFFECTING_PARAMS
+
+    repo = Path(__file__).resolve().parents[1]
+    source = (repo / "bindsight" / "runners" / "job_exec.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+
+    read: set[str] = set()
+    for node in ast.walk(tree):
+        # `spec.get("extra_params", {}).get("<name>")` and `extra["<name>"]`
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)
+        ):
+            inner = node.func.value
+            if (
+                isinstance(inner, ast.Call)
+                and isinstance(inner.func, ast.Attribute)
+                and inner.func.attr == "get"
+                and inner.args
+                and isinstance(inner.args[0], ast.Constant)
+                and inner.args[0].value == "extra_params"
+            ):
+                read.add(node.args[0].value)
+
+    #: Read by the executor but deliberately outside the key, each with a reason.
+    excused = {
+        # Where the work runs is folded in separately, after the hash.
+        "backend",
+        # Bookkeeping, not an input. `_common.py` adds it *after* the key is
+        # computed so the key depends on the work rather than on the filename,
+        # and the structure's *content* is already hashed into the key. The
+        # reason is stated there; it is repeated here so this exclusion is a
+        # decision rather than an omission.
+        "target_structure_name",
+    }
+
+    missing = sorted(read - set(_RESULT_AFFECTING_PARAMS) - excused)
+
+    assert not missing, (
+        f"the executor reads these from extra_params to decide what runs, and "
+        f"they are not in the cache key: {missing}. Two jobs differing only in "
+        "one of them would share a cache entry."
+    )
+    assert read, "the sweep found no extra_params reads at all; it is not working"
+
+
+def test_the_backend_sets_cover_every_registered_runner() -> None:
+    """A newly registered runner must not fall out of the orchestrator's sets.
+
+    ``_HEADLESS_BACKENDS`` and ``_REMOTE_CONTAINER_BACKENDS`` were hand-copied
+    from the runner registry and appeared in no test. A backend absent from the
+    first was treated as non-headless; absent from the second, a local
+    ``docker image inspect`` was attempted against an image that lives on the
+    provider, took the warning path, and the run completed green with **no
+    container digest in the manifest**.
+
+    They are derived now, and this asserts the partition stays total.
+    """
+    from bindsight import plugins
+    from bindsight.pipelines.full_run import (
+        _INTERACTIVE_BACKENDS,
+        _headless_backends,
+        _remote_container_backends,
+    )
+
+    registered = set(plugins._FALLBACK["bindsight.runners"])
+    covered = set(_headless_backends()) | set(_INTERACTIVE_BACKENDS)
+
+    assert registered == covered, (
+        f"registered runners and the orchestrator's classification disagree: "
+        f"{sorted(registered ^ covered)}"
+    )
+    assert set(_remote_container_backends()) <= set(_headless_backends())

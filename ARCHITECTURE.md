@@ -172,9 +172,17 @@ over the work itself:
 ```
 sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
        ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed
-       ‖ validator ‖ prescreen_top_k ‖ diffusion_samples ‖ max_parallel_samples
-       ‖ mode ‖ designer_commits)
+       ‖ validator ‖ designer ‖ designer_version ‖ prescreen_top_k
+       ‖ diffusion_samples ‖ max_parallel_samples ‖ mode ‖ designer_commits)
 ```
+
+`designer` and `designer_version` were missing from this list. `job_exec` reads
+`designer` straight out of `extra_params` to choose which tool executes, so two
+jobs differing only in it shared a key; that they did not actually collide was
+incidental, resting on the three adapters passing distinct pinned commits
+through `designer_commits`. Nothing carried `designer_version` at all, so
+bumping a designer's version without bumping its pinned commit produced an
+identical key and recorded the new version against the old cached numbers.
 
 then folded with where the work will run, which code will run there, and any
 binders shipped with the job:

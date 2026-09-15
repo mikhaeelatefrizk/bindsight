@@ -52,6 +52,18 @@ class Design:
     pdb_path: Path
 
 
+#: Wall clock for one external tool invocation, in seconds. Six hours is longer
+#: than any single RFdiffusion / ProteinMPNN / Boltz-2 step this project has
+#: measured, and shorter than a free Kaggle session -- so it bounds a hang
+#: without cutting real work short. It exists because this is the one seam
+#: through which those tools run on rented or quota-limited hardware, and it had
+#: no timeout at all: a tool that stopped making progress burned the entire
+#: session with nothing to stop it and nothing in the log to say so.
+#:
+#: Override with ``BINDSIGHT_TOOL_TIMEOUT`` for a genuinely longer job.
+_TOOL_TIMEOUT_S = float(os.environ.get("BINDSIGHT_TOOL_TIMEOUT", 6 * 60 * 60))
+
+
 def _run(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     """Run a subprocess, capturing output; raise on non-zero exit.
 
@@ -59,7 +71,21 @@ def _run(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProc
     output-assembly logic is exercised without a GPU.
     """
     LOG.info("exec: %s", " ".join(cmd))
-    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_TOOL_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired as exc:
+        LOG.error("command exceeded %.0f s and was killed: %s", _TOOL_TIMEOUT_S, " ".join(cmd))
+        raise RuntimeError(
+            f"{cmd[0]} exceeded the {_TOOL_TIMEOUT_S:.0f}s tool timeout and was killed. "
+            "Raise BINDSIGHT_TOOL_TIMEOUT if the job genuinely needs longer."
+        ) from exc
     if proc.returncode != 0:
         LOG.error(
             "command failed (%d): %s\n%s", proc.returncode, " ".join(cmd), proc.stderr[-2000:]
@@ -972,17 +998,28 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
         designs, prescreen_note = _apply_prescreen(spec, designs)
 
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
-    if prescreen_note:
-        (work_dir / "prescreen.txt").write_text(
-            prescreen_note + "\n", encoding="utf-8", newline="\n"
-        )
+    # Written unconditionally. A missing file used to mean either "the screen
+    # ran and had nothing to report" or "the screen was never reached", and a
+    # reader could not tell which.
+    (work_dir / "prescreen.txt").write_text(
+        (prescreen_note or "pre-screen not requested (no prescreen_top_k)") + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
     tools.write_metrics_jsonl(metrics, work_dir / "metrics.jsonl")
 
     out_tar = Path(tarball) if tarball else work_dir.with_suffix(".tar.gz")
     out_tar.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(out_tar, "w:gz", encoding="utf-8") as tf:
-        for sub in ("design", "validate", "metrics.jsonl"):
+        # ``prescreen.txt`` is in this list because it is the only record that
+        # the ESM-2 screen did not run. The screen fails open by design -- losing
+        # an already-successful GPU run would be worse -- but ``prescreen_top_k``
+        # is part of the cache key, so a job whose embedding died is cached under
+        # a key asserting it kept the top k, and the next run with a working
+        # embedder is served the unscreened set. Without this file leaving the
+        # host, nothing anywhere said which of the two happened.
+        for sub in ("design", "validate", "metrics.jsonl", "prescreen.txt"):
             p = work_dir / sub
             if p.exists():
                 tf.add(p, arcname=sub)

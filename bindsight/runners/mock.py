@@ -21,6 +21,20 @@ from pathlib import Path
 
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
 
+
+def _ATEXIT_CLEANUP(path: Path) -> None:
+    """Remove a scratch directory when the process ends.
+
+    These were created with ``mkdtemp`` and never removed. On a long-lived
+    process -- the hosted app is the obvious one -- that is one directory per
+    invocation, retained for the container's lifetime.
+    """
+    import atexit
+    import shutil
+
+    atexit.register(shutil.rmtree, path, True)
+
+
 # A minimal valid PDB (3 CA atoms) so downstream parsers have something real.
 LOG = logging.getLogger(__name__)
 
@@ -98,6 +112,7 @@ class MockRunner:
             return self.canned
         target = self._targets.get(handle.id, "MOCK")
         root = Path(tempfile.mkdtemp(prefix="bindsight_mock_"))
+        _ATEXIT_CLEANUP(root)
         work = root / "work"
         design = work / "design"
         validate = work / "validate"

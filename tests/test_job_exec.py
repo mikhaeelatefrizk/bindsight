@@ -608,3 +608,84 @@ class TestUnseedableDesigners:
             for r in caplog.records
             if "ignores the configured seed" in r.getMessage()
         ]
+
+
+def test_the_archive_carries_the_prescreen_record(mock_run, tmp_path: Path) -> None:
+    """The record of whether the ESM-2 screen ran must leave the GPU host.
+
+    It did not. ``prescreen.txt`` was written into the work directory and the
+    tarball packed only ``design``, ``validate`` and ``metrics.jsonl`` -- so the
+    file was created and discarded on the machine that made it.
+
+    That matters because ``prescreen_top_k`` is part of the cache key while the
+    screen itself fails open: a job whose embedding died keeps every design and
+    is cached under a key asserting it kept the top k, and the next run with a
+    working embedder is served the unscreened set. This file is the only thing
+    that distinguishes the two, and nothing anywhere else records it.
+    """
+    import tarfile
+
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "target.pdb").write_text(_TINY_PDB)
+
+    tar = job_exec.run_job(_spec(), work, tarball=tmp_path / "results.tar.gz")
+
+    with tarfile.open(tar, "r:gz") as tf:
+        members = set(tf.getnames())
+
+    assert "prescreen.txt" in members, (
+        f"the results archive does not carry the pre-screen record: {sorted(members)}"
+    )
+
+
+def test_the_prescreen_record_is_written_even_when_nothing_was_screened(
+    mock_run, tmp_path: Path
+) -> None:
+    """Absence of the file must not be the way "no screen" is expressed.
+
+    A missing file used to mean either "the screen ran and had nothing to say"
+    or "the screen was never reached", and a reader could not tell which.
+    """
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "target.pdb").write_text(_TINY_PDB)
+
+    job_exec.run_job(_spec(), work, tarball=tmp_path / "results.tar.gz")
+
+    note = (work / "prescreen.txt").read_text(encoding="utf-8")
+    assert note.strip(), "prescreen.txt is empty, so it says nothing either way"
+
+
+def test_the_external_tool_seam_has_a_wall_clock() -> None:
+    """The one seam through which GPU tools run had no timeout.
+
+    ``_run`` dispatches RFdiffusion, ProteinMPNN and Boltz-2 on rented or
+    quota-limited hardware. Without a timeout a tool that stopped making
+    progress burned the whole session with nothing to stop it and nothing in the
+    log to say so.
+
+    Checked by driving ``_run`` and inspecting what it passed, rather than by
+    reading the source: a structural check would pass against a timeout that is
+    computed and then not forwarded.
+    """
+    import subprocess as _sp
+    from unittest.mock import patch
+
+    seen: dict[str, object] = {}
+
+    def _fake_run(cmd, **kwargs):
+        seen.update(kwargs)
+        return _sp.CompletedProcess(cmd, 0, "", "")
+
+    with patch.object(_sp, "run", _fake_run):
+        job_exec._run(["true"])
+
+    assert "timeout" in seen, "the external-tool seam runs without a wall clock"
+    assert isinstance(seen["timeout"], (int, float))
+    assert seen["timeout"] > 0
+
+
+def test_the_tool_timeout_is_configurable_and_sane() -> None:
+    """Long enough not to cut real work short, short enough to bound a hang."""
+    assert 60 * 60 <= job_exec._TOOL_TIMEOUT_S <= 24 * 60 * 60

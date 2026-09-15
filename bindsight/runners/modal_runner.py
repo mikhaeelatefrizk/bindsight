@@ -33,6 +33,20 @@ from bindsight.cost import estimate
 from bindsight.runners import tools
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
 
+
+def _ATEXIT_CLEANUP(path: Path) -> None:
+    """Remove a scratch directory when the process ends.
+
+    These were created with ``mkdtemp`` and never removed. On a long-lived
+    process -- the hosted app is the obvious one -- that is one directory per
+    invocation, retained for the container's lifetime.
+    """
+    import atexit
+    import shutil
+
+    atexit.register(shutil.rmtree, path, True)
+
+
 LOG = logging.getLogger(__name__)
 
 #: Repository bindsight itself is installed from inside the remote image.
@@ -132,6 +146,7 @@ class ModalRunner:
             from bindsight.runners import job_exec
 
             work = _P(tempfile.mkdtemp(prefix="bindsight_modal_"))
+            _ATEXIT_CLEANUP(work)
             spec_dir = work / "spec"
             spec_dir.mkdir(parents=True, exist_ok=True)
             (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
