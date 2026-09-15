@@ -64,6 +64,8 @@ function splitRow(line) {
 }
 
 async function check() {
+  // Reset every run: a fixed file must clear the previous verdict.
+  var designBlocked = false;
   const counts = document.getElementById("counts").files[0];
   const design = document.getElementById("design").files[0];
   const out = document.getElementById("checks");
@@ -119,35 +121,62 @@ async function check() {
         body_html += "<br><strong>No two-level column found.</strong> The contrast needs a column with exactly two distinct values.";
       }
 
+      // Three states, not two. The two files usually come from different
+      // exports, so a name mismatch is the ordinary way this goes wrong.
+      var overlap = null;
       if (countsSamples && countsSamples.length) {
         const designSamples = body.map(function (r) { return r[0]; }).filter(Boolean);
         const shared = designSamples.filter(function (s) { return countsSamples.indexOf(s) >= 0; });
+        overlap = { shared: shared.length, total: designSamples.length };
         body_html +=
           "<br>Sample names shared with the counts matrix: <strong>" + shared.length +
-          "</strong> of " + designSamples.length +
-          (shared.length === 0
-            ? " — <strong>none match</strong>, so the contrast cannot be built."
-            : "");
+          "</strong> of " + designSamples.length;
+        if (shared.length === 0) {
+          body_html +=
+            " — <strong>none match</strong>, so the contrast cannot be built. The" +
+            " two files are probably from different exports; the design's first" +
+            " column has to hold the counts matrix's column headers.";
+        } else if (shared.length < designSamples.length) {
+          body_html +=
+            " — the other " + (designSamples.length - shared.length) +
+            " are not columns of the counts matrix and will be dropped.";
+        }
       }
 
-      // A design table is usable when it names a factor column. Whether the
-      // sample names line up is reported above on its own, because a
-      // mismatch there is a different problem with a different fix.
-      html += card("Design table", body_html, factor ? "ok" : "warn");
+      // The severity follows the finding. Marking this OK beside "the contrast
+      // cannot be built" is the failure this page exists to prevent, one step
+      // earlier in the pipeline.
+      var blocked = !factor || (overlap && overlap.shared === 0);
+      var partial = overlap && overlap.shared > 0 && overlap.shared < overlap.total;
+      html += card("Design table", body_html, blocked ? "err" : partial ? "warn" : "ok");
+      designBlocked = blocked;
     }
   }
 
   if (counts && design) {
-    html += card(
-      "Running it",
+    const privacy =
       "Nothing on this page was sent anywhere — the checks above ran in this " +
-        "browser, on the first 256&nbsp;kB of each file, so a counts matrix of " +
-        "patient data never left the machine. To run the pipeline on it, point " +
-        "the CLI at a config naming these two files:" +
-        "<pre><code>bindsight discover my.yaml --out runs/mine</code></pre>" +
-        "then <code>bindsight ui</code> to read the result here.",
-      "ok"
-    );
+      "browser, on the first 256&nbsp;kB of each file, so a counts matrix of " +
+      "patient data never left the machine. ";
+    if (designBlocked) {
+      html += card(
+        "Not ready to run",
+        privacy +
+          "The pipeline would fail on these two files for the reason above, so " +
+          "there is no command to give yet. Fix the design table and re-check.",
+        "err"
+      );
+    } else {
+      html += card(
+        "Running it",
+        privacy +
+          "To run the pipeline on it, point the CLI at a config naming these two " +
+          "files:" +
+          "<pre><code>bindsight discover my.yaml --out runs/mine</code></pre>" +
+          "then <code>bindsight ui</code> to read the result here.",
+        "ok"
+      );
+    }
   }
 
   out.innerHTML = html;

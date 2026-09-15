@@ -656,3 +656,55 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
         frame = pd.DataFrame({"symbol": ["CA9"], "padj": [0.0]})
 
         assert _df_to_records(frame, ["symbol", "padj"])[0]["padj"] == "<1e-300"
+
+
+class TestNoConditionIsDecorative:
+    """A condition that cannot change the answer is worse than no condition.
+
+    The "your data" page decided a card's severity with
+    ``factor && (!samples || samples.length === 0 || true)`` — which reduces to
+    ``factor``. Two checks that look load-bearing had never been consulted, and
+    the page showed a green tick beside "none match, so the contrast cannot be
+    built", then offered the command to run.
+
+    Driving the page is what found it. This is the cheap guard for the shape.
+    """
+
+    TAUTOLOGIES = ("|| true", "||true", "&& false", "&&false", "or True", "and False")
+
+    def test_no_inline_script_short_circuits_its_own_check(self) -> None:
+        web = REPO / "bindsight" / "report" / "web"
+        offenders: list[str] = []
+        for path in sorted(web.rglob("*.j2")):
+            text = path.read_text(encoding="utf-8")
+            for lineno, line in enumerate(text.splitlines(), 1):
+                if line.lstrip().startswith(("//", "*", "/*", "{#")):
+                    continue
+                for tautology in self.TAUTOLOGIES:
+                    if tautology in line:
+                        offenders.append(f"{path.name}:{lineno} {line.strip()[:80]}")
+
+        assert not offenders, (
+            "these conditions cannot change their own result, so whatever they "
+            f"appear to check is not being checked:\n  " + "\n  ".join(offenders)
+        )
+
+    def test_the_readiness_verdict_reaches_the_advice(self) -> None:
+        """The severity and the "here is the command" card must agree.
+
+        Verified in a browser across four design tables — all names matching, a
+        partial overlap, none matching, and no two-level column. This asserts the
+        wiring that makes those agree still exists.
+        """
+        page = (
+            REPO / "bindsight" / "report" / "web" / "templates" / "your_data.html.j2"
+        ).read_text(encoding="utf-8")
+
+        assert "designBlocked" in page, (
+            "the design table's verdict no longer reaches the card that tells the "
+            "reader to run the pipeline"
+        )
+        assert "Not ready to run" in page, (
+            "a blocked design no longer has a card of its own, so the page falls "
+            "back to offering a command that cannot work"
+        )
