@@ -47,4 +47,4 @@ numcodecs==0.16.5
 biopython==1.88
 
 # ---- figures embedded in the report ----
-matplotlib==3.11.1
+matplotlib==3.11.2
