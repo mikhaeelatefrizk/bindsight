@@ -9,7 +9,7 @@ pinned: false
 license: agpl-3.0
 short_description: RNA-seq counts → ranked de novo protein binder candidates
 tags:
-  - streamlit
+  - fastapi
   - bioinformatics
   - rna-seq
   - protein-design
@@ -61,10 +61,10 @@ provenance; known targets such as HER2 (ERBB2, UniProt P04626) appear among
 the candidates when their expression signal is present.
 
 The first visitor on a fresh container pays a ~60 s cold-run cost
-(real PyDESeq2 + Open Targets + AlphaFoldDB pulls); every subsequent
-visitor gets the cached result in ~0.1 s thanks to
-`@st.cache_resource` / `@st.cache_data` in
-`bindsight/report/webapp.py`.
+(real PyDESeq2 + Open Targets + AlphaFoldDB pulls). The GDC download is
+written where the run config's `inputs.counts` / `inputs.design` point —
+`data/gdc_cache/...` in `examples/demo/config.yaml` — so a second run on the
+same container reads from disk rather than the network.
 
 ## What this is
 

@@ -460,3 +460,136 @@ class TestTheDemoCanActuallyStart:
 
         assert len(_DEMO_STAGES) >= 2
         assert all(isinstance(name, str) and name for name in _DEMO_STAGES)
+
+
+class TestTheStructuresAreActuallyShown:
+    """538 kB of 3Dmol.js shipped in the wheel and no page referenced it.
+
+    Twenty predicted binder-target complexes are committed to this repository —
+    real validator output, the strongest artifact here, and the reason a reader
+    can rotate one instead of taking an ipTM on trust. ARCHITECTURE.md said the
+    interface rendered them. Nothing did: the library was vendored, the licence
+    was credited, the file was served, and no template loaded it.
+
+    The last test below is the one that would have caught it, and it is a sweep
+    rather than a list of the assets that exist today.
+    """
+
+    def test_every_vendored_asset_is_referenced_by_something(self) -> None:
+        """A vendored library nobody loads is dead weight in every install.
+
+        It is also a licence obligation carried for no benefit, and — worse —
+        a claim: the file's presence is what made "renders in 3-D" look true.
+        """
+        web = REPO / "bindsight" / "report" / "web"
+        sources = "\n".join(
+            p.read_text(encoding="utf-8", errors="ignore")
+            for p in web.rglob("*")
+            if p.suffix in {".j2", ".py", ".css"} and p.is_file()
+        )
+
+        vendored = [
+            p for p in (web / "static" / "vendor").iterdir()
+            if p.is_file() and p.suffix in {".js", ".css"}
+        ]
+        assert vendored, "the sweep found no vendored assets; it has stopped reaching them"
+
+        unused = [p.name for p in vendored if p.name not in sources]
+        assert not unused, (
+            "these are shipped in every wheel and referenced by nothing, so they "
+            f"cost the user bytes and the project a licence obligation for no benefit: {unused}"
+        )
+
+    def test_the_evidence_page_loads_the_vendored_copy(self, client: TestClient) -> None:
+        body = client.get("/evidence").text
+        if "binder-pick" not in body:
+            pytest.skip("the designer benchmark ships with the repository, not the wheel")
+
+        assert "/static/vendor/3Dmol-min.js" in body
+        assert "cdn." not in body, "the viewer is being fetched from a network"
+
+    def test_a_real_design_serves_a_real_structure(self, client: TestClient) -> None:
+        from bindsight.report import showcase
+
+        designer = showcase.load_designer_benchmark()
+        if designer is None or not designer.with_structures():
+            pytest.skip("the designer benchmark ships with the repository, not the wheel")
+
+        binder = designer.with_structures()[0]
+        response = client.get(f"/api/structure/{binder.binder_id}")
+
+        assert response.status_code == 200
+        assert "cif" in response.headers["content-type"]
+        assert "_atom_site" in response.text, "the response is not an mmCIF"
+
+    def test_every_design_the_page_offers_actually_resolves(self, client: TestClient) -> None:
+        """A dead option in the picker is a viewer that silently stays empty."""
+        body = client.get("/evidence").text
+        offered = re.findall(r'<option value="([^"]+)"', body)
+        if not offered:
+            pytest.skip("the designer benchmark ships with the repository, not the wheel")
+
+        for binder_id in offered:
+            assert client.get(f"/api/structure/{binder_id}").status_code == 200, (
+                f"the page offers {binder_id} and the route does not serve it"
+            )
+
+    def test_an_unknown_design_is_not_found(self, client: TestClient) -> None:
+        assert client.get("/api/structure/not-a-design").status_code == 404
+
+    @pytest.mark.parametrize(
+        "attempt",
+        ["../../pyproject.toml", "..%2F..%2Fpyproject.toml", "/etc/passwd", "....//pyproject.toml"],
+    )
+    def test_the_identifier_is_matched_never_joined_to_a_path(
+        self, client: TestClient, attempt: str
+    ) -> None:
+        """A path built from a request parameter is a file-read primitive.
+
+        The route resolves by comparing against the designs the benchmark
+        loaded, so there is no directory for a ``..`` to climb out of.
+        """
+        response = client.get(f"/api/structure/{attempt}")
+
+        assert response.status_code == 404
+        assert "[project]" not in response.text, "the route served a file off disk"
+
+    def test_every_structure_names_its_chains_the_way_the_viewer_expects(self) -> None:
+        """The viewer colours chain ``B`` as the binder; that is a claim.
+
+        It styled chains ``A`` and ``B`` at first. The files use ``T`` and
+        ``B``, so the target matched nothing, kept 3Dmol's default line style,
+        and rendered as a wireframe haze under a caption saying it was grey
+        cartoon — no error anywhere. The viewer now paints everything before
+        overriding the binder, so a change here degrades to *uniform* rather
+        than to *wrong*, and this test says so out loud.
+        """
+        from bindsight.report import showcase
+
+        designer = showcase.load_designer_benchmark()
+        if designer is None or not designer.with_structures():
+            pytest.skip("the designer benchmark ships with the repository, not the wheel")
+
+        def chains(path: Path) -> set[str]:
+            """Read the ``_atom_site`` loop header rather than guessing a column."""
+            columns: list[str] = []
+            found: set[str] = set()
+            for raw in path.read_text(encoding="utf-8").splitlines():
+                line = raw.strip()
+                if line.startswith("_atom_site."):
+                    columns.append(line.split(".", 1)[1])
+                elif line.startswith(("ATOM", "HETATM")) and columns:
+                    fields = line.split()
+                    for name in ("auth_asym_id", "label_asym_id"):
+                        if name in columns:
+                            found.add(fields[columns.index(name)])
+                            break
+            return found
+
+        for binder in designer.with_structures():
+            assert binder.complex_cif is not None
+            present = chains(binder.complex_cif)
+            assert "B" in present, (
+                f"{binder.binder_id} has chains {sorted(present)}; the viewer colours "
+                "chain B as the designed binder and would colour nothing"
+            )

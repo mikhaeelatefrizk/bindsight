@@ -11,7 +11,7 @@
 #
 # NOTE: this is the CLI image (it runs `bindsight` and exits). It is NOT the
 # Hugging Face Space web entrypoint — the Space has its own Dockerfile that
-# launches Streamlit on port 8501 and lives in the Space's own git repo
+# launches uvicorn on port 8501 and lives in the Space's own git repo
 # (see .huggingface/README.md).
 # Pinned by digest, not by tag: `python:3.11.9-slim-bookworm` is republished
 # whenever its base is patched, so the tag alone does not identify an image and

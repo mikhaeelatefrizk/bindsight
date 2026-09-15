@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -227,9 +227,14 @@ def create_app(*, run_root: Path | None = None) -> Any:
     def evidence(request: Request) -> HTMLResponse:
         study = showcase.load_study()
         designer = showcase.load_designer_benchmark()
+        # Only designs whose predicted complex is actually committed. Offering a
+        # design with no structure gives the reader a viewer that stays empty
+        # and no way to tell whether that is the design's fault or the page's.
+        structures = designer.with_structures() if designer else []
         return page(
             request,
             "evidence.html.j2",
+            structures=structures,
             study=study,
             designer=designer,
             paired=_paired_chart(designer),
@@ -252,6 +257,26 @@ def create_app(*, run_root: Path | None = None) -> Any:
     @app.get("/your-data", response_class=HTMLResponse)
     def your_data(request: Request) -> HTMLResponse:
         return page(request, "your_data.html.j2")
+
+    @app.get("/api/structure/{binder_id}")
+    def structure(binder_id: str) -> Any:
+        """The predicted complex for one binder, as mmCIF text.
+
+        Resolved by matching ``binder_id`` against the designs the benchmark
+        actually loaded, never by joining it onto a directory: a path built from
+        a request parameter turns a structure viewer into a file-read
+        primitive, and ``..`` is a legal path segment.
+        """
+        designer = showcase.load_designer_benchmark()
+        if designer is None:
+            return JSONResponse({"error": "no designer benchmark"}, status_code=404)
+        for binder in designer.with_structures():
+            if binder.binder_id == binder_id and binder.complex_cif is not None:
+                return Response(
+                    binder.complex_cif.read_text(encoding="utf-8"),
+                    media_type="chemical/x-cif",
+                )
+        return JSONResponse({"error": "no structure for that design"}, status_code=404)
 
     # -- 5. Runs ------------------------------------------------------------
     @app.get("/runs", response_class=HTMLResponse)

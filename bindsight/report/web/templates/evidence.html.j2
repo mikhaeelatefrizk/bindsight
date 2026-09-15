@@ -227,6 +227,44 @@
     data arrived.
   </div>
 
+  {% if structures %}
+    <h3 class="card__title" style="margin-top:1.5rem">The complexes themselves</h3>
+    <p class="small muted" style="margin-top:0">
+      Boltz-2's predicted binder&ndash;target complex for each design, as committed
+      to this repository. Rotate it. The numbers above are summaries of these
+      files, not of anything else.
+    </p>
+    <div class="field" style="max-width:32rem">
+      <label for="binder-pick">Design</label>
+      <select id="binder-pick">
+        {% for b in structures %}
+          <option value="{{ b.binder_id }}">
+            {{ b.binder_id }} — ipTM {{ fmt(b.iptm) }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div id="viewer" class="viewer" role="img"
+         aria-label="Three-dimensional view of the predicted binder-target complex">
+      <p class="viewer__fallback small muted">
+        The structure viewer needs JavaScript. Every complex is also committed as
+        mmCIF under <code>benchmarks/designer_benchmark/</code>, which is the file
+        this viewer reads.
+      </p>
+    </div>
+    <div class="viewer-legend">
+      <span><span class="swatch" style="background:#9aa5b1"></span>
+        chain&nbsp;<strong>T</strong> — the target</span>
+      <span><span class="swatch" style="background:#0f7d73"></span>
+        chain&nbsp;<strong>B</strong> — the designed binder</span>
+    </div>
+    <p class="chart__caption">
+      The chain letters are in the file, so the two are distinguishable without
+      the colours — on a projector, in greyscale, and to a reader who does not
+      separate teal from grey.
+    </p>
+  {% endif %}
+
   {% if paired %}
     <div data-chart="pairedStrip" data-spec='{{ tojson(paired) }}' style="margin-top:1rem"></div>
     <p class="chart__caption">
@@ -251,4 +289,57 @@ python scripts/build_docs_results.py   # rewrites the published pages; nothing s
   Re-running the study needs network and a few CPU-hours; re-running the design
   needs a GPU. Both chains are documented in the repository.
 </p>
+{% endblock %}
+
+{% block scripts %}
+{% if structures %}
+<script src="/static/vendor/3Dmol-min.js"></script>
+<script>
+// Vendored, not from a CDN: `bindsight ui` is meant to work on a laptop with no
+// connection once installed, and a page that silently needs one does not.
+(function () {
+  // bindsight writes the designed chain as B and the target it was designed
+  // against as T. tests/test_web_ui.py asserts that of every committed
+  // structure, so if it ever stops being true this stops being a silent
+  // mis-colouring and becomes a failing test.
+  var BINDER_CHAIN = "B";
+  var host = document.getElementById("viewer");
+  var pick = document.getElementById("binder-pick");
+  if (!host || !pick || typeof $3Dmol === "undefined") return;
+
+  host.innerHTML = "";
+  var viewer = $3Dmol.createViewer(host, { backgroundColor: "white" });
+
+  function show(id) {
+    fetch("/api/structure/" + encodeURIComponent(id))
+      .then(function (r) {
+        if (!r.ok) throw new Error("no structure for " + id);
+        return r.text();
+      })
+      .then(function (cif) {
+        viewer.clear();
+        viewer.addModel(cif, "cif");
+        // Paint everything first, then override the binder. Styling named
+        // chains only meant a file whose chains are named something else kept
+        // 3Dmol's default line style and rendered as a wireframe haze -- with
+        // no error, and under a caption claiming it was grey cartoon.
+        viewer.setStyle({}, { cartoon: { color: "#9aa5b1" } });
+        viewer.setStyle({ chain: BINDER_CHAIN }, { cartoon: { color: "#0f7d73" } });
+        viewer.zoomTo();
+        viewer.render();
+      })
+      .catch(function (err) {
+        // Said plainly. A viewer that stays blank is indistinguishable from a
+        // design that produced nothing, and those are different facts.
+        host.innerHTML =
+          '<p class="small" style="padding:1rem">Could not load this structure: ' +
+          String(err.message) + "</p>";
+      });
+  }
+
+  pick.addEventListener("change", function () { show(pick.value); });
+  show(pick.value);
+})();
+</script>
+{% endif %}
 {% endblock %}

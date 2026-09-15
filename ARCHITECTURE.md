@@ -48,7 +48,7 @@ counts.tsv + design.tsv ─┐
         ▼                │
    provenance.jsonld     │
         ▼                │
-   HTML report +       │
+   HTML report +         │
    web interface         │
         ▼                │
    RO-Crate zip (Zenodo) │
@@ -76,7 +76,7 @@ bindsight/
 │                    #   classification, null models + intervals, designer bench
 ├── provenance/      # Pydantic schema for run_manifest.jsonld + provenance fragments
 ├── export/          # RO-Crate emitter (FAIR bundle for Zenodo)
-├── report/          # HTML report template + Streamlit app (+ Limitations section)
+├── report/          # HTML report template + web interface (+ Limitations section)
 ├── cost.py          # Per-run cost estimation (GPU-type aware)
 ├── plugins.py       # Designer/validator plugin registry
 ├── config.py        # Pydantic run-configuration models
@@ -131,7 +131,7 @@ yet and nothing in the codebase depends on it.
 - SURFACE-Bind site lookup
 - AlphaFoldDB structure fetching
 - Multi-objective ranking
-- self-contained HTML + Streamlit reports
+- self-contained HTML + web-interface reports
 - Provenance emission
 
 ### 4.2 What runs remotely (GPU, offloaded)
@@ -367,7 +367,7 @@ is what the tool requires, not what this project has run it on. The
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | Run | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | Run | DAG, conda envs, --report |
 | Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | Run | |
-| Visualization | [py3Dmol](https://github.com/3dmol/3Dmol.js) / NGL | MIT / MPL | No | Run | Embed in HTML + Streamlit |
+| Visualization | [3Dmol.js](https://github.com/3dmol/3Dmol.js) / NGL | BSD-3 / MPL | No | Run | Vendored in the web interface |
 
 See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guidance.
 
@@ -393,7 +393,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 2. **Provenance graph + RO-Crate.** Every ranked candidate is one click from "show me the gene, the patients it came from, the structure, the trajectory seed, the docker digest." No existing protein-design tool does this.
 3. **Negative-result curation.** Catalogue targets that fail discovery (no AF model, no SURFACE-Bind site, fails specificity, designer fails to converge, validator rejects). Publish the failure taxonomy. *(Shipped for the discovery half: `taxonomy/failure_taxonomy.parquet` — an exhaustive per-gene disposition, rendered in the HTML report.)*
 4. **Cost-aware orchestration.** `--dry-run` estimates GPU $ before running. ProteinDJ/Ovo/BindCraft/dl_binder_design assume HPC.
-5. **Streamlit app with py3Dmol structure viewing, plus a self-contained HTML report.** The web app's *Real results* page renders the actual Boltz-2 predicted binder–target complexes in 3-D; the HTML report stays dependency-free and offline-openable. Together they are the artifact that sells the tool in a 5-minute talk.
+5. **A web interface with 3Dmol.js structure viewing, plus a self-contained HTML report.** The web interface renders the actual Boltz-2 predicted binder–target complexes in 3-D; the HTML report stays dependency-free and offline-openable. Together they are the artifact that sells the tool in a 5-minute talk.
 
 ---
 
@@ -451,7 +451,7 @@ backend, so they are listed unchecked rather than folded into the tick above.
 ### Phase 3 — Provenance, report, polish ✅ done
 - [x] RO-Crate output
 - [x] Self-contained HTML report (jinja2; no Quarto dependency)
-- [x] Streamlit dashboard / web UI
+- [x] Server-rendered web interface (FastAPI + Jinja2)
 - [x] `--dry-run` GPU cost estimator
 - [x] Held-out evaluation set + `bindsight benchmark`
 - [x] `v0.1.0`, Zenodo DOI

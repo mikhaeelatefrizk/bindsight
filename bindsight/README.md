@@ -29,7 +29,7 @@
 | [`pipelines/`](pipelines/) | The discovery orchestrator, and the caveats it attaches to its own output |
 | [`provenance/`](provenance/) | PROV-O JSON-LD emission and the RO-Crate exporter — the audit trail from a binder back to the cohort |
 | [`benchmark/`](benchmark/) | The scoring harnesses: rediscovery study, designer benchmark, and the statistics behind every published interval |
-| [`report/`](report/) | The HTML report and the Streamlit app |
+| [`report/`](report/) | The HTML report and the web interface |
 | [`config.py`](config.py) | Pydantic run-configuration models — the single definition of what a run config may contain |
 | [`cli.py`](cli.py) | The Click entry point for every `bindsight` command |
 | [`cost.py`](cost.py) | GPU cost estimation, so `--dry-run` can price a job before it runs |
