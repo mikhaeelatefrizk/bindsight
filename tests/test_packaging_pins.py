@@ -657,7 +657,11 @@ class TestTheInterfaceTestsCanActuallyRun:
         """
         pytest.importorskip("fastapi", reason="the report extra is not installed here")
 
-        from starlette.testclient import TestClient  # must not raise
+        # Through `fastapi`, which this project declares, rather than through
+        # `starlette`, which it does not — reaching straight into a transitive
+        # dependency is the habit that produced the httpx break in the first
+        # place. It is the same class either way.
+        from fastapi.testclient import TestClient  # must not raise
 
         assert TestClient is not None
 

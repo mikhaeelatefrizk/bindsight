@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
+from typing import ClassVar
 
 REPO = Path(__file__).resolve().parents[1]
 #: The extras the flat file claims to mirror. Its own header states this pair.
@@ -48,6 +49,20 @@ def _flat_requirements() -> set[str]:
             continue
         out.add(line)
     return out
+
+
+def _every_declared_name() -> set[str]:
+    """Every distribution the project declares, in any group.
+
+    ``_pyproject_requirements`` covers only the two mirrored extras, which is
+    right for the mirror check and wrong for asking "is this import declared
+    anywhere at all" -- the answer has to include dev, docs, runners, workflow
+    and embed, or a legitimately-declared tool reads as undeclared.
+    """
+    data = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    groups = [data.get("dependencies", [])]
+    groups += list(data.get("optional-dependencies", {}).values())
+    return {_name(spec) for group in groups for spec in group}
 
 
 def _name(spec: str) -> str:
@@ -218,3 +233,105 @@ class TestNoDeadDependencies:
             body = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
             for pkg in watched:
                 assert pkg not in body, f"{path} declares {pkg}, which nothing imports"
+
+
+class TestNothingIsImportedThatIsNotDeclared:
+    """The direction this file was missing.
+
+    ``TestNoDeadDependencies`` asks whether every *declared* package is
+    imported. The break that reached CI was the reverse: ``httpx`` was
+    *imported* — through ``starlette.testclient`` — and declared by nothing, so
+    a clean install could not collect ``tests/test_web_ui.py`` at all. It passed
+    here only because the author's machine still had Streamlit installed, and
+    Streamlit requires httpx. A package the project removed was still holding
+    the suite up.
+
+    A module that resolves on one machine and not another is the whole problem,
+    so this asks the question statically, from the source tree and the
+    declarations, rather than from whatever happens to be importable.
+    """
+
+    #: Imported by tests through a ``sys.path`` insertion, not from a
+    #: distribution. Each names the file that puts it on the path, so a stale
+    #: entry here is findable.
+    LOCAL_MODULES: ClassVar[dict[str, str]] = {
+        "analyse": "benchmarks/calibration/analyse.py",
+        "stage_scrambles": "benchmarks/calibration/stage_scrambles.py",
+        "tests": "the test package importing its own siblings",
+    }
+
+    @staticmethod
+    def _imported_everywhere() -> dict[str, set[str]]:
+        """Every third-party module imported anywhere the project owns."""
+        import ast
+        import sys
+
+        found: dict[str, set[str]] = {}
+        for area in ("bindsight", "tests", "scripts", "benchmarks"):
+            root = REPO / area
+            if not root.is_dir():
+                continue
+            for path in root.rglob("*.py"):
+                try:
+                    tree = ast.parse(path.read_text(encoding="utf-8"))
+                except SyntaxError:  # pragma: no cover - a broken file fails elsewhere
+                    continue
+                for node in ast.walk(tree):
+                    names: list[str] = []
+                    if isinstance(node, ast.Import):
+                        names = [a.name.split(".")[0] for a in node.names]
+                    elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                        names = [node.module.split(".")[0]]
+                    for name in names:
+                        if name in sys.stdlib_module_names or name == "bindsight":
+                            continue
+                        found.setdefault(name, set()).add(path.relative_to(REPO).as_posix())
+        return found
+
+    def test_the_scan_finds_the_imports_it_exists_to_check(self) -> None:
+        """Guards the guard: an empty scan would pass forever."""
+        found = self._imported_everywhere()
+
+        assert len(found) >= 15, (
+            f"the import scan found only {len(found)} third-party modules; it has "
+            "stopped reaching the source tree"
+        )
+        assert "pandas" in found, "the scan does not see an import it certainly should"
+
+    def test_every_imported_module_is_declared_or_named_as_local(self) -> None:
+        """Imported, therefore required. Declared, or this fails.
+
+        Reaching into a transitive dependency is the same defect whether it
+        works today or not: ``fastapi`` requires ``starlette`` unconditionally,
+        so importing ``starlette`` directly happens to work — and that is
+        exactly the reasoning that left ``httpx`` undeclared until a clean
+        install refused to collect a whole test module.
+        """
+        declared = {name.replace("_", "-") for name in _every_declared_name()}
+
+        undeclared: list[str] = []
+        for module, files in sorted(self._imported_everywhere().items()):
+            if module in self.LOCAL_MODULES:
+                continue
+            reverse = {mod: dist for dist, mod in _IMPORT_NAMES.items()}
+            candidates = {
+                module.lower().replace("_", "-"),
+                reverse.get(module, module).lower().replace("_", "-"),
+            }
+            if candidates & declared:
+                continue
+            where = ", ".join(sorted(files)[:2])
+            undeclared.append(f"{module} (imported in {where})")
+
+        assert not undeclared, (
+            "these modules are imported by this project and declared by no extra, "
+            "so they resolve only where something else happens to install them:\n  "
+            + "\n  ".join(undeclared)
+        )
+
+    def test_the_local_module_list_has_no_stale_entries(self) -> None:
+        """A name here that nothing imports would hide a real gap later."""
+        imported = set(self._imported_everywhere())
+
+        stale = sorted(set(self.LOCAL_MODULES) - imported)
+        assert not stale, f"these are excused as local modules and imported nowhere: {stale}"
