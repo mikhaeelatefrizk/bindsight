@@ -331,9 +331,17 @@ python scripts/build_docs_results.py   # rewrites the published pages; nothing s
       .catch(function (err) {
         // Said plainly. A viewer that stays blank is indistinguishable from a
         // design that produced nothing, and those are different facts.
-        host.innerHTML =
-          '<p class="small" style="padding:1rem">Could not load this structure: ' +
-          String(err.message) + "</p>";
+        //
+        // Built as a node with textContent rather than assembled into
+        // innerHTML. The message is composed here today, but an error string
+        // is exactly the kind of value that later starts carrying something a
+        // server said, and by then the interpolation looks harmless.
+        host.innerHTML = "";
+        var note = document.createElement("p");
+        note.className = "small";
+        note.style.padding = "1rem";
+        note.textContent = "Could not load this structure: " + String(err && err.message);
+        host.appendChild(note);
       });
   }
 
