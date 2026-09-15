@@ -63,3 +63,73 @@ def test_esm2_embed_real_inference() -> None:
     emb = esm2_embed(["MKTAYIAKQRQISFVK", "GGGGGGGGGGGG"])
     assert emb.shape == (2, 320)
     assert np.isfinite(emb).all()
+
+
+class TestTheResiduePoolingIsArithmeticAnyoneCanCheck:
+    """`esm2_embed` decides which designs reach validation, and nothing tested it.
+
+    Its only test needs `torch` and `transformers` — the `embed` extra, which no
+    CI job installs — so it skipped on every platform, and a model download on
+    top of that. What actually decides the numbers is one step: the mean over
+    real residues, excluding padding and the special BOS/EOS markers. A padding
+    token left in that average shifts every embedding, and the prescreen built
+    on those embeddings chooses what gets folded.
+
+    That step is now `mean_pool_residues`, which needs no model, and these run
+    everywhere.
+    """
+
+    @staticmethod
+    def _pool(hidden, keep):
+        from bindsight.design.embeddings import mean_pool_residues
+
+        return mean_pool_residues(np.asarray(hidden, dtype=np.float32), np.asarray(keep))
+
+    def test_a_padding_position_does_not_enter_the_average(self) -> None:
+        """The defect this exists to catch, stated as a number.
+
+        Two real residues at 1.0 and 3.0 average to 2.0. Include a padded 100.0
+        and it becomes 34.67 — and nothing downstream would look wrong.
+        """
+        hidden = [[[1.0], [3.0], [100.0]]]
+        assert self._pool(hidden, [[1, 1, 0]])[0][0] == pytest.approx(2.0)
+
+    def test_a_special_token_does_not_enter_the_average(self) -> None:
+        """BOS/EOS carry no residue; averaging them in is the same error."""
+        hidden = [[[50.0], [2.0], [4.0], [50.0]]]
+        assert self._pool(hidden, [[0, 1, 1, 0]])[0][0] == pytest.approx(3.0)
+
+    def test_every_position_kept_is_a_plain_mean(self) -> None:
+        """Guards the guard: the masking must not distort the ordinary case."""
+        assert self._pool([[[2.0], [4.0], [6.0]]], [[1, 1, 1]])[0][0] == pytest.approx(4.0)
+
+    def test_sequences_in_a_batch_do_not_bleed_into_each_other(self) -> None:
+        """Padding makes batch rows different lengths; each keeps its own mean."""
+        hidden = [[[1.0], [3.0], [0.0]], [[10.0], [0.0], [0.0]]]
+        out = self._pool(hidden, [[1, 1, 0], [1, 0, 0]])
+
+        assert out[0][0] == pytest.approx(2.0)
+        assert out[1][0] == pytest.approx(10.0)
+
+    def test_a_sequence_with_nothing_kept_is_zero_not_a_division_error(self) -> None:
+        """An all-special row must not raise, and must not invent a value."""
+        out = self._pool([[[7.0], [9.0]]], [[0, 0]])
+
+        assert out.shape == (1, 1)
+        assert out[0][0] == pytest.approx(0.0)
+
+    def test_the_shape_and_dtype_are_what_the_caller_stacks(self) -> None:
+        """`esm2_embed` vstacks these; a wrong rank or dtype breaks the join."""
+        out = self._pool([[[1.0, 2.0], [3.0, 4.0]]], [[1, 1]])
+
+        assert out.shape == (1, 2)
+        assert out.dtype == np.float32
+        assert out[0] == pytest.approx([2.0, 3.0])
+
+    def test_each_dimension_is_pooled_independently(self) -> None:
+        """A bug that pooled across D instead of L would pass every test above
+        that uses a single dimension."""
+        hidden = [[[1.0, 10.0], [3.0, 30.0], [99.0, 99.0]]]
+        out = self._pool(hidden, [[1, 1, 0]])
+
+        assert out[0] == pytest.approx([2.0, 20.0])

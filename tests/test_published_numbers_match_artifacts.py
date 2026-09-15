@@ -353,21 +353,28 @@ class TestTheDesignerBenchmarkMatchesTheArtifact:
                 "but the committed artifact is already the corrected run"
             )
 
-    def test_a_superseded_protocol_is_disclosed_wherever_its_numbers_appear(
-        self, bench: dict
-    ) -> None:
-        """Until the corrected re-run lands, every quoting surface must say so.
+    def test_the_superseded_protocol_is_gone_rather_than_disclosed(self, bench: dict) -> None:
+        """The caveat was conditional on the artifact still being the bad one.
 
-        Delete this test in the same commit that replaces the artifact — and
-        only then, because the caveat and the numbers have to move together.
+        It read "until the corrected re-run lands, every quoting surface must say
+        so", and skipped whenever the artifact was not 0.2.0. The corrected run
+        landed: the committed artifact is 0.2.2. So the test has been skipping
+        ever since — present in the file, absent from every run, and its own
+        docstring said to delete it at exactly that moment.
+
+        Asserting the condition is better than deleting it. A regression that put
+        the superseded artifact back would silently restore the need for a caveat
+        nothing now carries, and this is the line that would notice.
         """
-        if bench.get("bindsight_version", "") not in {"0.2.0"}:
-            pytest.skip("artifact is from the corrected protocol; caveat no longer required")
-        for rel in self.SURFACES:
-            low = _doc(rel).lower()
-            assert "pdb_path_chains" in low or "provisional" in low, (
-                f"{rel} quotes the pre-fix binder numbers without disclosing the protocol"
-            )
+        version = str(bench.get("bindsight_version", ""))
+
+        assert version, "the committed artifact records no bindsight version"
+        assert version != "0.2.0", (
+            "the committed designer-benchmark artifact is back to the superseded "
+            "0.2.0 protocol, whose binder numbers were produced before the "
+            "pdb_path_chains fix. Either restore the corrected artifact or "
+            "re-instate the disclosure on every surface that quotes it"
+        )
 
 
 class TestTheSuccessRateNeverAppearsBare:

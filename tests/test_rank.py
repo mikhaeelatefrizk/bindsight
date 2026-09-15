@@ -221,34 +221,13 @@ class TestOneRowPerAccession:
 
         assert list(kept.columns) == list(cand.columns)
 
-    def test_the_committed_cohorts_contain_no_collisions(self) -> None:
-        """Why this went unnoticed, recorded as a fact rather than an assumption.
-
-        If a future mapping starts producing collisions this fails, and whoever
-        sees it can decide whether the tie-break is the behaviour they want.
-        """
-        repo = Path(__file__).resolve().parents[1]
-        tables = sorted(repo.glob("runs/**/targets/candidates.parquet"))
-        if not tables:
-            pytest.skip("no committed candidate tables")
-
-        total = 0
-        collisions: dict[str, int] = {}
-        for table in tables:
-            df = pd.read_parquet(table)
-            if "uniprot_id" not in df.columns:
-                continue
-            known = df[df["uniprot_id"].notna()]
-            total += len(known)
-            n = int(known.duplicated("uniprot_id").sum())
-            if n:
-                collisions[str(table.relative_to(repo))] = n
-
-        assert total, "the committed candidate tables carry no accessions"
-        assert not collisions, (
-            f"candidate tables now contain duplicate accessions: {collisions}. "
-            "The tie-break in _one_row_per_accession is now load-bearing."
-        )
+    # A sixth test used to sweep runs/**/targets/candidates.parquet and assert
+    # no committed cohort contained duplicate accessions. `runs/` is gitignored
+    # and the repository tracks zero parquet files, so it skipped on every clone
+    # and, on the author's machine, read artifacts nobody else has -- a skip
+    # that reads like coverage. The property it wanted is proved above by
+    # construction, in five tests that build the collision rather than hope to
+    # find one, so removing it loses nothing.
 
 
 class TestTiedScoresRankReproducibly:

@@ -71,12 +71,37 @@ def esm2_embed(
             )
             special = enc.pop("special_tokens_mask")
             hidden = model(**enc).last_hidden_state  # (B, L, D)
-            # Pool over real residues only (attention=1 and not a special token).
-            keep = (enc["attention_mask"] * (1 - special)).unsqueeze(-1).to(hidden.dtype)
-            summed = (hidden * keep).sum(dim=1)
-            counts = keep.sum(dim=1).clamp(min=1.0)
-            vecs.append((summed / counts).cpu().numpy().astype(np.float32))
+            # Real residues only: attended to, and not a special token.
+            keep = (enc["attention_mask"] * (1 - special)).cpu().numpy()
+            vecs.append(mean_pool_residues(hidden.cpu().numpy(), keep))
     return np.vstack(vecs)
+
+
+def mean_pool_residues(hidden: np.ndarray, keep: np.ndarray) -> np.ndarray:
+    """Mean of ``hidden`` over the positions ``keep`` marks, per sequence.
+
+    Split out of :func:`esm2_embed` so it can be tested. It is arithmetic --
+    no model, no tokenizer, no ``torch`` -- and it is the step that decides the
+    numbers: a padding token or a BOS/EOS marker left in the average shifts
+    every embedding, and the prescreen built on those embeddings decides which
+    designs reach validation. Inside ``esm2_embed`` it was reachable only with
+    the ``embed`` extra installed, which no CI job does, so the one test that
+    exercised it skipped on every platform.
+
+    Args:
+        hidden: ``(B, L, D)`` final hidden states.
+        keep: ``(B, L)`` of 1 for a real residue and 0 for padding or a special
+            token.
+
+    Returns:
+        ``(B, D)`` float32. A sequence with no kept position averages over a
+        count of 1 rather than dividing by zero, giving a zero vector.
+    """
+    weights = keep[..., None].astype(hidden.dtype)
+    summed = (hidden * weights).sum(axis=1)
+    counts = weights.sum(axis=1).clip(min=1.0)
+    pooled: np.ndarray = (summed / counts).astype(np.float32)
+    return pooled
 
 
 def pca_2d(embeddings: np.ndarray) -> np.ndarray:
