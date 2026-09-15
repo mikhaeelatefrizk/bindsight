@@ -626,8 +626,9 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
             REPO / "bindsight" / "report" / "templates" / "report.css"
         ).read_text(encoding="utf-8")
 
-        assert "--ink:" not in layer and "--navy:" not in layer, (
-            "report.css declares its own copy of the design tokens; that is the "
+        redeclared = [t for t in ("--ink:", "--navy:", "--ok:", "--rule:") if t in layer]
+        assert not redeclared, (
+            f"report.css declares its own copy of {redeclared}; that is the "
             "arrangement that let the two surfaces drift apart"
         )
 

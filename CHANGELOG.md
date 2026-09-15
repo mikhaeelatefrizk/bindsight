@@ -13,6 +13,76 @@ defects that were invisible because they only manifested on other people's
 machines, claims the project's own controls had refuted, and a front door that
 sent visitors somewhere else.
 
+### Changed — the interface is served, not a Streamlit app
+
+Streamlit is gone, replaced by a server-rendered interface under
+`bindsight/report/web/`: FastAPI, uvicorn and Jinja over the same data layer the
+standalone report reads. No build step, no bundler, no npm, nothing fetched from
+a network once installed. It is a net *reduction* in dependency weight —
+Streamlit declared 34 requirements — and the reason for the change is not
+weight:
+
+- **Every figure had to be expressed through a widget whose layout the caller
+  does not control.** That is how confidence intervals — including one spanning
+  15–70% — ended up inside hover tooltips, under a paragraph promising that every
+  rate carried its interval. A tooltip does not print, does not exist on a touch
+  screen, and is absent from a photograph of a slide.
+- **`webapp.py` printed four zeros in metric chrome for absent parquets**, so a
+  broken run rendered identically to a measured empty one.
+
+`bindsight ui` serves it; `bindsight report --format streamlit` becomes
+`--format web`. Five sections: Overview, Evidence, Try it, Your data, Runs.
+
+The properties the deleted Streamlit tests encoded were ported, not dropped —
+most importantly that a **degraded Open Targets lookup must be visible**. Open
+Targets is the only genome-wide Ensembl → UniProt source in the pipeline; where
+it does not answer, every gene missing from the small bundled table is dropped
+*before* the surfaceome filter, so the shortlist is drawn from that handful
+rather than from the cohort. A reader not told this reads a short list as a
+negative result. It is on the page, with counts, not in a tooltip.
+
+### Fixed — things the interface change exposed
+
+- **The demo button could never have worked.** `_demo_config` imported
+  `load_config` from `bindsight.config`, which has no such name; every press
+  raised ImportError into the broad handler and reported it to the page as a
+  failed run. mypy sees it immediately — the module was outside the type-check
+  scope until this release widened it, and no test had ever called the function.
+- **3Dmol.js was vendored, credited, served, and referenced by nothing.** 538 kB
+  in every wheel, while ARCHITECTURE.md said the interface "renders the actual
+  Boltz-2 predicted binder–target complexes in 3-D". Twenty real predicted
+  complexes are committed to this repository and were reachable only through a
+  file manager. They are on the evidence page now. Found while driving it in a
+  browser: the first version styled chains `A` and `B`, the files use `T` and
+  `B`, so the target matched nothing and rendered as a wireframe haze *under a
+  caption saying it was grey cartoon*.
+- **Rich ate every "install the extra" message.** `[report]` is markup, so
+  `pip install -e ".[report]"` rendered as `pip install -e "."` — the base
+  package, which the reader already had. Three sites, on the paths a user only
+  reaches when something is already wrong.
+- **The Space health check probed `/_stcore/health`**, a Streamlit endpoint.
+  Nothing serves it, so the job whose purpose is to prove the Space is up would
+  have reported it down on every run.
+- **`report --format web` announced a run directory it never passed on**, and
+  **`bindsight ui` discarded its launch status** — a port already in use exited 0.
+
+### Changed — one design system, and one set of rules
+
+`bindsight.css` is embedded by both the served interface and the standalone HTML
+report. The report's own stylesheet had a second copy of the tokens, a `.badge`
+and `.note` that looked alike but were not, and a `.kpi` component with **no
+denominator slot** — which exempted its four headline numbers from the rule the
+rest of the project enforces. They carry it now, and the denominators were
+already on disk: 17,348 genes tested → 5,121 significant of those → 291
+candidates after the surfaceome filter → 2 epitopes.
+
+Sharing the stylesheet was not enough, and the way it failed is the point: the
+report still printed CA9's `padj` as `0`, because the rule that a p-value never
+renders as zero lived inside the web app while the report kept its own
+`f"{v:.3g}"`. Same number, same run, two answers — and harder to notice once the
+surfaces look alike. Those rules now live in `bindsight/report/format.py`, which
+neither surface owns and both import.
+
 ### Fixed — six defects that worked only on the machine that wrote them
 
 The worst class a repository can carry: the author cannot see them, and the
