@@ -61,7 +61,7 @@ These are **not** enabled by default. They require explicit opt-in via a CLI fla
 | AF2-IG validator (via [dl_binder_design](https://github.com/nrbennet/dl_binder_design)) | Inherits AF2 weights restriction | ⚠️ Restricted | Same as above |
 | [DESeq2](https://bioconductor.org/packages/DESeq2/) | LGPL-3 | ✅ Yes (LGPL allows commercial use of LGPL libraries from non-LGPL apps) | **Not integrated; listed for reference only.** There is no R bridge — `pydeseq2` (MIT) is the only DEG engine |
 | [edgeR](https://bioconductor.org/packages/edgeR/) | GPL-2 | ⚠️ GPL — calling from non-GPL code is a runtime dependency, generally OK, but distribution of bundled binaries triggers GPL | **Not integrated; listed for reference only.** Not selectable from any config; do not vendor edgeR |
-| [PyMOL OSS](https://github.com/schrodinger/pymol-open-source) | Custom (research-friendly, commercial restrictions) | ⚠️ Check terms | Use `py3Dmol` / NGL instead (both MIT/BSD) |
+| [PyMOL OSS](https://github.com/schrodinger/pymol-open-source) | Custom (research-friendly, commercial restrictions) | ⚠️ Check terms | Use 3Dmol.js / NGL instead (BSD-3 / MIT) |
 | [ColabFold MSA server](https://colabfold.com/) | Free service operated by Steinegger lab | ⚠️ Not for commercial scale | Provide BYO MMseqs2 path for commercial users |
 | [TCGA controlled-access subsets](https://gdc.cancer.gov/) | NIH dbGaP, requires DAC approval | ⚠️ Requires approval | Default examples use only the open subset |
 

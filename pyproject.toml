@@ -243,7 +243,6 @@ module = [
     "pydeseq2.*",
     "scipy.*",
     "Bio.*",
-    "py3Dmol.*",
     "modal.*",
     "snakemake.*",
     "kaggle.*",

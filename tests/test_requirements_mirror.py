@@ -187,8 +187,8 @@ class TestNoDeadDependencies:
             name = _name(spec)
             module = _IMPORT_NAMES.get(name, name.replace("-", "_"))
             # Case-insensitively: PyPI names are case-insensitive and pip
-            # normalises them, so the distribution `py3Dmol` is declared as
-            # `py3dmol` while the module it installs is `py3Dmol`.
+            # normalises them, so a distribution whose name is mixed-case is
+            # declared lower-case while the module it installs is not.
             if module.lower() in {m.lower() for m in imported} or name in _INDIRECT:
                 continue
             unexplained.append(name)
