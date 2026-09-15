@@ -382,9 +382,12 @@ class TestTheFixItMessageIsTheCommandToRun:
         source = (REPO / "bindsight" / "cli.py").read_text(encoding="utf-8")
         found: list[tuple[int, str]] = []
         for node in ast.walk(ast.parse(source)):
-            if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                if "pip install" in node.value:
-                    found.append((node.lineno, node.value))
+            if (
+                isinstance(node, ast.Constant)
+                and isinstance(node.value, str)
+                and "pip install" in node.value
+            ):
+                found.append((node.lineno, node.value))
         return found
 
     def test_the_sweep_finds_the_hints_it_exists_to_check(self) -> None:

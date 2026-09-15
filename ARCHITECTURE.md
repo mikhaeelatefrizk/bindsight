@@ -49,7 +49,7 @@ counts.tsv + design.tsv ─┐
    provenance.jsonld     │
         ▼                │
    HTML report +       │
-   Streamlit dashboard   │
+   web interface         │
         ▼                │
    RO-Crate zip (Zenodo) │
 ```

@@ -15,13 +15,6 @@ shipped.
 
 from __future__ import annotations
 
-
-def _plain(text: str) -> str:
-    """Terminal output with the colour codes removed."""
-    import re
-
-    return re.sub(r"\x1b\[[0-9;]*m", "", text)
-
 import json
 import tarfile
 from pathlib import Path
@@ -33,6 +26,13 @@ import pytest
 from click.testing import CliRunner
 
 from bindsight import cli
+
+
+def _plain(text: str) -> str:
+    """Terminal output with the colour codes removed."""
+    import re
+
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
 def _run_dir(tmp_path: Path, *, with_designs: bool = True, fastas: bool = True) -> Path:

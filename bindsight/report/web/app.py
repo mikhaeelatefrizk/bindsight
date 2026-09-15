@@ -60,6 +60,12 @@ def fmt(value: Any, digits: int = 2) -> str:
 
 
 def fmt_int(value: Any) -> str:
+    """An integer for the screen, or the em dash when there is not one.
+
+    Absence renders as ``—``. It never renders as ``0``: a crisp zero in
+    metric chrome reads as a measurement, which is how a run that crashed
+    comes to look like a run that found nothing.
+    """
     if value is None:
         return ABSENT
     try:
@@ -130,6 +136,7 @@ class Job:
     run_dir: str = ""
 
     def step(self, name: str, state: str = "running") -> None:
+        """Record a stage, or move one already recorded to a new state."""
         for stage in self.stages:
             if stage["name"] == name:
                 stage["state"] = state
@@ -137,6 +144,11 @@ class Job:
         self.stages.append({"name": name, "state": state})
 
     def finish_previous(self) -> None:
+        """Close whatever is still running.
+
+        Called when the next stage begins, so a reader can tell a slow run
+        from a stuck one -- which a single indeterminate spinner cannot.
+        """
         for stage in self.stages:
             if stage["state"] == "running":
                 stage["state"] = "done"
@@ -542,7 +554,7 @@ def _run_demo(job: Job) -> None:
             f"({exc}). It ships with the repository rather than the wheel — "
             "clone the repository to run the demo."
         )
-    except Exception as exc:  # noqa: BLE001 - surfaced to the page verbatim
+    except Exception as exc:  # surfaced to the page verbatim, not swallowed
         job.state = "failed"
         job.error = str(exc)
         for stage in job.stages:
@@ -551,8 +563,14 @@ def _run_demo(job: Job) -> None:
 
 
 def _demo_config() -> Any:
-    from bindsight.config import load_config
+    """The bundled demo cohort's config.
 
+    ``RunConfig.from_yaml``, not a ``load_config`` helper: that name does not
+    exist, so the demo raised ImportError into the broad handler below and
+    reported it to the page as a failed run. mypy had it -- the module was
+    outside the type-check scope until it was widened.
+    """
+    from bindsight.config import RunConfig
     from bindsight.report.showcase import benchmarks_root
 
     root = benchmarks_root()
@@ -560,7 +578,7 @@ def _demo_config() -> Any:
     path = base / "examples" / "demo" / "config.yaml"
     if not path.is_file():
         raise FileNotFoundError(str(path))
-    return load_config(path)
+    return RunConfig.from_yaml(path)
 
 
 def serve(

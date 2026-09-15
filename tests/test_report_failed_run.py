@@ -26,9 +26,7 @@ HTML report, and the showcase loaders both surfaces read.
 
 from __future__ import annotations
 
-import dataclasses
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +36,6 @@ import pytest
 from bindsight.provenance import StageRecord, ToolRef, new_manifest
 from bindsight.report import html as report_html
 from bindsight.report import showcase
-
 
 #: The error a real crashed run records — pydeseq2 rejecting a normalised matrix.
 DEG_ERROR = "ValueError: counts matrix contains non-integer values"

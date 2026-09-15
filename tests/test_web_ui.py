@@ -338,7 +338,8 @@ class TestTheChartsCarryRealSpecifications:
         assert len(spec["pairs"]) >= 20
         assert spec["threshold"] == 0.65
         for pair in spec["pairs"]:
-            assert pair["a"] is not None and pair["b"] is not None
+            assert pair["a"] is not None
+            assert pair["b"] is not None
 
 
 class TestADegradedLookupIsNotASilentOne:
@@ -428,3 +429,34 @@ class TestADegradedLookupIsNotASilentOne:
         assert "2 of 3" in body, "the counts must be on screen"
         assert "incomplete" in body.lower(), "a partial outage weakens the claim"
         assert "error" in body, "the breakdown names the status it saw"
+
+
+class TestTheDemoCanActuallyStart:
+    """The demo button called a loader that does not exist.
+
+    ``_demo_config`` imported ``load_config`` from ``bindsight.config``, which
+    has no such name — so every press raised ImportError into the broad handler
+    around the job and reported it to the page as a failed run. mypy sees it,
+    but the module sat outside the type-check scope until that scope was
+    widened; nothing else did, because no test ever called the function.
+    """
+
+    def test_the_bundled_config_loads(self) -> None:
+        from bindsight.config import RunConfig
+        from bindsight.report.web.app import _demo_config
+
+        try:
+            cfg = _demo_config()
+        except FileNotFoundError:
+            pytest.skip("the demo cohort ships with the repository, not the wheel")
+
+        assert isinstance(cfg, RunConfig), (
+            "the demo did not produce a config the pipeline can run"
+        )
+
+    def test_the_stages_it_advertises_are_the_stages_it_runs(self) -> None:
+        """Named stages are a progress claim; an empty list is a spinner."""
+        from bindsight.report.web.app import _DEMO_STAGES
+
+        assert len(_DEMO_STAGES) >= 2
+        assert all(isinstance(name, str) and name for name in _DEMO_STAGES)
