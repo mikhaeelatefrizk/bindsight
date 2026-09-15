@@ -67,7 +67,10 @@ HTML report you can open in a browser. It needs internet on first run (the cohor
 and the enrichment lookups are cached afterwards) and takes a few minutes of real
 DESeq2. No GPU.
 
-For a local web interface over the same thing:
+For a local interface over the same thing — the evidence behind every claim
+below, the demo, your own cohort, and the predicted binder–target complexes
+rendered in 3-D. Served from your machine; nothing is fetched from a network
+once installed.
 
 ```bash
 bindsight ui      # opens http://localhost:8501
@@ -209,7 +212,7 @@ reference resources, none of which is wired in.
 |---|---|---|
 | **`bindsight demo`** — full discovery on a real cohort + report | ✅ ready | `bindsight demo` |
 | **`bindsight discover`** — your own RNA-seq cohort → ranked targets | ✅ ready | `bindsight discover my.yaml --out runs/x` |
-| **`bindsight ui`** — multi-page local web app | ✅ ready | `bindsight ui` |
+| **`bindsight ui`** — local interface: the evidence, a demo, your own data, past runs, and the 20 predicted complexes in 3-D | ✅ ready | `bindsight ui` |
 | **`bindsight report`** — paper-style HTML, embedded volcano + provenance | ✅ ready | `bindsight report runs/x` |
 | **`bindsight run`** — full orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ runs end to end | `bindsight design runs/x --backend kaggle` |
