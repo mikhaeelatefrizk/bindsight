@@ -467,22 +467,34 @@ class TestTheSummaryCountsTheRunNotTheTable:
     published "20" as its candidate count -- the committed run has 291.
     """
 
-    def test_the_kpi_reports_every_candidate(self, tmp_path: Path) -> None:
+    @staticmethod
+    def _stats(html: str) -> dict[str, str]:
+        """Every ``.stat`` on the page, by its label.
+
+        Reads the shared component rather than the report's old private
+        ``.kpi``: the report and the served interface use one design system, and
+        ``.stat`` is what carries the rule that a figure appears with its
+        denominator.
+        """
         import re
 
+        found: dict[str, str] = {}
+        for block in re.findall(r'<div class="stat[^"]*">(.*?)</div>\s*(?=<div|</div>)', html, re.S):
+            label = re.search(r'class="stat__label">([^<]+)<', block)
+            value = re.search(r'class="stat__value">([^<]+)<', block)
+            if label and value:
+                found[label.group(1).strip().lower()] = value.group(1).strip()
+        return found
+
+    def test_the_kpi_reports_every_candidate(self, tmp_path: Path) -> None:
         run = _many_candidates(tmp_path, n=45)
 
         html = render_run(run).read_text(encoding="utf-8")
 
-        kpis = dict(
-            (m.group(2), int(m.group(1)))
-            for m in re.finditer(
-                r'<div class="num">(\d+)</div><div class="label">([^<]+)</div>', html
-            )
-        )
-        assert kpis["candidate targets"] == 45, (
-            f"the KPI reports {kpis.get('candidate targets')} for a 45-candidate run; "
-            "it is counting the truncated display table"
+        stats = self._stats(html)
+        assert stats.get("candidate targets") == "45", (
+            f"the report states {stats.get('candidate targets')} for a 45-candidate "
+            "run; it is counting the truncated display table"
         )
 
     def test_the_report_states_the_run_s_real_candidate_count(self, tmp_path: Path) -> None:
@@ -506,8 +518,16 @@ class TestTheSummaryCountsTheRunNotTheTable:
 
         html = render_run(run, tmp_path / "report.html").read_text(encoding="utf-8")
 
-        assert f'<div class="num">{expected}</div>' in html, (
+        stats = self._stats(html)
+        assert stats.get("candidate targets") == str(expected), (
             f"the report does not state the run's {expected} candidates"
+        )
+        # The move to `.stat` is what makes this checkable: the number must now
+        # appear beside what it is a count *of*. A bare count is the shape the
+        # 20-instead-of-291 defect hid in.
+        assert "stat__of" in html, (
+            "the summary renders figures without their denominators, which is the "
+            "rule the shared component exists to keep"
         )
 
     def test_a_truncated_binder_table_does_not_claim_to_be_every_design(

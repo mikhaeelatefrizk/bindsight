@@ -593,3 +593,65 @@ class TestTheStructuresAreActuallyShown:
                 f"{binder.binder_id} has chains {sorted(present)}; the viewer colours "
                 "chain B as the designed binder and would colour nothing"
             )
+
+
+class TestBothSurfacesWriteTheSameNumberTheSameWay:
+    """One design system means one set of rules, not just one stylesheet.
+
+    The report picked up ``bindsight.css`` and still printed CA9's ``padj`` as
+    ``0``, because the rule that a p-value never renders as zero lived inside
+    the web app's module while the report kept its own ``f"{v:.3g}"``. Same
+    number, same run, two answers — and the disagreement is *harder* to notice
+    once the two surfaces look alike.
+    """
+
+    def test_the_report_embeds_the_shared_stylesheet(self) -> None:
+        """Not a copy of it: a second copy is how the tokens drifted before."""
+        from bindsight.report import html as report_html
+
+        shared = (
+            REPO / "bindsight" / "report" / "web" / "static" / "bindsight.css"
+        ).read_text(encoding="utf-8")
+        source = Path(report_html.__file__).read_text(encoding="utf-8")
+
+        assert "bindsight.css" in source, (
+            "the report no longer embeds the design system, so the two surfaces "
+            "can look like different products again"
+        )
+        assert "--ink:" in shared, "the design system has no tokens to share"
+
+    def test_the_report_stylesheet_is_a_layer_not_a_second_system(self) -> None:
+        """It must not redeclare the tokens it is supposed to be inheriting."""
+        layer = (
+            REPO / "bindsight" / "report" / "templates" / "report.css"
+        ).read_text(encoding="utf-8")
+
+        assert "--ink:" not in layer and "--navy:" not in layer, (
+            "report.css declares its own copy of the design tokens; that is the "
+            "arrangement that let the two surfaces drift apart"
+        )
+
+    @pytest.mark.parametrize("value", [0.0, 3.97e-4, 1e-300, 0.5])
+    def test_a_p_value_reads_identically_in_both(self, value: float) -> None:
+        """The web helper and the report's table formatter are one function."""
+        from bindsight.report import format as shared_format
+        from bindsight.report.html import _P_VALUE_COLS, _df_to_records
+
+        pd = pytest.importorskip("pandas")
+        frame = pd.DataFrame({"padj": [value]})
+        rendered = _df_to_records(frame, ["padj"])[0]["padj"]
+
+        assert "padj" in _P_VALUE_COLS
+        assert rendered == shared_format.fmt_p(value), (
+            f"the report writes {value} as {rendered!r} and the interface writes "
+            f"it as {shared_format.fmt_p(value)!r}"
+        )
+
+    def test_a_p_value_of_zero_is_not_zero_in_the_report(self) -> None:
+        """The specific row this was found on: CA9, padj literally 0.0."""
+        from bindsight.report.html import _df_to_records
+
+        pd = pytest.importorskip("pandas")
+        frame = pd.DataFrame({"symbol": ["CA9"], "padj": [0.0]})
+
+        assert _df_to_records(frame, ["symbol", "padj"])[0]["padj"] == "<1e-300"

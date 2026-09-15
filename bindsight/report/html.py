@@ -36,6 +36,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
+from bindsight.report.format import ABSENT, fmt_p  # noqa: F401
 
 LOG = logging.getLogger(__name__)
 
@@ -85,7 +86,18 @@ def render_run(
         lstrip_blocks=True,
     )
     template = env.get_template("report.html.j2")
-    css = (_TEMPLATES_DIR / "report.css").read_text(encoding="utf-8")
+    # The shared design system first, then the report's own layer. One
+    # stylesheet for both surfaces is the point: a reader who has seen the
+    # served interface should recognise this file, and a rule enforced in one
+    # place should not be absent from the other.
+    _design_system = (
+        Path(__file__).resolve().parent / "web" / "static" / "bindsight.css"
+    )
+    css = (
+        _design_system.read_text(encoding="utf-8")
+        + "\n"
+        + (_TEMPLATES_DIR / "report.css").read_text(encoding="utf-8")
+    )
 
     html = template.render(
         run_name=manifest.get("name") if manifest else run_dir.name,
@@ -317,6 +329,19 @@ def _maybe_read_jsonld(path: Path) -> dict[str, Any] | None:
         return None
 
 
+#: Columns whose zero is a floor, not a measurement.
+_P_VALUE_COLS = frozenset({"padj", "pvalue", "p_value", "padj_adjusted", "fdr"})
+
+
+def _fmt_cell(value: Any) -> str:
+    """A float for a table cell, or empty when there is nothing behind it."""
+    if value is None or (isinstance(value, float) and value != value):
+        return ""
+    if not pd.notna(value):
+        return ""
+    return f"{float(value):.3g}"
+
+
 def _df_to_records(
     df: pd.DataFrame | None, cols: list[str], head: int = 20
 ) -> list[dict[str, Any]]:
@@ -325,9 +350,12 @@ def _df_to_records(
         return []
     present_cols = [c for c in cols if c in df.columns]
     sub = df[present_cols].head(head).copy()
-    # Format floats so the report stays readable; pandas prints ugly otherwise.
+    # The same rules the served interface applies. `f"{v:.3g}"` printed CA9's
+    # padj -- literally 0.0 in the artifact, below floating-point resolution --
+    # as "0", which is not a p-value, in the one row a reader looks at first.
     for c in sub.select_dtypes(include="float").columns:
-        sub[c] = sub[c].apply(lambda v: f"{v:.3g}" if pd.notna(v) else "")
+        rule = fmt_p if c in _P_VALUE_COLS else _fmt_cell
+        sub[c] = sub[c].apply(rule)
     records: list[dict[str, Any]] = sub.to_dict(orient="records")
     return records
 

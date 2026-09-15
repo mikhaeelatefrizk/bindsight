@@ -1,212 +1,67 @@
-/* bindsight report — paper-style stylesheet (embedded in report.html) */
-
-:root {
-  --fg: #1a1a1a;
-  --muted: #6c757d;
-  --accent: #0b5394;
-  --accent-soft: #e8f0fb;
-  --ok: #2e7d32;
-  --warn: #f9a825;
-  --err: #c62828;
-  --code-bg: #f6f8fa;
-  --border: #e3e6ea;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: var(--fg);
-  margin: 0;
-  padding: 0;
-  background: #fafafa;
-  line-height: 1.55;
-  font-size: 15px;
-}
+/* SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * The report's own layer, on top of the shared design system.
+ *
+ * Everything a reader recognises -- statistics, badges, notes, tables, the
+ * absence dash -- comes from bindsight.css, so the report and the served
+ * interface are the same product. What is left here is what only a single
+ * self-contained file needs: a masthead, an embedded plot, and the row
+ * highlight that marks a candidate inside the top N.
+ *
+ * This file used to be 212 lines and carried a second copy of the tokens, a
+ * `.badge` that differed from the app's, and a `.kpi` component with no
+ * denominator slot -- which exempted the report's four headline numbers from
+ * the rule the rest of the project enforces.
+ */
 
 main {
-  max-width: 980px;
+  max-width: var(--measure-wide, 72rem);
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: var(--s-8) var(--s-6) var(--s-16);
 }
 
+/* Masthead. The app has a navigation rail here; a file opened from an email
+   has nowhere to navigate to, so it gets the run's identity instead. */
 header {
-  background: var(--accent);
-  color: white;
-  padding: 2rem 1.5rem;
-  border-bottom: 4px solid #094078;
+  background: var(--navy-deep);
+  color: #eaf1fa;
+  padding: var(--s-8) var(--s-6);
 }
+header .inner { max-width: var(--measure-wide, 72rem); margin: 0 auto; }
+header h1 { color: #fff; margin-bottom: var(--s-2); }
+header .subtitle { color: #c7d8ee; margin: 0 0 var(--s-3); font-size: var(--t-sm); }
+header .meta { color: #a8c0dd; font-size: var(--t-xs); }
+header .meta code { background: rgba(255, 255, 255, 0.12); color: #eaf1fa; }
+header a { color: #cfe0f5; }
 
-header .inner {
-  max-width: 980px;
-  margin: 0 auto;
-}
+section { margin-bottom: var(--s-12); }
 
-header h1 {
-  margin: 0;
-  font-size: 1.9rem;
-  letter-spacing: -0.02em;
-}
-
-header .subtitle {
-  margin: 0.4rem 0 0;
-  opacity: 0.9;
-  font-size: 0.95rem;
-}
-
-header .meta {
-  margin-top: 0.8rem;
-  font-size: 0.85rem;
-  opacity: 0.85;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-}
-
-h2 {
-  margin-top: 2.5rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--accent);
-  letter-spacing: -0.01em;
-}
-
-h3 {
-  margin-top: 1.6rem;
-  color: #333;
-}
-
-p, li { font-size: 0.95rem; }
-
-.badges {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin: 0.8rem 0 1.2rem;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.badge.ok    { background: #e8f5e9; color: var(--ok); }
-.badge.warn  { background: #fff8e1; color: #b08400; }
-.badge.err   { background: #ffebee; color: var(--err); }
-
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.kpi {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.2rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.kpi .num {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.kpi .label {
-  font-size: 0.8rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.2rem;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  font-size: 0.88rem;
-}
-
-th, td {
-  padding: 0.55rem 0.8rem;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-}
-
-thead tr {
-  background: var(--code-bg);
-  color: #555;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-tbody tr:hover { background: #fafbfc; }
-
-tbody tr.top { background: #fffbe6; font-weight: 500; }
-
-td.num { font-variant-numeric: tabular-nums; text-align: right; }
-
+/* The volcano plot is embedded as a data URI, so it must not be able to push
+   the page wider than the measure. */
 img.plot {
   display: block;
-  max-width: 100%;
-  margin: 1rem auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: white;
-  padding: 0.5rem;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
-code, pre {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.82rem;
-  background: var(--code-bg);
-  border-radius: 4px;
-}
-
-code { padding: 0.1rem 0.35rem; }
-
-pre {
-  padding: 0.8rem 1rem;
-  overflow-x: auto;
-  border: 1px solid var(--border);
-}
+/* A candidate inside the top N. Backed by a badge in the same row, so the
+   tint is a second signal rather than the only one. */
+tbody tr.top { background: #fffbe6; }
 
 footer {
-  margin-top: 4rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.8rem;
-  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding: var(--s-6);
+  color: var(--ink-soft);
+  font-size: var(--t-xs);
   text-align: center;
 }
 
-footer a { color: var(--muted); }
-
-a { color: var(--accent); }
-a:hover { color: #094078; }
-
-.note {
-  background: #fffae6;
-  border-left: 3px solid #f9a825;
-  padding: 0.7rem 1rem;
-  margin: 1rem 0;
-  font-size: 0.88rem;
-  border-radius: 0 4px 4px 0;
+@media print {
+  header { background: none; color: var(--ink); padding: 0 0 var(--s-4); }
+  header h1, header .subtitle, header .meta { color: var(--ink); }
+  main { padding: 0; }
 }
-
-.note.ok    { background: #e8f5e9; border-left-color: var(--ok); }
-.note.info  { background: var(--accent-soft); border-left-color: var(--accent); }
-.note.err   { background: #ffebee; border-left-color: var(--err); }
