@@ -549,7 +549,12 @@ _TEST_COUNT_EXEMPT = {"CHANGELOG.md"}
 #: suite. Written as a pattern rather than a file list because the previous
 #: version of this guard read only paper/paper.md, and paper/README.md sat at a
 #: stale "635 tests" for as long as that list went unrevised.
-_TEST_COUNT_CLAIM = re.compile(r"(over\s+)?(\d[\d,]*)\s+(?:\w+\s+){0,3}?tests\b", re.I)
+#: ``tests`` alone did not match "over 1,300 test functions" — the same number
+#: and the same promise, invisible to the sweep. That is how a claim stops being
+#: guarded without anyone editing the guard.
+_TEST_COUNT_CLAIM = re.compile(
+    r"(over\s+)?(\d[\d,]*)\s+(?:\w+\s+){0,3}?(?:tests\b|test\s+functions\b)", re.I
+)
 
 
 def _shipped_documents() -> list[Path]:

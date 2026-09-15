@@ -136,8 +136,20 @@ dev = [
     # locally it ran only because streamlit -- the package this release
     # deleted -- was still installed and still pulling httpx in.
     "httpx2>=2.0,<3",
-    "ruff>=0.4",
-    "mypy>=1.10",
+    # Imported at module level by tests/test_packaging_pins.py (33 tests) and
+    # by scripts/check_pinned_environment.py. It arrives transitively via
+    # pytest today, which is a guarantee this project never asked for -- the
+    # same shape as the httpx dependency that broke CI.
+    "packaging>=22",
+    # Bounded, and the ruff bound is deliberately tight. These two decide
+    # whether the repository is acceptable, and ruff is a 0.x *formatter*:
+    # a minor bump can reformat the tree with no commit, so the gate would
+    # fail on a change nobody made. CI resolved 0.16.7 against `>=0.4` while
+    # a developer machine sat on 0.15.17, and the two disagreed about
+    # bindsight/design/protocol.py -- which is how a lint warning reached
+    # CI that could not be reproduced locally at all.
+    "ruff>=0.16,<0.17",
+    "mypy>=2.1,<3",
     "types-requests",
     "types-pyyaml",
     "pre-commit>=3.7",

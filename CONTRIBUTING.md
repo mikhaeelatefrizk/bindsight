@@ -19,7 +19,7 @@ pytest -m "not gpu"
 # Run linters
 ruff check .
 ruff format --check .
-mypy bindsight
+mypy bindsight scripts benchmarks
 
 # Run the discovery-half smoke test on the bundled example cohort
 bindsight demo
@@ -92,7 +92,10 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 ## Pull request checklist
 
 - [ ] Tests added or updated (in `tests/`)
-- [ ] Linters pass (`ruff check`, `ruff format --check`, `mypy`)
+- [ ] Linters pass, over the same scope CI uses:
+      `ruff check bindsight tests scripts benchmarks`,
+      `ruff format --check bindsight tests scripts benchmarks`,
+      `mypy bindsight scripts benchmarks`
 - [ ] Docstrings on public functions
 - [ ] Manifest schema updated if a new artifact type is introduced
 - [ ] [LICENSING.md](LICENSING.md) updated if a new dependency is added

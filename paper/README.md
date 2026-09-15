@@ -71,7 +71,11 @@ JOSS submission criteria (already met):
 - ✅ Repository on GitHub with version-controlled history
 - ✅ Tagged release
 - ✅ Documentation (README + `docs/`)
-- ✅ Tests with CI (over 1000 tests; 6 platform/Python jobs — 3 OS × Python 3.11/3.12 — plus lint, build and docker)
+- ✅ Tests with CI (over 1,300 test functions; 9 platform/Python jobs — 3 OS ×
+  Python 3.11/3.12/3.13 — plus lint, a pinned-environment job, and a wheel build)
+- ⬜ The Docker workflow is **not** a passing gate: the image builds, and the
+  push to `ghcr.io` is refused because the package is not linked to this
+  repository object. Listed here because it was previously claimed as green.
 - ✅ Statement of need in `paper.md`
 
 ---

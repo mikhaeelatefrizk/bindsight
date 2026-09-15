@@ -82,11 +82,14 @@ def check_pins() -> list[str]:
 
 def check_ranges() -> list[str]:
     """Installed distributions that fall outside their declared range."""
-    try:
-        from packaging.requirements import Requirement
-        from packaging.version import Version
-    except ImportError:  # pragma: no cover
-        return []
+    # Not a silent skip. Returning [] here reports *no problems found* when the
+    # truth is *nothing was checked*, and this function is the entire content
+    # of CI's "The installed versions are the recorded ones" step -- which
+    # would have exited 0 having verified nothing at all. `packaging` is
+    # declared in the dev extra; if it is missing, the environment is not one
+    # this check can speak about, and saying so is the only honest answer.
+    from packaging.requirements import Requirement
+    from packaging.version import Version
 
     problems: list[str] = []
     for name, spec in _declared_ranges().items():

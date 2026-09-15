@@ -54,7 +54,7 @@ release overwrites it; edit `.huggingface/README.md` in the repo instead.
 
 ## Quick start
 
-Click **Demo** in the sidebar for a guided run on a real TCGA breast-cancer
+Click **Try it** in the sidebar for a guided run on a real TCGA breast-cancer
 cohort (NIH/GDC, tumor vs. adjacent normal).  The pipeline discovers
 antibody-tractable cell-surface antigens over-expressed in tumor, with full
 provenance; known targets such as HER2 (ERBB2, UniProt P04626) appear among

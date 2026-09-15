@@ -17,7 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # A real import, not a TYPE_CHECKING one. ``submit`` annotates this type, and
 # the annotation was previously silenced with ``# type: ignore[name-defined]``
-# plus ``# noqa: F821`` -- which quieted two checkers rather than telling either
+# plus a ``noqa: F821`` directive -- which quieted two checkers rather than
+# telling either
 # what the name is, so ``typing.get_type_hints`` on this Protocol raised and
 # nothing could introspect the contract. ``bindsight.runners.protocol`` imports
 # nothing from this package, so there is no cycle to avoid.
