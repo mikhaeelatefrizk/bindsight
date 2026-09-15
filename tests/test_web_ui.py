@@ -686,7 +686,7 @@ class TestNoConditionIsDecorative:
 
         assert not offenders, (
             "these conditions cannot change their own result, so whatever they "
-            f"appear to check is not being checked:\n  " + "\n  ".join(offenders)
+            "appear to check is not being checked:\n  " + "\n  ".join(offenders)
         )
 
     def test_the_readiness_verdict_reaches_the_advice(self) -> None:
