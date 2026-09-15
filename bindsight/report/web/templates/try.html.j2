@@ -1,0 +1,94 @@
+{% extends "base.html.j2" %}
+{% block title %}Try it — bindsight{% endblock %}
+
+{% block content %}
+<h1>Try it</h1>
+<p class="lede">
+  The discovery half, end to end, on a real cohort. No GPU, no account, nothing
+  to configure.
+</p>
+
+<div class="card">
+  <h3 class="card__title">What this runs</h3>
+  <div class="grid grid--2">
+    {#- `.fact`, not `.stat`. A `.stat` is a measurement and must carry its
+        denominator or interval; these are descriptions, and borrowing the
+        figure component for them would make that rule unenforceable. -#}
+    {% for key, value in cohort.items() %}
+      <div class="fact">
+        <span class="fact__label">{{ key }}</span>
+        <span class="fact__value">{{ value }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn--primary" id="start">Run the demo</button>
+  </div>
+
+  <ol class="steps" id="steps" hidden></ol>
+  <div id="outcome"></div>
+</div>
+
+<div class="note note--info">
+  <span class="note__glyph" aria-hidden="true">i</span>
+  <div class="note__body">
+    <p class="small" style="margin:0">
+      Well-known antigens appear among the candidates when their signal is
+      present in the cohort. They are not guaranteed to: in whole unstratified
+      TCGA-BRCA, ERBB2 measures a log2 fold change below the filter, and the
+      study says so rather than quietly stratifying until it does not.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Per-stage progress. A single indeterminate spinner cannot tell a reader
+// whether a run is slow or stuck, and on a cold cache this is minutes.
+const GLYPH = { pending: "○", running: "◐", done: "✓", failed: "✗" };
+
+document.getElementById("start").addEventListener("click", async function () {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = "Running…";
+  document.getElementById("outcome").innerHTML = "";
+  const steps = document.getElementById("steps");
+  steps.hidden = false;
+
+  const started = await fetch("/try/run", { method: "POST" });
+  const { job } = await started.json();
+
+  const poll = setInterval(async function () {
+    const res = await fetch("/api/job/" + job);
+    const state = await res.json();
+
+    steps.innerHTML = state.stages
+      .map(function (s) {
+        return (
+          '<li data-state="' + s.state + '">' +
+          '<span class="steps__glyph" aria-hidden="true">' + (GLYPH[s.state] || "") + "</span>" +
+          s.name +
+          '<span class="visually-hidden"> (' + s.state + ")</span></li>"
+        );
+      })
+      .join("");
+
+    if (state.state === "done" || state.state === "failed") {
+      clearInterval(poll);
+      btn.disabled = false;
+      btn.textContent = "Run it again";
+      document.getElementById("outcome").innerHTML =
+        state.state === "done"
+          ? '<div class="note note--ok"><span class="note__glyph" aria-hidden="true">✓</span>' +
+            '<div class="note__body"><p style="margin:0">Complete. The run is in <code>' +
+            state.run_dir + '</code> — <a href="/runs">browse it</a>.</p></div></div>'
+          : '<div class="note note--err"><span class="note__glyph" aria-hidden="true">✗</span>' +
+            '<div class="note__body"><p style="margin:0"><strong>The demo did not finish.</strong></p>' +
+            '<p class="small" style="margin:.5rem 0 0">' + state.error + "</p></div></div>";
+    }
+  }, 700);
+});
+</script>
+{% endblock %}

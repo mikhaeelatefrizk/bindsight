@@ -1,0 +1,140 @@
+{% extends "base.html.j2" %}
+{% block title %}bindsight — RNA-seq to de novo binder design{% endblock %}
+
+{% block content %}
+<h1>bindsight</h1>
+<p class="lede">
+  An open-source pipeline that joins cohort RNA-seq target discovery to de novo
+  protein binder design in one reproducible workflow, with machine-readable
+  provenance from every ranked binder back to the patient samples it came from.
+</p>
+
+<p class="prose">
+  Genomics tooling stops at <em>“here are the interesting genes.”</em>
+  Protein-design tooling starts at <em>“given a target…”</em>. The bridge between
+  them is built ad-hoc, per project, and rarely reproducibly. bindsight ships
+  that bridge as one tool and carries an audit trail across the join.
+</p>
+
+<div class="btn-row">
+  <a class="btn btn--primary" href="/evidence">See what it has shown</a>
+  <a class="btn" href="/try">Run the demo</a>
+  <a class="btn" href="/your-data">Use your own data</a>
+</div>
+
+<h2>What it has, and has not, shown</h2>
+<p class="prose muted">
+  Stated here rather than further in, because the parts that did not work are
+  the reason to trust the parts that did.
+</p>
+
+{% if not have_evidence %}
+  <div class="note note--warn">
+    <span class="note__glyph" aria-hidden="true">!</span>
+    <div class="note__body">
+      <p><strong>The evidence is not available in this install.</strong></p>
+      <p class="small">
+        <code>benchmarks/</code> ships with the repository, not the wheel. Clone
+        the repository to see the study, the controls and the binders, or read
+        them on <a href="{{ github }}/tree/main/benchmarks">GitHub</a>.
+      </p>
+    </div>
+  </div>
+{% else %}
+
+<div class="grid grid--2">
+  <section class="card">
+    <h3 class="card__title">Discovery — one result survived its controls</h3>
+    {% if study %}
+      {% set gap = study.indication_gap %}
+      {% if gap.get('point') is not none %}
+        <div class="stat">
+          <span class="stat__label">Indication-specific gap</span>
+          <span class="stat__value">{{ fmt(gap.point, 3) }}</span>
+          <span class="stat__ci">{{ interval(gap.low, gap.high, confidence=gap.get('confidence')) }}
+            over {{ gap.get('n_clusters', ABSENT) }} antigens — excludes zero</span>
+        </div>
+        <p class="small muted" style="margin-top:.75rem">
+          Known antigens rank higher in the cancer they are actually used in than
+          in cancers that are not theirs. This is a claim about the ordering, not
+          about any individual hit.
+        </p>
+      {% endif %}
+      <p class="small">
+        Against abundance-matched decoys the result is <strong>negative</strong>:
+        {{ study.decoy_nominal }} of {{ study.decoy_rows|length }} pairs are
+        nominally significant and
+        <strong>{{ study.decoy_surviving_correction }}</strong> survive
+        Benjamini-Hochberg.
+      </p>
+    {% endif %}
+    <p><a href="/evidence">The study, its denominators and both nulls →</a></p>
+  </section>
+
+  <section class="card">
+    <h3 class="card__title">Design — the headline was withdrawn</h3>
+    {% if designer %}
+      <div class="stat">
+        <span class="stat__label">Binders designed and folded</span>
+        <span class="stat__value">{{ fmt_int(designer.n_designs) }}</span>
+        <span class="stat__of">
+          from {{ designer.n_trajectories or ABSENT }} backbones on
+          {{ designer.gpu or 'a free GPU' }} — structures committed
+        </span>
+      </div>
+      <div class="withdrawn">
+        <strong>success@0.65 is withdrawn as a measure of design quality.</strong>
+        A paired control folded each design beside a shuffle of its own sequence;
+        the shuffles cleared the bar more often than the designs did. The ipTM
+        values are real Boltz-2 outputs — what does not follow is that the rate
+        measures the designs.
+      </div>
+    {% endif %}
+    <p><a href="/evidence#design">The control, and what it refuted →</a></p>
+  </section>
+</div>
+
+<div class="grid grid--2" style="margin-top:1rem">
+  <section class="card">
+    <h3 class="card__title">Scope</h3>
+    {% if study %}
+      <div class="row">
+        <div class="stat">
+          <span class="stat__label">Cohorts</span>
+          <span class="stat__value">{{ study.n_projects }}</span>
+          <span class="stat__of">whole, unstratified TCGA projects</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Antigen-cohort pairs</span>
+          <span class="stat__value">{{ study.n_scored }}</span>
+          <span class="stat__of">panel fixed in git before any cohort ran</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Surfaceome</span>
+          <span class="stat__value">{{ fmt_int(study.surfaceome_size) }}</span>
+          <span class="stat__of">eligible accessions</span>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h3 class="card__title">What has not been done</h3>
+    <ul class="small">
+      <li>
+        The three-way designer comparison against BindCraft and BoltzGen is
+        <strong>not run</strong>: both need 24–32&nbsp;GB against anything larger
+        than a small domain, so those arms require paid backends.
+      </li>
+      <li>
+        The calibration's own power analysis puts <strong>142 paired designs</strong>
+        at 80% power to detect a 0.05 ipTM difference. The committed control has 20.
+      </li>
+    </ul>
+  </section>
+</div>
+{% endif %}
+
+<h2>Citing this</h2>
+<p class="prose">{{ citation() }}</p>
+{% endblock %}

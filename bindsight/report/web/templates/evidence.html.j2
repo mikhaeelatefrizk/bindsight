@@ -1,0 +1,254 @@
+{% extends "base.html.j2" %}
+{% block title %}Evidence — bindsight{% endblock %}
+
+{% block content %}
+<h1>Evidence</h1>
+<p class="lede">
+  Everything on this page is read from <code>benchmarks/</code> in the
+  repository — the same files the manuscripts cite. Nothing is illustrative,
+  recomputed on the fly, or typed by hand.
+</p>
+
+{% if not study and not designer %}
+  <div class="note note--warn">
+    <span class="note__glyph" aria-hidden="true">!</span>
+    <div class="note__body">
+      <p><strong>No evidence tree in this install.</strong> <code>benchmarks/</code>
+      ships with the repository rather than the wheel.</p>
+      <p class="small"><a href="{{ github }}/tree/main/benchmarks">Read it on GitHub →</a></p>
+    </div>
+  </div>
+{% endif %}
+
+{% if study %}
+<h2 id="discovery">Does it resurface antigens we already trust?</h2>
+<p class="prose">
+  <strong>{{ study.n_scored }} antigen-cohort pairs across {{ study.n_projects }}
+  real TCGA projects.</strong> Each cohort is a whole, unstratified project —
+  every primary tumour against every solid-tissue normal — contrast paired on the
+  patient. Nothing selects for the antigen being sought.
+</p>
+
+<h3>Recall, on the pre-registered denominator</h3>
+{% set cascade = (study.recall_cascade or {}).get('all', {}) %}
+{% set w20 = ((cascade.get('at_k') or {}).get('recall@20') or {}).get('wilson') or {} %}
+<div class="card">
+  <div class="row">
+    <div class="stat">
+      <span class="stat__label">Recall @ 20</span>
+      <span class="stat__value">{{ w20.get('numerator', ABSENT) }}/{{ w20.get('denominator', ABSENT) }}</span>
+      <span class="stat__ci">{{ interval(w20.get('low'), w20.get('high'), digits=2) }}</span>
+      <span class="stat__note">
+        Approved-agent antigens only — the tiers the study pre-registered.
+      </span>
+    </div>
+  </div>
+  {% if recall %}
+    <div data-chart="bars" data-spec='{{ tojson(recall) }}' style="margin-top:1rem"></div>
+    <p class="chart__caption">
+      Each bar is a cutoff; the figure beside it is the numerator over the
+      denominator, not a percentage on its own.
+    </p>
+  {% endif %}
+</div>
+
+{% if study.headline %}
+{% set top = study.headline %}
+<h3>The best-ranked antigen, and why it is shown separately</h3>
+<div class="card">
+  <div class="row">
+    <div class="stat">
+      <span class="stat__label">{{ top.symbol }} rank</span>
+      <span class="stat__value">{{ top.rank }}</span>
+      <span class="stat__of">of {{ fmt_int(top.shortlist_size) }} candidates in
+        {{ top.project|replace('TCGA-','') }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat__label">log2 fold change</span>
+      <span class="stat__value">{{ fmt(top.log2fc) }}</span>
+      <span class="stat__ci">
+        {% if top.get('lfc_se') is not none %}± {{ fmt(top.lfc_se) }} (SE){% else %}{{ ABSENT }}{% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="note note--info" style="margin-top:1rem">
+    <span class="note__glyph" aria-hidden="true">i</span>
+    <div class="note__body">
+      <p class="small" style="margin:0">
+        <strong>{{ top.symbol }} is not in the recall figure above.</strong> Its
+        regulatory tier is <code>{{ top.get('tier', ABSENT) }}</code>, and the
+        study pre-registered
+        <code>{{ study.primary_tiers|join(', ') or ABSENT }}</code> as the primary
+        denominator. The two numbers answer different questions and are kept
+        apart deliberately: placing them side by side invites a reader to bind
+        the “1” in a recall fraction to a rank of 1 for a different antigen.
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<h3 id="nulls">Is the ranking doing anything? Two nulls, pointing different ways</h3>
+<p class="prose">
+  Both are reported. Reporting only the flattering one would make the other the
+  finding.
+</p>
+
+<div class="grid grid--2">
+  <section class="card">
+    <h4 class="card__title">
+      <span class="badge badge--warn"><span class="badge__glyph" aria-hidden="true">–</span>negative</span>
+      Against abundance-matched decoys
+    </h4>
+    <div class="stat">
+      <span class="stat__label">Survive Benjamini-Hochberg</span>
+      <span class="stat__value">{{ study.decoy_surviving_correction }}</span>
+      <span class="stat__of">of {{ study.decoy_rows|length }} pairs
+        ({{ study.decoy_nominal }} nominally significant at 0.05)</span>
+    </div>
+    <p class="small" style="margin-top:.75rem">
+      Each antigen is compared with genes matched to it on abundance and
+      dispersion quintile, drawn from the same eligible surfaceome: would a gene
+      that merely <em>looks</em> like this antigen have ranked as well?
+    </p>
+    {% if study.smallest_attainable_decoy_bh is not none %}
+      <p class="small muted">
+        Read with the panel's resolution in mind: each pair's p is bounded below
+        by its own stratum size, so the smallest adjusted value this panel could
+        have produced is <strong>{{ fmt(study.smallest_attainable_decoy_bh, 3) }}</strong>.
+        Under 0.05 — a pair genuinely could have survived, but only one sitting
+        essentially on its floor. A measurement, not a foregone conclusion, and
+        not a sensitive one.
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h4 class="card__title">
+      <span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">✓</span>positive</span>
+      Against a permuted indication
+    </h4>
+    {% set gap = study.indication_gap %}
+    {% set spec = study.specificity_null %}
+    {% if gap.get('point') is not none %}
+      <div class="stat">
+        <span class="stat__label">Within-antigen difference</span>
+        <span class="stat__value">{{ fmt(gap.point, 3) }}</span>
+        <span class="stat__ci">
+          {{ interval(gap.low, gap.high, confidence=gap.get('confidence')) }}
+          over {{ gap.get('n_clusters', ABSENT) }} antigens — excludes zero
+        </span>
+      </div>
+    {% endif %}
+    {% if spec.get('p_value') is not none %}
+      <p class="small" style="margin-top:.75rem">
+        Exact permutation p = <strong>{{ fmt_p(spec.p_value) }}</strong> over
+        {{ fmt_int(spec.get('n_permutations')) }} enumerated orderings{% if study.specificity_is_at_its_floor %} —
+        the floor for this design, so it is as extreme as an exhaustive
+        enumeration of this panel can show rather than vanishingly small{% endif %}.
+      </p>
+    {% endif %}
+    {% if nulls %}
+      <div data-chart="forest" data-spec='{{ tojson(nulls) }}'></div>
+    {% endif %}
+    <p class="small muted">
+      Each antigen is its own control: the comparison is within antigen, not
+      between two groups of them.
+    </p>
+  </section>
+</div>
+
+<h3>Every pair</h3>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Antigen</th><th>Cohort</th>
+        <th class="num">log2FC</th><th class="num">padj</th>
+        <th class="num">Rank</th>
+        <th class="num"><abbr title="Where it would have ranked with every gate removed">Counterfactual</abbr></th>
+        <th>Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in study.pairs %}
+      <tr>
+        <td><strong>{{ p.get('symbol', ABSENT) }}</strong></td>
+        <td>{{ p.get('project', ABSENT)|replace('TCGA-','') }}</td>
+        <td class="num">{{ fmt(p.get('log2fc')) }}</td>
+        <td class="num">{{ fmt_p(p.get('padj')) }}</td>
+        <td class="num">
+          {% if p.get('rank') is not none %}{{ p.rank }} of {{ fmt_int(p.get('shortlist_size')) }}
+          {% else %}{{ ABSENT }}{% endif %}
+        </td>
+        <td class="num">{{ fmt_int(p.get('counterfactual_rank')) }}</td>
+        <td class="small">{{ p.get('outcome_class', ABSENT)|replace('_',' ') }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="chart__caption">
+  A rank is printed with the size of the list it sits in. The counterfactual
+  column is what separates “a filter excluded it” from “the ranking placed it low”.
+</p>
+{% endif %}
+
+{% if designer %}
+<h2 id="design">The design half, and the control that withdrew its headline</h2>
+<div class="card">
+  <div class="row">
+    <div class="stat">
+      <span class="stat__label">Designs</span>
+      <span class="stat__value">{{ fmt_int(designer.n_designs) }}</span>
+      <span class="stat__of">from {{ designer.n_trajectories or ABSENT }} backbones</span>
+    </div>
+    <div class="stat">
+      <span class="stat__label">Mean ipTM</span>
+      <span class="stat__value">{{ fmt(designer.mean_iptm) }}</span>
+      <span class="stat__of">validator {{ designer.validator or ABSENT }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat__label">Hardware</span>
+      <span class="stat__value" style="font-size:var(--t-md)">{{ designer.gpu or ABSENT }}</span>
+      <span class="stat__of">bindsight {{ designer.bindsight_version or ABSENT }}</span>
+    </div>
+  </div>
+
+  <div class="withdrawn">
+    <strong>success@0.65 is withdrawn as a measure of design quality.</strong>
+    A paired control folded every design beside a shuffle of its own sequence —
+    same length, same amino-acid composition, only the order destroyed. Under a
+    seeded validator averaging five diffusion draws the shuffles cleared the
+    customary ipTM 0.65 bar <em>more</em> often than the designs did. The ipTM
+    values are real Boltz-2 outputs; what does not follow is that the rate
+    measures the designs. The control's predictions were written down before its
+    data arrived.
+  </div>
+
+  {% if paired %}
+    <div data-chart="pairedStrip" data-spec='{{ tojson(paired) }}' style="margin-top:1rem"></div>
+    <p class="chart__caption">
+      One line per pair, so the pairing is visible rather than two clouds. A red
+      line is a pair whose shuffle scored higher than the design it came from.
+    </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<h2>Reproducing any of this</h2>
+<p class="prose">
+  Three tiers. The first needs nothing but a clone and runs in seconds; it
+  regenerates the published pages from committed files and should produce no
+  diff at all.
+</p>
+<pre><code>git clone {{ github }}
+cd bindsight
+pip install -e ".[discover,report]"
+python scripts/build_docs_results.py   # rewrites the published pages; nothing should change</code></pre>
+<p class="small muted">
+  Re-running the study needs network and a few CPU-hours; re-running the design
+  needs a GPU. Both chains are documented in the repository.
+</p>
+{% endblock %}

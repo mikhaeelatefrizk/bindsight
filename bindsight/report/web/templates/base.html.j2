@@ -1,0 +1,48 @@
+{#- SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+    SPDX-License-Identifier: AGPL-3.0-or-later -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}bindsight{% endblock %}</title>
+<link rel="stylesheet" href="/static/bindsight.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='none' stroke='%230b5394' stroke-width='2'/><circle cx='8' cy='8' r='2' fill='%230f7d73'/></svg>">
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar" aria-label="Sections">
+    <a class="brand" href="/">
+      <span class="brand__name">bindsight</span>
+      <span class="brand__tag">Expression → Binder</span>
+    </a>
+
+    <div class="nav">
+      {% set sections = [
+        ('overview',  '/',          'Overview'),
+        ('evidence',  '/evidence',  'Evidence'),
+        ('try',       '/try',       'Try it'),
+        ('your_data', '/your-data', 'Your data'),
+        ('runs',      '/runs',      'Runs'),
+      ] %}
+      {% for key, href, label in sections %}
+        <a href="{{ href }}"{% if nav == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="sidebar__foot">
+      v{{ version }} · AGPL-3.0<br>
+      <a href="{{ github }}">Source</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="wrap">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script src="/static/charts.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

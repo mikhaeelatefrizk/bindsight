@@ -179,6 +179,14 @@ packages = ["bindsight"]
 "bindsight/surfaceome/data/surfaceome_extended.tsv" = "bindsight/surfaceome/data/surfaceome_extended.tsv"
 "bindsight/report/templates/report.html.j2"   = "bindsight/report/templates/report.html.j2"
 "bindsight/report/templates/report.css"       = "bindsight/report/templates/report.css"
+# The web interface's templates and static assets are deliberately NOT listed
+# here: `packages = ["bindsight"]` above already collects every file under the
+# package, and adding them again makes hatch refuse the build outright ("a
+# second file is being added at the same path"). What guards them is
+# tests/test_packaging_pins.py, which builds the wheel and opens it — a list in
+# this file could only ever confirm itself, and these are not importable
+# modules, so a missing one is a 404 for every pip-installed user while every
+# test still passes.
 
 [tool.ruff]
 line-length = 100

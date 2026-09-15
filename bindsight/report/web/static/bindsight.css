@@ -1,0 +1,421 @@
+/* SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * bindsight design system.
+ *
+ * One stylesheet, two surfaces: the interactive app and the standalone HTML
+ * report a collaborator opens from an email. They looked like different
+ * products before; a reader who has seen one should recognise the other.
+ *
+ * Three rules this file exists to enforce, because they are scientific claims
+ * and not decoration:
+ *
+ *   1. A figure never appears without what makes it interpretable. `.stat`
+ *      requires a denominator or interval slot; there is no variant without one.
+ *   2. Nothing is encoded by colour alone. Every status carries a glyph, so the
+ *      meaning survives a projector, a greyscale printout, and deuteranopia.
+ *   3. Absence renders as an em dash, never as zero. `.stat--absent` exists so
+ *      "not measured" cannot be mistaken for "measured as none".
+ */
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  /* Ink and ground. Deliberately not pure black on pure white: 1b1f24 on
+     fcfdfe is easier to read for long stretches and still clears WCAG AAA. */
+  --ink: #1b1f24;
+  --ink-soft: #55606d;
+  --ink-faint: #7d8896;
+  --ground: #fcfdfe;
+  --surface: #ffffff;
+  --rule: #e3e8ef;
+  --rule-strong: #c9d2de;
+
+  /* Brand. Navy carries structure; teal marks the designed half. */
+  --navy: #0b5394;
+  --navy-deep: #073a68;
+  --navy-tint: #eaf1fa;
+  --teal: #0f7d73;
+  --teal-tint: #e6f4f2;
+
+  /* Status. Each is paired with a glyph in the markup — never used alone. */
+  --ok: #1f6f35;
+  --ok-tint: #e8f4ea;
+  --warn: #8a6100;
+  --warn-tint: #fdf3dd;
+  --err: #a32020;
+  --err-tint: #fbeaea;
+
+  /* Type scale, 1.2 ratio from 16px. */
+  --t-xs: 0.75rem;
+  --t-sm: 0.875rem;
+  --t-base: 1rem;
+  --t-md: 1.2rem;
+  --t-lg: 1.44rem;
+  --t-xl: 1.728rem;
+  --t-2xl: 2.074rem;
+
+  /* Spacing, 4px base. */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --measure: 68ch;
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--ground);
+  /* Tabular figures everywhere: a column of numbers that does not align is a
+     column a reader cannot scan. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- layout */
+.shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  flex: 0 0 15rem;
+  background: var(--navy-deep);
+  color: #dce7f3;
+  padding: var(--s-6) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+.sidebar a { color: #dce7f3; }
+
+.brand { display: block; text-decoration: none; }
+.brand__name {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.brand__tag { font-size: var(--t-xs); color: #9fb8d4; }
+
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--t-sm);
+}
+.nav a:hover { background: rgba(255, 255, 255, 0.08); }
+.nav a[aria-current="page"] {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
+}
+/* Not colour alone: the current page also carries a marker. */
+.nav a[aria-current="page"]::before { content: "▸"; margin-left: -0.75em; }
+
+.sidebar__foot {
+  margin-top: auto;
+  font-size: var(--t-xs);
+  color: #9fb8d4;
+  line-height: 1.5;
+}
+
+.main { flex: 1 1 auto; min-width: 0; }
+.wrap { max-width: 78rem; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-16); }
+.prose { max-width: var(--measure); }
+
+/* ------------------------------------------------------------ typography */
+h1, h2, h3, h4 { line-height: 1.25; letter-spacing: -0.015em; margin: 0 0 var(--s-3); }
+h1 { font-size: var(--t-2xl); font-weight: 700; }
+h2 { font-size: var(--t-xl); font-weight: 650; margin-top: var(--s-12); }
+h3 { font-size: var(--t-md); font-weight: 650; margin-top: var(--s-8); }
+h2:first-of-type, h3:first-of-type { margin-top: 0; }
+p { margin: 0 0 var(--s-4); }
+.lede { font-size: var(--t-md); color: var(--ink-soft); max-width: var(--measure); }
+.muted { color: var(--ink-soft); }
+.small { font-size: var(--t-sm); }
+code, kbd, samp { font-family: var(--mono); font-size: 0.9em; }
+:not(pre) > code {
+  background: var(--navy-tint);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+pre {
+  background: #0f1720;
+  color: #e6edf3;
+  padding: var(--s-4);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: var(--t-sm);
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; color: inherit; }
+a { color: var(--navy); text-underline-offset: 2px; }
+a:hover { color: var(--navy-deep); }
+
+/* ----------------------------------------------------------------- cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--s-6);
+  box-shadow: var(--shadow);
+}
+.card + .card { margin-top: var(--s-4); }
+.card__title { font-size: var(--t-md); font-weight: 650; margin: 0 0 var(--s-2); }
+
+.grid { display: grid; gap: var(--s-4); }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+
+/* ----------------------------------------------------------------- stats
+ *
+ * The central component, and the one with a rule attached: a `.stat` must
+ * carry a `.stat__of` (its denominator) or a `.stat__ci` (its interval). The
+ * old interface put intervals in hover tooltips — including one spanning
+ * 15–70% — under a paragraph promising every rate carried its interval. A
+ * tooltip is not a disclosure: it does not print, does not exist on touch, and
+ * is not there when someone photographs the screen.
+ */
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat__label {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.stat__value {
+  font-size: var(--t-xl);
+  font-weight: 680;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.stat__of { font-size: var(--t-sm); color: var(--ink-soft); }
+.stat__ci { font-size: var(--t-sm); color: var(--ink-soft); }
+.stat__note { font-size: var(--t-xs); color: var(--ink-faint); line-height: 1.45; }
+
+/* Absence. Never a zero: four crisp zeros in metric chrome read as a
+   measurement, and a broken run then looks like an empty one. */
+.stat--absent .stat__value { color: var(--ink-faint); font-weight: 500; }
+
+/* Descriptive key/value, deliberately *not* `.stat`.
+ *
+ * `.stat` is a measurement and carries a rule: it must have a denominator or an
+ * interval. Descriptions have neither and never will, so they get their own
+ * component -- otherwise the rule would have to admit exceptions, and a rule
+ * with exceptions cannot be checked. */
+.fact { display: flex; flex-direction: column; gap: 2px; }
+.fact__label {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.fact__value { font-size: var(--t-base); font-weight: 600; line-height: 1.4; }
+
+/* ---------------------------------------------------------------- badges */
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  padding: 0.15em 0.55em;
+  border-radius: 999px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.badge__glyph { font-weight: 700; }
+.badge--ok { background: var(--ok-tint); color: var(--ok); border-color: #bfe0c7; }
+.badge--warn { background: var(--warn-tint); color: var(--warn); border-color: #ecd9a4; }
+.badge--err { background: var(--err-tint); color: var(--err); border-color: #eebcbc; }
+.badge--info { background: var(--navy-tint); color: var(--navy); border-color: #c3d8f0; }
+.badge--teal { background: var(--teal-tint); color: var(--teal); border-color: #b7ded8; }
+
+/* ---------------------------------------------------------------- notices */
+.note {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  margin: var(--s-4) 0;
+}
+.note__glyph { flex: 0 0 auto; font-weight: 700; line-height: 1.5; }
+.note__body { min-width: 0; }
+.note__body > :last-child { margin-bottom: 0; }
+.note--info { background: var(--navy-tint); border-color: #c3d8f0; }
+.note--ok { background: var(--ok-tint); border-color: #bfe0c7; }
+.note--warn { background: var(--warn-tint); border-color: #ecd9a4; }
+.note--err { background: var(--err-tint); border-color: #eebcbc; }
+
+/* Withdrawal. Its own component, because a retracted figure must not be
+   stylistically interchangeable with an ordinary caveat. */
+.withdrawn {
+  border-left: 3px solid var(--err);
+  background: var(--err-tint);
+  padding: var(--s-3) var(--s-4);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: var(--s-4) 0;
+  font-size: var(--t-sm);
+}
+.withdrawn strong { color: var(--err); }
+
+/* ---------------------------------------------------------------- tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: var(--t-sm); background: var(--surface); }
+th, td { padding: var(--s-2) var(--s-3); text-align: left; border-bottom: 1px solid var(--rule); }
+th {
+  background: #f5f8fc;
+  font-weight: 650;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #f8fbfe; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* A column header that carries its own definition. */
+th abbr { text-decoration: underline dotted; cursor: help; }
+
+/* ---------------------------------------------------------------- charts */
+.chart { width: 100%; overflow: visible; }
+.chart text { font-family: var(--font); font-size: 11px; fill: var(--ink-soft); }
+.chart .axis line, .chart .axis path { stroke: var(--rule-strong); }
+.chart .gridline { stroke: var(--rule); stroke-dasharray: 2 3; }
+.chart .mark { stroke: var(--surface); stroke-width: 1; }
+.chart .mark:hover { stroke: var(--ink); stroke-width: 1.5; }
+.chart .band { fill: var(--navy-tint); }
+.chart__caption { font-size: var(--t-sm); color: var(--ink-soft); margin-top: var(--s-2); }
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--ink);
+  color: #fff;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  z-index: 50;
+  max-width: 22rem;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.18);
+}
+.tooltip[hidden] { display: none; }
+
+/* --------------------------------------------------------------- buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover { background: #f5f8fc; }
+.btn--primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn--primary:hover { background: var(--navy-deep); color: #fff; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); margin: var(--s-4) 0; }
+
+/* ----------------------------------------------------------------- forms */
+label { display: block; font-size: var(--t-sm); font-weight: 600; margin-bottom: var(--s-1); }
+.field { margin-bottom: var(--s-4); }
+.field__help { font-size: var(--t-xs); color: var(--ink-soft); margin-top: var(--s-1); }
+input[type="text"], input[type="number"], input[type="file"], select {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--t-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+input:focus-visible, select:focus-visible, .btn:focus-visible, a:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------- progress */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.steps li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-sm);
+}
+.steps li[data-state="running"] { background: var(--navy-tint); font-weight: 600; }
+.steps li[data-state="done"] { color: var(--ink-soft); }
+.steps li[data-state="failed"] { background: var(--err-tint); color: var(--err); font-weight: 600; }
+.steps__glyph { flex: 0 0 1.25em; font-weight: 700; }
+
+/* ------------------------------------------------------------- structure */
+.viewer { width: 100%; height: 26rem; position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--rule); }
+.viewer-legend { display: flex; gap: var(--s-4); flex-wrap: wrap; margin-top: var(--s-2); font-size: var(--t-sm); }
+
+/* ---------------------------------------------------------------- misc */
+.stack > * + * { margin-top: var(--s-4); }
+.row { display: flex; gap: var(--s-4); flex-wrap: wrap; align-items: baseline; }
+hr { border: none; border-top: 1px solid var(--rule); margin: var(--s-8) 0; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* --------------------------------------------------------------- narrow */
+@media (max-width: 60rem) {
+  .shell { flex-direction: column; }
+  .sidebar { flex: 0 0 auto; flex-direction: row; align-items: center; gap: var(--s-4); flex-wrap: wrap; padding: var(--s-3) var(--s-4); }
+  .nav { flex-direction: row; flex-wrap: wrap; }
+  .sidebar__foot { margin-top: 0; width: 100%; }
+  .wrap { padding: var(--s-6) var(--s-4) var(--s-12); }
+  h1 { font-size: var(--t-xl); }
+}
+
+/* ---------------------------------------------------------------- print
+ * The report is emailed and printed. Hover states do not survive paper, so
+ * nothing meaningful may live in one. */
+@media print {
+  .sidebar, .btn-row, .tooltip { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .table-wrap { overflow: visible; }
+  a { color: var(--ink); text-decoration: underline; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: var(--ink-faint); }
+}

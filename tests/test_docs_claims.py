@@ -824,17 +824,30 @@ def test_the_report_surfaces_carry_the_withdrawal_too() -> None:
     Guarding only the Markdown would leave the number standing unqualified on
     the one surface most people see, which is the opposite of the point.
     """
-    import inspect
+    from bindsight.report import showcase
 
-    from bindsight.report import showcase, webapp
+    # Swept, not listed. The interface renders from templates, which are not
+    # importable modules -- a list of modules would have stopped covering the
+    # place the number is actually written the moment it moved into Jinja.
+    surfaces: list[tuple[str, str]] = []
+    for path in (ROOT / "bindsight" / "report").rglob("*"):
+        if path.suffix not in {".py", ".j2", ".html"}:
+            continue
+        surfaces.append((path.relative_to(ROOT).as_posix(), path.read_text(encoding="utf-8")))
+    surfaces.append(("bindsight/report/showcase.py", Path(showcase.__file__).read_text(encoding="utf-8")))
 
-    for module in (showcase, webapp):
-        source = inspect.getsource(module)
+    checked = 0
+    for name, source in surfaces:
         if "ipTM 0.65" not in source:
             continue
+        checked += 1
         assert "withdrawn" in source.lower(), (
-            f"{module.__name__} renders the success rate without the withdrawal"
+            f"{name} renders the success rate without the withdrawal"
         )
+    assert checked, (
+        "no rendering surface mentions the success rate at all; either the "
+        "figure left the interface or this sweep stopped reaching it"
+    )
 
 
 def test_the_demo_help_does_not_promise_a_rediscovery_the_study_refutes() -> None:
@@ -1103,8 +1116,9 @@ _CALIBRATION_HISTORY_ALLOWED: frozenset[str] = frozenset(
 def _calibration_surfaces() -> list[Path]:
     """Every place a reader can meet the calibration result.
 
-    Prose *and* code: the superseded figures were also hard-coded into the
-    Streamlit UI's tooltip, which no documentation sweep would ever have seen.
+    Prose *and* code *and* templates: the superseded figures were hard-coded
+    into a UI tooltip, which no documentation sweep would ever have seen. The
+    interface is Jinja now, so ``.j2`` is swept for the same reason ``.py`` is.
     """
     # ``tests`` is excluded because this module necessarily contains the
     # forbidden strings in order to forbid them; no test file is a surface a
@@ -1118,7 +1132,7 @@ def _calibration_surfaces() -> list[Path]:
     skip = (".git", "site", "runs", "node_modules", "__pycache__", ".venv", "tests")
     out: list[Path] = []
     for path in ROOT.rglob("*"):
-        if path.suffix not in {".md", ".tex", ".py"}:
+        if path.suffix not in {".md", ".tex", ".py", ".j2"}:
             continue
         parts = set(path.relative_to(ROOT).parts)
         if parts & set(skip):
@@ -1132,8 +1146,11 @@ def test_the_sweep_for_calibration_surfaces_sees_prose_and_code() -> None:
     found = {p.relative_to(ROOT).as_posix() for p in _calibration_surfaces()}
 
     assert "README.md" in found
-    assert "bindsight/report/webapp.py" in found, (
-        "the sweep no longer covers the Streamlit app, where a superseded copy of the notice lived"
+    assert "bindsight/report/web/app.py" in found, (
+        "the sweep no longer covers the interface, where a superseded copy of the notice lived"
+    )
+    assert any(f.endswith(".j2") for f in found), (
+        "the sweep no longer covers the templates, which is where the interface now writes its prose"
     )
     assert "benchmarks/designer_benchmark/DESIGNER_BENCHMARK.md" in found
 

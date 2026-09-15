@@ -1,0 +1,125 @@
+{% extends "base.html.j2" %}
+{% block title %}Runs — bindsight{% endblock %}
+
+{% block content %}
+<h1>Runs</h1>
+<p class="lede">Runs found under <code>{{ root }}</code>.</p>
+
+{% if not runs %}
+  <div class="note note--info">
+    <span class="note__glyph" aria-hidden="true">i</span>
+    <div class="note__body">
+      <p style="margin:0">Nothing here yet.</p>
+      <p class="small" style="margin:.5rem 0 0">
+        Run the demo, or point bindsight at your own cohort.
+      </p>
+      <div class="btn-row" style="margin-bottom:0">
+        <a class="btn btn--primary" href="/try">Run the demo</a>
+        <a class="btn" href="/your-data">Use your own data</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th><abbr title="The PROV-O record of what produced this run">Manifest</abbr></th>
+          <th>Candidates</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in runs %}
+        <tr>
+          <td><strong>{{ r.name }}</strong></td>
+          <td>
+            {% if r.has_manifest %}
+              <span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">✓</span>recorded</span>
+            {% else %}
+              <span class="badge badge--warn"><span class="badge__glyph" aria-hidden="true">!</span>absent</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.verdict == 'failed' %}
+              <span class="badge badge--err"><span class="badge__glyph" aria-hidden="true">✗</span>a stage failed</span>
+            {% elif r.has_candidates %}
+              <span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">✓</span>present</span>
+            {% else %}
+              <span class="badge badge--warn"><span class="badge__glyph" aria-hidden="true">!</span>absent</span>
+            {% endif %}
+          </td>
+          <td class="small muted"><code>{{ r.path }}</code></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% set broken = runs | selectattr('failures') | list %}
+  {% if broken %}
+    <div class="note note--err">
+      <span class="note__glyph" aria-hidden="true">✗</span>
+      <div class="note__body">
+        <p style="margin:0"><strong>Some runs did not complete.</strong></p>
+        <p class="small">
+          These are not runs that found nothing — a stage crashed, and the empty
+          tables it left behind look identical. The stage and its error:
+        </p>
+        <ul class="small">
+          {% for r in broken %}
+            {% for f in r.failures %}
+              <li><code>{{ r.name }}</code> — <strong>{{ f.name }}</strong>: {{ f.error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+  {% set degraded = runs | selectattr('open_targets') | list %}
+  {% if degraded %}
+    <div class="note note--warn">
+      <span class="note__glyph" aria-hidden="true">!</span>
+      <div class="note__body">
+        <p style="margin:0"><strong>Some shortlists were not drawn from the whole cohort.</strong></p>
+        <p class="small">
+          Open Targets is the only genome-wide Ensembl&nbsp;&rarr;&nbsp;UniProt source
+          here. Where it did not answer, the only mapping left is a bundled table of a
+          few well-known genes, and every gene missing from that table was dropped
+          before the surfaceome filter.
+        </p>
+        <ul class="small">
+          {% for r in degraded %}
+            {% set ot = r.open_targets %}
+            <li>
+              <code>{{ r.name }}</code> &mdash;
+              <strong>{{ ot.degraded }} of {{ ot.total }}</strong> candidates mapped from the
+              bundled offline table
+              ({% for b in ot.breakdown %}<code>{{ b.status }}</code>&nbsp;&times;&nbsp;{{ b.count }}{% if not loop.last %}, {% endif %}{% endfor %}).
+              {% if ot.total_outage %}
+                Open Targets answered for none of them, so that table's handful of genes
+                was the entire mapping. <strong>This is not a genome-wide discovery</strong>:
+                a gene's absence from it is no evidence about that gene.
+              {% else %}
+                Open Targets answered for the rest, so the genes it failed on were dropped
+                unless that table happened to list them. <strong>This shortlist is
+                incomplete.</strong>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="small" style="margin-bottom:0">
+          Re-run with Open Targets reachable for a full discovery.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+  <p class="chart__caption">
+    A run missing its manifest or its candidate table is shown as <em>absent</em>,
+    not as a run that produced nothing. Those are different findings, and
+    reporting the second for the first is how a crashed stage reads as an empty
+    result.
+  </p>
+{% endif %}
+{% endblock %}

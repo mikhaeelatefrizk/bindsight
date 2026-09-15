@@ -324,10 +324,15 @@ def _wheel_paths() -> set[str]:
 
 
 class TestEntryPointsResolveFromTheInstall:
-    """`bindsight ui` looked for a root-level streamlit_app.py, which the wheel
-    does not contain, so the command worked only from a source checkout. Its
-    sibling — `report --format streamlit` — already imported the packaged module,
-    so one file held both the right and the wrong way to find the same app.
+    """`bindsight ui` looked for a root-level file the wheel does not contain,
+    so the command worked only from a source checkout.
+
+    The interface is served from inside the package now, which moves the risk:
+    it is no longer a wrong path but a **missing file**. Its templates and
+    assets are not importable modules, so they ship only if `force-include`
+    names them, and that list is written by hand. A template added next month
+    renders in every test -- the tests read the source tree -- and 404s in the
+    wheel. So the guard below is a sweep rather than a list.
     """
 
     @staticmethod
@@ -342,17 +347,77 @@ class TestEntryPointsResolveFromTheInstall:
             "that path does not exist in an installed wheel"
         )
 
-    def test_the_ui_launches_the_packaged_module(self) -> None:
+    def test_the_ui_launches_the_packaged_interface(self) -> None:
+        """Both `ui` and `report --format web` must resolve the same module."""
         source = self._cli_source()
 
-        assert source.count("from bindsight.report import streamlit_app") >= 2, (
-            "the ui and the streamlit report should both resolve the packaged "
-            "module; one of them is resolving something else"
+        assert source.count("from bindsight.report.web.app import serve") >= 2, (
+            "the ui and the web report should both resolve the packaged "
+            "interface; one of them is resolving something else"
         )
 
     def test_the_packaged_entry_point_exists(self) -> None:
         """The module the commands launch must actually be in the package."""
-        assert (REPO_ROOT / "bindsight" / "report" / "streamlit_app.py").is_file()
+        assert (REPO_ROOT / "bindsight" / "report" / "web" / "app.py").is_file()
+
+    def test_every_template_and_asset_the_interface_needs_is_in_the_wheel(
+        self, tmp_path: Path
+    ) -> None:
+        """Built and opened, because the config cannot answer this.
+
+        An earlier version of this guard compared the tree against the
+        ``force-include`` table and would have passed a build that shipped
+        nothing -- those entries were duplicates of what ``packages`` already
+        collects, and re-adding them as directories broke the build. Templates
+        and static files are not importable modules: if they are absent, every
+        test still passes, because tests read the source tree, and a
+        pip-installed user gets a 404 on every page.
+        """
+        import subprocess
+        import sys
+        import zipfile
+
+        out = tmp_path / "dist"
+        built = subprocess.run(
+            [sys.executable, "-m", "build", "--wheel", "--no-isolation", "--outdir", str(out)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if built.returncode != 0:
+            pytest.skip(f"wheel build unavailable here: {built.stderr.strip()[-200:]}")
+
+        wheels = sorted(out.glob("*.whl"))
+        assert wheels, "the build reported success and produced no wheel"
+        shipped = set(zipfile.ZipFile(wheels[-1]).namelist())
+
+        web = REPO_ROOT / "bindsight" / "report" / "web"
+        needed = {
+            p.relative_to(REPO_ROOT).as_posix()
+            for d in ("templates", "static")
+            for p in (web / d).rglob("*")
+            if p.is_file()
+        }
+        assert needed, "the interface has no templates or assets; the sweep found nothing"
+
+        missing = sorted(needed - shipped)
+        assert not missing, (
+            "these files are served by the interface and are not in the wheel, so "
+            f"a pip-installed user gets a 404 where a clone works: {missing}"
+        )
+
+    def test_the_shipped_list_has_no_entries_that_left_the_tree(self) -> None:
+        """A force-include naming a deleted file is a build error on some
+        backends and silent rot on the rest."""
+        import tomllib
+
+        pyproject = tomllib.loads(
+            (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        shipped = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["force-include"]
+
+        absent = sorted(rel for rel in shipped if not (REPO_ROOT / rel).exists())
+        assert not absent, f"force-include names files that are not in the tree: {absent}"
 
     def test_the_demo_can_find_its_config_from_an_installed_layout(self) -> None:
         """The wheel installs the demo config as shared-data under sys.prefix.

@@ -1,13 +1,13 @@
 # The Hugging Face Space's Dockerfile, version-controlled here.
 #
 # It used to exist only in the Space repository, hand-maintained and invisible
-# to review, which is how the Space came to silently ignore .streamlit/config.toml
-# for its whole life: the file sits at this repository's root, the Space never
-# received it, and the theme and telemetry settings it declares therefore
+# to review, which is how the Space came to silently ignore a .streamlit/
+# config for its whole life: that file sat at this repository's root, the Space
+# never received it, and the theme and telemetry settings it declared therefore
 # applied to local runs only while the file's own comment named the Space.
 #
-# `.github/workflows/sync-hf-space.yml` uploads this file and that config to the
-# Space on every release, so the two can no longer drift.
+# `.github/workflows/sync-hf-space.yml` uploads this file to the Space on every
+# release, so the build and the repository can no longer drift.
 
 # Digest-pinned, like the root Dockerfile. A floating tag means the public
 # demo can be rebuilt onto a different base than the one it was tested on,
@@ -22,8 +22,10 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# bindsight itself arrives through the Space's own requirements.txt, which
+# installs it from git at `main`. Nothing is copied from a source tree, so a
+# rebuild serves the released code rather than whatever the Space last held.
 COPY requirements.txt ./
-COPY src/ ./src/
 # bindsight's _find_repo_root() walks up from the installed package looking
 # for examples/demo/config.yaml; on this Space the package is in
 # site-packages so the walk fails and the function falls back to Path.cwd()
@@ -37,15 +39,17 @@ COPY examples/ ./examples/
 # difference between a demo that shows the evidence and one that claims to.
 COPY benchmarks/ ./benchmarks/
 
-# Streamlit reads its config from $CWD/.streamlit/config.toml, and WORKDIR is
-# /app, so this is what makes the navy theme and gatherUsageStats=false apply
-# to the hosted demo rather than only to local clones.
-COPY .streamlit/ ./.streamlit/
+# The interface is server-rendered now: its stylesheet, templates and vendored
+# assets travel inside the package, so there is no separate config to copy and
+# no theme that applies only to a clone. The previous arrangement read its
+# config from $CWD, which meant a pip-installed user running the app from their
+# home directory silently got default styling and half the documented upload
+# limit.
 
 RUN pip3 install -r requirements.txt
 
 EXPOSE 8501
 
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+HEALTHCHECK CMD curl --fail http://localhost:8501/ || exit 1
 
-ENTRYPOINT ["streamlit", "run", "src/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["python", "-c", "import uvicorn; from bindsight.report.web.app import create_app; uvicorn.run(create_app(), host='0.0.0.0', port=8501, log_level='warning')"]

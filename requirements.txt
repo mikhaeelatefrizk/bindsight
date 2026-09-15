@@ -1,6 +1,5 @@
-# A flat mirror of `pip install -e ".[discover,report]"`, for Streamlit hosts
-# and other runtimes that install from a requirements file rather than from
-# pyproject extras. Local installs should prefer the editable install.
+# A flat mirror of `pip install -e ".[discover,report]"`, for hosts that
+# install from a requirements file rather than from pyproject extras. Local installs should prefer the editable install.
 #
 # This file is a second copy of a dependency list, which is a thing that drifts:
 # it was already missing openpyxl, without which the SURFY surfaceome .xlsx
@@ -25,6 +24,7 @@ biopython>=1.83,<2
 openpyxl>=3.1
 
 # ---- report ----
+fastapi>=0.110,<1
+uvicorn>=0.27,<1
+python-multipart>=0.0.9
 matplotlib>=3.8,<4
-streamlit>=1.60,<2
-py3Dmol>=2.0

@@ -14,7 +14,7 @@ Design choices:
   genuinely self-contained HTML file — CSS embedded, volcano plot embedded as
   a base64 PNG, and no external requests at all, so it survives being emailed
   or opened offline. Interactive 3-D structure viewing deliberately lives in
-  the Streamlit app (``report/webapp.py``) instead, because a structure viewer
+  the web interface (``report/web/app.py``) instead, because a structure viewer
   needs a script from a CDN and that would break self-containment.
 - **Looks like a paper, not a dashboard.** Sections, tables, captions,
   citations to the upstream tools — readable as a methods + results pair.

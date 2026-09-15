@@ -570,7 +570,7 @@ def rank(run_dir: Path) -> None:
 @click.option(
     "--format",
     "fmt",
-    type=click.Choice(["html", "streamlit"]),
+    type=click.Choice(["html", "web"]),
     default="html",
     show_default=True,
 )
@@ -610,32 +610,38 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
         )
         return
 
-    if fmt == "streamlit":
-        import subprocess
-        import sys as _sys
-
-        from bindsight.report import streamlit_app
-
-        app_path = Path(streamlit_app.__file__)
-        console.print(f"[dim]launching Streamlit:[/dim] {app_path} {run_dir}")
-        # ``-m streamlit`` is run through this interpreter, so a missing module
-        # exits non-zero rather than raising FileNotFoundError; that handler was
-        # unreachable and a missing dependency surfaced as a bare traceback.
+    if fmt == "web":
         try:
-            subprocess.run(
-                [_sys.executable, "-m", "streamlit", "run", str(app_path), "--", str(run_dir)],
-                check=True,
-            )
-        except (FileNotFoundError, subprocess.CalledProcessError):
+            from bindsight.report.web.app import serve
+        except ImportError as exc:  # pragma: no cover - exercised via the extra
             console.print(
                 Panel(
-                    "[yellow]Streamlit not installed.[/yellow] Install the report extras:\n"
-                    '  [bold]pip install -e ".[report]"[/bold]',
+                    "[yellow]The web interface is not installed.[/yellow]\n"
+                    f"[dim]{exc}[/dim]\n"
+                    # Rich reads an unescaped bracket as a style tag, which made
+                    # this print `pip install -e "."` -- the base package, which
+                    # is what the reader already had.
+                    '  [bold]pip install -e ".\\[report]"[/bold]',
                     title="Missing dependency",
                     border_style="yellow",
                 )
             )
             sys.exit(2)
+
+        console.print(
+            Panel(
+                f"[bold]http://127.0.0.1:8501[/bold]\n"
+                f"[dim]Serving runs from {run_dir.parent}. Ctrl-C to stop.[/dim]",
+                title="bindsight",
+                border_style="blue",
+            )
+        )
+        try:
+            # The root it just announced, not whatever ./runs resolves to from
+            # the shell's working directory.
+            serve(port=8501, open_browser=True, run_root=run_dir.parent)
+        except KeyboardInterrupt:  # pragma: no cover - interactive
+            console.print("[dim]stopped[/dim]")
         return
 
 
@@ -878,7 +884,7 @@ def benchmark(
 
 
 # ---------------------------------------------------------------------------
-# ui — launch the local Streamlit web app
+# ui — launch the local web interface
 # ---------------------------------------------------------------------------
 @main.command()
 @click.option(
@@ -886,7 +892,7 @@ def benchmark(
     type=click.IntRange(min=1, max=65535),
     default=8501,
     show_default=True,
-    help="Port for the local Streamlit server.",
+    help="Port for the local web server.",
 )
 @click.option(
     "--no-browser",
@@ -896,75 +902,45 @@ def benchmark(
 def ui(port: int, no_browser: bool) -> None:
     """Launch the bindsight web interface in your browser.
 
-    Same app that's deployed on the Hugging Face Space —
-    multi-page, with the real-results explorer, the demo, 'run on my data', and
-    'browse a run' panels. Local-first; telemetry is disabled explicitly below.
+    Five sections: what the tool is and has shown, the evidence behind that, a
+    demo, your own data, and the runs already on disk. Served locally; nothing
+    leaves the machine and nothing is fetched from a network once installed --
+    the stylesheet, the charts and the structure viewer all travel inside the
+    package.
     """
-    import subprocess
-    import sys as _sys
-
-    # The packaged module, not a repository file. This looked for a root-level
-    # streamlit_app.py, which the wheel does not contain, so `bindsight ui`
-    # worked only from a source checkout. The sibling path --
-    # `report --format streamlit` -- already imports the packaged module, so the
-    # same file had one correct and one incorrect way of finding the same app.
-    from bindsight.report import streamlit_app
-
-    entry = Path(streamlit_app.__file__)
-    if not entry.exists():  # pragma: no cover - a module without a file on disk
+    try:
+        from bindsight.report.web.app import serve
+    except ImportError as exc:  # pragma: no cover - exercised via the extra
         console.print(
             Panel(
-                "[red]The packaged Streamlit entry point is missing.[/red] "
-                "Re-install: [bold]pip install bindsight[report][/bold]",
-                title="ui: missing entrypoint",
+                "[red]The web interface is not installed.[/red]\n"
+                f"[dim]{exc}[/dim]\n\n"
+                # Escaped: Rich would read `[report]` as a style tag and drop
+                # it, printing a command that installs nothing new.
+                'Install it with: [bold]pip install -e ".\\[report]"[/bold]',
+                title="ui: missing dependency",
                 border_style="red",
             )
         )
         sys.exit(2)
 
-    cmd = [
-        _sys.executable,
-        "-m",
-        "streamlit",
-        "run",
-        str(entry),
-        "--server.port",
-        str(port),
-        # .streamlit/config.toml covers runs from a repo checkout, but a
-        # packaged install launched from elsewhere never sees it -- so the
-        # "no telemetry" promise above is enforced here too.
-        "--browser.gatherUsageStats",
-        "false",
-    ]
-    if no_browser:
-        cmd += ["--server.headless", "true"]
-
+    url = f"http://127.0.0.1:{port}"
     console.print(
         Panel(
-            f"[green]Launching bindsight UI at http://localhost:{port}[/green]\n\n"
-            "Stop with Ctrl-C.",
-            title="bindsight ui",
-            border_style="green",
+            f"[bold]{url}[/bold]\n"
+            "[dim]Ctrl-C to stop. Runs are read from ./runs.[/dim]",
+            title="bindsight",
+            border_style="blue",
         )
     )
-    # ``check=False`` meant a Streamlit that failed to start still left this
-    # command exiting 0, having just printed "Launching bindsight UI" -- a
-    # success message and a success code for a UI that is not running.
+    # Served in-process. The subprocess this replaced ran with ``check=False``
+    # and its status was discarded, so a server that never started still left
+    # the command printing "Launching bindsight UI" and exiting 0. uvicorn exits
+    # non-zero on a port it cannot bind, and that status is no longer swallowed.
     try:
-        completed = subprocess.run(cmd, check=False)
-        if completed.returncode != 0:
-            console.print(f"[red]Streamlit exited with status {completed.returncode}.[/red]")
-            sys.exit(completed.returncode)
-    except FileNotFoundError:
-        console.print(
-            Panel(
-                "[yellow]Streamlit not installed.[/yellow] Install the report extras:\n"
-                '  [bold]pip install -e ".[report]"[/bold]',
-                title="Missing dependency",
-                border_style="yellow",
-            )
-        )
-        sys.exit(2)
+        serve(port=port, open_browser=not no_browser)
+    except KeyboardInterrupt:  # pragma: no cover - interactive
+        console.print("[dim]stopped[/dim]")
 
 
 # ---------------------------------------------------------------------------
@@ -2189,7 +2165,7 @@ def doctor() -> None:
             _row(
                 f"dep: {dep}",
                 False,
-                'not installed; run: pip install -e ".[discover]"',
+                'not installed; run: pip install -e ".\\[discover]"',
             )
 
     # Cache state

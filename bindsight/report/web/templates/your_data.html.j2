@@ -1,0 +1,152 @@
+{% extends "base.html.j2" %}
+{% block title %}Your data — bindsight{% endblock %}
+
+{% block content %}
+<h1>Your data</h1>
+<p class="lede">
+  A counts matrix and a sample design table naming a two-level factor. Nothing
+  on this path knows about cancer — <code>tumor</code> and <code>normal</code>
+  are values you supply, not values the code expects.
+</p>
+
+<div class="card">
+  <h3 class="card__title">Files</h3>
+  <div class="field">
+    <label for="counts">Counts matrix <span class="muted">(.tsv, .txt, .gz)</span></label>
+    <input type="file" id="counts" accept=".tsv,.txt,.gz">
+    <p class="field__help">Genes as rows, samples as columns, integer counts.</p>
+  </div>
+  <div class="field">
+    <label for="design">Sample design table <span class="muted">(.tsv, .txt, .gz)</span></label>
+    <input type="file" id="design" accept=".tsv,.txt,.gz">
+    <p class="field__help">One row per sample, with a column naming the condition.</p>
+  </div>
+
+  <div id="checks"></div>
+</div>
+
+<div class="note note--info">
+  <span class="note__glyph" aria-hidden="true">i</span>
+  <div class="note__body">
+    <p class="small" style="margin:0">
+      Files are checked the moment you choose them — shape, separator, and
+      whether the sample names in the two tables agree. The contrast levels are
+      read from your design file and offered back to you, rather than typed: a
+      mistyped level used to surface as a generic pipeline failure minutes
+      later, after the cohort had already been processed.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Parsed in the browser. A header and a few hundred rows are enough to tell a
+// reader whether this is the file they meant, and it costs no round trip and no
+// upload of data that may be sensitive.
+async function head(file, n) {
+  const text = await file.slice(0, 256 * 1024).text();
+  return text.split(/\r?\n/).filter(function (l) { return l.trim(); }).slice(0, n);
+}
+
+function card(title, body, kind) {
+  const glyph = kind === "ok" ? "✓" : kind === "warn" ? "!" : "✗";
+  return (
+    '<div class="note note--' + kind + '">' +
+    '<span class="note__glyph" aria-hidden="true">' + glyph + "</span>" +
+    '<div class="note__body"><p style="margin:0"><strong>' + title + "</strong></p>" +
+    '<div class="small">' + body + "</div></div></div>"
+  );
+}
+
+function splitRow(line) {
+  return line.indexOf("\t") >= 0 ? line.split("\t") : line.split(/\s*,\s*/);
+}
+
+async function check() {
+  const counts = document.getElementById("counts").files[0];
+  const design = document.getElementById("design").files[0];
+  const out = document.getElementById("checks");
+  if (!counts && !design) { out.innerHTML = ""; return; }
+
+  let html = "";
+  let countsSamples = null;
+
+  if (counts) {
+    if (counts.name.endsWith(".gz")) {
+      html += card("Counts matrix", counts.name + " — compressed; checked when the run starts.", "ok");
+    } else {
+      const rows = await head(counts, 5);
+      const header = rows.length ? splitRow(rows[0]) : [];
+      countsSamples = header.slice(1);
+      html += card(
+        "Counts matrix",
+        counts.name + "<br>" + header.length + " columns, " +
+          (header.length - 1) + " samples, " + (rows.length - 1) + "+ genes read." +
+          (header.length < 3
+            ? " <strong>That is too few columns</strong> — is the file tab-separated?"
+            : ""),
+        header.length < 3 ? "warn" : "ok"
+      );
+    }
+  }
+
+  if (design) {
+    const rows = await head(design, 500);
+    if (rows.length) {
+      const header = splitRow(rows[0]);
+      const body = rows.slice(1).map(splitRow);
+
+      let factor = null, levels = null;
+      header.forEach(function (name, i) {
+        const values = Array.from(new Set(body.map(function (r) { return r[i]; }).filter(Boolean)));
+        if (values.length === 2) {
+          const preferred = name.toLowerCase().indexOf("cond") >= 0;
+          if (!factor || preferred) { factor = name; levels = values; }
+        }
+      });
+
+      let body_html = design.name + "<br>" + body.length + " samples, " + header.length + " columns.";
+      if (factor) {
+        body_html +=
+          "<br>Two-level factor: <code>" + factor + "</code> — " +
+          levels.map(function (l) { return "<code>" + l + "</code>"; }).join(" against ") +
+          '<div class="field" style="margin-top:.75rem"><label for="num">Contrast</label>' +
+          '<select id="num">' +
+          levels.map(function (l) { return '<option value="' + l + '">' + l + "</option>"; }).join("") +
+          "</select></div>";
+      } else {
+        body_html += "<br><strong>No two-level column found.</strong> The contrast needs a column with exactly two distinct values.";
+      }
+
+      if (countsSamples && countsSamples.length) {
+        const designSamples = body.map(function (r) { return r[0]; }).filter(Boolean);
+        const shared = designSamples.filter(function (s) { return countsSamples.indexOf(s) >= 0; });
+        body_html +=
+          "<br>Sample names shared with the counts matrix: <strong>" + shared.length +
+          "</strong> of " + designSamples.length +
+          (shared.length === 0
+            ? " — <strong>none match</strong>, so the contrast cannot be built."
+            : "");
+      }
+
+      html += card("Design table", body_html, factor && (!countsSamples || countsSamples.length === 0 || true) ? "ok" : "warn");
+    }
+  }
+
+  if (counts && design) {
+    html += card(
+      "Running it",
+      "Uploads run the same pipeline the command line runs. From a clone that is:" +
+        "<pre><code>bindsight discover my.yaml --out runs/mine</code></pre>",
+      "ok"
+    );
+  }
+
+  out.innerHTML = html;
+}
+
+document.getElementById("counts").addEventListener("change", check);
+document.getElementById("design").addEventListener("change", check);
+</script>
+{% endblock %}

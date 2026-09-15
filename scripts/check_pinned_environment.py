@@ -12,7 +12,8 @@ Two claims are checked, both of which were silently false:
 
 2. **Every installed distribution satisfies the range pyproject declares.**
    Nothing checked this either: the working environment carried
-   ``streamlit 1.58`` against a declared floor of ``>=1.60``.
+   ``pyarrow 24`` against a pin of ``20``, and a UI dependency two minor
+   versions under its own declared floor.
 
 Run by the ``pinned`` CI job, and useful locally::
 

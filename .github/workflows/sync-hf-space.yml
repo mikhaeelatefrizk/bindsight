@@ -9,18 +9,17 @@ name: Sync Hugging Face Space
 # that way, because they are not part of the installed package, and each is
 # uploaded here instead:
 #
-#   README.md              the Space landing page
-#   Dockerfile             the Space build, previously hand-maintained in the
-#                          Space repo and invisible to review
-#   .streamlit/config.toml the theme and `gatherUsageStats = false`
+#   README.md   the Space landing page
+#   Dockerfile  the Space build, previously hand-maintained in the Space repo
+#               and invisible to review
 #
-# The last two are why this list grew. The config sits at this repository's
-# root, the Space's Dockerfile copied only requirements.txt, src/ and examples/,
-# and Streamlit reads its config from the working directory — so for the Space's
-# whole life the navy theme and the telemetry opt-out applied to local clones
-# only, while the config file's own comment named the Space as covered. The
-# Dockerfile is now version-controlled at .huggingface/Dockerfile and copies the
-# config, which is what makes that claim true.
+# There used to be a third, `.streamlit/config.toml`, and it is the reason this
+# list exists: it sat at this repository's root, the Space never received it,
+# and Streamlit read its config from the working directory — so for the Space's
+# whole life the theme and the telemetry opt-out applied to local clones only,
+# while the file's own comment named the Space as covered. The interface is
+# server-rendered now and carries its styling inside the package, so there is no
+# third file to drift.
 #
 # Dormant until an `HF_TOKEN` secret exists (Settings → Secrets and variables →
 # Actions → New repository secret; the token needs *write* access to
@@ -88,11 +87,7 @@ jobs:
           api = HfApi(token=os.environ["HF_TOKEN"])
           space = os.environ["SPACE_ID"]
 
-          # Order matters. The Dockerfile's `COPY .streamlit/` fails the build if
-          # that directory is absent, so the config has to land first: on the very
-          # first run of this workflow the Space has no .streamlit/ at all.
           uploads = [
-              (".streamlit/config.toml", ".streamlit/config.toml"),
               (".huggingface/Dockerfile", "Dockerfile"),
               (".huggingface/README.md", "README.md"),
           ]

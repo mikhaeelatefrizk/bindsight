@@ -444,7 +444,7 @@ class DesignerShowcase:
         (50% against 30%; paired difference -0.043, 95% CI -0.142 to +0.054).
 
         Any surface rendering this must carry that with it, adjacently, and
-        ``bindsight.report.webapp`` does. It is deliberately not a headline
+        ``bindsight.report.web`` does. It is deliberately not a headline
         statistic anywhere: a caveat underneath a number does not travel with
         the number.
 

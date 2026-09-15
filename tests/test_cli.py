@@ -305,43 +305,121 @@ class TestTheDryRunPricesTheConfiguredHardware:
 
 
 class TestAFailedLaunchDoesNotExitZero:
-    """`bindsight ui` printed "Launching bindsight UI" and exited 0 whatever
-    Streamlit did, because the subprocess ran with ``check=False`` and its status
-    was discarded."""
+    """`bindsight ui` printed "Launching bindsight UI" and exited 0 whatever the
+    server did, because the launch ran with ``check=False`` and its status was
+    discarded.
 
-    def test_the_ui_propagates_the_exit_status(self, monkeypatch) -> None:
-        """Driven, not grepped. A source check for "completed.returncode" passes
-        against `if False:` — the strings stay and the behaviour goes."""
-        import subprocess
+    The server runs in-process now, so the discarded-status bug cannot recur in
+    that shape. The failure it protected against still can: a port already in
+    use is the ordinary way this command fails, and a shell that sees 0 will go
+    on to open a browser at a URL nothing is serving.
+    """
 
-        from click.testing import CliRunner
+    def test_a_port_already_in_use_is_not_a_successful_launch(self) -> None:
+        """Driven against a real occupied socket, not a mocked return value.
 
-        from bindsight.cli import main
-
-        def _fake_run(cmd, **kwargs):
-            return subprocess.CompletedProcess(cmd, returncode=3)
-
-        monkeypatch.setattr(subprocess, "run", _fake_run)
-
-        result = CliRunner().invoke(main, ["ui", "--no-browser"])
-
-        assert result.exit_code == 3, (
-            f"Streamlit exited 3 and the command exited {result.exit_code}; a UI "
-            "that failed to start must not report success"
-        )
-
-    def test_the_ui_exits_zero_when_streamlit_does(self, monkeypatch) -> None:
-        """The guard must not turn every launch into a failure."""
-        import subprocess
+        A source check for the error path passes against ``if False:`` — the
+        strings stay and the behaviour goes.
+        """
+        import socket
 
         from click.testing import CliRunner
 
         from bindsight.cli import main
 
-        monkeypatch.setattr(
-            subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0)
+        with socket.socket() as taken:
+            taken.bind(("127.0.0.1", 0))
+            taken.listen(1)
+            port = taken.getsockname()[1]
+
+            result = CliRunner().invoke(main, ["ui", "--no-browser", "--port", str(port)])
+
+        assert result.exit_code != 0, (
+            f"the port was already bound and the command exited {result.exit_code}; "
+            "a UI that failed to start must not report success"
         )
 
-        result = CliRunner().invoke(main, ["ui", "--no-browser"])
+    def test_a_clean_shutdown_still_exits_zero(self, monkeypatch) -> None:
+        """The guard must not turn every launch into a failure.
+
+        ``serve`` is replaced rather than run: the real one blocks until
+        interrupted, and a test that waits for a keyboard is not a test.
+        """
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+        from bindsight.report.web import app as web_app
+
+        served: dict[str, object] = {}
+        monkeypatch.setattr(web_app, "serve", lambda **kw: served.update(kw))
+
+        result = CliRunner().invoke(main, ["ui", "--no-browser", "--port", "8765"])
 
         assert result.exit_code == 0, result.output
+        assert served == {"port": 8765, "open_browser": False}, (
+            f"the command did not pass its own options through to the server: {served}"
+        )
+
+
+class TestTheFixItMessageIsTheCommandToRun:
+    """Rich reads ``[report]`` as a style tag and drops it.
+
+    Every "install the extra" hint therefore rendered as ``pip install -e "."``:
+    the base package, which is what the user already had. The message appears
+    only on the path where something is already broken, prints a command that
+    changes nothing, and reads as though it fixed it. Three sites had it.
+
+    Rendered rather than grepped -- a source check for a backslash passes
+    against a string that Rich mangles some other way, and the thing that
+    matters is what lands in the terminal.
+    """
+
+    @staticmethod
+    def _install_hints() -> list[tuple[int, str]]:
+        """Every string literal in the CLI that tells someone what to install."""
+        import ast
+
+        source = (REPO / "bindsight" / "cli.py").read_text(encoding="utf-8")
+        found: list[tuple[int, str]] = []
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                if "pip install" in node.value:
+                    found.append((node.lineno, node.value))
+        return found
+
+    def test_the_sweep_finds_the_hints_it_exists_to_check(self) -> None:
+        """Guards the guard: an empty sweep would pass silently forever."""
+        assert len(self._install_hints()) >= 3, (
+            "no install hints found in bindsight/cli.py; the sweep has stopped "
+            "reaching the strings it is meant to check"
+        )
+
+    def test_every_extra_survives_being_rendered(self) -> None:
+        import io
+        import re
+
+        from rich.console import Console
+
+        broken: list[str] = []
+        for lineno, text in self._install_hints():
+            # Just the command, not the whole literal: an f-string arrives from
+            # ``ast`` in pieces, and a piece beginning ``[/dim]`` is not markup
+            # anything can render on its own.
+            for command in re.findall(r'pip install -e "[^"]*"', text):
+                wanted = re.findall(r'"\.\\?\[([a-z,]+)\]"', command)
+                if not wanted:
+                    continue
+                buf = io.StringIO()
+                Console(file=buf, width=200, no_color=True, highlight=False).print(command)
+                rendered = buf.getvalue()
+                for extra in wanted:
+                    if f".[{extra}]" not in rendered:
+                        broken.append(
+                            f"bindsight/cli.py:{lineno} renders as "
+                            f"{rendered.strip()!r}, dropping [{extra}]"
+                        )
+
+        assert not broken, (
+            "these messages tell the user to run a command that does not install "
+            "what they are missing:\n  " + "\n  ".join(broken)
+        )

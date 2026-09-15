@@ -68,9 +68,9 @@ def test_submodule_imports_still_work() -> None:
     ``__getattr__`` runs before the submodule import machinery, so returning
     anything other than ``AttributeError`` for an unknown name would break these.
     """
-    from bindsight.report import html, showcase, streamlit_app, theme, webapp
+    from bindsight.report import html, showcase, theme, web
 
-    for mod in (html, showcase, streamlit_app, theme, webapp):
+    for mod in (html, showcase, theme, web):
         assert mod.__name__.startswith("bindsight.report.")
 
 

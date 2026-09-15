@@ -4,16 +4,23 @@
 
 `validate --revalidate` is roughly 110 lines of CLI and `_launch_revalidate`,
 and `grep -rn revalidate tests/` returned nothing. `bindsight ui` and
-`report --format streamlit` are the "How to try" instruction for two more ready
-rows and neither had a CLI-level test, so the entrypoint resolution and the
-missing-Streamlit path could both break silently.
+`report --format web` are the "How to try" instruction for two more ready rows
+and neither had a CLI-level test, so the entrypoint resolution and the
+missing-dependency path could both break silently.
 
-Nothing here launches Streamlit or a GPU: the subprocess seam and the submit
-seam are patched, and what is asserted is the command assembled and the spec
+Nothing here starts a server or a GPU: the serve seam and the submit seam are
+patched, and what is asserted is what the command passed on and the spec
 shipped.
 """
 
 from __future__ import annotations
+
+
+def _plain(text: str) -> str:
+    """Terminal output with the colour codes removed."""
+    import re
+
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 import json
 import tarfile
@@ -197,82 +204,110 @@ class TestTheStreamlitEntrypoints:
     """Two ready rows whose "How to try" command nothing exercised."""
 
     @staticmethod
-    def _capture(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
-        import subprocess
+    def _capture(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
+        """Record what the command asked the server for, without starting one."""
+        from bindsight.report.web import app as web_app
 
-        seen: list[list[str]] = []
-
-        def fake_run(cmd: list[str], **kw: Any) -> Any:
-            seen.append(list(cmd))
-            return SimpleNamespace(returncode=0)
-
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        seen: list[dict[str, Any]] = []
+        monkeypatch.setattr(web_app, "serve", lambda **kw: seen.append(dict(kw)))
         return seen
 
-    def test_ui_launches_streamlit_on_the_requested_port(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_ui_serves_on_the_requested_port(self, monkeypatch: pytest.MonkeyPatch) -> None:
         seen = self._capture(monkeypatch)
         result = CliRunner().invoke(cli.main, ["ui", "--port", "8899"])
         assert result.exit_code == 0, result.output
         assert len(seen) == 1
-        cmd = seen[0]
-        assert cmd[1:4] == ["-m", "streamlit", "run"]
-        assert "8899" in cmd
-        assert cmd[cmd.index("--server.port") + 1] == "8899"
+        assert seen[0]["port"] == 8899
 
-    def test_ui_keeps_its_no_telemetry_promise(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """The docstring says telemetry is disabled explicitly; that is a claim.
+    def test_the_interface_fetches_nothing_from_a_network(self) -> None:
+        """The command promises nothing leaves the machine; that is a claim.
 
-        `.streamlit/config.toml` covers a repo checkout, and a packaged install
-        launched from elsewhere never sees it — so the flag has to be on the
-        command line, and has to stay there.
+        It used to be a Streamlit telemetry flag, which covered one vendor and
+        nothing else. The promise is really about what the pages reference, so
+        that is what is checked: a template or stylesheet that pulls a font, a
+        script or an image from someone else's server breaks it on a machine
+        with no route out, and leaks a request on one with a route.
         """
-        seen = self._capture(monkeypatch)
-        CliRunner().invoke(cli.main, ["ui"])
-        cmd = seen[0]
-        assert cmd[cmd.index("--browser.gatherUsageStats") + 1] == "false"
+        import re
 
-    def test_no_browser_runs_headless(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        web = Path(cli.__file__).resolve().parent / "report" / "web"
+        offenders: list[str] = []
+        for path in web.rglob("*"):
+            if path.suffix not in {".j2", ".css", ".html"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for attr in re.finditer(
+                r"""(?:src|href)\s*=\s*["']([^"']+)["']""", text
+            ):
+                url = attr.group(1)
+                if url.startswith(("http://", "https://", "//")):
+                    offenders.append(f"{path.name}: {url}")
+            for imported in re.finditer(r"""@import\s+(?:url\()?["']([^"']+)""", text):
+                if imported.group(1).startswith(("http://", "https://", "//")):
+                    offenders.append(f"{path.name}: {imported.group(1)}")
+
+        assert not offenders, (
+            "the interface loads these from a remote origin, so it is neither "
+            f"offline nor private: {offenders}"
+        )
+
+    def test_no_browser_does_not_open_one(self, monkeypatch: pytest.MonkeyPatch) -> None:
         seen = self._capture(monkeypatch)
         CliRunner().invoke(cli.main, ["ui", "--no-browser"])
-        cmd = seen[0]
-        assert cmd[cmd.index("--server.headless") + 1] == "true"
+        assert seen[0]["open_browser"] is False
 
-    def test_ui_says_how_to_fix_a_missing_streamlit(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        import subprocess
+    def test_ui_says_how_to_fix_a_missing_dependency(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An uninstalled extra must name the extra, not raise ImportError."""
+        import builtins
 
-        def missing(cmd: list[str], **kw: Any) -> Any:
-            raise FileNotFoundError("streamlit")
+        real_import = builtins.__import__
 
-        monkeypatch.setattr(subprocess, "run", missing)
+        def missing(name: str, *a: Any, **kw: Any) -> Any:
+            if name.startswith("bindsight.report.web"):
+                raise ImportError("No module named 'fastapi'")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", missing)
         result = CliRunner().invoke(cli.main, ["ui"])
         assert result.exit_code == 2
-        assert "report" in result.output, "the message must name the extra to install"
+        assert ".[report]" in _plain(result.output), (
+            "the message must name the extra to install, and Rich eats an "
+            "unescaped bracket -- so the command it prints installs nothing"
+        )
 
-    def test_report_streamlit_launches_the_dashboard_for_the_run(
+    def test_report_web_points_the_interface_at_the_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """The panel announces a directory; the server must actually read it."""
         seen = self._capture(monkeypatch)
         run = _run_dir(tmp_path, with_designs=False)
-        result = CliRunner().invoke(cli.main, ["report", str(run), "--format", "streamlit"])
+        result = CliRunner().invoke(cli.main, ["report", str(run), "--format", "web"])
         assert result.exit_code == 0, result.output
-        cmd = seen[0]
-        assert cmd[1:4] == ["-m", "streamlit", "run"]
-        assert str(run) in cmd, "the dashboard must be pointed at the run"
+        assert seen[0]["run_root"] == run.parent, (
+            "the command printed one run directory and served another"
+        )
 
-    def test_report_streamlit_says_how_to_fix_a_missing_streamlit(
+    def test_report_web_says_how_to_fix_a_missing_dependency(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        import subprocess
+        import builtins
 
-        def missing(cmd: list[str], **kw: Any) -> Any:
-            raise FileNotFoundError("streamlit")
+        real_import = builtins.__import__
 
-        monkeypatch.setattr(subprocess, "run", missing)
+        def missing(name: str, *a: Any, **kw: Any) -> Any:
+            if name.startswith("bindsight.report.web"):
+                raise ImportError("No module named 'fastapi'")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", missing)
         run = _run_dir(tmp_path, with_designs=False)
-        result = CliRunner().invoke(cli.main, ["report", str(run), "--format", "streamlit"])
+        result = CliRunner().invoke(cli.main, ["report", str(run), "--format", "web"])
         assert result.exit_code == 2
+        assert ".[report]" in _plain(result.output), (
+            "the message must name the extra to install"
+        )
         assert "report" in result.output
 
 
