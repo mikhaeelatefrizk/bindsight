@@ -1737,21 +1737,48 @@ def test_every_published_figure_is_regenerated_by_the_build() -> None:
         )
 
 
-#: Scripts whose output is committed. Discovered by what they write, not listed:
-#: any module under scripts/ or benchmarks/ that calls ``write_text`` on a path
-#: it also commits is in scope.
-_GENERATORS = (
-    "scripts/build_docs_results.py",
-    "scripts/make_og_image.py",
-    "scripts/build_surfaceome_extension.py",
-    "scripts/build_surfy_gene_map.py",
-    "scripts/build_surfy_list.py",
-    "scripts/set_doi.py",
-    "benchmarks/run_study.py",
-    "benchmarks/build_eval_set.py",
-    "benchmarks/calibration/analyse.py",
-    "benchmarks/designer_benchmark/score_run.py",
-)
+def _modules_that_write_text() -> tuple[str, ...]:
+    """Every tracked Python module that writes a text file, discovered.
+
+    This was a ten-name tuple under a comment claiming it was "discovered, not
+    listed", naming only ``scripts/`` and ``benchmarks/`` -- because that is
+    where the audit that wrote it happened to be looking. ``bindsight/`` was out
+    of scope, so the package that writes ``run_manifest.jsonld``,
+    ``config.yaml``, ``report.html`` and ``metrics.jsonl`` -- the files whose
+    bytes are hashed into every crate -- was never checked at all. 86 calls
+    across 23 of its modules were writing the platform's line endings and
+    decoding with the machine's locale.
+
+    A directory name is not a scope. What a module *does* is.
+    """
+    import ast
+
+    tracked = _tracked_files()
+    found: list[str] = []
+    for path in sorted(ROOT.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        if tracked is not None and rel not in tracked:
+            continue
+        if rel.startswith("tests/"):
+            continue  # a test's scratch files are not artifacts
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError, UnicodeDecodeError):  # pragma: no cover
+            continue
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "write_text"
+            ):
+                found.append(rel)
+                break
+    return tuple(found)
+
+
+_GENERATORS = _modules_that_write_text()
 
 
 def test_every_generator_pins_its_line_endings() -> None:
@@ -1872,4 +1899,51 @@ def test_every_docs_file_is_a_page_or_explicitly_excluded() -> None:
     assert "README.md" in excluded, (
         "docs/README.md must stay excluded — it collides with index.md and takes "
         "the strict build down"
+    )
+
+
+def test_the_generator_sweep_covers_every_module_that_writes() -> None:
+    """The scope must be derived, not narrowed back to a directory name.
+
+    Guards the guard. Replacing the discovery with a short list fails nothing on
+    its own -- the modules left in it all pass -- so the sweep would quietly
+    check less while its docstring still claimed completeness. That is precisely
+    what the previous ten-name tuple did: it said "discovered, not listed",
+    named ``scripts/`` and ``benchmarks/``, and left the 21 modules in
+    ``bindsight/`` that write the files hashed into every crate entirely
+    unchecked.
+    """
+    import ast
+
+    tracked = _tracked_files()
+    if tracked is None:
+        pytest.skip("git is unavailable, so trackedness cannot be established")
+
+    writers: set[str] = set()
+    for path in sorted(ROOT.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        if rel not in tracked or rel.startswith("tests/"):
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError, UnicodeDecodeError):  # pragma: no cover
+            continue
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "write_text"
+            ):
+                writers.add(rel)
+                break
+
+    missing = sorted(writers - set(_GENERATORS))
+
+    assert not missing, (
+        f"these tracked modules write text files but are outside the sweep: {missing}"
+    )
+    assert len(_GENERATORS) >= 20, (
+        f"the sweep covers only {len(_GENERATORS)} modules; it was narrowed"
     )

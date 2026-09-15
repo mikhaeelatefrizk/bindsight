@@ -63,7 +63,7 @@ def assemble(fragments: list[Path], *, name: str = "snakemake-run") -> Manifest:
             LOG.info("skipping empty/missing fragment: %s", frag)
             continue
         try:
-            payload = json.loads(frag.read_text())
+            payload = json.loads(frag.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
             LOG.warning("malformed fragment %s: %s", frag, e)
             continue

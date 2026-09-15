@@ -15,6 +15,8 @@ import tomllib
 from pathlib import Path
 
 import pytest
+from packaging.requirements import Requirement
+from packaging.version import Version
 
 REPO_ROOT = Path(__file__).parent.parent
 PYPROJECT = REPO_ROOT / "pyproject.toml"
@@ -42,9 +44,28 @@ def _dockerfiles() -> list[Path]:
 DOCKERFILES = _dockerfiles()
 DOCKERFILE = REPO_ROOT / "Dockerfile"
 
-#: Libraries whose release can move the numbers a run reports. An unbounded
-#: `>=` on any of these lets a resolver silently cross a breaking boundary.
-RESULT_AFFECTING = ["pydeseq2", "numpy", "scipy", "pandas", "pyarrow", "biopython", "matplotlib"]
+
+def _result_affecting() -> list[str]:
+    """Libraries whose release can move a number, read from the project's own list.
+
+    This was a seven-name list, hand-written, and it omitted eight distributions
+    that ``provenance.manifest.SCIENTIFIC_STACK`` declares result-affecting and
+    records in every manifest: formulaic, formulaic-contrasts, scikit-learn,
+    anndata, h5py, zarr, numcodecs, torch, transformers. ``torch`` and
+    ``transformers`` drive the ESM-2 prescreen that decides which designs reach
+    validation, and both are declared ``>=`` with no ceiling -- so a resolver
+    could cross a major boundary, change the design set, and this test would
+    stay green because the package was outside its own scope.
+
+    One declaration, two consumers. If a library is worth recording in a
+    manifest because it can move a number, it is worth bounding.
+    """
+    from bindsight.provenance.manifest import PRESENTATION_ONLY, SCIENTIFIC_STACK
+
+    return sorted(set(SCIENTIFIC_STACK) - set(PRESENTATION_ONLY))
+
+
+RESULT_AFFECTING = _result_affecting()
 
 _REQ_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 
@@ -94,11 +115,73 @@ def test_zenodo_version_matches_the_package_version() -> None:
 # ---------------------------------------------------------------------------
 # Dependency bounds
 # ---------------------------------------------------------------------------
+def _constraint_pins() -> dict[str, str]:
+    """``name -> version`` from ``envs/constraints.txt``."""
+    pins: dict[str, str] = {}
+    for line in CONSTRAINTS.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "==" not in line:
+            continue
+        name, _, version = line.partition("==")
+        pins[name.strip().lower()] = version.strip()
+    return pins
+
+
 @pytest.mark.parametrize("package", RESULT_AFFECTING)
-def test_result_affecting_dependency_has_an_upper_bound(package: str) -> None:
+def test_result_affecting_dependency_is_bounded_somewhere(package: str) -> None:
+    """Every library that can move a number must have its version constrained.
+
+    There are two honest ways to do that, and this checks the right one applies:
+
+    - **Declared in pyproject** -- then it needs an upper bound, or a resolver
+      may cross a breaking boundary. ``torch`` and ``transformers`` sit here and
+      had none, while driving the ESM-2 prescreen that decides which designs
+      reach validation.
+    - **Arrives transitively** (formulaic, anndata, h5py, zarr, numcodecs and
+      the rest come in through pydeseq2) -- then pyproject has nothing to bound,
+      and the constraint has to be an exact pin in ``envs/constraints.txt``.
+
+    The previous scope was a seven-name list that omitted eight of these, so the
+    check passed for packages nothing constrained at all. It is now derived from
+    ``SCIENTIFIC_STACK`` -- the project's own declaration of what moves a number.
+    """
     spec = _requirements().get(package)
-    assert spec is not None, f"{package} is not declared in pyproject"
-    assert "<" in spec, f"{package}{spec} is unbounded above; a resolver may cross a major"
+    if spec is not None:
+        assert "<" in spec, (
+            f"{package}{spec} is declared in pyproject and unbounded above; "
+            "a resolver may cross a major boundary and move a published number"
+        )
+        return
+
+    pins = _constraint_pins()
+    assert package.lower() in pins, (
+        f"{package} is recorded as result-affecting in SCIENTIFIC_STACK but is "
+        "neither declared in pyproject nor pinned in envs/constraints.txt, so "
+        "nothing constrains the version that produces a number"
+    )
+
+
+def test_every_constraint_pin_is_applied_where_results_are_produced() -> None:
+    """A pin nothing applies is a decoration.
+
+    ``envs/constraints.txt`` describes itself as "the exact versions this release
+    was resolved and tested against". Only the Dockerfile ever passed ``-c``;
+    CI installed without it. So the pins governed the container and nothing
+    else, and the ranges in pyproject were the only real constraint -- which is
+    why a Dependabot PR that widened one range was the only one of four that
+    changed what CI resolved.
+    """
+    appliers = [
+        path.name
+        for path in (*DOCKERFILES, REPO_ROOT / ".github" / "workflows" / "ci.yml")
+        if path.is_file() and "-c envs/constraints.txt" in path.read_text(encoding="utf-8")
+    ]
+
+    assert "ci.yml" in appliers, (
+        "CI installs without -c envs/constraints.txt, so the pinned versions the "
+        f"project claims to be tested against are never the versions tested. "
+        f"Applied by: {appliers or 'nothing'}"
+    )
 
 
 def test_scipy_is_declared_explicitly_not_left_transitive() -> None:
@@ -135,9 +218,21 @@ def test_constraints_respect_the_pyproject_bounds() -> None:
         spec = specs.get(name.lower())
         if spec is None:
             continue  # a transitive pin (e.g. formulaic); nothing to compare against
-        upper = re.search(r"<\s*(\d+)", spec)
-        assert upper is not None, f"{name} is pinned but unbounded in pyproject"
-        assert int(version.split(".")[0]) <= int(upper.group(1))
+        # Resolve the pin against the declared specifier itself rather than
+        # comparing major digits. Two defects lived in that arithmetic: it used
+        # ``<=`` against an exclusive ``<`` bound, so ``pyarrow==25.0.1`` under
+        # ``<25`` computed ``25 <= 25`` and passed; and it only ever read the
+        # major, so ``pydeseq2==0.5.4`` under ``<0.6`` compared 0 against 0 and
+        # could not see a minor ceiling at all. The one test whose job is
+        # catching a pin outside its range was blind to both boundary cases.
+        requirement = Requirement(f"{name}{spec}")
+        assert any(op in spec for op in ("<", "==")), (
+            f"{name} is pinned but unbounded above in pyproject ({spec!r})"
+        )
+        assert requirement.specifier.contains(Version(version), prereleases=True), (
+            f"{name}=={version} falls outside the range {spec!r} that pyproject "
+            "declares; pip cannot resolve this combination"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -415,4 +510,43 @@ def test_the_showcase_docstring_does_not_claim_a_full_deploy() -> None:
     assert "deploys the full repository" not in flattened, (
         "showcase.py claims the Space deploys the full repository; it deploys "
         "the paths .huggingface/Dockerfile names"
+    )
+
+
+def test_the_result_affecting_scope_covers_the_recorded_stack() -> None:
+    """The scope must be the project's own declaration, not a subset of it.
+
+    Guards the guard. Narrowing ``RESULT_AFFECTING`` back to a hand-written list
+    fails nothing on its own -- every package left in it is bounded, so the
+    tests still pass while checking less. That is exactly how the original
+    seven-name list came to omit eight distributions ``SCIENTIFIC_STACK``
+    declares result-affecting, including ``torch`` and ``transformers``, both
+    unbounded and both driving the prescreen that decides which designs reach
+    validation.
+
+    A scope that can silently cover less is not a scope.
+    """
+    from bindsight.provenance.manifest import PRESENTATION_ONLY, SCIENTIFIC_STACK
+
+    declared = set(SCIENTIFIC_STACK) - set(PRESENTATION_ONLY)
+    missing = sorted(declared - set(RESULT_AFFECTING))
+
+    assert not missing, (
+        f"these are recorded as result-affecting in SCIENTIFIC_STACK but are "
+        f"outside the scope this file checks: {missing}"
+    )
+
+
+def test_ci_installs_with_the_constraints_file() -> None:
+    """Checking that the filename *appears* is not checking that it is applied.
+
+    The first version of this guard searched for the string ``constraints.txt``
+    anywhere in the workflow -- which a comment satisfies. It has to look for
+    the install flag.
+    """
+    ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert "-c envs/constraints.txt" in ci, (
+        "no CI job installs with -c envs/constraints.txt, so the versions the "
+        "project records as tested are never the versions tested"
     )

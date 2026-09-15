@@ -47,7 +47,7 @@ from bindsight.benchmark.designer_bench import (
 
 def _read_metrics(tar: Path) -> list[dict]:
     """Read metrics.jsonl rows from the results tarball."""
-    with tarfile.open(tar, "r:gz") as tf:
+    with tarfile.open(tar, "r:gz", encoding="utf-8") as tf:
         member = next((m for m in tf.getnames() if Path(m).name == "metrics.jsonl"), None)
         if member is None:
             raise SystemExit(f"{tar} has no metrics.jsonl")
@@ -208,7 +208,7 @@ def main() -> None:
     binders = args.out / "binders"
     binders.mkdir(parents=True, exist_ok=True)
     n_complexes = 0
-    with tarfile.open(args.tarball, "r:gz") as tf:
+    with tarfile.open(args.tarball, "r:gz", encoding="utf-8") as tf:
         for m in tf.getmembers():
             if not m.isfile():
                 continue

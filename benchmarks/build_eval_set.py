@@ -447,7 +447,7 @@ def main() -> int:
         "expected_direction",
         "note",
     ]
-    with known_path.open("w", newline="") as f:
+    with known_path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=known_cols, delimiter="\t", lineterminator="\n")
         w.writeheader()
         w.writerows(KNOWN_ANTIGENS)
@@ -493,13 +493,13 @@ def main() -> int:
 
     binders_path = HERE / "binders.tsv"
     binder_cols = list(binder_rows[0].keys())
-    with binders_path.open("w", newline="") as f:
+    with binders_path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=binder_cols, delimiter="\t", lineterminator="\n")
         w.writeheader()
         w.writerows(binder_rows)
 
     fasta_path = HERE / "binders.fasta"
-    fasta_path.write_text("\n".join(fasta_lines) + "\n", newline="\n")
+    fasta_path.write_text("\n".join(fasta_lines) + "\n", newline="\n", encoding="utf-8")
 
     # ---- sources.json (provenance: SHA-256 + retrieval metadata) ----
     n_struct = sum(1 for r in binder_rows if r["sequence_source"].startswith("PDB:"))
@@ -525,7 +525,7 @@ def main() -> int:
             for p in (known_path, binders_path, fasta_path)
         },
     }
-    (HERE / "sources.json").write_text(json.dumps(sources, indent=2) + "\n", newline="\n")
+    (HERE / "sources.json").write_text(json.dumps(sources, indent=2) + "\n", newline="\n", encoding="utf-8")
 
     print(f"known antigens : {len(KNOWN_ANTIGENS)} -> {known_path.name}")
     print(f"binders        : {len(binder_rows)} -> {binders_path.name}")

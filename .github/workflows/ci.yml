@@ -72,6 +72,37 @@ jobs:
       - name: Pytest (no GPU, no slow)
         run: pytest -m "not gpu and not slow" --maxfail=5 -q --cov-fail-under=75
 
+  # `envs/constraints.txt` calls itself "the exact versions this release was
+  # resolved and tested against". Only the Dockerfile ever applied it; the
+  # matrix above installs unpinned, so the pins governed the container and
+  # nothing else. That is why a Dependabot PR widening a pyproject range was the
+  # only one of four that changed what CI resolved — the others edited a file no
+  # job read.
+  #
+  # The matrix stays unpinned on purpose: it proves the code works across three
+  # Pythons and three platforms. This job proves the *recorded* environment
+  # still resolves and still produces the committed artifacts, which is the
+  # claim the file actually makes.
+  pinned:
+    name: Pinned environment (constraints.txt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install exactly what the release records
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c envs/constraints.txt -e ".[dev,discover,report]"
+      - name: The installed versions are the recorded ones
+        run: python scripts/check_pinned_environment.py
+      - name: Regenerating the published pages changes nothing
+        run: |
+          python scripts/build_docs_results.py
+          git diff --exit-code -- docs/results.md docs/glossary.md
+
   build:
     name: Build wheel + sdist
     runs-on: ubuntu-latest

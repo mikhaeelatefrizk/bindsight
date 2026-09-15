@@ -94,8 +94,22 @@ docs = [
 embed = [
     # Protein-language-model embeddings (ESM-2) for the pre-GPU sequence-space
     # visualizer. Heavy + CPU-capable; kept out of `all` so the core stays lean.
-    "torch>=2.0",
-    "transformers>=4.40",
+    #
+    # Bounded because these are not decoration: the ESM-2 prescreen decides
+    # which designs reach validation, so a resolver crossing a major boundary
+    # changes the design set. Both are named in
+    # `provenance.manifest.SCIENTIFIC_STACK` and recorded in every manifest for
+    # that reason, and both were declared with no ceiling — the pin test could
+    # not see them because its scope was a hand-written list.
+    "torch>=2.0,<3",
+    # <6, not <5: the manifest of the committed join run records
+    # transformers 5.12.0, so a lower ceiling would declare the recorded
+    # environment non-compliant. The committed binder results did not exercise
+    # the prescreen at all -- no artifact references it -- so for those numbers
+    # this is environment context rather than a result input. It is bounded
+    # anyway, because the moment the prescreen does run it decides which designs
+    # reach validation.
+    "transformers>=4.40,<6",
 ]
 all = [
     "bindsight[discover,report,runners,workflow]",

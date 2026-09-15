@@ -202,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
         backbone_text, designed = _binder_backbone_pdb(cif, native)
 
         scratch = staged / f"{parent}_backbone.tmp.pdb"
-        scratch.write_text(backbone_text, encoding="utf-8")
+        scratch.write_text(backbone_text, encoding="utf-8", newline="\n")
 
         def emit(binder_id: str, sequence: str, *, _scratch: Path = scratch) -> None:
             """Write one sequence and its carrier structure into the staging set."""
@@ -211,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             (staged / f"{binder_id}.fasta").write_text(
                 f">{binder_id}\n{sequence}\n", encoding="utf-8"
-            )
+            , newline="\n")
 
         emit(f"{parent}_scram", _scramble(designed, rng))
         written += 1
