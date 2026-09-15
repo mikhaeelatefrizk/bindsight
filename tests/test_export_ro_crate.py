@@ -213,26 +213,59 @@ class TestTheBibliographyCreditsTheToolsThatDidTheWork:
     copyleft licence over BSD-3 and MIT work.
     """
 
-    def test_a_run_using_a_wrapper_cites_what_the_wrapper_ran(self) -> None:
+    @staticmethod
+    def _run_that_used_the_wrappers(tmp_path: Path) -> Path:
+        """A run directory whose manifest names the design and validate tools.
+
+        Built here rather than read from ``runs/join``. That directory is
+        gitignored, so these tests skipped with "committed run not present"
+        everywhere except the machine that produced it -- and what stopped being
+        enforced was the attribution obligation itself: that ``software.bib``
+        credits RFdiffusion, ProteinMPNN and Boltz-2, and that no upstream tool
+        is relicensed under bindsight's AGPL. BSD-3 and MIT both require that
+        credit, and the crate is the artifact a depositor points a licence
+        question at.
+
+        A skip reason that reads like an environment quirk, for a condition that
+        is permanent everywhere but one laptop, is worse than a failure.
+        """
+        import json
+
+        run = tmp_path / "run"
+        run.mkdir()
+        manifest = {
+            "run_id": "r",
+            "name": "attribution fixture",
+            "stages": [
+                {
+                    "name": "design",
+                    "tool": {"name": "bindsight.design.rfdiff_mpnn", "version": "0.3.0"},
+                },
+                {
+                    "name": "validate",
+                    "tool": {"name": "bindsight.validate.boltz2", "version": "0.3.0"},
+                },
+            ],
+        }
+        (run / "run_manifest.jsonld").write_text(
+            json.dumps(manifest), encoding="utf-8", newline="\n"
+        )
+        return run
+
+    def test_a_run_using_a_wrapper_cites_what_the_wrapper_ran(self, tmp_path: Path) -> None:
         from bindsight.export.ro_crate import _build_software_bib
 
-        run = REPO / "runs" / "join"
-        if not (run / "run_manifest.jsonld").is_file():
-            pytest.skip("committed run not present")
-        bib = _build_software_bib(run)
+        bib = _build_software_bib(self._run_that_used_the_wrappers(tmp_path))
 
         for tool in ("RFdiffusion", "ProteinMPNN", "Boltz-2"):
             assert tool in bib, f"software.bib does not credit {tool}"
 
-    def test_no_upstream_tool_is_relicensed_as_bindsight(self) -> None:
+    def test_no_upstream_tool_is_relicensed_as_bindsight(self, tmp_path: Path) -> None:
         """Attribution, not pedantry: BSD-3 and MIT both require it, and the
         crate is the artifact a depositor points a licence question at."""
         from bindsight.export.ro_crate import _build_software_bib
 
-        run = REPO / "runs" / "join"
-        if not (run / "run_manifest.jsonld").is_file():
-            pytest.skip("committed run not present")
-        bib = _build_software_bib(run)
+        bib = _build_software_bib(self._run_that_used_the_wrappers(tmp_path))
 
         for entry in bib.split("@software")[1:]:
             title = entry.split("title = {", 1)[1].split("}", 1)[0]

@@ -26,16 +26,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,discover,report]"
       - name: Ruff check
-        run: ruff check bindsight tests scripts
+        run: ruff check bindsight tests scripts benchmarks
       - name: Ruff format
-        run: ruff format --check bindsight tests scripts
+        run: ruff format --check bindsight tests scripts benchmarks
       # Blocking. pyproject sets strict = true and CI swallowed the result with
       # `|| true`, so 53 errors accumulated unnoticed -- including the arity bug
       # that left the Snakemake front-end dead for five weeks. That front-end is
       # scripts/, which this step did not check: the justification named a
       # directory outside its own scope.
       - name: mypy
-        run: mypy bindsight scripts
+        run: mypy bindsight scripts benchmarks
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})

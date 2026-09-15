@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from bindsight.provenance import (
     InputRef,
@@ -486,20 +485,26 @@ class TestTheSummaryCountsTheRunNotTheTable:
             "it is counting the truncated display table"
         )
 
-    def test_the_committed_run_reports_its_real_count(self) -> None:
-        """The number a reader of the shipped report actually meets."""
+    def test_the_report_states_the_run_s_real_candidate_count(self, tmp_path: Path) -> None:
+        """The number a reader of the shipped report actually meets.
 
+        Built from a fixture rather than read from ``runs/join``: that directory
+        is gitignored, so this skipped as "committed run not present" everywhere
+        but the machine that produced it -- for a condition that is permanent,
+        not environmental. The KPI it guards is the one that published **20**
+        where the truth was 291, by counting the length of its own display table.
+
+        It also used to render into the repository tree
+        (``runs/join/_guard_report.html``) and unlink afterwards, which leaks the
+        file whenever an assertion above it raises first.
+        """
         import pandas as pd
 
-        run = Path(__file__).resolve().parents[1] / "runs" / "join"
-        if not (run / "targets" / "candidates.parquet").is_file():
-            pytest.skip("committed run not present")
+        run = _make_run(tmp_path)
         expected = len(pd.read_parquet(run / "targets" / "candidates.parquet"))
+        assert expected, "the fixture produced no candidates to count"
 
-        html = render_run(run, tmp_path_factory_out := (run / "_guard_report.html")).read_text(
-            encoding="utf-8"
-        )
-        tmp_path_factory_out.unlink(missing_ok=True)
+        html = render_run(run, tmp_path / "report.html").read_text(encoding="utf-8")
 
         assert f'<div class="num">{expected}</div>' in html, (
             f"the report does not state the run's {expected} candidates"

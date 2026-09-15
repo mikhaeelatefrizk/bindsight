@@ -42,7 +42,7 @@ import math
 import statistics
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -283,7 +283,9 @@ def variance_decomposition(
     }
 
 
-def _input_provenance(metrics: Path, committed: Path, decoy_metrics: Path | None) -> dict[str, Any]:
+def _input_provenance(
+    metrics: Path, committed: Path | None, decoy_metrics: Path | None
+) -> dict[str, Any]:
     """Repo-relative paths and SHA-256 digests of everything this report read.
 
     Paths are recorded POSIX-style so the artifact does not differ by operating
@@ -390,12 +392,19 @@ def _pass_rate(designs: list[float], threshold: float) -> dict[str, Any]:
     }
 
 
+#: Every threshold from 0.00 to 1.00 in hundredths. Named rather than inlined
+#: as a default argument: it is evaluated once either way, and the search this
+#: drives decides the published operating point, so it is worth being able to
+#: point at.
+_THRESHOLD_GRID: tuple[float, ...] = tuple(i / 100 for i in range(101))
+
+
 def operating_point(
     designs: list[float],
     scrambles: list[float],
     *,
     max_fpr: float,
-    grid: tuple[float, ...] = tuple(i / 100 for i in range(101)),
+    grid: tuple[float, ...] = _THRESHOLD_GRID,
 ) -> dict[str, Any]:
     """Lowest threshold whose scramble false-positive rate is at most ``max_fpr``.
 
@@ -665,8 +674,17 @@ def analyse(
         # version drift together. Reported because a bound is worth having and
         # because pretending it is one thing would be worse than saying it is two.
         before = _load(committed)
-        drift = [
-            {"binder_id": b, "committed": before[b], "refolded": d, "delta": d - before[b]}
+        # Typed at the source. The rows mix a str id with three floats, so an
+        # untyped dict literal gives every value ``object`` and every later
+        # comparison becomes uncheckable -- which is how this module went
+        # unchecked: it was outside the mypy scope entirely.
+        drift: list[dict[str, Any]] = [
+            {
+                "binder_id": b,
+                "committed": float(before[b]),
+                "refolded": float(d),
+                "delta": float(d) - float(before[b]),
+            }
             for b, d, _ in pairs
             if b in before
         ]
@@ -680,8 +698,8 @@ def analyse(
             # artifact like every other published figure.
             from scipy import stats
 
-            before_vals = [x["committed"] for x in drift]
-            after_vals = [x["refolded"] for x in drift]
+            before_vals = [cast(float, x["committed"]) for x in drift]
+            after_vals = [cast(float, x["refolded"]) for x in drift]
             spearman = pearson = None
             if len(drift) > 2:
                 spearman = float(stats.spearmanr(before_vals, after_vals).statistic)
@@ -691,12 +709,12 @@ def analyse(
                 "spearman_r": spearman,
                 "pearson_r": pearson,
                 "n_verdicts_flipped": sum(
-                    (x["committed"] >= DEFAULT_IPTM_SUCCESS)
-                    != (x["refolded"] >= DEFAULT_IPTM_SUCCESS)
+                    (cast(float, x["committed"]) >= DEFAULT_IPTM_SUCCESS)
+                    != (cast(float, x["refolded"]) >= DEFAULT_IPTM_SUCCESS)
                     for x in drift
                 ),
                 "note": "run-to-run and version-to-version drift together, not determinism",
-                "abs_delta": _describe([abs(x["delta"]) for x in drift]),
+                "abs_delta": _describe([abs(cast(float, x["delta"])) for x in drift]),
                 "per_binder": drift,
             }
     return report

@@ -54,7 +54,11 @@ def main() -> None:
         rows.append([fa.stem] + [str(dd[c]) for c in _COLS[1:]])
 
     out = args.binders / "developability.tsv"
-    out.write_text("\t".join(_COLS) + "\n" + "\n".join("\t".join(r) for r in rows) + "\n", encoding="utf-8", newline="\n")
+    out.write_text(
+        "\t".join(_COLS) + "\n" + "\n".join("\t".join(r) for r in rows) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
     scores = [float(r[_COLS.index("developability_score")]) for r in rows]
     stable = sum(1 for r in rows if float(r[_COLS.index("instability_index")]) < 40.0)

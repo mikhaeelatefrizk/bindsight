@@ -32,6 +32,7 @@ import json
 import statistics
 import tarfile
 from pathlib import Path
+from typing import Any
 
 from bindsight import __version__
 from bindsight.benchmark.designer_bench import (
@@ -45,7 +46,7 @@ from bindsight.benchmark.designer_bench import (
 )
 
 
-def _read_metrics(tar: Path) -> list[dict]:
+def _read_metrics(tar: Path) -> list[dict[str, Any]]:
     """Read metrics.jsonl rows from the results tarball."""
     with tarfile.open(tar, "r:gz", encoding="utf-8") as tf:
         member = next((m for m in tf.getnames() if Path(m).name == "metrics.jsonl"), None)
@@ -56,7 +57,7 @@ def _read_metrics(tar: Path) -> list[dict]:
     return [json.loads(ln) for ln in text.splitlines() if ln.strip()]
 
 
-def _derive_validator(rows: list[dict], tar: Path) -> tuple[str, str]:
+def _derive_validator(rows: list[dict[str, Any]], tar: Path) -> tuple[str, str]:
     """Derive the validator identity from the metrics rows, or refuse to score.
 
     The only run-provenance the tarball carries is the ``validator_name`` /
@@ -83,7 +84,7 @@ def _derive_validator(rows: list[dict], tar: Path) -> tuple[str, str]:
     return name, versions.pop() if len(versions) == 1 else ""
 
 
-def _score(designer: str, rows: list[dict]) -> DesignerScore:
+def _score(designer: str, rows: list[dict[str, Any]]) -> DesignerScore:
     """Aggregate validator rows into a DesignerScore (real, not mock)."""
     iptm = [r["iptm"] for r in rows if isinstance(r.get("iptm"), (int, float))]
     pae = [r["pae_interaction"] for r in rows if isinstance(r.get("pae_interaction"), (int, float))]

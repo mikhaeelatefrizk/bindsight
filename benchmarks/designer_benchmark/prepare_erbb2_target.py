@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 # Domain IV (CR2/S2) of the ERBB2 extracellular region — the trastuzumab epitope.
 DOMAIN_IV = (511, 652)
@@ -48,9 +49,12 @@ def main() -> None:
 
     structure = MMCIFParser(QUIET=True).get_structure(UNIPROT, str(cif))
 
-    class DomainIV(Select):
-        def accept_residue(self, residue):
-            return args.lo <= residue.id[1] <= args.hi
+    # Biopython ships no type information, so ``Select`` is ``Any`` and mypy
+    # cannot check the subclass. The ignore is narrow and the method below is
+    # annotated, so the part that is ours stays checked.
+    class DomainIV(Select):  # type: ignore[misc]
+        def accept_residue(self, residue: Any) -> bool:
+            return bool(args.lo <= residue.id[1] <= args.hi)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     io = PDBIO()

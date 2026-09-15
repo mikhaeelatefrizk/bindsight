@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
@@ -69,9 +70,12 @@ def main(argv: list[str] | None = None) -> int:
 
     structure = MMCIFParser(QUIET=True).get_structure(UNIPROT, str(cif))
 
-    class Domain(Select):
-        def accept_residue(self, residue):
-            return args.lo <= residue.id[1] <= args.hi
+    # Biopython ships no type information, so ``Select`` is ``Any`` and mypy
+    # cannot check the subclass. The ignore is narrow and the method below is
+    # annotated, so the part that is ours stays checked.
+    class Domain(Select):  # type: ignore[misc]
+        def accept_residue(self, residue: Any) -> bool:
+            return bool(args.lo <= residue.id[1] <= args.hi)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     io = PDBIO()

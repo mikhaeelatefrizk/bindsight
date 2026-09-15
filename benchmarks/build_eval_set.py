@@ -525,7 +525,9 @@ def main() -> int:
             for p in (known_path, binders_path, fasta_path)
         },
     }
-    (HERE / "sources.json").write_text(json.dumps(sources, indent=2) + "\n", newline="\n", encoding="utf-8")
+    (HERE / "sources.json").write_text(
+        json.dumps(sources, indent=2) + "\n", newline="\n", encoding="utf-8"
+    )
 
     print(f"known antigens : {len(KNOWN_ANTIGENS)} -> {known_path.name}")
     print(f"binders        : {len(binder_rows)} -> {binders_path.name}")

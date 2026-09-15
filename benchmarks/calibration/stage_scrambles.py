@@ -210,8 +210,8 @@ def main(argv: list[str] | None = None) -> int:
                 _scratch, staged / f"{binder_id}.pdb", chain="A", sequence=sequence
             )
             (staged / f"{binder_id}.fasta").write_text(
-                f">{binder_id}\n{sequence}\n", encoding="utf-8"
-            , newline="\n")
+                f">{binder_id}\n{sequence}\n", encoding="utf-8", newline="\n"
+            )
 
         emit(f"{parent}_scram", _scramble(designed, rng))
         written += 1
