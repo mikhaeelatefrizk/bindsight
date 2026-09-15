@@ -100,6 +100,11 @@ workflow = [
 ]
 docs = [
     "mkdocs-material>=9.5,<10",  # MIT line; builds the docs site (mkdocs.yml)
+    # scripts/make_og_image.py renders the docs site's social card. Declared
+    # here rather than in `report`: nothing under bindsight/ imports PIL, so
+    # putting it in a mirrored extra would make it a dependency the package
+    # claims and never uses.
+    "pillow>=10",
 ]
 embed = [
     # Protein-language-model embeddings (ESM-2) for the pre-GPU sequence-space

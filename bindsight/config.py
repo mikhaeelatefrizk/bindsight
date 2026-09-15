@@ -18,8 +18,19 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from pydantic_core.core_schema import ValidationInfo
+
+# `ValidationInfo` comes from `pydantic`, not from `pydantic_core.core_schema`.
+# The latter is pydantic's private internal surface: it is re-exported here
+# only as an implementation detail, and importing it directly means a
+# pydantic release that moves it breaks this package with no deprecation.
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 
 # ---------------------------------------------------------------------------

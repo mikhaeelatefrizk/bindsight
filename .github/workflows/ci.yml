@@ -101,7 +101,12 @@ jobs:
       - name: Regenerating the published pages changes nothing
         run: |
           python scripts/build_docs_results.py
-          git diff --exit-code -- docs/results.md docs/glossary.md
+          # Every output the generator writes, figures included. It copies
+          # PNGs into docs/assets/figures (build_docs_results.py:468) and the
+          # diff covered only the two markdown files -- so a benchmark re-run
+          # that moved a figure but not the prose passed this gate while the
+          # committed image silently diverged from the data behind it.
+          git diff --exit-code -- docs/results.md docs/glossary.md docs/assets/figures
 
   build:
     name: Build wheel + sdist

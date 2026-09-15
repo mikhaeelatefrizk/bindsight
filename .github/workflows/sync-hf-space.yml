@@ -100,6 +100,23 @@ jobs:
                   commit_message=f"Sync {remote} from the bindsight repository",
               )
               print(f"uploaded {remote} to {space}")
+
+          # The Dockerfile above copies examples/ and benchmarks/ out of the
+          # Space's build context, and nothing was sending them -- so the two
+          # inputs the version-controlled build depends on stayed
+          # hand-maintained in the Space repo, which is the drift this
+          # workflow exists to stop, one level down. benchmarks/ is what the
+          # Evidence page reads; without it that page renders nothing while
+          # the README promises twenty binders.
+          for folder in ("examples", "benchmarks"):
+              api.upload_folder(
+                  folder_path=folder,
+                  path_in_repo=folder,
+                  repo_id=space,
+                  repo_type="space",
+                  commit_message=f"Sync {folder}/ from the bindsight repository",
+              )
+              print(f"uploaded {folder}/ to {space}")
           PY
 
       - name: Factory-rebuild the Space

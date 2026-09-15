@@ -15,7 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build draft PDF
-        uses: openjournals/openjournals-draft-action@master
+        # Pinned to a commit, not to `@master`: whatever lands on that
+        # branch would otherwise run here unreviewed, in the workflow that
+        # builds the submitted paper. This SHA is what the `v1.0` tag points
+        # at and what `master` pointed at when it was pinned, so it is a
+        # no-op today. (The repository also carries a typo'd `v.1.0` tag
+        # pointing somewhere older -- do not reach for it.)
+        uses: openjournals/openjournals-draft-action@85a18372e48f551d8af9ddb7a747de685fbbb01c  # v1.0
         with:
           journal: joss
           paper-path: paper/paper.md

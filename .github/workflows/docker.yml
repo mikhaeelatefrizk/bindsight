@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && vars.PUBLISH_GHCR == 'true'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -33,7 +33,20 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          # Publishing is opt-in, and off by default, because it cannot
+          # succeed from here: the ghcr.io package predates this repository
+          # object and is not linked to it, so GITHUB_TOKEN is refused
+          # (`denied: permission_denied: write_package`) no matter what
+          # `permissions:` says. Every push-to-main run failed on that, none
+          # on the build -- so the red X reported a settings problem as a
+          # code problem, on every commit, which is how a check stops being
+          # read at all.
+          #
+          # To publish: link the package to this repository (its own settings
+          # page -> Manage Actions access -> Add repository, role Write), then
+          # set the repository variable PUBLISH_GHCR to `true`. The build
+          # below runs either way, so a broken Dockerfile still fails here.
+          push: ${{ github.event_name != 'pull_request' && vars.PUBLISH_GHCR == 'true' }}
           # A version tag on tag pushes. The workflow triggers on `v*` and
           # published only `:latest` and `:<sha>`, so a release produced no
           # tag anyone could pin to — and `:latest` moved under them instead.
@@ -43,3 +56,8 @@ jobs:
             ${{ startsWith(github.ref, 'refs/tags/') && format('{0}:{1}', env.IMAGE, github.ref_name) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Say so when the image was built but not published
+        if: github.event_name != 'pull_request' && vars.PUBLISH_GHCR != 'true'
+        run: |
+          echo "::notice title=Image built, not published::The image built successfully and was NOT pushed to ghcr.io. Publishing is disabled because the package is not linked to this repository. Link it in the package's settings, then set the repository variable PUBLISH_GHCR=true."
+

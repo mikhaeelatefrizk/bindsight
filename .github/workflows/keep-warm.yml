@@ -68,8 +68,11 @@ jobs:
           echo "::notice title=HF stage::${stage}"
 
           # SLEEPING is the routine case: visiting the UI URL kicks off
-          # the wake-up.  Hit the UI URL once with a long timeout and
-          # then verify the embed app's /_stcore/health.
+          # the wake-up. Hit the UI URL once with a long timeout, then probe
+          # the interface's own overview at `/`. It used to probe
+          # `/_stcore/health`, which was Streamlit's and which nothing serves
+          # now -- so the check that exists to prove the Space is up would
+          # have failed every run for a reason unrelated to the Space.
           if [ "${stage}" = "SLEEPING" ] || [ "${stage}" = "STOPPED" ]; then
             echo "Triggering wake by visiting the UI URL..."
             curl -sSL --max-time 240 --retry 2 --retry-delay 30 \
