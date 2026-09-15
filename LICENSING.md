@@ -44,7 +44,7 @@ The default `bindsight` configuration uses **only** components with permissive l
 | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | ✅ Yes |
 | [fpocket](https://github.com/Discngine/fpocket) | MIT | ✅ Yes |
 | [Snakemake](https://github.com/snakemake/snakemake) | MIT | ✅ Yes |
-| [py3Dmol](https://pypi.org/project/py3Dmol/) | BSD-3 | ✅ Yes |
+| [3Dmol.js](https://github.com/3dmol/3Dmol.js) (vendored, see `bindsight/report/web/static/vendor/3Dmol.LICENSE`) | BSD-3-Clause | ✅ Yes |
 | [NGL Viewer](https://github.com/nglviewer/ngl) | MIT | ✅ Yes |
 | [ColabFold](https://github.com/sokrypton/ColabFold) (code) | MIT | ✅ Yes |
 | [MMseqs2](https://github.com/soedinglab/MMseqs2) | MIT | ✅ Yes |

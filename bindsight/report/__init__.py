@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Reporting: paper-style HTML + Streamlit dashboard, both backed by the same data.
+"""Reporting: paper-style HTML + a served interface, both backed by the same data.
 
 ``render_run`` is resolved lazily. Importing it eagerly pulled in
 :mod:`bindsight.report.html`, and therefore pandas and jinja2, for anyone who

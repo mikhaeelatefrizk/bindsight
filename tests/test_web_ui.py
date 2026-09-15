@@ -270,7 +270,12 @@ class TestTheRetractedFigureIsNotAHeadline:
 
         body = client.get("/").text
         if theme.DOI_IS_PENDING:
-            assert "doi.org/10.5281/zenodo.PENDING" not in body, (
+            # Assembled, not written out: a literal here reads to the DOI
+            # sweep as a surface that scripts/set_doi.py has to update, and
+            # a test asserting the placeholder's absence is the one file
+            # that must keep naming it after the DOI is minted.
+            placeholder = f"doi.org/10.5281/zenodo.{theme.ZENODO_DOI.rsplit('.', 1)[-1]}"
+            assert placeholder not in body, (
                 "the placeholder DOI is rendered as a resolvable link"
             )
             assert "pending" in body.lower()

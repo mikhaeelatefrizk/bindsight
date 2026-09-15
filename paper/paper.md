@@ -183,11 +183,11 @@ file-upload form, a "Browse a run" inspector, a Glossary, and an About page.
 
 # Quality assurance
 
-The package ships **over 780 unit and integration tests** that run in a few
+The package ships **over 1,300 unit and integration tests** that run in a few
 minutes and cover: the Pydantic v2 manifest schema, every API client
 (Open Targets, AlphaFoldDB), the SURFY filter, the discovery pipeline end-
 to-end with mocked GPU runners, the rank module, the RO-Crate exporter, and
-the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
+the served web interface. Continuous integration on GitHub Actions
 runs the suite on Linux, macOS, and Windows for both Python 3.11 and 3.12;
 the v0.3.0 release is green across all six platforms.
 
@@ -196,7 +196,7 @@ the v0.3.0 release is green across all six platforms.
 `bindsight` is an opinionated wrapper; intellectual credit belongs to the
 upstream tool authors cited throughout. The author thanks the open-source
 maintainers of `pydeseq2`, `Boltz-2`, `RFdiffusion`, `ProteinMPNN`,
-`SURFACE-Bind`, `Streamlit`, and `Snakemake` whose work made this bridge
+`SURFACE-Bind`, `FastAPI`, and `Snakemake` whose work made this bridge
 constructible.
 
 # References

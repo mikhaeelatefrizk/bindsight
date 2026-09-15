@@ -77,8 +77,18 @@ discover = [
     "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [
-    "streamlit>=1.60,<2",  # web UI: `bindsight ui` + `bindsight report --format streamlit`; floor for st.iframe + width=, cap major against breaking removals
-    "py3Dmol>=2.0",
+    # The web interface: `bindsight ui` and `report --format web`. Server-rendered
+    # Jinja over the same data layer the standalone report reads, which is why
+    # jinja2 sits in the base dependencies rather than here.
+    #
+    # This replaced Streamlit and is a reduction: Streamlit declared 34
+    # requirements, and every figure had to be expressed through a widget whose
+    # layout the caller does not control -- which is how confidence intervals
+    # ended up inside hover tooltips under a paragraph promising every rate
+    # carried its interval. py3Dmol went with it: the 3-D viewer is 3Dmol.js
+    # itself, vendored into the package, so nothing is fetched at render time.
+    "fastapi>=0.110,<1",
+    "uvicorn>=0.27,<1",
     "matplotlib>=3.8,<4",  # renders the volcano plot embedded in every report
 ]
 runners = [

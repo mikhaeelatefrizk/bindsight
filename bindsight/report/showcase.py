@@ -15,7 +15,7 @@
 
 Until now none of it was reachable from the web app, so a visitor saw a Demo
 button and had to take the science on faith. This module is the single source
-of truth both the Streamlit app and the documentation site read from, so the
+of truth both the web interface and the documentation site read from, so the
 numbers on screen can never drift from the numbers in ``benchmarks/``.
 
 Everything here is read-only, network-free, and degrades to ``None`` rather

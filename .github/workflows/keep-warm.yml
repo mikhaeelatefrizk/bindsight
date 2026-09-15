@@ -92,14 +92,18 @@ jobs:
             exit 1
           fi
 
-          # Final health probe on the actual Streamlit app port.
+          # Final health probe. This asked for /_stcore/health, which was
+          # Streamlit's; nothing serves it now, so the check that exists to
+          # prove the Space is up would have failed on every run for a
+          # reason that has nothing to do with the Space. The interface
+          # serves its overview at /, so that is what is probed.
           code=$(curl -sSL --max-time 60 --retry 3 --retry-delay 10 \
                       -o /dev/null -w "%{http_code}" \
                       -A 'bindsight-keep-warm/2' \
-                      "${APP_URL}/_stcore/health")
-          echo "Streamlit /_stcore/health -> ${code}"
+                      "${APP_URL}/")
+          echo "GET / -> ${code}"
           if [ "${code}" != "200" ]; then
-            echo "::error title=HF health unhealthy::/_stcore/health returned ${code}"
+            echo "::error title=HF health unhealthy::GET / returned ${code}"
             exit 1
           fi
           echo "::notice title=HF demo healthy::stage=RUNNING, health=200"

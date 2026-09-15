@@ -560,7 +560,7 @@ def rank(run_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# report — self-contained HTML / Streamlit
+# report — self-contained HTML / served interface
 # ---------------------------------------------------------------------------
 @main.command()
 @click.argument(
@@ -584,11 +584,11 @@ def rank(run_dir: Path) -> None:
     ),
 )
 def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
-    """Render the run as a self-contained HTML report or launch the Streamlit dashboard.
+    """Render the run as a self-contained HTML report, or serve the interface.
 
     HTML output is one self-contained file (CSS + plot + tables embedded) you
-    can email or attach to a paper. Streamlit launches a local dev server for
-    interactive browsing.
+    can email or attach to a paper. `--format web` serves the same run locally
+    for interactive browsing; nothing is fetched from a network either way.
     """
     if fmt == "html":
         from bindsight.report import render_run
