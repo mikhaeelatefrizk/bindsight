@@ -90,9 +90,7 @@ def render_run(
     # stylesheet for both surfaces is the point: a reader who has seen the
     # served interface should recognise this file, and a rule enforced in one
     # place should not be absent from the other.
-    _design_system = (
-        Path(__file__).resolve().parent / "web" / "static" / "bindsight.css"
-    )
+    _design_system = Path(__file__).resolve().parent / "web" / "static" / "bindsight.css"
     css = (
         _design_system.read_text(encoding="utf-8")
         + "\n"

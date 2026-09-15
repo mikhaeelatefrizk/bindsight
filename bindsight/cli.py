@@ -927,8 +927,7 @@ def ui(port: int, no_browser: bool) -> None:
     url = f"http://127.0.0.1:{port}"
     console.print(
         Panel(
-            f"[bold]{url}[/bold]\n"
-            "[dim]Ctrl-C to stop. Runs are read from ./runs.[/dim]",
+            f"[bold]{url}[/bold]\n[dim]Ctrl-C to stop. Runs are read from ./runs.[/dim]",
             title="bindsight",
             border_style="blue",
         )

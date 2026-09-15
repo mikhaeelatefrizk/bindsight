@@ -236,9 +236,7 @@ class TestTheStreamlitEntrypoints:
             if path.suffix not in {".j2", ".css", ".html"}:
                 continue
             text = path.read_text(encoding="utf-8")
-            for attr in re.finditer(
-                r"""(?:src|href)\s*=\s*["']([^"']+)["']""", text
-            ):
+            for attr in re.finditer(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", text):
                 url = attr.group(1)
                 if url.startswith(("http://", "https://", "//")):
                     offenders.append(f"{path.name}: {url}")
@@ -256,9 +254,7 @@ class TestTheStreamlitEntrypoints:
         CliRunner().invoke(cli.main, ["ui", "--no-browser"])
         assert seen[0]["open_browser"] is False
 
-    def test_ui_says_how_to_fix_a_missing_dependency(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_ui_says_how_to_fix_a_missing_dependency(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """An uninstalled extra must name the extra, not raise ImportError."""
         import builtins
 
@@ -305,9 +301,7 @@ class TestTheStreamlitEntrypoints:
         run = _run_dir(tmp_path, with_designs=False)
         result = CliRunner().invoke(cli.main, ["report", str(run), "--format", "web"])
         assert result.exit_code == 2
-        assert ".[report]" in _plain(result.output), (
-            "the message must name the extra to install"
-        )
+        assert ".[report]" in _plain(result.output), "the message must name the extra to install"
         assert "report" in result.output
 
 

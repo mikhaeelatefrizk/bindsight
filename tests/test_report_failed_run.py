@@ -242,4 +242,3 @@ def real_designer():
     if d is None:
         pytest.skip("designer benchmark not available in this checkout")
     return d
-

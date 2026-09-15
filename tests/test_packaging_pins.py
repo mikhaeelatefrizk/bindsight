@@ -411,9 +411,7 @@ class TestEntryPointsResolveFromTheInstall:
         backends and silent rot on the rest."""
         import tomllib
 
-        pyproject = tomllib.loads(
-            (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        )
+        pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         shipped = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["force-include"]
 
         absent = sorted(rel for rel in shipped if not (REPO_ROOT / rel).exists())
@@ -615,3 +613,60 @@ def test_ci_installs_with_the_constraints_file() -> None:
         "no CI job installs with -c envs/constraints.txt, so the versions the "
         "project records as tested are never the versions tested"
     )
+
+
+class TestTheInterfaceTestsCanActuallyRun:
+    """A test that does not run is not a test.
+
+    ``tests/test_web_ui.py`` opens with ``importorskip("fastapi")``, so a
+    missing extra makes it vanish rather than fail. That is the right behaviour
+    for an optional extra and the wrong behaviour for a *broken* one: on CI the
+    extra was installed and the module still could not run, because
+    ``starlette.testclient`` needs ``httpx2``/``httpx`` and nothing declared it.
+
+    It errored there, which was luck -- an error is loud. One layer of
+    ``importorskip`` further and it would have skipped instead, and CI would
+    have reported success with 67 guards running nowhere.
+
+    The first test below is static, so it runs in every environment including
+    the ones where the extra is absent. That matters: a guard that skips
+    alongside the thing it guards protects nothing.
+    """
+
+    #: What ``starlette.testclient`` will try to import, in its own order.
+    TEST_CLIENT_BACKENDS = ("httpx2", "httpx")
+
+    def test_the_test_client_backend_is_declared_somewhere(self) -> None:
+        """Static: no imports, so this cannot skip with what it is guarding."""
+        declared = set(_requirements())
+
+        assert declared & set(self.TEST_CLIENT_BACKENDS), (
+            "nothing in pyproject.toml declares the package starlette.testclient "
+            f"needs (one of {list(self.TEST_CLIENT_BACKENDS)}), so a clean install "
+            "cannot run tests/test_web_ui.py — which is how 67 interface guards "
+            "came to run nowhere on CI while passing locally off a leftover "
+            "transitive dependency of the deleted Streamlit package"
+        )
+
+    def test_the_interface_extra_is_enough_to_drive_the_interface(self) -> None:
+        """Dynamic: where the extra IS installed, the client must be usable.
+
+        Declaring the dependency is not the same as it working — a wrong pin or
+        an incompatible starlette would leave this red while the static check
+        above stays green.
+        """
+        pytest.importorskip("fastapi", reason="the report extra is not installed here")
+
+        from starlette.testclient import TestClient  # must not raise
+
+        assert TestClient is not None
+
+    def test_the_web_interface_suite_is_not_empty(self) -> None:
+        """And it must still contain the guards it is supposed to contain."""
+        module = REPO_ROOT / "tests" / "test_web_ui.py"
+        body = module.read_text(encoding="utf-8")
+
+        assert body.count("def test_") >= 40, (
+            f"tests/test_web_ui.py declares {body.count('def test_')} tests; the "
+            "interface guards have been removed rather than fixed"
+        )

@@ -401,9 +401,7 @@ def open_targets_degradation(cand: Any) -> dict[str, Any] | None:
     return {
         "degraded": len(degraded),
         "total": len(statuses),
-        "breakdown": [
-            {"status": s, "count": degraded.count(s)} for s in dict.fromkeys(degraded)
-        ],
+        "breakdown": [{"status": s, "count": degraded.count(s)} for s in dict.fromkeys(degraded)],
         # Nothing came back live, so the bundled table was the entire mapping.
         "total_outage": len(degraded) == len(statuses),
     }
@@ -442,13 +440,7 @@ def _discover_runs(root: Path) -> list[dict[str, Any]]:
                 "failures": failures,
                 # Three states, not two. "completed" and "found nothing" are the
                 # same layout; "crashed" must not be.
-                "verdict": (
-                    "failed"
-                    if failures
-                    else "unknown"
-                    if body is None
-                    else "completed"
-                ),
+                "verdict": ("failed" if failures else "unknown" if body is None else "completed"),
                 "open_targets": open_targets_degradation(_read_candidates(path)),
                 "mtime": path.stat().st_mtime,
             }

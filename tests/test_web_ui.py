@@ -260,9 +260,7 @@ class TestTheRetractedFigureIsNotAHeadline:
     def test_the_withdrawal_travels_with_any_mention(self, client: TestClient) -> None:
         body = client.get("/evidence").text
         if "success@0.65" in body:
-            assert "withdrawn" in body, (
-                "the evidence page names the rate without withdrawing it"
-            )
+            assert "withdrawn" in body, "the evidence page names the rate without withdrawing it"
 
     def test_a_placeholder_doi_is_not_a_live_link(self, client: TestClient) -> None:
         """A 404 behind a button labelled "Cite" is the worst possible click."""
@@ -275,9 +273,7 @@ class TestTheRetractedFigureIsNotAHeadline:
             # a test asserting the placeholder's absence is the one file
             # that must keep naming it after the DOI is minted.
             placeholder = f"doi.org/10.5281/zenodo.{theme.ZENODO_DOI.rsplit('.', 1)[-1]}"
-            assert placeholder not in body, (
-                "the placeholder DOI is rendered as a resolvable link"
-            )
+            assert placeholder not in body, "the placeholder DOI is rendered as a resolvable link"
             assert "pending" in body.lower()
 
 
@@ -291,7 +287,9 @@ class TestEveryFigureCarriesWhatMakesItReadable:
         blocks = 0
         for path in PAGES:
             body = client.get(path).text
-            for block in re.findall(r'<div class="stat[^"]*">(.*?)</div>\s*(?=<div|</div>)', body, re.S):
+            for block in re.findall(
+                r'<div class="stat[^"]*">(.*?)</div>\s*(?=<div|</div>)', body, re.S
+            ):
                 if "stat__value" not in block:
                     continue
                 blocks += 1
@@ -318,9 +316,7 @@ class TestTheChartsCarryRealSpecifications:
         found = 0
         for path in PAGES:
             body = client.get(path).text
-            for kind, spec in re.findall(
-                r"data-chart=\"([^\"]+)\" data-spec='([^']*)'", body
-            ):
+            for kind, spec in re.findall(r"data-chart=\"([^\"]+)\" data-spec='([^']*)'", body):
                 found += 1
                 parsed = json.loads(spec)
                 assert parsed, f"{path}: the {kind} chart carries an empty specification"
@@ -450,9 +446,7 @@ class TestTheDemoCanActuallyStart:
         except FileNotFoundError:
             pytest.skip("the demo cohort ships with the repository, not the wheel")
 
-        assert isinstance(cfg, RunConfig), (
-            "the demo did not produce a config the pipeline can run"
-        )
+        assert isinstance(cfg, RunConfig), "the demo did not produce a config the pipeline can run"
 
     def test_the_stages_it_advertises_are_the_stages_it_runs(self) -> None:
         """Named stages are a progress claim; an empty list is a spinner."""
@@ -489,7 +483,8 @@ class TestTheStructuresAreActuallyShown:
         )
 
         vendored = [
-            p for p in (web / "static" / "vendor").iterdir()
+            p
+            for p in (web / "static" / "vendor").iterdir()
             if p.is_file() and p.suffix in {".js", ".css"}
         ]
         assert vendored, "the sweep found no vendored assets; it has stopped reaching them"
@@ -609,9 +604,9 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
         """Not a copy of it: a second copy is how the tokens drifted before."""
         from bindsight.report import html as report_html
 
-        shared = (
-            REPO / "bindsight" / "report" / "web" / "static" / "bindsight.css"
-        ).read_text(encoding="utf-8")
+        shared = (REPO / "bindsight" / "report" / "web" / "static" / "bindsight.css").read_text(
+            encoding="utf-8"
+        )
         source = Path(report_html.__file__).read_text(encoding="utf-8")
 
         assert "bindsight.css" in source, (
@@ -622,9 +617,9 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
 
     def test_the_report_stylesheet_is_a_layer_not_a_second_system(self) -> None:
         """It must not redeclare the tokens it is supposed to be inheriting."""
-        layer = (
-            REPO / "bindsight" / "report" / "templates" / "report.css"
-        ).read_text(encoding="utf-8")
+        layer = (REPO / "bindsight" / "report" / "templates" / "report.css").read_text(
+            encoding="utf-8"
+        )
 
         redeclared = [t for t in ("--ink:", "--navy:", "--ok:", "--rule:") if t in layer]
         assert not redeclared, (

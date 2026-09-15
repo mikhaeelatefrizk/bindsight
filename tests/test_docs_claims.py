@@ -834,7 +834,9 @@ def test_the_report_surfaces_carry_the_withdrawal_too() -> None:
         if path.suffix not in {".py", ".j2", ".html"}:
             continue
         surfaces.append((path.relative_to(ROOT).as_posix(), path.read_text(encoding="utf-8")))
-    surfaces.append(("bindsight/report/showcase.py", Path(showcase.__file__).read_text(encoding="utf-8")))
+    surfaces.append(
+        ("bindsight/report/showcase.py", Path(showcase.__file__).read_text(encoding="utf-8"))
+    )
 
     checked = 0
     for name, source in surfaces:

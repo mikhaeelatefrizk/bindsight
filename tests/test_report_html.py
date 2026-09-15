@@ -479,7 +479,9 @@ class TestTheSummaryCountsTheRunNotTheTable:
         import re
 
         found: dict[str, str] = {}
-        for block in re.findall(r'<div class="stat[^"]*">(.*?)</div>\s*(?=<div|</div>)', html, re.S):
+        for block in re.findall(
+            r'<div class="stat[^"]*">(.*?)</div>\s*(?=<div|</div>)', html, re.S
+        ):
             label = re.search(r'class="stat__label">([^<]+)<', block)
             value = re.search(r'class="stat__value">([^<]+)<', block)
             if label and value:
