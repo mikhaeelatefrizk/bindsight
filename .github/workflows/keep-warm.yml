@@ -109,5 +109,24 @@ jobs:
             echo "::error title=HF health unhealthy::GET / returned ${code}"
             exit 1
           fi
-          echo "::notice title=HF demo healthy::stage=RUNNING, health=200"
+
+          # A 200 from / says something answered, not that it is this software.
+          # The Space spent this release serving the Streamlit app that was
+          # removed -- an empty page titled "Streamlit" -- which answers 200
+          # just as well, so this check reported a healthy demo for an
+          # application that is not bindsight. `docs/index.md` links that Space
+          # as "Try it live".
+          #
+          # `/static/bindsight.css` is published only by the served interface,
+          # and `--ink-faint` is a token inside it, so a 200 carrying that
+          # string means the running Space is this interface and not something
+          # else that happens to be up.
+          css=$(curl -sSL --max-time 60 --retry 3 --retry-delay 10 \
+                     -A 'bindsight-keep-warm/2' \
+                     "${APP_URL}/static/bindsight.css" || true)
+          if ! printf '%s' "${css}" | grep -q -- '--ink-faint'; then
+            echo "::error title=HF demo is not this interface::GET /static/bindsight.css did not return the interface stylesheet. The Space is running, but it is not serving this build -- most likely it never received one, because sync-hf-space.yml is dormant until an HF_TOKEN secret exists and skips every step (reporting success) without it."
+            exit 1
+          fi
+          echo "::notice title=HF demo healthy::stage=RUNNING, health=200, serving the current interface"
 

@@ -206,3 +206,56 @@ class TestThePrintedPageDoesNotDescribeAViewerItOmits:
         assert "benchmarks/designer_benchmark/" in template, (
             "the print caption does not say where the structures are"
         )
+
+
+class TestTheLiveDemoProbeChecksWhatIsServed:
+    """`keep-warm.yml` finished on `GET / -> 200` and called that healthy.
+
+    The Space spent this release serving the Streamlit application that was
+    removed -- an empty page titled "Streamlit" -- which answers 200 just as
+    well. So the monitor reported a healthy demo for software that is not this
+    one, and `docs/index.md` links that Space as "Try it live".
+
+    The probe now asks for the interface's own stylesheet and requires a token
+    from inside it, which no other application serves. These tests keep the
+    probe and the stylesheet agreeing: a marker the CSS no longer contains would
+    make the check fail forever, and a check for a string every server returns
+    would make it pass forever.
+    """
+
+    WORKFLOW = REPO / ".github" / "workflows" / "keep-warm.yml"
+
+    def test_the_probe_asks_for_the_interface_stylesheet(self) -> None:
+        text = self.WORKFLOW.read_text("utf-8")
+
+        assert "/static/bindsight.css" in text, (
+            "the keep-warm probe no longer asks for anything only this "
+            "interface serves, so it would pass for any application that is up"
+        )
+
+    def test_the_marker_it_greps_for_is_in_the_stylesheet(self) -> None:
+        workflow = self.WORKFLOW.read_text("utf-8")
+        match = re.search(r"grep -q -- '([^']+)'", workflow)
+        assert match, "the probe no longer greps the stylesheet for a marker"
+
+        marker = match.group(1)
+
+        assert marker in CSS.read_text("utf-8"), (
+            f"the probe greps for {marker!r}, which the stylesheet does not "
+            "contain; the live-demo check would fail on every run for a reason "
+            "unrelated to the Space"
+        )
+
+    def test_the_app_actually_serves_that_marker(self) -> None:
+        """End to end, against the app rather than the file on disk."""
+        pytest.importorskip("fastapi", reason="the web interface needs the report extra")
+        from fastapi.testclient import TestClient
+
+        from bindsight.report.web.app import create_app
+
+        workflow = self.WORKFLOW.read_text("utf-8")
+        marker = re.search(r"grep -q -- '([^']+)'", workflow).group(1)
+        response = TestClient(create_app()).get("/static/bindsight.css")
+
+        assert response.status_code == 200
+        assert marker in response.text
