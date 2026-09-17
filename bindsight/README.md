@@ -1,6 +1,6 @@
 # `bindsight/` — the package
 
-77 modules. The pipeline runs in stages, and the directories follow them.
+Over 75 modules. The pipeline runs in stages, and the directories follow them.
 
 ## The discovery half (CPU, no GPU)
 
@@ -27,7 +27,8 @@
 | Module | What it does |
 |---|---|
 | [`pipelines/`](pipelines/) | The discovery orchestrator, and the caveats it attaches to its own output |
-| [`provenance/`](provenance/) | PROV-O JSON-LD emission and the RO-Crate exporter — the audit trail from a binder back to the cohort |
+| [`provenance/`](provenance/) | PROV-O JSON-LD emission — the audit trail from a binder back to the cohort |
+| [`export/`](export/) | The RO-Crate exporter — that audit trail packaged as a citable deposit |
 | [`benchmark/`](benchmark/) | The scoring harnesses: rediscovery study, designer benchmark, and the statistics behind every published interval |
 | [`report/`](report/) | The HTML report and the web interface |
 | [`config.py`](config.py) | Pydantic run-configuration models — the single definition of what a run config may contain |

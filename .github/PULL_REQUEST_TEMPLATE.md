@@ -10,8 +10,9 @@
 ## Checks
 
 - [ ] `python -m pytest -q` passes
-- [ ] `ruff check bindsight tests scripts` and `ruff format --check` pass
-- [ ] `mypy bindsight scripts` passes
+- [ ] `ruff check bindsight tests scripts benchmarks` and
+      `ruff format --check bindsight tests scripts benchmarks` pass
+- [ ] `mypy bindsight scripts benchmarks` passes
 - [ ] If it changes a published number, the artifact was regenerated and the
       generator produces no diff
 - [ ] If it adds a guard, the guard was **mutation-tested**: the defect

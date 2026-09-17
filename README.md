@@ -289,11 +289,15 @@ python benchmarks/designer_benchmark/score_run.py <out_dir>/<id>.tar.gz \
 
 ## Repository map
 
-Every directory carries its own `README.md` explaining what is in it and why.
+Each top-level area carries its own `README.md` explaining what is in it and
+why — [`bindsight/`](bindsight/), [`tests/`](tests/), [`scripts/`](scripts/),
+[`benchmarks/`](benchmarks/) and each benchmark under it, [`docs/`](docs/),
+[`examples/`](examples/), [`envs/`](envs/) and [`paper/`](paper/). Package
+subdirectories are documented in the table below rather than individually.
 
 | Path | What it holds |
 |---|---|
-| [`bindsight/`](bindsight/) | The Python package — [`io`](bindsight/io/), [`deg`](bindsight/deg/), [`targets`](bindsight/targets/), [`surfaceome`](bindsight/surfaceome/), [`structures`](bindsight/structures/), [`epitopes`](bindsight/epitopes/), [`design`](bindsight/design/), [`runners`](bindsight/runners/), [`validate`](bindsight/validate/), [`rank`](bindsight/rank/), [`benchmark`](bindsight/benchmark/), [`pipelines`](bindsight/pipelines/), [`provenance`](bindsight/provenance/), [`report`](bindsight/report/) |
+| [`bindsight/`](bindsight/) | The Python package — [`io`](bindsight/io/), [`deg`](bindsight/deg/), [`targets`](bindsight/targets/), [`surfaceome`](bindsight/surfaceome/), [`structures`](bindsight/structures/), [`epitopes`](bindsight/epitopes/), [`design`](bindsight/design/), [`runners`](bindsight/runners/), [`validate`](bindsight/validate/), [`rank`](bindsight/rank/), [`benchmark`](bindsight/benchmark/), [`pipelines`](bindsight/pipelines/), [`provenance`](bindsight/provenance/), [`export`](bindsight/export/), [`report`](bindsight/report/) |
 | [`benchmarks/`](benchmarks/) | All the evidence — the [study](benchmarks/study/), the [calibration control](benchmarks/calibration/), the [designer benchmark](benchmarks/designer_benchmark/), the [provenance join](benchmarks/provenance_join/), and the held-out antigen set |
 | [`tests/`](tests/) | 1,600+ tests. Many are guards on published claims, not on code |
 | [`paper/`](paper/) | JOSS and bioRxiv manuscripts, and the validation write-up |

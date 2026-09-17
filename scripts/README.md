@@ -1,6 +1,6 @@
 # `scripts/` — generators and stage entry points
 
-Two kinds of thing live here. Neither is part of the installed package.
+Three kinds of thing live here. None is part of the installed package.
 
 ## Generators — they write committed files
 
@@ -30,7 +30,9 @@ code against bindsight, import from the package.
 
 ## Why these are linted and type-checked
 
-CI runs `ruff check bindsight tests scripts` and `mypy bindsight scripts`. An
+CI runs `ruff check bindsight tests scripts benchmarks`,
+`ruff format --check bindsight tests scripts benchmarks` and
+`mypy bindsight scripts benchmarks`. An
 arity bug in a stage wrapper here left the Snakemake front-end dead for five
 weeks without a single test noticing, because the wrappers were outside the
 checked scope. They are inside it now.

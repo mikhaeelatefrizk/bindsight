@@ -159,7 +159,9 @@ the document that presents itself as the interface contract.
 Implementations:
 
 - `runners/colab.py` — templates a Colab notebook from a Jinja template, opens it in a browser, polls a Drive folder for results
-- `runners/modal.py` — Python-native `modal.Function` calls
+- `runners/modal_runner.py` — Python-native `modal.Function` calls. Named
+  `modal_runner` rather than `modal` so it cannot shadow the `modal` package
+  it imports.
 - `runners/kaggle.py` — Kaggle Notebooks API
 - `runners/local_docker.py` — for users with their own GPU
 - `runners/mock.py` — returns canned results for CI
@@ -367,7 +369,7 @@ is what the tool requires, not what this project has run it on. The
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | Run | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | Run | DAG, conda envs, --report |
 | Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | Run | |
-| Visualization | [3Dmol.js](https://github.com/3dmol/3Dmol.js) / NGL | BSD-3 / MPL | No | Run | Vendored in the web interface |
+| Visualization | [3Dmol.js](https://github.com/3dmol/3Dmol.js) | BSD-3 | No | Run | Vendored at `bindsight/report/web/static/vendor/3Dmol-min.js`, loaded by the evidence page. NGL is not vendored — it is suggested in `docs/colab-design-howto.md` as a viewer for opening output yourself |
 
 See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guidance.
 

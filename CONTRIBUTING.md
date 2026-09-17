@@ -39,7 +39,7 @@ bindsight demo
 
 ## Repository structure
 
-See [README.md § Repository layout](README.md#repository-layout) and [ARCHITECTURE.md](ARCHITECTURE.md).
+See [README.md § Repository map](README.md#repository-map) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 

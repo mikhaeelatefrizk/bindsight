@@ -2004,3 +2004,48 @@ def test_the_generator_sweep_covers_every_module_that_writes() -> None:
     assert len(_GENERATORS) >= 20, (
         f"the sweep covers only {len(_GENERATORS)} modules; it was narrowed"
     )
+
+
+#: Documents that describe the package's current structure, where a named module
+#: is a statement about what exists rather than a historical reference.
+#: ``CHANGELOG.md`` is deliberately absent: it names deleted files on purpose.
+_STRUCTURAL_DOCS = ("ARCHITECTURE.md", "bindsight/README.md", "README.md")
+
+#: A package-relative module path, as those documents write it: ``runners/mock.py``.
+_PACKAGE_MODULE = re.compile(r"`([a-z_][a-z0-9_]*/[a-z0-9_/]+\.py)`")
+
+
+def test_every_package_module_named_in_a_structural_document_exists() -> None:
+    """``ARCHITECTURE.md`` listed ``runners/modal.py``; the file is
+    ``runners/modal_runner.py``.
+
+    It sat in a bullet list whose four siblings — ``colab.py``, ``kaggle.py``,
+    ``local_docker.py``, ``mock.py`` — all resolve, so the one wrong entry read
+    as correct. The existing guard checks modules named in *commands*; this one
+    was prose, and prose is what a reader looking for the Modal runner would
+    follow.
+
+    Scoped to documents that describe the package as it is now. ``CHANGELOG.md``
+    names files that were deleted, which is its job.
+    """
+    missing: list[str] = []
+    for rel in _STRUCTURAL_DOCS:
+        doc = ROOT / rel
+        if not doc.is_file():
+            continue
+        for named in _PACKAGE_MODULE.findall(doc.read_text(encoding="utf-8")):
+            if (ROOT / "bindsight" / named).is_file() or (ROOT / named).is_file():
+                continue
+            missing.append(f"{rel} names `{named}`, which is not in the package")
+
+    assert not missing, "structural documents naming a module that does not exist:\n  " + "\n  ".join(
+        missing
+    )
+
+
+def test_the_module_sweep_sees_the_modules_it_exists_to_check() -> None:
+    """Guards the guard: a regex that matched nothing would pass forever."""
+    found = _PACKAGE_MODULE.findall((ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8"))
+
+    assert len(found) >= 5, f"the sweep found only {found} in ARCHITECTURE.md"
+    assert "runners/mock.py" in found, "the sweep no longer sees the runner list"

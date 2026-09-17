@@ -1,6 +1,6 @@
 # `tests/` — 1,600+ tests, and most of them are not about code
 
-82 test modules. The unusual thing about this suite is how much of it guards
+78 test modules. The unusual thing about this suite is how much of it guards
 **published claims** rather than functions.
 
 ## What the categories are
