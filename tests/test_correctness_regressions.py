@@ -208,6 +208,10 @@ class TestBinderIdentity:
 # ---------------------------------------------------------------------------
 # 5. Validators score the region the designer saw
 # ---------------------------------------------------------------------------
+#: The first four bytes of a gzip stream: magic, deflate method, no flags.
+GZIP_MAGIC = b"\x1f\x8b\x08\x00"
+
+
 def _write_pdb(path: Path, *, chain: str = "A", first: int = 1, n: int = 10) -> Path:
     """A CA-only chain of ``n`` alanines numbered from ``first``."""
     lines = []
@@ -2175,3 +2179,235 @@ def test_the_backend_sets_cover_every_registered_runner() -> None:
         f"{sorted(registered ^ covered)}"
     )
     assert set(_remote_container_backends()) <= set(_headless_backends())
+
+
+class TestACacheHitMustBeAResultThatCanBeRead:
+    """A non-empty file is not a readable archive, and size alone called it a hit.
+
+    An interrupted transfer leaves plausible-looking bytes on disk. The hit test
+    was ``exists() and st_size > 0``, so those bytes became a permanent hit:
+    nothing in the path ever re-submits once the file exists. ``extract_member``
+    then swallowed the ``TarError`` as a warning and returned without writing
+    anything, so the result reported ``cache_status="hit"`` while pointing at a
+    metrics file that had never been created.
+
+    The cache poisoned itself and, with no path back, stayed poisoned. Every
+    later run of that work unit returned the same broken result.
+    """
+
+    @staticmethod
+    def _spec(structure: Path) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        return DesignSpec(
+            target_uniprot="P04626",
+            target_structure_path=str(structure),
+            epitope_chain="A",
+            epitope_residues=[1, 2, 3],
+            design_ranges=[(1, 10)],
+            n_trajectories=2,
+            seed=0,
+            extra_params={"designer": "rfdiff_mpnn"},
+        )
+
+    @staticmethod
+    def _good_archive(tmp_path: Path) -> Path:
+        import tarfile
+
+        work = tmp_path / "payload"
+        work.mkdir(exist_ok=True)
+        (work / "metrics.jsonl").write_text(json.dumps({"binder_id": "b0", "iptm": 0.7}) + "\n")
+        archive = tmp_path / "results.tar.gz"
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(work / "metrics.jsonl", arcname="metrics.jsonl")
+        return archive
+
+    def _submit(self, spec: Any, runner: Any, key: str) -> Any:
+        from bindsight.design._common import submit_via_runner
+
+        return submit_via_runner(
+            spec,
+            runner,
+            designer_name="rfdiff_mpnn",
+            designer_version="0.1.0",
+            designer_commit_sha=None,
+            cache_key=key,
+        )
+
+    @staticmethod
+    def _staged_dir(root: Path) -> Path:
+        """Where the code put its own result.
+
+        Not ``make_cache_key(spec)``: ``submit_via_runner`` re-folds that with
+        the backend and the code identity before deriving the directory. Staging
+        a fixture under the unfolded key puts it where the lookup never reads,
+        so the test takes the miss path and passes without testing anything.
+        """
+        staged = [p for p in (root / "runs" / "_design").iterdir() if p.is_dir()]
+        assert len(staged) == 1, f"expected one staged work unit, found {staged}"
+        return staged[0]
+
+    def test_a_truncated_archive_is_re_run_rather_than_returned_forever(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.design._common import make_cache_key
+
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        key = make_cache_key(spec)
+        runner = _CountingRunner(self._good_archive(tmp_path))
+
+        assert self._submit(spec, runner, key).cache_status == "miss"
+        assert runner.submits == 1
+
+        # The staged result is damaged after the fact, the way a transfer
+        # interrupted partway leaves it: real gzip magic, nothing behind it.
+        staged = self._staged_dir(tmp_path)
+        (staged / "results.tar.gz").write_bytes(GZIP_MAGIC + b"corrupted")
+        (staged / "metrics.jsonl").unlink(missing_ok=True)
+
+        result = self._submit(spec, runner, key)
+
+        assert result.cache_status == "miss", "a corrupt archive was served as a cache hit"
+        assert runner.submits == 2, "the work was never re-run, so the cache stayed poisoned"
+        assert Path(result.metrics_jsonl_path).is_file()
+
+    def test_a_readable_archive_without_metrics_is_not_a_hit_either(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Returning its path would hand the caller a file that is not there."""
+        import tarfile
+
+        from bindsight.design._common import make_cache_key
+
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        key = make_cache_key(spec)
+        runner = _CountingRunner(self._good_archive(tmp_path))
+
+        assert self._submit(spec, runner, key).cache_status == "miss"
+
+        staged = self._staged_dir(tmp_path)
+        (staged / "metrics.jsonl").unlink(missing_ok=True)
+        (tmp_path / "other.txt").write_text("not metrics")
+        with tarfile.open(staged / "results.tar.gz", "w:gz") as tf:
+            tf.add(tmp_path / "other.txt", arcname="other.txt")
+
+        result = self._submit(spec, runner, key)
+
+        assert result.cache_status == "miss"
+        assert runner.submits == 2
+        assert Path(result.metrics_jsonl_path).is_file()
+
+    def test_a_genuine_hit_is_still_a_hit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The readability probe must not cost the cache its purpose."""
+        from bindsight.design._common import make_cache_key
+
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = self._spec(structure)
+        key = make_cache_key(spec)
+        runner = _CountingRunner(self._good_archive(tmp_path))
+
+        assert self._submit(spec, runner, key).cache_status == "miss"
+        assert self._submit(spec, runner, key).cache_status == "hit"
+        assert runner.submits == 1
+
+
+class TestAJobWithNoTargetStructureStopsBeforeTheGpuIsPaidFor:
+    """The spec named a structure file the job had not shipped.
+
+    ``target_structure_name`` was written into ``extra_params`` unconditionally,
+    while the copy was guarded by ``if structure_src.exists()``. A missing file
+    therefore produced a spec that told the executor where to find something
+    that was not there. ``job_exec._locate_structure`` does raise -- but on the
+    remote side, after the GPU session has been allocated and billed, which is
+    the exact reason its own comment gives for failing early rather than late.
+
+    ``make_cache_key`` compounds it: a structure it cannot read hashes as the
+    empty string, so two jobs against two *different* missing structures share
+    a key, and the second would be served the first's designs.
+    """
+
+    @staticmethod
+    def _absent_spec(tmp_path: Path) -> Any:
+        from bindsight.design.protocol import DesignSpec
+
+        return DesignSpec(
+            target_uniprot="P04626",
+            target_structure_path=str(tmp_path / "absent.pdb"),
+            epitope_chain="A",
+            epitope_residues=[1, 2, 3],
+            design_ranges=[(1, 10)],
+            n_trajectories=2,
+            seed=0,
+            extra_params={"designer": "rfdiff_mpnn"},
+        )
+
+    def test_it_raises_locally_instead_of_shipping_a_spec_that_cannot_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.design._common import make_cache_key, submit_via_runner
+
+        monkeypatch.chdir(tmp_path)
+        spec = self._absent_spec(tmp_path)
+        runner = _CountingRunner(tmp_path / "unused.tar.gz")
+
+        with pytest.raises(FileNotFoundError, match="target structure not found"):
+            submit_via_runner(
+                spec,
+                runner,
+                designer_name="rfdiff_mpnn",
+                designer_version="0.1.0",
+                designer_commit_sha=None,
+                cache_key=make_cache_key(spec),
+            )
+
+        assert runner.submits == 0, "the GPU was engaged for a job that could not run"
+
+    def test_it_leaves_no_spec_directory_behind(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from bindsight.design._common import make_cache_key, submit_via_runner
+
+        monkeypatch.chdir(tmp_path)
+        spec = self._absent_spec(tmp_path)
+
+        with pytest.raises(FileNotFoundError):
+            submit_via_runner(
+                spec,
+                _CountingRunner(tmp_path / "unused.tar.gz"),
+                designer_name="rfdiff_mpnn",
+                designer_version="0.1.0",
+                designer_commit_sha=None,
+                cache_key=make_cache_key(spec),
+            )
+
+        assert not list(tmp_path.glob("_bindsight_spec_*")), "a dead spec directory was left behind"
+
+    def test_a_structure_that_is_present_still_ships(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The guard must reject only the case it was written for."""
+        from bindsight.design._common import make_cache_key, submit_via_runner
+
+        monkeypatch.chdir(tmp_path)
+        structure = _write_pdb(tmp_path / "target.pdb", n=10)
+        spec = TestACacheHitMustBeAResultThatCanBeRead._spec(structure)
+        runner = _CountingRunner(TestACacheHitMustBeAResultThatCanBeRead._good_archive(tmp_path))
+
+        result = submit_via_runner(
+            spec,
+            runner,
+            designer_name="rfdiff_mpnn",
+            designer_version="0.1.0",
+            designer_commit_sha=None,
+            cache_key=make_cache_key(spec),
+        )
+
+        assert result.cache_status == "miss"
+        assert runner.submits == 1

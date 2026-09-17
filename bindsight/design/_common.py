@@ -259,8 +259,24 @@ def submit_via_runner(
     # spec). Record the filename in extra_params so the executor can find it.
     structure_src = Path(spec.target_structure_path)
     target_name = "target" + (structure_src.suffix or ".pdb")
-    if structure_src.exists():
-        shutil.copy2(structure_src, spec_dir / target_name)
+    if not structure_src.is_file():
+        # The spec records `target_structure_name` unconditionally, so a missing
+        # structure was not shipped and the spec still told the executor to find
+        # it. `job_exec._locate_structure` raises when it cannot -- but only
+        # after the GPU session has been allocated and paid for, and its own
+        # comment gives the reason to fail early rather than late. The same
+        # argument applies one level further out, where the file is at hand.
+        #
+        # `make_cache_key` makes it worse: a structure it cannot read hashes as
+        # the empty string, so two jobs against two different missing structures
+        # share a key and the second would be served the first's designs.
+        shutil.rmtree(spec_dir, ignore_errors=True)
+        raise FileNotFoundError(
+            f"target structure not found: {structure_src}. The job ships this "
+            "file beside the spec, so it must exist before submitting. Re-run "
+            "the discover stage, or correct target_structure_path."
+        )
+    shutil.copy2(structure_src, spec_dir / target_name)
     spec_to_send = spec.model_copy(
         update={"extra_params": {**spec.extra_params, "target_structure_name": target_name}}
     )
@@ -275,12 +291,34 @@ def submit_via_runner(
     results_dir = Path("./runs/_design") / cache_key
     staged_archive = results_dir / "results.tar.gz"
     metrics_path = results_dir / "metrics.jsonl"
+    # A non-empty file is not a readable archive. A download interrupted partway
+    # leaves bytes on disk, and size alone called that a hit -- permanently, on
+    # every rerun, because nothing here ever re-submits once the file exists.
+    # `extract_member` then swallows the TarError as a warning and returns
+    # without writing anything, so the result pointed at a metrics file that was
+    # never created while reporting cache_status="hit". The cache poisoned
+    # itself and stayed poisoned.
     cache_hit = staged_archive.exists() and staged_archive.stat().st_size > 0
+    if cache_hit and not _archive_is_readable(staged_archive):
+        LOG.warning(
+            "cached archive %s is present but unreadable; treating as a miss and re-running",
+            staged_archive,
+        )
+        cache_hit = False
     if cache_hit:
         LOG.info("cache hit for %s; skipping submit (%s)", cache_key[:8], staged_archive)
-        shutil.rmtree(spec_dir, ignore_errors=True)
         if not metrics_path.exists():
             extract_member(staged_archive, "metrics.jsonl", metrics_path)
+        if not metrics_path.exists():
+            # A readable archive that does not carry metrics.jsonl is not a
+            # usable result either, and returning its path would hand the caller
+            # a file that is not there.
+            LOG.warning(
+                "cached archive %s carries no metrics.jsonl; treating as a miss", staged_archive
+            )
+            cache_hit = False
+    if cache_hit:
+        shutil.rmtree(spec_dir, ignore_errors=True)
         return DesignResult(
             spec=spec,
             results_archive_path=str(staged_archive),
@@ -323,6 +361,22 @@ def submit_via_runner(
         cache_key=cache_key,
         cache_status="miss",
     )
+
+
+def _archive_is_readable(tar_path: Path) -> bool:
+    """Whether a staged results archive can actually be opened and listed.
+
+    Existence and a non-zero size do not make a tarball readable: an interrupted
+    transfer leaves plausible-looking bytes. Reading the member list is the
+    cheapest check that touches the gzip stream and the tar index, which is
+    where a truncated file fails.
+    """
+    try:
+        with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
+            return bool(tf.getnames())
+    except (tarfile.TarError, OSError, EOFError) as e:
+        LOG.warning("cached archive %s is not readable: %s", tar_path, e)
+        return False
 
 
 def extract_member(tar_path: Path, member: str, dest: Path) -> None:
