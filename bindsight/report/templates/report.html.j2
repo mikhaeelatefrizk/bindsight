@@ -103,7 +103,7 @@
     Significant genes are highlighted. This run did not record the cutoffs it
     applied, so no threshold lines are drawn.
     {% endif %}
-  </p></div></div>
+  </p>
   <img class="plot" src="data:image/png;base64,{{ volcano_b64 }}" alt="Volcano plot">
 </section>
 {% endif %}
@@ -114,7 +114,7 @@
     Genes that survived all filters: significantly differentially expressed,
     surface-exposed (SURFY), antibody-tractable (Open Targets, when enabled),
     and below the safety-event threshold. Top-N rows highlighted.
-  </p></div></div>
+  </p>
   {% if candidates_table %}
   <div class="table-wrap">
   <table>
@@ -176,7 +176,7 @@
     <code>surface_bind_lookup_failed</code> is different from both: the lookup
     <em>errored</em>, so nothing is known about this protein either way. It is
     not a measured absence of a site.
-  </p></div></div>
+  </p>
   {% if epitopes_table %}
   <div class="table-wrap">
   <table>
@@ -218,7 +218,7 @@
     (lower is better). <code>passes</code> records each design against the
     configured quality bars; nothing is dropped on their account unless
     <code>apply_thresholds</code> is set.
-  </p></div></div>
+  </p>
   {% if binders_table %}
   <div class="table-wrap">
   <table>
@@ -274,7 +274,7 @@
     disposition explaining why it did or didn't become a surfaced candidate &mdash;
     so the failure modes are auditable rather than discarded. The counts sum to the
     gene total.
-  </p></div></div>
+  </p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>disposition</th><th>genes</th><th>share</th></tr></thead>
@@ -302,7 +302,7 @@
     Every stage's tool, version, license, inputs (with SHA-256), and outputs
     (with SHA-256). The full PROV-O JSON-LD is in
     <code>run_manifest.jsonld</code> at the run root.
-  </p></div></div>
+  </p>
   {% if stages %}
   <div class="table-wrap">
   <table>
@@ -334,7 +334,7 @@
 
 <section id="limitations">
   <h2>Limitations</h2>
-  <p>The honest scope of expression-based discovery — read before trusting a candidate:</p></div></div>
+  <p>The honest scope of expression-based discovery — read before trusting a candidate:</p>
   <ul>
     {% for lim in limitations %}
     <li><strong>{{ lim.title }}.</strong> {{ lim.body }}</li>

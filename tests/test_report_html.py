@@ -657,3 +657,55 @@ class TestTheVolcanoIsReadable:
         drawn = {t.get_text() for t in axes[0].texts}
         assert f"SYM{n - 1}" in drawn, "the strongest gene is not labelled"
         assert "SYM0" not in drawn, "the weakest gene is labelled over stronger ones"
+
+
+class TestTheReportIsWellFormedHtml:
+    """Every generated report closed twelve more `<div>`s than it opened.
+
+    Introduced by the note conversion when the interface was rebuilt: seven plain
+    paragraphs were given the `</p></div></div>` ending that belongs to a note
+    block, so each emitted two closers for divs nothing had opened.
+
+    Browsers recover from it silently, which is exactly why it survived. A
+    validator does not, and neither does a print-to-PDF path or anything that
+    parses the file rather than renders it — and this report is the artifact a
+    collaborator is meant to open from an email.
+    """
+
+    def test_the_div_tags_balance(self, tmp_path: Path) -> None:
+        import re
+
+        html = render_run(_make_run(tmp_path), tmp_path / "r.html").read_text(encoding="utf-8")
+
+        opened = len(re.findall(r"<div\b", html))
+        closed = len(re.findall(r"</div>", html))
+
+        assert closed == opened, (
+            f"the report opens {opened} <div> and closes {closed}; "
+            f"{abs(closed - opened)} tag(s) do not match"
+        )
+
+    def test_no_line_of_the_template_closes_a_div_that_is_not_open(self) -> None:
+        """Located, not just counted — a balanced total can still be misnested."""
+        import re
+
+        template = (
+            Path(__file__).resolve().parents[1]
+            / "bindsight"
+            / "report"
+            / "templates"
+            / "report.html.j2"
+        ).read_text(encoding="utf-8")
+
+        depth = 0
+        offenders: list[str] = []
+        for lineno, line in enumerate(template.split("\n"), 1):
+            depth += len(re.findall(r"<div\b", line)) - len(re.findall(r"</div>", line))
+            if depth < 0:
+                offenders.append(f"line {lineno}: {line.strip()[:70]}")
+                depth = 0
+
+        assert not offenders, "template lines closing an unopened <div>:\n  " + "\n  ".join(
+            offenders
+        )
+        assert depth == 0, f"the template leaves {depth} <div> unclosed"
