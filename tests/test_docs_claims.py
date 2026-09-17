@@ -2038,8 +2038,8 @@ def test_every_package_module_named_in_a_structural_document_exists() -> None:
                 continue
             missing.append(f"{rel} names `{named}`, which is not in the package")
 
-    assert not missing, "structural documents naming a module that does not exist:\n  " + "\n  ".join(
-        missing
+    assert not missing, (
+        "structural documents naming a module that does not exist:\n  " + "\n  ".join(missing)
     )
 
 
