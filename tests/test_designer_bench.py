@@ -590,8 +590,13 @@ class TestTheSuccessCellKnowsItsOwnDenominator:
         from bindsight.benchmark.designer_bench import _success_cell
 
         cell = _success_cell(
-            {"success_rate": 0.5, "n_success": 8, "n_designs": 16,
-             "success_ci_low": 0.3, "success_ci_high": 0.7}
+            {
+                "success_rate": 0.5,
+                "n_success": 8,
+                "n_designs": 16,
+                "success_ci_low": 0.3,
+                "success_ci_high": 0.7,
+            }
         )
 
         assert "8/16" in cell
