@@ -115,15 +115,18 @@ def plot_outcome_classes(summary: dict[str, Any], out_path: Path) -> Path | None
     fig, ax = plt.subplots(figsize=(8, 3.4))
     bars = ax.bar(labels, values, color=colours)
     for bar, value in zip(bars, values, strict=True):
-        if value:
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                value,
-                str(value),
-                ha="center",
-                va="bottom",
-                fontsize=10,
-            )
+        # Every bar is annotated, zero included. `if value:` suppressed the label
+        # on an empty class, so a category with no pairs was drawn as a bar of no
+        # height and no number — indistinguishable from a category that was not
+        # plotted at all. "None of these" is a finding; "not shown" is not.
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            value,
+            str(value),
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
     ax.set_ylabel("Antigen-cohort pairs")
     # The bars count the pre-registered denominator, which is fewer pairs than
     # the study scored. An untitled denominator reads as a total of the panel.

@@ -251,16 +251,45 @@ class TestTheSuccessRateFractionMatchesItsOwnPercentage:
         assert _success_cell(row).startswith("8/20 = 40%")
 
     def test_the_committed_benchmark_scored_every_design(self) -> None:
-        """The anchor: if this stops holding, the published cell changes shape."""
+        """The anchor: if this stops holding, the published cell changes shape.
+
+        This asserted `n_scored == n_designs` behind `if scored is not None`, and
+        the committed artifact predates `n_scored` being serialised at all — so
+        the assertion never ran and the test passed against any artifact
+        whatsoever. The property it wants is checkable without that field: the
+        rate and the fraction printed beside it must describe the same set.
+        """
         results = json.loads(
             Path("benchmarks/designer_benchmark/results.json").read_text(encoding="utf-8")
         )
+        checked = 0
         for designer in results.get("designers", []):
-            if designer.get("success_rate") is None:
+            rate = designer.get("success_rate")
+            if rate is None:
                 continue
+            checked += 1
+            n_designs = designer["n_designs"]
+            n_success = designer["n_success"]
+            # The denominator the rate was computed over: recorded where the
+            # artifact has it, and otherwise implied by the rate itself.
             scored = designer.get("n_scored")
             if scored is not None:
-                assert scored == designer["n_designs"]
+                assert scored == n_designs, (
+                    f"{designer['designer']} scored {scored} of {n_designs} designs, so the "
+                    "published cell carries two different denominators"
+                )
+            else:
+                implied = n_success / rate if rate else n_designs
+                assert implied == pytest.approx(n_designs, abs=0.5), (
+                    f"{designer['designer']} publishes {n_success}/{n_designs} as {rate:.0%}, "
+                    f"but that rate implies a denominator of {implied:.1f}: the numerator and "
+                    "the denominator in that cell are not over the same set"
+                )
+
+        assert checked, (
+            "the committed designer benchmark records no success rate, so this "
+            "anchor is checking nothing"
+        )
 
 
 class TestValidateRecordsNoStageWhenNothingWasValidated:

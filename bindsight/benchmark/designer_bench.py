@@ -242,6 +242,15 @@ def _resolve_structure(
 # ---------------------------------------------------------------------------
 def _read_metrics(metrics_jsonl: Path) -> list[dict[str, Any]]:
     if not metrics_jsonl.exists():
+        # Said out loud. An absent metrics file scores the run as zero designs,
+        # which is the same published shape as a run that produced none — and
+        # this function already goes to some length for the lesser case, naming
+        # every unparseable *line* below. A missing file loses every line.
+        LOG.warning(
+            "%s: no metrics file, so this run scores as zero designs. That is not "
+            "the same as a run that designed nothing: nothing was read.",
+            metrics_jsonl,
+        )
         return []
     rows = []
     skipped: list[int] = []

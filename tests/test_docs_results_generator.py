@@ -253,3 +253,51 @@ class TestTheOutcomeTableNamesItsDenominator:
             assert str(tier).replace("_", " ") in title, (
                 f"the figure title does not name the {tier} denominator: {title!r}"
             )
+
+
+class TestAnEmptyCategoryIsDrawnAsZeroNotAsAbsent:
+    """`if value:` suppressed the annotation on a bar of height zero.
+
+    A category with no pairs was then drawn as a bar of no height carrying no
+    number — visually identical to a category that was not plotted at all. "None
+    of these" is a finding; "not shown" is not, and the reader could not tell
+    which they were looking at.
+
+    The figure is committed (`docs/assets/figures/outcome_classes.png`) and
+    embedded in `docs/results.md`, so this is what a reader sees.
+    """
+
+    def test_every_bar_carries_its_count_including_zero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip("matplotlib")
+
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from matplotlib.axes import Axes
+
+        from bindsight.benchmark import study_figures as F
+
+        annotated: list[str] = []
+        real_text = Axes.text
+
+        def _record(self, x, y, sss, *a, **kw):
+            annotated.append(str(sss))
+            return real_text(self, x, y, sss, *a, **kw)
+
+        monkeypatch.setattr(Axes, "text", _record)
+
+        summary = {
+            "outcome_class_counts": {"ranked": 3, "gated_out": 14, "not_reachable": 0},
+            "design": {"tiers_in_primary_denominator": ["approved"]},
+        }
+        if F.plot_outcome_classes(summary, tmp_path / "figs") is None:
+            pytest.skip("this artifact shape produces no outcome-class figure")
+
+        assert "0" in annotated, (
+            f"a category with zero pairs was drawn without its count; the bars annotated "
+            f"were {annotated}. A bar of no height and no number cannot be told apart "
+            "from one that was not plotted at all"
+        )
+        assert "3" in annotated and "14" in annotated, "the non-zero bars stopped being annotated"
