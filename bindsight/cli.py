@@ -524,8 +524,14 @@ def rank(run_dir: Path) -> None:
     """Rank validated binders by composite score (affinity, iPTM, expression Δ)."""
     from bindsight.rank import rank_run
 
+    # The run's own weights, not the defaults. This command called
+    # `rank_run(run_dir)` with no weights and then recorded `RankWeights()` in
+    # provenance, so a user who configured a weighting got an ordering produced
+    # by a different one -- and a manifest that said otherwise.
+    weights = _rank_weights(run_dir)
+
     try:
-        out = rank_run(run_dir)
+        out = rank_run(run_dir, weights=weights)
     except FileNotFoundError as e:
         console.print(
             Panel(
@@ -539,9 +545,8 @@ def rank(run_dir: Path) -> None:
     # The weights are what turn four metrics into one ordering, and they are
     # configurable. Recording the ranking without them left the published order
     # underdetermined: nothing in the manifest says which weighting produced it.
-    from bindsight.config import RankWeights
-
-    weights = RankWeights()
+    # They are read above from the run's config, so what is recorded here is what
+    # actually ran.
     provenance.record(
         run_dir,
         name="rank",
@@ -1585,6 +1590,39 @@ def _validators_that_produced(validated: Path) -> list[str]:
         return []
     names = {str(v) for v in df["validator_name"].dropna().tolist() if str(v).strip()}
     return sorted(names)
+
+
+def _rank_weights(run_dir: Path) -> Any:
+    """Read the run's rank weights, falling back to the defaults.
+
+    Only the ``params.rank`` section is parsed, not the whole ``RunConfig`` --
+    the same reason :func:`_validate_params` gives just below: validating the
+    entire document would make an unrelated schema change silently revert an
+    existing run to the default weighting, which is the class of quiet fallback
+    these helpers exist to remove.
+
+    Args:
+        run_dir: the run directory, which holds the effective ``config.yaml``.
+
+    Returns:
+        The :class:`~bindsight.config.RankWeights` the run was configured with.
+        A run with no config, or an unreadable one, gets the defaults -- and the
+        unreadable case warns, because silently ranking by a different weighting
+        than the one on disk is exactly the defect this fixes.
+    """
+    from bindsight.config import RankWeights
+
+    cfg_path = run_dir / "config.yaml"
+    if not cfg_path.is_file():
+        return RankWeights()
+    try:
+        import yaml
+
+        params = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}).get("params") or {}
+        return RankWeights(**((params.get("rank") or {}).get("weights") or {}))
+    except Exception as e:  # a malformed config must not silently reweight the run
+        LOG_CLI.warning("could not read %s (%s); ranking with the default weights", cfg_path, e)
+        return RankWeights()
 
 
 def _validate_params(run_dir: Path) -> Any:

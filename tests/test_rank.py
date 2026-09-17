@@ -357,3 +357,95 @@ class TestTheCompositeExcludesWhatItCannotRead:
             "a row with no developability component scored NaN; missing metrics "
             "should be excluded from the average, not poison it"
         )
+
+
+class TestTheRankCommandHonoursTheRunsWeights:
+    """`bindsight rank <run>` ranked with the defaults whatever the config said.
+
+    The command called `rank_run(run_dir)` with no `weights=`, so `rank_validated`
+    fell back to `RankWeights()` — and then recorded those defaults in provenance.
+    A user who set `params.rank.weights`, followed the documented per-stage path
+    (`discover` → `design` → `validate` → `rank`), and read the manifest afterwards
+    was told their weighting had been used when it had not.
+
+    The weights are what turn four metrics into one ordering. The published order
+    answered a different question from the one asked, and nothing in the run said
+    so — which is what makes it worse than a crash.
+    """
+
+    @staticmethod
+    def _run_with_weights(tmp_path: Path, weights: dict | None) -> Path:
+        """A rankable run whose config names a weighting, or names none."""
+        import yaml
+
+        run = tmp_path / "run"
+        (run / "validate").mkdir(parents=True)
+        (run / "targets").mkdir(parents=True)
+        _make_validated().to_parquet(run / "validate" / "validated.parquet", index=False)
+        _make_candidates().to_parquet(run / "targets" / "candidates.parquet", index=False)
+        if weights is not None:
+            (run / "config.yaml").write_text(
+                yaml.safe_dump({"params": {"rank": {"weights": weights}}}),
+                encoding="utf-8",
+                newline="\n",
+            )
+        return run
+
+    def test_the_configured_weights_reach_the_ranker(self, tmp_path: Path) -> None:
+        """Driven, not grepped: the weighting is read back off the call."""
+        from click.testing import CliRunner
+
+        from bindsight import cli
+
+        run = self._run_with_weights(tmp_path, {"iptm": 0.9, "affinity": 0.05})
+
+        seen: dict = {}
+
+        def _capture(run_dir, *, weights=None):
+            seen["weights"] = weights
+            return run_dir / "rank" / "ranking.parquet"
+
+        import bindsight.rank as rank_pkg
+
+        original = rank_pkg.rank_run
+        rank_pkg.rank_run = _capture
+        try:
+            CliRunner().invoke(cli.main, ["rank", str(run)])
+        finally:
+            rank_pkg.rank_run = original
+
+        assert seen.get("weights") is not None, (
+            "the rank command passed no weights, so the ranker used its defaults "
+            "whatever the run was configured with"
+        )
+        assert seen["weights"].iptm == pytest.approx(0.9)
+        assert seen["weights"].affinity == pytest.approx(0.05)
+
+    def test_a_run_without_a_config_still_ranks_with_the_defaults(self, tmp_path: Path) -> None:
+        """Guards the guard: reading the config must not become a requirement."""
+        from bindsight.cli import _rank_weights
+        from bindsight.config import RankWeights
+
+        run = self._run_with_weights(tmp_path, None)
+
+        assert _rank_weights(run).model_dump() == RankWeights().model_dump()
+
+    def test_an_unreadable_config_warns_rather_than_reweighting_in_silence(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """Falling back is fine; doing it quietly is the defect being fixed."""
+        import logging
+
+        from bindsight.cli import _rank_weights
+        from bindsight.config import RankWeights
+
+        run = self._run_with_weights(tmp_path, None)
+        (run / "config.yaml").write_text("params: [not, a, mapping", encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING):
+            got = _rank_weights(run)
+
+        assert got.model_dump() == RankWeights().model_dump()
+        assert any("default weights" in r.getMessage() for r in caplog.records), (
+            "an unreadable config silently changed the weighting the run is ranked by"
+        )
