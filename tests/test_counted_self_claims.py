@@ -222,3 +222,99 @@ class TestNoTwoRoadmapEntriesShareAVersion:
             f"the roadmap does not mark v{version} -- the version in pyproject.toml "
             "-- as the current one"
         )
+
+
+class TestTheSupportedPythonsAreTheOnesCiRuns:
+    """`bindsight doctor` reported a plain "ok" for any Python >= 3.11.
+
+    `requires-python` is `>=3.11` with no ceiling and the CI matrix runs
+    3.11-3.13, so on 3.14 everything installs, `doctor` says ok, and the first
+    thing the tool tells a newcomer about their setup is not true of it.
+    Supported means tested.
+
+    The list is now kept in one place and checked against the workflow that
+    actually runs, and against the classifiers that advertise it.
+    """
+
+    @staticmethod
+    def _matrix_pythons() -> set[tuple[int, int]]:
+        """The versions `.github/workflows/ci.yml` runs the suite on."""
+        workflow = (REPO / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        match = re.search(r"python-version:\s*\[([^\]]+)\]", workflow)
+        assert match, "ci.yml no longer declares a python-version matrix"
+        return {
+            tuple(int(n) for n in v.strip().strip('"' + "'").split("."))  # type: ignore[misc]
+            for v in match.group(1).split(",")
+        }
+
+    def test_the_matrix_is_readable(self) -> None:
+        """Guards the guard: an unreadable matrix would make the checks vacuous."""
+        assert len(self._matrix_pythons()) >= 2, (
+            f"only read {self._matrix_pythons()} from the CI matrix"
+        )
+
+    def test_the_code_lists_exactly_what_ci_runs(self) -> None:
+        from bindsight.cli import TESTED_PYTHONS
+
+        assert set(TESTED_PYTHONS) == self._matrix_pythons(), (
+            f"cli.TESTED_PYTHONS is {sorted(TESTED_PYTHONS)} but CI runs "
+            f"{sorted(self._matrix_pythons())}; doctor would report a version as "
+            "tested that nothing tested, or refuse one that CI covers"
+        )
+
+    def test_the_classifiers_advertise_exactly_what_ci_runs(self) -> None:
+        import tomllib
+
+        pyproject = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+        advertised = {
+            tuple(int(n) for n in c.rsplit(" ", 1)[-1].split("."))
+            for c in pyproject["project"]["classifiers"]
+            if c.startswith("Programming Language :: Python :: 3.")
+        }
+
+        assert advertised == self._matrix_pythons(), (
+            f"pyproject advertises {sorted(advertised)}; CI runs {sorted(self._matrix_pythons())}"
+        )
+
+    def test_the_minimum_matches_requires_python(self) -> None:
+        import tomllib
+
+        pyproject = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+        floor = tuple(
+            int(n) for n in pyproject["project"]["requires-python"].lstrip(">=").split(".")
+        )
+
+        from bindsight.cli import TESTED_PYTHONS
+
+        assert floor == min(TESTED_PYTHONS), (
+            f"requires-python is {floor} but the lowest tested version is "
+            f"{min(TESTED_PYTHONS)}; pip would install onto an untested interpreter "
+            "without saying so"
+        )
+
+    def test_an_untested_version_is_not_reported_as_fine(self) -> None:
+        import bindsight.cli as cli_module
+        from bindsight.cli import _python_support_note
+
+        original = cli_module.sys.version_info
+        try:
+            cli_module.sys.version_info = (99, 0, 0, "final", 0)  # type: ignore[assignment]
+            note = _python_support_note()
+        finally:
+            cli_module.sys.version_info = original  # type: ignore[assignment]
+
+        assert "untested" in note, f"a future Python is described as {note!r}"
+
+    def test_a_tested_version_gets_no_caveat(self) -> None:
+        import bindsight.cli as cli_module
+        from bindsight.cli import TESTED_PYTHONS, _python_support_note
+
+        original = cli_module.sys.version_info
+        try:
+            major, minor = min(TESTED_PYTHONS)
+            cli_module.sys.version_info = (major, minor, 0, "final", 0)  # type: ignore[assignment]
+            note = _python_support_note()
+        finally:
+            cli_module.sys.version_info = original  # type: ignore[assignment]
+
+        assert note == "", f"a tested Python was caveated as {note!r}"

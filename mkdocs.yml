@@ -19,7 +19,8 @@ theme:
   name: material
   custom_dir: overrides
   # Brand assets and colours mirror bindsight/report/theme.py so the docs site,
-  # the Streamlit app and the generated HTML report read as one product.
+  # the served interface (`bindsight ui`) and the generated HTML report read
+  # as one product.
   logo: assets/logo.svg
   favicon: assets/favicon.svg
   palette:

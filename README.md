@@ -34,6 +34,7 @@ an account, or a GPU to read.
 | **Find your way around the code** | [Repository map](#repository-map) |
 | **Use your own data** | [Scope — what it accepts](#scope--what-it-accepts) |
 | **Design binders on a free GPU** | [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md) |
+| **Look up a term** (PROV-O, RO-Crate, ipTM, PAE-int…) | [Glossary](docs/glossary.md) |
 | **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **Cite it** | [Citation](#citation) |
 

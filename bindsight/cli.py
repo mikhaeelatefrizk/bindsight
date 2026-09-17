@@ -94,6 +94,35 @@ def _setup_logging(verbose: bool) -> None:
 # ---------------------------------------------------------------------------
 # Top-level group
 # ---------------------------------------------------------------------------
+#: Python versions the CI matrix actually runs, as (major, minor).
+#:
+#: Kept beside the check rather than read from `pyproject.toml` classifiers,
+#: which are a publishing hint rather than a statement about what was executed.
+#: `tests/test_counted_self_claims.py` asserts this matches the workflow matrix.
+TESTED_PYTHONS: tuple[tuple[int, int], ...] = ((3, 11), (3, 12), (3, 13))
+
+
+def _PYTHON_SUPPORT_STATUS() -> bool:
+    """True when this interpreter is one the CI matrix runs.
+
+    Below the floor is a hard no. Above the ceiling is also not "ok": nothing
+    has run the suite there, and saying otherwise is the check reporting a
+    result it does not have.
+    """
+    return sys.version_info[:2] in TESTED_PYTHONS
+
+
+def _python_support_note() -> str:
+    """What to add beside the version when it is not one that was tested."""
+    if _PYTHON_SUPPORT_STATUS():
+        return ""
+    lowest = ".".join(str(n) for n in min(TESTED_PYTHONS))
+    highest = ".".join(str(n) for n in max(TESTED_PYTHONS))
+    if sys.version_info[:2] < min(TESTED_PYTHONS):
+        return f" — below the minimum; bindsight needs at least {lowest}"
+    return f" — untested: CI runs {lowest}–{highest}, so nothing has exercised this one"
+
+
 def _designer_choice() -> click.Choice[str]:
     """The designers this installation can run, for `--designer`.
 
@@ -2251,7 +2280,15 @@ def doctor() -> None:
         table.add_row(name, status, detail)
 
     # Runtime
-    _row("python", sys.version_info >= (3, 11), platform.python_version())
+    # Not a bare `>= 3.11`. `requires-python` has no ceiling, so a newer
+    # interpreter installs cleanly and this row said "ok" about a version CI
+    # has never run -- the first thing `doctor` tells a newcomer about their
+    # setup, and not true of it. Supported means tested.
+    _row(
+        "python",
+        _PYTHON_SUPPORT_STATUS(),
+        platform.python_version() + _python_support_note(),
+    )
     _row("platform", True, platform.platform())
     _row("bindsight", True, __version__)
 
@@ -2312,13 +2349,14 @@ def doctor() -> None:
         _row(
             "SURFACE-Bind data",
             sb_path.exists(),
-            f"env BINDSIGHT_SURFACE_BIND_DATA={sb_path}",
+            f"optional — env BINDSIGHT_SURFACE_BIND_DATA={sb_path}",
         )
     else:
         _row(
             "SURFACE-Bind data",
             (sb_default / "sites").exists() if sb_default.exists() else False,
-            "data/surface_bind/sites — see data/surface_bind/README.md",
+            "optional — data/surface_bind/sites; without it design targets the "
+            "whole surface. See data/surface_bind/README.md",
         )
 
     console.print(table)
