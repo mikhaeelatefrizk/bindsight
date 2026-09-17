@@ -101,7 +101,7 @@ Taken over the **counterfactual** rank rather than the shortlist rank, so no gat
 
 **3 of 22 pairs are nominally significant at 0.05 (CA9, GPC3, MET), and 0 survive Benjamini-Hochberg across the panel.**
 
-That is the finding, and it is a negative one: against background matched on abundance and dispersion, no antigen in this panel is distinguishable once the panel is corrected for its own size. Reporting the three nominal hits without the correction would be the error this column exists to prevent.
+That is the finding, and it is a negative one: against background matched on abundance and dispersion, no antigen in this panel is distinguishable once the panel is corrected for its own size. Reporting the 3 nominal hits without the correction would be the error this column exists to prevent.
 
 ### Indication-specificity null
 

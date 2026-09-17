@@ -568,3 +568,92 @@ class TestAnIntervalIsNeverLabelledWithAnAssumedLevel:
         rendered = (REPO / "benchmarks" / "study" / "RESULTS.md").read_text(encoding="utf-8")
         expected = f"{float(paired['confidence']) * 100:g}% CI"
         assert expected in rendered
+
+
+class TestTheHeadlineTableStatesWhatItMeasured:
+    """Three numbers were written into the report as words, not read from it.
+
+    Each renders into `benchmarks/study/RESULTS.md`, the study's primary
+    reader-facing page.
+    """
+
+    def test_an_interval_is_labelled_with_the_level_it_recorded(self) -> None:
+        """`_interval_phrase` already read the level; `_interval` assumed it.
+
+        `_confidence_label` exists for exactly this, and its docstring says why:
+        an interval is not publishable without its level, so the level is read or
+        not claimed. The headline cascade and the primary interval went through
+        the other renderer, which printed "95% CI" over whatever the artifact had.
+        """
+        from bindsight.benchmark.study_report import _interval
+
+        block = {"numerator": 3, "denominator": 5, "point": 0.6, "low": 0.23, "high": 0.88}
+
+        assert "80% CI" in _interval({**block, "confidence": 0.80})
+        assert "95% CI" in _interval({**block, "confidence": 0.95})
+
+    def test_an_interval_with_no_recorded_level_claims_none(self) -> None:
+        from bindsight.benchmark.study_report import _interval
+
+        rendered = _interval(
+            {"numerator": 3, "denominator": 5, "point": 0.6, "low": 0.23, "high": 0.88}
+        )
+
+        assert "CI" in rendered
+        assert "%" not in rendered, (
+            f"a level was invented for an interval that records none: {rendered}"
+        )
+
+    def test_the_headline_column_names_the_cutoff_it_shows(self) -> None:
+        """`study.py` picks 20 only if 20 is configured, else the last cutoff.
+
+        A literal "Recall@20" header can therefore name a column it is not.
+        """
+        from bindsight.benchmark.study_report import render_markdown
+
+        summary = {
+            "design": {},
+            "headline_k": 50,
+            "recall_cascade": {
+                "all": {
+                    "wilson": {
+                        "numerator": 1,
+                        "denominator": 17,
+                        "point": 0.059,
+                        "low": 0.01,
+                        "high": 0.27,
+                        "confidence": 0.95,
+                    }
+                }
+            },
+        }
+
+        md = render_markdown(summary)
+
+        assert "Recall@50" in md, "the header names a cutoff the table does not show"
+        assert "Recall@20" not in md
+
+    def test_the_nominal_hit_count_is_the_one_that_was_counted(self) -> None:
+        """ "Reporting the three nominal hits" was a literal three beside a
+        computed count two lines above it. They agree today; a panel with four
+        would print both, contradicting each other in consecutive sentences."""
+        from bindsight.benchmark.study_report import render_markdown
+
+        pairs = [
+            {
+                "symbol": s,
+                "project": "TCGA-X",
+                "p_decoy": 0.01,
+                "p_decoy_bh": 0.9,
+                "p_decoy_floor": 0.01,
+                "counterfactual_rank": 3,
+                "decoy_pool_size": 50,
+                "decoy_exact": True,
+            }
+            for s in ("A", "B", "C", "D")
+        ]
+        md = render_markdown({"design": {}, "decoy_nulls": {"pairs": pairs}})
+
+        if "nominal hit" in md:
+            assert "4 nominal hits" in md, "the sentence states a count it did not compute"
+            assert "three nominal hits" not in md

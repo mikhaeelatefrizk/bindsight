@@ -157,9 +157,14 @@ def _interval(block: dict[str, Any] | None) -> str:
     """A rate as point estimate, interval and the counts behind it."""
     if not block:
         return "—"
+    # `_confidence_label` exists for this and says why: an interval is not
+    # publishable without its level, so the level is read from the artifact or
+    # not claimed. `_interval_phrase` already used it; this renderer -- the
+    # headline cascade and the primary interval -- printed "95% CI" over
+    # whatever level the artifact happened to record.
     return (
         f"{block['numerator']}/{block['denominator']} = {block['point']:.3f} "
-        f"(95% CI {block['low']:.3f}–{block['high']:.3f})"
+        f"({_confidence_label(block)}CI {block['low']:.3f}–{block['high']:.3f})"
     )
 
 
@@ -192,13 +197,17 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
     cascade = summary.get("recall_cascade", {})
     if cascade:
+        # The cutoff the artifact actually reported. `study.py:758` sets it to 20
+        # only when 20 is among the configured cutoffs and otherwise to the last
+        # one, so a literal "Recall@20" header can name a column it is not.
+        headline_k = summary.get("headline_k", 20)
         lines += [
             "## Headline",
             "",
             "Three nested denominators. Each is a different question, and merging "
             "them would answer none of them.",
             "",
-            "| Denominator | What it asks | Recall@20 |",
+            f"| Denominator | What it asks | Recall@{headline_k} |",
             "|---|---|---|",
         ]
         # `all` means every pair in the primary tier, NOT every scored pair: the
@@ -422,8 +431,9 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
                 "That is the finding, and it is a negative one: against background "
                 "matched on abundance and dispersion, no antigen in this panel is "
                 "distinguishable once the panel is corrected for its own size. "
-                "Reporting the three nominal hits without the correction would be "
-                "the error this column exists to prevent.",
+                f"Reporting the {len(nominal)} nominal "
+                f"hit{'s' if len(nominal) != 1 else ''} without the correction would "
+                "be the error this column exists to prevent.",
                 "",
             ]
 
