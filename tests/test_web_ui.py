@@ -817,3 +817,87 @@ class TestAnIntervalOnThePageCarriesItsLevel:
         assert _ci_label(0.9) == "90% CI"
         assert _ci_label(None) == "CI"
         assert _ci_label("not a number") == "CI"
+
+
+class TestTheDesignCheckSaysWhenItGuessedTheFactor:
+    """It picked a two-level column and reported the pick as a finding.
+
+    `your_data.html.j2` scans for a column with exactly two distinct values,
+    prefers one named like a condition, and otherwise takes the first it meets.
+    A design table whose `condition` column holds one level and whose `batch`
+    column holds two was reported "Two-level factor: batch" with a green tick --
+    so the run it recommends contrasts a technical covariate and returns
+    plausible differentially expressed genes answering a question nobody asked.
+
+    Verified in a browser before the fix: six samples, `condition` all "tumor",
+    `batch` alternating, tick shown. After it: the same file reports a warning
+    naming `condition` and its level count.
+
+    The rule is not a count of alternatives -- the case that prompted this had
+    exactly one candidate. It is whether the page had any basis for its pick
+    beyond "this column happens to hold two values".
+    """
+
+    TEMPLATE = REPO / "bindsight" / "report" / "web" / "templates" / "your_data.html.j2"
+
+    def _script(self) -> str:
+        return self.TEMPLATE.read_text("utf-8")
+
+    def test_it_collects_every_two_level_column(self) -> None:
+        script = self._script()
+
+        assert "candidates.push(" in script, (
+            "the design check no longer gathers candidate factor columns, so it "
+            "cannot tell the reader a choice was made"
+        )
+
+    def test_the_guess_rule_turns_on_the_name_not_the_count(self) -> None:
+        """A single wrongly-named candidate is still a guess."""
+        script = self._script()
+
+        assert "const guessed = !!chosen && !chosen.named;" in script, (
+            "the guess rule no longer depends on the chosen column's name; a "
+            "design table with one two-level column named `batch` would be "
+            "reported as a determination again"
+        )
+
+    def test_a_guess_lowers_the_severity(self) -> None:
+        script = self._script()
+
+        assert re.search(r"var partial =\s*\n?\s*guessed \|\|", script), (
+            "a guessed factor no longer lowers the card's severity, so the page "
+            "shows a tick beside a factor it chose for the reader"
+        )
+
+    def test_it_names_the_column_the_reader_probably_meant(self) -> None:
+        script = self._script()
+
+        assert "conditionish" in script, "the check no longer tracks condition-named columns"
+        assert "a contrast needs exactly two" in script, (
+            "the page does not tell the reader why their own factor was unusable"
+        )
+
+    def test_a_condition_named_column_is_still_preferred(self) -> None:
+        """The common good case must stay silent."""
+        script = self._script()
+
+        assert 'indexOf("cond") >= 0' in script, (
+            "the preference for a condition-named column is gone, so a correct "
+            "file could have a different column chosen"
+        )
+
+    def test_nothing_is_uploaded_to_make_any_of_this_work(self) -> None:
+        """The whole check is client-side, and that is the point.
+
+        A counts matrix is patient data. If this ever grows a fetch, the page's
+        own promise -- "Nothing on this page was sent anywhere" -- stops being
+        true.
+        """
+        script = self._script()
+        promise = "Nothing on this page was sent anywhere"
+
+        assert promise in script, "the page no longer makes the promise this checks"
+        assert "fetch(" not in script, (
+            "the design check now calls fetch(), which would contradict the "
+            "page's promise that nothing is sent anywhere"
+        )

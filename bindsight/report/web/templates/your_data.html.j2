@@ -99,14 +99,34 @@ async function check() {
       const header = splitRow(rows[0]);
       const body = rows.slice(1).map(splitRow);
 
-      let factor = null, levels = null;
+      // Every two-level column, not just the winner. This used to keep only
+      // the first match (preferring a name containing "cond") and report it as
+      // "Two-level factor: x" with a tick. A design table whose `condition`
+      // column has one level and whose `batch` column has two was therefore
+      // reported ready to run -- against `batch` -- and the run it recommends
+      // would contrast a technical covariate and return plausible genes
+      // answering a question nobody asked.
+      const candidates = [];
+      const conditionish = [];
       header.forEach(function (name, i) {
         const values = Array.from(new Set(body.map(function (r) { return r[i]; }).filter(Boolean)));
+        const named = name.toLowerCase().indexOf("cond") >= 0 || name.toLowerCase() === "group";
+        if (named) { conditionish.push({ name: name, count: values.length }); }
         if (values.length === 2) {
-          const preferred = name.toLowerCase().indexOf("cond") >= 0;
-          if (!factor || preferred) { factor = name; levels = values; }
+          candidates.push({ name: name, levels: values, named: named });
         }
       });
+      const named = candidates.filter(function (c) { return c.named; });
+      const chosen = named.length ? named[0] : candidates[0] || null;
+      const factor = chosen ? chosen.name : null;
+      const levels = chosen ? chosen.levels : null;
+      // Not a count of alternatives. The question is whether the page had any
+      // basis for its pick beyond "this column happens to hold two values". A
+      // name that reads as a condition is a basis; nothing else is, however few
+      // columns were in the running. The case that prompted this had exactly
+      // one candidate -- a `batch` column, in a file whose `condition` column
+      // held a single level -- and reported it with a tick.
+      const guessed = !!chosen && !chosen.named;
 
       let body_html = design.name + "<br>" + body.length + " samples, " + header.length + " columns.";
       if (factor) {
@@ -117,6 +137,27 @@ async function check() {
           '<select id="num">' +
           levels.map(function (l) { return '<option value="' + l + '">' + l + "</option>"; }).join("") +
           "</select></div>";
+        if (candidates.length > 1) {
+          body_html +=
+            "<br>Columns with exactly two values: " +
+            candidates.map(function (c) { return "<code>" + c.name + "</code>"; }).join(", ") +
+            ".";
+        }
+        if (guessed) {
+          // The user's own factor, named, because that is what they have to fix.
+          const wrongLevels = conditionish.filter(function (c) { return c.count !== 2; });
+          body_html +=
+            "<br><strong>This column was chosen because it has two values, not " +
+            "because it is your factor.</strong> " +
+            (wrongLevels.length
+              ? "The column you probably meant, <code>" + wrongLevels[0].name +
+                "</code>, holds " + wrongLevels[0].count +
+                (wrongLevels[0].count === 1 ? " level" : " levels") +
+                ", and a contrast needs exactly two. "
+              : "No column here is named like a condition. ") +
+            "The pipeline contrasts whichever column your config names — check " +
+            "that it is the comparison you mean.";
+        }
       } else {
         body_html += "<br><strong>No two-level column found.</strong> The contrast needs a column with exactly two distinct values.";
       }
@@ -147,7 +188,10 @@ async function check() {
       // cannot be built" is the failure this page exists to prevent, one step
       // earlier in the pipeline.
       var blocked = !factor || (overlap && overlap.shared === 0);
-      var partial = overlap && overlap.shared > 0 && overlap.shared < overlap.total;
+      // A guessed factor is not a clean bill of health: the page chose by
+      // column order, and only the reader knows whether that is the biology.
+      var partial =
+        guessed || (overlap && overlap.shared > 0 && overlap.shared < overlap.total);
       html += card("Design table", body_html, blocked ? "err" : partial ? "warn" : "ok");
       designBlocked = blocked;
     }
