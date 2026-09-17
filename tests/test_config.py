@@ -293,3 +293,46 @@ def test_run_config_rejects_unknown_modality_before_any_compute(tmp_path: Path) 
                 },
             }
         )
+
+
+class TestAnInvertedBinderLengthRangeIsRejectedHoweverItArrives:
+    """`DesignParams` carried a range check that only ran half the time.
+
+    It was a `field_validator` on `binder_length_max`, and Pydantic does not
+    validate a field left at its default. Supplying only the minimum therefore
+    skipped the check entirely: `DesignParams(binder_length_min=200)` built
+    cleanly with max still at 100, and the designer was handed a range with no
+    integers in it.
+
+    The pair is a property of the model, not of either field, so it is checked
+    on the assembled model where both halves are present however they arrived.
+    """
+
+    def test_a_minimum_above_the_default_maximum_is_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="binder_length_max"):
+            DesignParams(binder_length_min=200)
+
+    def test_a_maximum_below_the_default_minimum_is_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="binder_length_max"):
+            DesignParams(binder_length_max=30)
+
+    def test_both_supplied_inverted_is_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="binder_length_max"):
+            DesignParams(binder_length_min=200, binder_length_max=100)
+
+    def test_the_message_names_both_numbers_so_the_fix_is_obvious(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            DesignParams(binder_length_min=200)
+
+        message = str(excinfo.value)
+        assert "200" in message
+        assert "100" in message
+
+    def test_a_valid_range_and_the_defaults_still_build(self) -> None:
+        assert DesignParams().binder_length_min == 50
+        assert DesignParams().binder_length_max == 100
+        assert DesignParams(binder_length_min=30, binder_length_max=200).binder_length_max == 200
+
+    def test_an_equal_range_is_allowed(self) -> None:
+        """One permitted length is a range, not an inversion."""
+        assert DesignParams(binder_length_min=60, binder_length_max=60).binder_length_min == 60

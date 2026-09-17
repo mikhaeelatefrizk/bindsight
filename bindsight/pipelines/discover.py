@@ -1261,6 +1261,11 @@ def _build_epitopes(
       about this protein, and that is not the same as learning it has no site;
     - ``surface_bind_not_configured`` — no SURFACE-Bind data vendored.
 
+    ``min_surface_bind_score`` filters scored sites only. A site the vendored
+    data left unscored cannot be compared against the threshold, so it is kept
+    and logged rather than silently counted as having passed one; its row
+    carries ``score: None``.
+
     ``require_surface_bind_site`` only bites when data is actually vendored: with
     a client, ``True`` carries *only* candidates that have ≥1 qualifying site,
     while ``False`` carries every top-N candidate (whole-surface where no site
@@ -1312,11 +1317,27 @@ def _build_epitopes(
         lookup_failed = False
         if client is not None and isinstance(uni, str) and uni:
             try:
-                sites = [
-                    s
-                    for s in client.sites(uni)
-                    if s.score is None or s.score >= p.min_surface_bind_score
-                ]
+                found = client.sites(uni)
+                # `score` is optional in the SURFACE-Bind contract -- the loader
+                # reads it with `.get` and sorts unscored sites last -- so a site
+                # can arrive with nothing to compare against the threshold.
+                # Dropping it would let the run report `no_surface_bind_site`,
+                # which is documented as "data present, none for this protein":
+                # a claim about the biology that would not be true. So it is
+                # kept, and the run says so rather than letting the reader
+                # assume every surviving site cleared the bar. Its row carries
+                # `score: None`, which is the same fact on the reader's side.
+                unscored = [s for s in found if s.score is None]
+                if unscored:
+                    LOG.warning(
+                        "%s: %d SURFACE-Bind site(s) carry no score; "
+                        "min_surface_bind_score=%.2f could not be applied to them "
+                        "and they are retained unfiltered",
+                        uni,
+                        len(unscored),
+                        p.min_surface_bind_score,
+                    )
+                sites = [s for s in found if s.score is None or s.score >= p.min_surface_bind_score]
             except Exception as e:  # malformed vendored data must not abort discovery
                 LOG.warning("SURFACE-Bind lookup failed for %s: %s", uni, e)
                 lookup_failed = True

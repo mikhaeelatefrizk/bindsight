@@ -10,6 +10,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from bindsight.config import RunConfig
+from bindsight.epitopes.surface_bind import TargetableSite
 from bindsight.pipelines import discover as discover_pipeline
 from bindsight.targets.open_targets import TargetEvidence
 
@@ -327,3 +328,80 @@ def test_discover_records_failure_when_inputs_missing(tmp_path: Path) -> None:
     assert manifest.stages[0].status == "failed"
     assert manifest.stages[0].name == "deg"
     assert "missing input" in (manifest.stages[0].error or "").lower()
+
+
+class TestAnUnscoredSiteDoesNotPassAThresholdInSilence:
+    """`min_surface_bind_score` admitted sites it had never compared anything to.
+
+    The filter read `s.score is None or s.score >= p.min_surface_bind_score`, and
+    `score` is optional in the SURFACE-Bind contract -- the loader reads it with
+    `.get` and its own comment says unscored sites sort last. So a user asking
+    for sites scoring at least 0.9 could be handed one carrying no score at all,
+    with nothing anywhere saying the threshold had not been applied to it.
+
+    Keeping the site is the right call: dropping it would empty the site list and
+    the run would report `no_surface_bind_site`, documented as "data present,
+    none for this protein" -- a claim about the biology that would be false. What
+    was wrong was doing it silently. The run now says so.
+    """
+
+    @staticmethod
+    def _run(sites, threshold, caplog):
+        import logging
+
+        from bindsight.config import TargetDiscoveryParams
+        from bindsight.pipelines.discover import _build_epitopes
+
+        class _Client:
+            def sites(self, _uniprot):
+                return sites
+
+        top = pd.DataFrame(
+            [
+                {
+                    "gene_id": "ENSG1",
+                    "symbol": "ERBB2",
+                    "uniprot_id": "P04626",
+                    "alphafold_structure_path": None,
+                }
+            ]
+        )
+        params = TargetDiscoveryParams(min_surface_bind_score=threshold)
+        with caplog.at_level(logging.WARNING, logger="bindsight.pipelines.discover"):
+            frame = _build_epitopes(top, _Client(), params)
+        return frame
+
+    def test_the_unscored_site_is_kept_rather_than_faked_into_a_biological_negative(
+        self, caplog
+    ) -> None:
+        site = TargetableSite(uniprot_id="P04626", site_id="s1", residues=[1, 2], score=None)
+
+        frame = self._run([site], 0.9, caplog)
+
+        assert list(frame["epitope_status"]) == ["surface_bind_site"]
+        assert frame["score"].isna().all(), "an unscored site must not acquire a score"
+
+    def test_the_run_says_the_threshold_could_not_be_applied(self, caplog) -> None:
+        site = TargetableSite(uniprot_id="P04626", site_id="s1", residues=[1, 2], score=None)
+
+        self._run([site], 0.9, caplog)
+
+        assert any(
+            "no score" in r.getMessage() and "P04626" in r.getMessage() for r in caplog.records
+        ), f"no warning naming the protein; got {[r.getMessage() for r in caplog.records]}"
+
+    def test_a_scored_site_below_the_threshold_is_still_dropped(self, caplog) -> None:
+        """The filter still filters -- this is not a licence to keep everything."""
+        low = TargetableSite(uniprot_id="P04626", site_id="lo", residues=[1], score=0.10)
+        high = TargetableSite(uniprot_id="P04626", site_id="hi", residues=[9], score=0.95)
+
+        frame = self._run([low, high], 0.9, caplog)
+
+        assert list(frame["site_id"]) == ["hi"]
+
+    def test_a_fully_scored_protein_warns_about_nothing(self, caplog) -> None:
+        high = TargetableSite(uniprot_id="P04626", site_id="hi", residues=[9], score=0.95)
+
+        self._run([high], 0.9, caplog)
+
+        assert not [r for r in caplog.records if "no score" in r.getMessage()]

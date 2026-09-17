@@ -27,7 +27,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -274,13 +273,20 @@ class DesignParams(BaseModel):
     # for. See bindsight.design.prescreen.
     prescreen_top_k: int | None = Field(None, ge=1)
 
-    @field_validator("binder_length_max")
-    @classmethod
-    def _check_length_range(cls, v: int, info: ValidationInfo) -> int:
-        lo = info.data.get("binder_length_min")
-        if lo is not None and v < lo:
-            raise ValueError("binder_length_max must be ≥ binder_length_min")
-        return v
+    # A field validator fires only when its own field is supplied. Pydantic does
+    # not validate defaults, so `DesignParams(binder_length_min=200)` left the
+    # max at its default of 100 and this check never ran: the object was built
+    # with min > max and the designer was handed an empty length range. An
+    # after-validator runs on the assembled model, so it sees the pair however
+    # either half arrived.
+    @model_validator(mode="after")
+    def _check_length_range(self) -> DesignParams:
+        if self.binder_length_max < self.binder_length_min:
+            raise ValueError(
+                f"binder_length_max ({self.binder_length_max}) must be >= "
+                f"binder_length_min ({self.binder_length_min})"
+            )
+        return self
 
 
 class ValidateParams(BaseModel):
