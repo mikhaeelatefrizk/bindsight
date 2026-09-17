@@ -300,4 +300,5 @@ class TestAnEmptyCategoryIsDrawnAsZeroNotAsAbsent:
             f"were {annotated}. A bar of no height and no number cannot be told apart "
             "from one that was not plotted at all"
         )
-        assert "3" in annotated and "14" in annotated, "the non-zero bars stopped being annotated"
+        assert "3" in annotated, "a non-zero bar stopped being annotated"
+        assert "14" in annotated, "a non-zero bar stopped being annotated"
