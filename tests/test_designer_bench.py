@@ -581,9 +581,8 @@ class TestTheSuccessCellKnowsItsOwnDenominator:
 
         cell = _success_cell(_score_dict(self._score()))
 
-        assert "20" in cell and "unscored" in cell, (
-            f"the cell narrows the denominator without saying so: {cell}"
-        )
+        assert "20" in cell, f"the cell narrows the denominator without saying so: {cell}"
+        assert "unscored" in cell, f"the cell does not say how many were unscored: {cell}"
 
     def test_an_older_summary_without_n_scored_still_renders(self) -> None:
         """Guards the guard: artifacts written before this field must not break."""
