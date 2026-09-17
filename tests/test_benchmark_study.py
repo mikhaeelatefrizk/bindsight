@@ -401,3 +401,86 @@ def _surfaceome_gene_ids() -> list[str]:
 
     surfaceome = load_surfy(allow_offline_fallback=False)
     return [g for g, a in load_surfy_gene_map().items() if a in surfaceome]
+
+
+class TestACachedCohortIsTheCohortThatWasAskedFor:
+    """`prepare_cohort` reused whatever was on disk without checking its size.
+
+    The three files existing says *a* cohort is there, not that it is *this* one.
+    A sweep run at 50 pairs and re-run at 5 got the 50-pair cohort back and its
+    provenance reporting `n_tumor: 50` — which `benchmarks/run_study.py:87`
+    copies straight into the published record. The study would state one cohort
+    size and its own provenance another, from the same call.
+
+    Reuse is the point of the function: it is what makes a staged sweep
+    resumable, and re-downloading a TCGA cohort is expensive. So the fix is not
+    to stop reusing, it is to reuse only what matches.
+    """
+
+    @staticmethod
+    def _staged(tmp_path: Path, n_built: int) -> Any:
+        import json
+
+        run = tmp_path / "brca"
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "counts.tsv.gz").write_bytes(b"stub")
+        (run / "design.tsv").write_text("sample\tcondition\n", encoding="utf-8")
+        (run / "provenance.json").write_text(
+            json.dumps({"project": "TCGA-BRCA", "n_tumor": n_built, "n_normal": n_built}),
+            encoding="utf-8",
+        )
+        return ST.StudyConfig(out_dir=tmp_path)
+
+    def test_a_matching_cohort_is_reused_without_refetching(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The resumability this function exists for must survive the fix."""
+        cfg = self._staged(tmp_path, 50)
+        called: list[str] = []
+        monkeypatch.setattr("bindsight.io.gdc.matched_pair_cases", lambda p: called.append(p) or [])
+
+        got = ST.prepare_cohort("TCGA-BRCA", cfg, max_pairs=50)
+
+        assert got["n_tumor"] == 50
+        assert called == [], "a cohort that already matches the request was re-fetched"
+
+    def test_a_cohort_built_at_another_size_is_not_returned_as_this_one(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """The defect: 50 pairs returned, and reported, for a request of 5."""
+        import logging
+
+        cfg = self._staged(tmp_path, 50)
+        fetched: dict = {}
+
+        monkeypatch.setattr(
+            "bindsight.io.gdc.matched_pair_cases", lambda p: [f"case-{i}" for i in range(50)]
+        )
+
+        def _fake_fetch(**kw):
+            fetched.update(kw)
+            return {"project": kw["project"], "n_tumor": kw["n_tumor"], "n_normal": kw["n_normal"]}
+
+        monkeypatch.setattr("bindsight.io.gdc.fetch_cohort", _fake_fetch)
+
+        with caplog.at_level(logging.WARNING):
+            got = ST.prepare_cohort("TCGA-BRCA", cfg, max_pairs=5)
+
+        assert got["n_tumor"] == 5, (
+            f"a cohort built at 50 pairs was returned for a request of 5, reporting "
+            f"n_tumor={got['n_tumor']} — the number run_study.py publishes"
+        )
+        assert fetched.get("n_tumor") == 5, "the rebuild did not honour the requested cap"
+        assert any("were requested" in r.getMessage() for r in caplog.records), (
+            "the cohort was rebuilt at a different size without saying so"
+        )
+
+    def test_an_uncapped_request_still_reuses_whatever_is_there(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No cap means no size was asked for, so anything on disk answers it."""
+        self._staged(tmp_path, 50)
+        cfg = ST.StudyConfig(out_dir=tmp_path, max_pairs=None)
+        monkeypatch.setattr("bindsight.io.gdc.matched_pair_cases", lambda p: [])
+
+        assert ST.prepare_cohort("TCGA-BRCA", cfg)["n_tumor"] == 50

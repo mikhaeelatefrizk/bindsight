@@ -128,7 +128,10 @@ def prepare_cohort(
 
     Only patients contributing both arms are used, so the contrast can block on
     the patient. Nothing is downloaded twice: an existing counts file with its
-    provenance is reused, which is what makes a staged sweep resumable.
+    provenance is reused, which is what makes a staged sweep resumable -- but
+    only when it was built at the size being asked for. A cohort on disk that
+    holds a different number of pairs is rebuilt and the mismatch logged, because
+    returning it would report the cached size as the requested one.
 
     Args:
         project: GDC project id.
@@ -150,9 +153,27 @@ def prepare_cohort(
     design = run_dir / "design.tsv"
     provenance_path = run_dir / "provenance.json"
 
+    cap = max_pairs if max_pairs is not None else config.max_pairs
+
     if counts.exists() and design.exists() and provenance_path.exists():
-        LOG.info("%s: reusing the cohort already on disk (%s)", project, counts)
-        return dict(json.loads(provenance_path.read_text(encoding="utf-8")))
+        cached = dict(json.loads(provenance_path.read_text(encoding="utf-8")))
+        built_with = cached.get("n_tumor")
+        # Reuse only what matches the request. The three files existing says a
+        # cohort is there, not that it is *this* cohort: a sweep run at 50 pairs
+        # and re-run at 5 returned the 50-pair cohort and reported n_tumor 50,
+        # which benchmarks/run_study.py copies straight into the published
+        # record. The study would then state one size and its provenance
+        # another, from the same call.
+        if cap is None or built_with is None or int(built_with) == int(cap):
+            LOG.info("%s: reusing the cohort already on disk (%s)", project, counts)
+            return cached
+        LOG.warning(
+            "%s: the cohort on disk holds %s pair(s) and %s were requested; "
+            "rebuilding rather than reporting the cached size as the one asked for",
+            project,
+            built_with,
+            cap,
+        )
 
     cases = matched_pair_cases(project)
     if not cases:
@@ -161,7 +182,6 @@ def prepare_cohort(
             "normal, so no paired contrast is possible. Exclude the cohort rather than "
             "substituting an unpaired or cross-study normal."
         )
-    cap = max_pairs if max_pairs is not None else config.max_pairs
     if cap is not None:
         cases = cases[:cap]
 
