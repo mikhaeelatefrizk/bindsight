@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [0.3.0] - 2026-09-17
+## [0.3.0] - 2026-09-18
 
 Prepared for publication as a fresh repository. The work below is of three kinds:
 defects that were invisible because they only manifested on other people's
@@ -185,12 +185,72 @@ and `SUPPORT.md`.
 - Eight orphaned figures removed, dated five weeks before the artifacts they
   depicted were re-scored.
 
+### Fixed — six more, found by auditing for this release's own defect classes
+
+Each was reproduced before it was touched, and each guard was mutation-tested.
+
+- **Every generated HTML report closed twelve `</div>` it never opened.** The
+  note conversion that rebuilt the interface applied a note block's
+  `</p></div></div>` ending to "the first `</p>` after each rewritten opener",
+  and seven of those were plain descriptive paragraphs. Browsers recover from it
+  silently, which is why a visual check missed it; a validator, a print-to-PDF
+  path, and anything that parses rather than renders do not — and this report is
+  the artifact a collaborator opens from an email.
+
+- **A cache key that differed between Linux and Windows.** `_with_payload`
+  ordered the shipped binders by sorting `Path` objects, and `PurePath.__lt__`
+  compares the parts tuple, case-insensitively on Windows. The same payload
+  hashed to two different keys depending on the machine, so a rerun on CI could
+  not reuse a local result and two keys that differed asserted the payloads
+  differed when they did not.
+
+- **`boltzgen_protocol` and `boltzgen_use_kernels` were missing from the cache
+  key** while `job_exec` read both and acted on them, so two BoltzGen jobs
+  running different design protocols shared an entry and the second returned the
+  first's designs. That was the third entry the executor acts on to go missing
+  from a hand-kept tuple, so the tuple is no longer trusted: a new guard walks
+  `job_exec`'s AST for every `extra_params` key it reads and fails unless each is
+  keyed or exempt with a written reason.
+
+- **A cache that could poison itself permanently.** A hit was `exists() and
+  st_size > 0`, so an interrupted transfer's bytes became a hit that nothing ever
+  re-submitted past; `extract_member` then swallowed the `TarError` as a warning,
+  and the result reported `cache_status="hit"` pointing at a metrics file that
+  had never been created. A hit now has to open, list, and carry the metrics it
+  is consulted for.
+
+- **A job with no target structure paid for a GPU to find that out.** The spec
+  recorded `target_structure_name` unconditionally while the copy was guarded by
+  an existence check, so the executor was told to find a file that had not been
+  shipped — and `make_cache_key` hashes an unreadable structure as the empty
+  string, so two jobs against two different missing structures shared a key. It
+  now fails locally, before submission.
+
+- **Two filters admitted what they were configured to exclude.**
+  `DesignParams` checked its binder-length range in a `field_validator` on
+  `binder_length_max`, and Pydantic does not validate defaults, so
+  `binder_length_min=200` alone built cleanly against a default max of 100 and
+  handed the designer an empty range. And `min_surface_bind_score` admitted
+  sites carrying no score at all — legal under the SURFACE-Bind contract — with
+  nothing saying the threshold had not been applied to them. The site is still
+  kept, because dropping it would make the run report `no_surface_bind_site`,
+  documented as "data present, none for this protein", which would be a false
+  claim about the biology. What changed is the silence.
+
+Three smaller corrections in the same pass: `pca_2d` returned `(N, 1)` for a
+single-feature embedding while promising `(N, 2)`, which the plotting function
+unpacks as x and y; the ESM-2 prescreen reported "no top_k set" for a run that
+had set one and simply had fewer designs than its cap; and `designer_version`
+now says it versions the bindsight adapter rather than the upstream tool, beside
+a field a reader meets next to `designer_name: "rfdiff_mpnn"`.
+
 ### Notes
 
-1,607 tests pass locally and 1,601 from a clean clone with nothing failing;
-`ruff` and `mypy` are clean across `bindsight`, `tests` and `scripts`. Every fix
-was mutation-tested: the defect reintroduced, the guard confirmed to fail, the
-tree restored.
+1,729 tests pass locally with 13 skipped and nothing failing; `ruff check`,
+`ruff format --check` and `mypy` are clean across `bindsight`, `tests`,
+`scripts` and `benchmarks`. Every fix was mutation-tested: the defect
+reintroduced, the guard confirmed to fail on exactly that defect, the tree
+restored and the diff checked clean.
 
 Two claims were checked and **not** published because they did not survive
 inspection: that the decoy null's negative was forced by the panel's design (it
