@@ -90,12 +90,31 @@ def _list_cohort_files(
 ) -> list[dict[str, Any]]:
     """List STAR-Counts files for a project + tumor/normal class.
 
-    Without ``cases`` this returns the first ``n`` files (deterministic by
+    With ``cases=None`` this returns the first ``n`` files (deterministic by
     ``file_id``). With ``cases`` (a list of TCGA case submitter ids, e.g. the
     HER2-enriched patients from cBioPortal) it restricts to those cases and
     de-duplicates to at most one file per case before capping at ``n`` — so a
     subtype-stratified cohort fetches exactly the patients you asked for.
+
+    An empty list raises. It means the restriction was applied and matched
+    nobody, which is not the same request as ``None`` and must not be answered
+    with an unrestricted cohort.
     """
+    if cases is not None and not cases:
+        # `None` means "no restriction"; `[]` means "restrict to these, and
+        # there are none". Every guard below was `if cases:`, which merged them,
+        # so a subtype that matched nobody dropped the `cases.submitter_id`
+        # clause and fetched the first `n` files of any subtype instead. The
+        # cohort then carried the label of a stratified one while being an
+        # unstratified sample, with nothing raised, nothing warned, and
+        # `selection: "first_n"` recorded in its own provenance.
+        raise ValueError(
+            f"an empty case list was supplied for {project} {condition}: the "
+            "restriction matched no patients. Passing None asks for an "
+            "unrestricted cohort; passing [] asks for a cohort of nobody, which "
+            "cannot be silently widened to everybody."
+        )
+
     content = [
         {"op": "in", "content": {"field": "cases.project.project_id", "value": [project]}},
         {

@@ -459,6 +459,24 @@ def prepare_cohort(
             raise ValueError(f"{cohort.key} needs subtype labels but none were provided")
         tumor_cases = patients_with_subtype(subtype_labels, cohort.subtype)
         LOG.info("%s: %d %s patients from cBioPortal", cohort.key, len(tumor_cases), cohort.subtype)
+        if not tumor_cases:
+            # An empty match used to flow through as `[]`, which every guard in
+            # `_list_cohort_files` read as "no restriction" -- so the cohort was
+            # built from the first n tumours of any subtype and published under
+            # the stratified cohort's name. This module's own docstring calls
+            # that stratification the scientific prerequisite for recovering a
+            # subtype-specific antigen, because a bulk contrast over the whole
+            # project averages the signal away.
+            #
+            # Raised here rather than left to the query builder so the message
+            # names the label that failed to match, which is where the fix is.
+            raise ValueError(
+                f"{cohort.key}: no patient carries subtype {cohort.subtype!r} in the "
+                f"supplied labels ({len(subtype_labels)} label(s) read). The cohort "
+                "cannot be built as specified, and building it unstratified would "
+                "publish a different cohort under this one's name. Check the subtype "
+                "label against the cBioPortal study's own vocabulary."
+            )
 
     prov: dict[str, Any]
     if counts.exists() and design.exists():

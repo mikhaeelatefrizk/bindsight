@@ -361,8 +361,16 @@ def _build_metadata(
             body = json.loads(manifest_path.read_text(encoding="utf-8"))
             body.pop("@context", None)
             manifest = body
-        except json.JSONDecodeError:
-            pass
+        except (json.JSONDecodeError, OSError) as e:
+            # `_external_inputs` logs this exact failure; this swallowed it with
+            # a bare `pass`. The crate then shipped with an empty run id and no
+            # sha256 on any file, and a consumer preparing a deposit could not
+            # tell that from a run which genuinely recorded no digests.
+            LOG.warning(
+                "could not read %s (%s); the crate will carry no run identity and no file digests",
+                manifest_path,
+                e,
+            )
 
     digests = _manifest_digests(manifest)
     file_entries: list[dict[str, object]] = []
