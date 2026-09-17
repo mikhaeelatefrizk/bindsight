@@ -418,7 +418,7 @@ class TestACachedCohortIsTheCohortThatWasAskedFor:
     """
 
     @staticmethod
-    def _staged(tmp_path: Path, n_built: int) -> Any:
+    def _staged(tmp_path: Path, n_built: int) -> ST.StudyConfig:
         import json
 
         run = tmp_path / "brca"
