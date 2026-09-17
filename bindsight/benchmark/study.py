@@ -765,7 +765,12 @@ def summarise(results: list[CohortResult], config: StudyConfig) -> dict[str, Any
     summary: dict[str, Any] = {
         "schema": "bindsight-rediscovery/3",
         "design": {
-            "cohorts": "whole unstratified TCGA project, all primary tumour vs all normal",
+            # Not "all primary tumour": prepare_cohort calls matched_pair_cases,
+            # so a tumour with no matched normal never enters the contrast.
+            "cohorts": (
+                "every patient in the TCGA project who contributed both a primary "
+                "tumour and a solid-tissue normal; no biomarker stratification"
+            ),
             "contrast": "~ case_barcode + condition (paired on patient)",
             "admissible_stratifier_rule": P.ADMISSIBLE_STRATIFIER_RULE,
             "unreachable_note": P.UNREACHABLE_NOTE,

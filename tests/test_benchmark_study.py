@@ -242,7 +242,25 @@ class TestSummarise:
             ST.StudyConfig(out_dir=Path(".")),
         )
         design = summary["design"]
-        assert "unstratified" in design["cohorts"]
+        cohorts = design["cohorts"].lower()
+
+        # Two separate properties, and the record used to state only one of them
+        # — as "all primary tumour vs all normal", which is not what runs.
+        # `prepare_cohort` calls `matched_pair_cases`, so a tumour with no matched
+        # normal never enters the contrast; in TCGA-UCEC that leaves 23 pairs. A
+        # reader who takes the old sentence literally has the wrong denominator
+        # for every number downstream of it.
+        assert "stratif" in cohorts, (
+            f"the recorded design no longer says the cohort is unstratified: {cohorts!r}"
+        )
+        assert "both" in cohorts or "matched" in cohorts or "pair" in cohorts, (
+            "the recorded design does not say the cohort is restricted to patients "
+            f"who contributed both a tumour and a normal: {cohorts!r}"
+        )
+        assert "all primary tumour" not in cohorts, (
+            "the design record claims every primary tumour is in the contrast; "
+            "prepare_cohort takes matched pairs only"
+        )
         assert "case_barcode" in design["contrast"]
         assert "antigen under test" in design["admissible_stratifier_rule"]
 

@@ -12,8 +12,19 @@ earlier six-cohort study did wrong.
 TCGA-BRCA tumours by PAM50 HER2-enriched subtype and then reported discovering
 ERBB2. ERBB2 is one of the fifty genes the PAM50 centroid classifier is built
 on, so the tumour arm was chosen partly by high ERBB2 expression. EGFR is also a
-PAM50 gene. Every cohort here is therefore the **whole unstratified project**:
-all primary tumour against all solid-tissue normal.
+PAM50 gene. No cohort here is stratified by any biomarker: the arms are
+**every patient in the project who contributed both a primary tumour and a
+solid-tissue normal**, and nothing about the antigen under test enters that
+choice.
+
+That is a subset of the project, and saying so matters. This used to read
+"all primary tumour against all solid-tissue normal", which is not what runs:
+``study.prepare_cohort`` calls ``matched_pair_cases``, so a tumour with no
+matched normal is not in the contrast. In TCGA-UCEC that leaves 23 pairs. A
+reader who takes the older sentence literally is wrong about the denominator
+of every number downstream of it. The pairing is a design choice about the
+contrast, not a selection on the answer, so the non-circularity argument below
+is unaffected -- but the two are different claims and only one of them was true.
 
 Two properties have to hold and they are not the same thing:
 
@@ -292,9 +303,11 @@ PANEL: list[AntigenCohort] = [
         tier="approved",
         usable="scored",
         note="EGFR drives lung adenocarcinoma through mutation and amplification, not "
-        "bulk mRNA over-expression. The published run measured log2fc 0.42 (not "
-        "significant), so a null is the a-priori expectation and is a statement about "
-        "the biology, not about the ranker.",
+        "bulk mRNA over-expression. The published run measured log2fc 0.06 (padj 0.75, "
+        "not significant), so a null is the a-priori expectation and is a statement "
+        "about the biology, not about the ranker. This note quoted 0.42 until a check "
+        "against the artifact caught it -- 0.41 is ERBB2's log2fc in the same cohort, "
+        "not EGFR's.",
     ),
     AntigenCohort(
         project="TCGA-LUSC",
@@ -406,7 +419,7 @@ PANEL: list[AntigenCohort] = [
         tier="late_clinical",
         usable="scored",
         note="CEA is abundantly expressed in normal colonic epithelium, and the "
-        "published run measured log2fc -0.28 (not significant). Together with FOLH1 "
+        "published run measured log2fc -0.48 (padj 0.045, not significant: the rule requires both an adjusted p below the FDR threshold and an absolute log2 fold change at or above the floor, and this clears only the first). Together with FOLH1 "
         "and CLDN18 this makes three pre-registered lineage-antigen nulls, which is "
         "what turns an anecdote into a measured statement about the blind spot.",
     ),
@@ -461,7 +474,10 @@ PANEL: list[AntigenCohort] = [
         usable="scored",
         note="Fourth ERBB2 indication. 35 normals but only 23 matched pairs, the "
         "weakest pairing in the panel, so the paired primary analysis is underpowered "
-        "here and the unpaired secondary carries this cohort.",
+        "here and this cohort carries the least weight of any in the study. There is "
+        "no unpaired secondary: study.prepare_cohort refuses to fall back to an "
+        "unpaired design rather than substitute a different contrast, so an "
+        "underpowered pair is reported as underpowered instead of being rescued.",
     ),
     AntigenCohort(
         project="TCGA-UCEC",

@@ -76,28 +76,28 @@ Taken over the **counterfactual** rank rather than the shortlist rank, so no gat
 
 | antigen | cohort | counterfactual rank | p | BH | floor | decoys |
 |---|---|--:|--:|--:|--:|--:|
-| **MET** | KIRP | 10 | 0.0047 | 0.102 | 0.0047 | 214 |
-| **CA9** | KIRC | 1 | 0.0185 | 0.204 | 0.0185 | 53 |
-| **GPC3** | LIHC | 9 | 0.0417 | 0.306 | 0.0417 | 23 |
-| **FOLH1** | PRAD | 36 | 0.0645 | 0.355 | 0.0323 | 30 |
-| **ERBB2** | BRCA | 476 | 0.1212 | 0.432 | 0.0101 | 98 |
-| **MET** | LUAD | 713 | 0.1525 | 0.432 | 0.0169 | 58 |
-| **ERBB2** | LUAD | 841 | 0.1702 | 0.432 | 0.0043 | 234 |
-| **TACSTD2** | LUAD | 1286 | 0.2182 | 0.432 | 0.0091 | 109 |
-| **EGFR** | LUSC | 648 | 0.2200 | 0.432 | 0.0200 | 49 |
-| **EGFR** | HNSC | 413 | 0.2275 | 0.432 | 0.0047 | 210 |
-| **EGFR** | LUAD | 1443 | 0.2364 | 0.432 | 0.0091 | 109 |
-| **ERBB2** | UCEC | 937 | 0.2423 | 0.432 | 0.0052 | 193 |
-| **STEAP1** | PRAD | 244 | 0.2553 | 0.432 | 0.0213 | 46 |
-| **ERBB2** | STAD | 997 | 0.3182 | 0.500 | 0.0091 | 109 |
-| **NECTIN4** | BLCA | 438 | 0.3699 | 0.542 | 0.0137 | 72 |
-| **CEACAM5** | COAD | 1753 | 0.4000 | 0.550 | 0.0250 | 39 |
-| **TACSTD2** | BRCA | 1375 | 0.5000 | 0.647 | 0.0172 | 57 |
-| **CLDN18** | STAD | 1835 | 0.6000 | 0.733 | 0.0133 | 74 |
-| **FGFR2** | STAD | 2333 | 0.6545 | 0.748 | 0.0091 | 109 |
-| **CLDN18** | ESCA | 2265 | 0.6923 | 0.748 | 0.0192 | 51 |
-| **FOLR1** | UCEC | 669 | 0.7143 | 0.748 | 0.0476 | 20 |
-| **EGFR** | COAD | 2715 | 0.8170 | 0.817 | 0.0043 | 234 |
+| **MET** | KIRP | 10 | 0.0047 | 0.1023 | 0.0047 | 214 |
+| **CA9** | KIRC | 1 | 0.0185 | 0.2037 | 0.0185 | 53 |
+| **GPC3** | LIHC | 9 | 0.0417 | 0.3056 | 0.0417 | 23 |
+| **FOLH1** | PRAD | 36 | 0.0645 | 0.3548 | 0.0323 | 30 |
+| **ERBB2** | BRCA | 476 | 0.1212 | 0.4321 | 0.0101 | 98 |
+| **MET** | LUAD | 713 | 0.1525 | 0.4321 | 0.0169 | 58 |
+| **ERBB2** | LUAD | 841 | 0.1702 | 0.4321 | 0.0043 | 234 |
+| **TACSTD2** | LUAD | 1286 | 0.2182 | 0.4321 | 0.0091 | 109 |
+| **EGFR** | LUSC | 648 | 0.2200 | 0.4321 | 0.0200 | 49 |
+| **EGFR** | HNSC | 413 | 0.2275 | 0.4321 | 0.0047 | 210 |
+| **EGFR** | LUAD | 1443 | 0.2364 | 0.4321 | 0.0091 | 109 |
+| **ERBB2** | UCEC | 937 | 0.2423 | 0.4321 | 0.0052 | 193 |
+| **STEAP1** | PRAD | 244 | 0.2553 | 0.4321 | 0.0213 | 46 |
+| **ERBB2** | STAD | 997 | 0.3182 | 0.5000 | 0.0091 | 109 |
+| **NECTIN4** | BLCA | 438 | 0.3699 | 0.5425 | 0.0137 | 72 |
+| **CEACAM5** | COAD | 1753 | 0.4000 | 0.5500 | 0.0250 | 39 |
+| **TACSTD2** | BRCA | 1375 | 0.5000 | 0.6471 | 0.0172 | 57 |
+| **CLDN18** | STAD | 1835 | 0.6000 | 0.7333 | 0.0133 | 74 |
+| **FGFR2** | STAD | 2333 | 0.6545 | 0.7483 | 0.0091 | 109 |
+| **CLDN18** | ESCA | 2265 | 0.6923 | 0.7483 | 0.0192 | 51 |
+| **FOLR1** | UCEC | 669 | 0.7143 | 0.7483 | 0.0476 | 20 |
+| **EGFR** | COAD | 2715 | 0.8170 | 0.8170 | 0.0043 | 234 |
 
 **3 of 22 pairs are nominally significant at 0.05 (CA9, GPC3, MET), and 0 survive Benjamini-Hochberg across the panel.**
 
@@ -117,6 +117,8 @@ Excluded, several indications each: CLDN18, EGFR, ERBB2, MET, TACSTD2. The test 
 
 Excluded, not scored in every cohort: CEACAM5. A complete matrix is required, or the observed statistic and the permuted one would be built from different sets of cohorts.
 
+> **What qualifies CA9.** Carbonic anhydrase IX is the defining clear-cell RCC surface antigen. Measured here at log2fc 9.58 with an adjusted p below floating-point resolution, the largest effect in the panel. Two notes: the girentuximab ADJUVANT phase 3 (ARISER) FAILED its primary endpoint, so the live asset is the diagnostic imaging agent rather than a therapeutic; and CA9 is absent from the SURFY list, so under that reference alone it was unreachable at any expression level. It is reachable through the extended reference, and this pair is why that extension exists.
+
 ## Results by outcome class
 
 ### Reached the shortlist (5)
@@ -125,7 +127,7 @@ These entered the candidate shortlist. The rank is only interpretable beside the
 
 | Cohort | Antigen | Agent | Tier | log2FC | padj | Rank / shortlist | Counterfactual rank / eligible | Direction | Why |
 |---|---|---|---|--:|--:|--:|--:|---|---|
-| TCGA-KIRC | **CA9** (Q16790) | [89Zr]Zr-girentuximab (imaging, under FDA review) | clinical_stage | 9.58 | 0.000 | 1 / 291 | 1 / 3727 | up | reached the candidate shortlist at rank 1 of 291 (carried through to design) |
+| TCGA-KIRC | **CA9** (Q16790) | [89Zr]Zr-girentuximab (imaging, under FDA review) | clinical_stage | 9.58 | <1e-300 | 1 / 291 | 1 / 3727 | up | reached the candidate shortlist at rank 1 of 291 (carried through to design) |
 | TCGA-KIRP | **MET** (P08581) | telisotuzumab vedotin | approved | 2.34 | 8.39e-58 | 10 / 287 | 10 / 3674 | up | reached the candidate shortlist at rank 10 of 287 (carried through to design) |
 | TCGA-LIHC | **GPC3** (P51654) | GPC3 CAR-T and bispecifics (phase 1/2) | clinical_stage | 3.97 | 8.17e-33 | 9 / 289 | 9 / 3510 | up | reached the candidate shortlist at rank 9 of 289 (carried through to design) |
 | TCGA-PRAD | **FOLH1** (Q04609) | [177Lu]Lu-PSMA-617 (Pluvicto) | approved | 2.21 | 2.35e-15 | 34 / 285 | 36 / 3710 | up | reached the candidate shortlist at rank 34 of 285 (past the structure-fetch cap; no lookup was attempted) |
@@ -137,23 +139,23 @@ These were measured and then excluded by a named filter. The counterfactual rank
 
 | Cohort | Antigen | Agent | Tier | log2FC | padj | Rank / shortlist | Counterfactual rank / eligible | Direction | Why |
 |---|---|---|---|--:|--:|--:|--:|---|---|
-| TCGA-BLCA | **NECTIN4** (Q96NY8) | enfortumab vedotin (Padcev) | approved | 1.52 | 0.053 | — | 438 / 3576 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-BLCA | **NECTIN4** (Q96NY8) | enfortumab vedotin (Padcev) | approved | 1.52 | 0.0526 | — | 438 / 3576 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-BRCA | **ERBB2** (P04626) | trastuzumab, pertuzumab, T-DXd | approved | 0.92 | 5.64e-11 | — | 476 / 3817 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-BRCA | **TACSTD2** (P09758) | sacituzumab govitecan, datopotamab deruxtecan | approved | 0.16 | 0.363 | — | 1375 / 3817 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-COAD | **CEACAM5** (P06731) | tusamitamab ravtansine, labetuzumab govitecan (phase 2/3) | late_clinical | -0.48 | 0.045 | — | 1753 / 3582 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-BRCA | **TACSTD2** (P09758) | sacituzumab govitecan, datopotamab deruxtecan | approved | 0.16 | 0.3631 | — | 1375 / 3817 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-COAD | **CEACAM5** (P06731) | tusamitamab ravtansine, labetuzumab govitecan (phase 2/3) | late_clinical | -0.48 | 0.0452 | — | 1753 / 3582 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-COAD | **EGFR** (P00533) | cetuximab, panitumumab | approved | -1.04 | 3.46e-14 | — | 2715 / 3582 | down | measured as down-regulated in tumour |
-| TCGA-ESCA | **CLDN18** (P56856) | zolbetuximab (Vyloy) | approved | -0.39 | 0.693 | — | 2265 / 3748 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-ESCA | **CLDN18** (P56856) | zolbetuximab (Vyloy) | approved | -0.39 | 0.6928 | — | 2265 / 3748 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-HNSC | **EGFR** (P00533) | cetuximab | approved | 1.03 | 2.88e-07 | — | 413 / 3671 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
-| TCGA-LUAD | **EGFR** (P00533) | cetuximab, necitumumab | approved | 0.06 | 0.755 | — | 1443 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-LUAD | **ERBB2** (P04626) | T-DXd (tumour-agnostic, HER2 IHC3+) | approved | 0.41 | 0.001 | — | 841 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-LUAD | **EGFR** (P00533) | cetuximab, necitumumab | approved | 0.06 | 0.7548 | — | 1443 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-LUAD | **ERBB2** (P04626) | T-DXd (tumour-agnostic, HER2 IHC3+) | approved | 0.41 | 0.0013 | — | 841 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-LUAD | **MET** (P08581) | telisotuzumab vedotin | approved | 0.67 | 6.57e-04 | — | 713 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-LUAD | **TACSTD2** (P09758) | datopotamab deruxtecan | approved | 0.15 | 0.356 | — | 1286 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-LUAD | **TACSTD2** (P09758) | datopotamab deruxtecan | approved | 0.15 | 0.3560 | — | 1286 / 3761 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
 | TCGA-LUSC | **EGFR** (P00533) | necitumumab | approved | 1.07 | 1.43e-06 | — | 648 / 3771 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
-| TCGA-STAD | **CLDN18** (P56856) | zolbetuximab (Vyloy) | approved | -0.06 | 0.931 | — | 1835 / 3799 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-STAD | **ERBB2** (P04626) | trastuzumab, T-DXd | approved | 0.44 | 0.152 | — | 997 / 3799 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-STAD | **FGFR2** (P21802) | bemarituzumab (phase 3) | late_clinical | -0.33 | 0.279 | — | 2333 / 3799 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-UCEC | **ERBB2** (P04626) | T-DXd (tumour-agnostic accelerated approval) | approved | 0.48 | 0.032 | — | 937 / 3631 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
-| TCGA-UCEC | **FOLR1** (P15328) | mirvetuximab soravtansine (Elahere) | approved | 1.51 | 0.022 | — | 669 / 3631 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
+| TCGA-STAD | **CLDN18** (P56856) | zolbetuximab (Vyloy) | approved | -0.06 | 0.9313 | — | 1835 / 3799 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-STAD | **ERBB2** (P04626) | trastuzumab, T-DXd | approved | 0.44 | 0.1524 | — | 997 / 3799 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-STAD | **FGFR2** (P21802) | bemarituzumab (phase 3) | late_clinical | -0.33 | 0.2787 | — | 2333 / 3799 | down | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-UCEC | **ERBB2** (P04626) | T-DXd (tumour-agnostic accelerated approval) | approved | 0.48 | 0.0317 | — | 937 / 3631 | up | did not clear the significance rule, which requires BOTH an adjusted p-value below the FDR threshold AND an absolute log2 fold change at or above the floor — naming only the FDR would misattribute an antigen that is statistically solid but modestly changed, such as ERBB2 in the unstratified breast cohort at log2fc 0.92 |
+| TCGA-UCEC | **FOLR1** (P15328) | mirvetuximab soravtansine (Elahere) | approved | 1.51 | 0.0221 | — | 669 / 3631 | up | outside the top-K enrichment cut, so it never became a candidate at all (this is a gate, not a ranking outcome) |
 
 ## Set sizes
 

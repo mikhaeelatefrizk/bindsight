@@ -28,6 +28,7 @@ from typing import Any
 
 from bindsight.benchmark import outcomes as O
 from bindsight.benchmark import panel as P
+from bindsight.report.format import fmt_p
 
 __all__ = ["render_markdown"]
 
@@ -122,6 +123,19 @@ def _paired_phrase(paired: Mapping[str, Any] | None) -> str:
         f"({_confidence_label(paired)}CI {_fmt(low, 3)}–{_fmt(high, 3)} over {n} antigen"
         f"{'s' if n and int(n) != 1 else ''}{tail})"
     )
+
+
+def _fmt_p(value: Any) -> str:
+    """A p-value, under the rule the other two surfaces already apply.
+
+    ``_fmt`` guards its scientific-notation branch with ``value != 0``, so a
+    padj of literally 0.0 -- below floating-point resolution, which is what the
+    strongest result in the panel carries -- fell through to ``0.000``. In a
+    column whose other entries read ``8.39e-58``, that makes the most
+    significant antigen look like the least. ``fmt_p`` is the same function the
+    served interface and the standalone HTML report use.
+    """
+    return fmt_p(value)
 
 
 def _fmt(value: Any, places: int = 3) -> str:
@@ -293,6 +307,24 @@ def render_markdown(summary: dict[str, Any]) -> str:
             lines += [f"Affected: {', '.join(infra['pairs'])}", ""]
 
     lines += _render_nulls(summary)
+    # The headline antigen's own caveat, beside the table that ranks it first.
+    # The artifact has carried this text since the study ran and no surface
+    # rendered it: that the girentuximab phase 3 failed its primary endpoint, so
+    # the live asset is an imaging agent rather than a therapeutic, and that CA9
+    # is absent from SURFY. A reader meeting "rank 1 of 291" without it is
+    # reading the strongest number in the study with its qualification removed.
+    # Derived the same way bindsight.report.showcase derives it -- the
+    # best-ranked surfaced pair -- because the artifact records no top-level
+    # "headline" key and reading one would silently render nothing.
+    _ranked = [p for p in (summary.get("pairs") or []) if isinstance(p.get("rank"), int)]
+    headline: dict[str, Any] = min(_ranked, key=lambda p: p["rank"], default={}) or {}
+    if headline.get("note"):
+        lines += [
+            f"> **What qualifies {headline.get('symbol', 'the top-ranked antigen')}.** "
+            f"{headline['note']}",
+            "",
+        ]
+
     lines += _render_pairs(summary.get("pairs", []))
     lines += _render_set_sizes(summary.get("set_sizes_by_cohort", {}))
     lines += _render_excluded()
@@ -369,9 +401,9 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             lines.append(
                 f"| **{pair['symbol']}** | {str(pair['project']).removeprefix('TCGA-')} "
                 f"| {pair.get('counterfactual_rank')} "
-                f"| {_fmt(pair['p_decoy'], 4)} "
-                f"| {_fmt(pair.get('p_decoy_bh'), 3)} "
-                f"| {_fmt(pair.get('p_decoy_floor'), 4)} "
+                f"| {_fmt_p(pair['p_decoy'])} "
+                f"| {_fmt_p(pair.get('p_decoy_bh'))} "
+                f"| {_fmt_p(pair.get('p_decoy_floor'))} "
                 f"| {pair.get('decoy_pool_size')} |"
             )
         nominal = [p for p in pairs if float(p["p_decoy"]) < 0.05]
@@ -403,7 +435,7 @@ def _render_nulls(summary: dict[str, Any]) -> list[str]:
             "",
             f"- Observed mean standing: **{_fmt(spec.get('observed'), 3)}** "
             "(1.0 is the top of the eligible surfaceome, 0.0 the bottom)",
-            f"- p = **{_fmt(spec.get('p_value'), 4)}** over "
+            f"- p = **{_fmt_p(spec.get('p_value'))}** over "
             f"{spec.get('n_permutations')} "
             + ("enumerated" if spec.get("exact") else "sampled")
             + " permutations"
@@ -513,7 +545,7 @@ def _render_pairs(pairs: list[dict[str, Any]]) -> list[str]:
             lines.append(
                 f"| {r.get('project')} | **{r.get('symbol')}** ({r.get('uniprot')}) "
                 f"| {r.get('agent')} | {r.get('tier')} | {_fmt(r.get('log2fc'), 2)} "
-                f"| {_fmt(r.get('padj'))} | {rank} | {cf} | {r.get('direction', '—')} "
+                f"| {_fmt_p(r.get('padj'))} | {rank} | {cf} | {r.get('direction', '—')} "
                 f"| {r.get('reason', '')} |"
             )
         lines.append("")

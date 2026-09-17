@@ -1153,3 +1153,90 @@ class TestBothNullsReachAReader:
             "the results page reports a Fisher combination over pairs that repeat "
             "antigens; use a clustered estimator or report the pairs as they are"
         )
+
+
+class TestThePanelNotesAgreeWithTheArtifact:
+    """A panel note may state any number; nothing checked it against the data.
+
+    `bindsight/benchmark/panel.py` says of itself that it is "data, deliberately
+    separated from the code that runs the study so the panel can be read, cited
+    and criticised on its own". Its notes are therefore a published surface —
+    and one of them said EGFR measured **log2fc 0.42** in TCGA-LUAD. The
+    artifact says 0.061. 0.414 is *ERBB2* in that same cohort: the note quoted
+    the wrong gene's number, seven-fold out, and nothing noticed because no test
+    compared a note to the data it describes.
+    """
+
+    @staticmethod
+    def _artifact() -> dict:
+        import json
+
+        path = REPO / "benchmarks" / "study" / "results.json"
+        if not path.is_file():
+            pytest.skip("the study artifact ships with the repository, not the wheel")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_every_log2fc_quoted_in_a_note_matches_the_artifact(self) -> None:
+        import re
+
+        from bindsight.benchmark import panel
+
+        art = self._artifact()
+        measured = {
+            (p.get("project"), p.get("symbol")): p.get("log2fc")
+            for p in art.get("pairs", [])
+            if p.get("log2fc") is not None
+        }
+        assert measured, "the artifact records no log2fc values to check against"
+
+        quoted = re.compile(r"log2fc\s+(-?\d+(?:\.\d+)?)", re.I)
+        checked = 0
+        wrong: list[str] = []
+        for entry in panel.PANEL:
+            note = getattr(entry, "note", "") or ""
+            for found in quoted.finditer(note):
+                # A note that explains a past correction may name the old value.
+                if "quoted" in note[: found.start()].lower():
+                    continue
+                claimed = float(found.group(1))
+                actual = measured.get((entry.project, entry.symbol))
+                if actual is None:
+                    continue
+                checked += 1
+                # The notes round; allow the rounding but not a different number.
+                if abs(claimed - actual) > 0.5 * 10 ** -len(found.group(1).split(".")[-1]):
+                    wrong.append(
+                        f"{entry.project} {entry.symbol}: note says log2fc {claimed}, "
+                        f"the artifact says {actual:.4f}"
+                    )
+
+        assert checked, "no note quotes a log2fc the artifact also records; the sweep found nothing"
+        assert not wrong, "panel notes disagree with the artifact they describe:\n  " + "\n  ".join(
+            wrong
+        )
+
+    def test_no_note_promises_an_analysis_the_study_does_not_run(self) -> None:
+        """A note said "the unpaired secondary carries this cohort".
+
+        `study.py` has no secondary analysis and deliberately refuses to fall
+        back to an unpaired design — it raises rather than substitute a
+        different contrast. A note that promises one describes a study that was
+        never run.
+        """
+        from bindsight.benchmark import panel
+
+        study_src = (REPO / "bindsight" / "benchmark" / "study.py").read_text(encoding="utf-8")
+        runs_unpaired_secondary = "secondary" in study_src.lower()
+
+        promising = [
+            f"{e.project} {e.symbol}"
+            for e in panel.PANEL
+            if "unpaired secondary" in (getattr(e, "note", "") or "").lower()
+            and "no unpaired secondary" not in (getattr(e, "note", "") or "").lower()
+        ]
+
+        if not runs_unpaired_secondary:
+            assert not promising, (
+                "these panel notes promise an unpaired secondary analysis, and "
+                f"study.py runs none: {promising}"
+            )

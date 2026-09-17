@@ -24,9 +24,11 @@
 <h2 id="discovery">Does it resurface antigens we already trust?</h2>
 <p class="prose">
   <strong>{{ study.n_scored }} antigen-cohort pairs across {{ study.n_projects }}
-  real TCGA projects.</strong> Each cohort is a whole, unstratified project —
-  every primary tumour against every solid-tissue normal — contrast paired on the
-  patient. Nothing selects for the antigen being sought.
+  real TCGA projects.</strong> Each cohort is every patient in the project who
+  contributed both a primary tumour and a solid-tissue normal, contrasted
+  pairwise on the patient. That is a subset of the project — a tumour with no
+  matched normal is not in it — and the subset is chosen by sample availability,
+  never by the antigen under test. No cohort is stratified by any biomarker.
 </p>
 
 <h3>Recall, on the pre-registered denominator</h3>
@@ -86,6 +88,17 @@
       </p>
     </div>
   </div>
+
+  {% if top.get('note') %}
+    <div class="note note--warn" style="margin-top:.75rem">
+      <span class="note__glyph" aria-hidden="true">!</span>
+      <div class="note__body">
+        <p class="small" style="margin:0">
+          <strong>What qualifies this result.</strong> {{ top.note }}
+        </p>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endif %}
 

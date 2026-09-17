@@ -2033,7 +2033,8 @@ def demo(out_dir: Path, no_report: bool) -> None:
     """
     # This help text once promised the demo rediscovered ERBB2 (HER2) and EGFR
     # as top antibody-tractable surface antigens. The project's own rediscovery
-    # study measures ERBB2 in a whole unstratified breast cohort at log2 fold
+    # study measures ERBB2 in an unstratified breast cohort (matched pairs, no
+    # biomarker selection) at log2 fold
     # change 0.92 -- below the 1.0 floor, so it does not clear the significance
     # rule -- and the demo config's own comment notes that EGFR is often lower in
     # bulk tumour than in normal breast epithelium. Naming an expected outcome in
