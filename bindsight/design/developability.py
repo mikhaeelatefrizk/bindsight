@@ -3,23 +3,40 @@
 """Binder developability — sequence-level manufacturability / liability flags.
 
 A high-ipTM design is useless if it won't express, aggregates, or is hard to
-manufacture. This module scores a designed binder's *sequence* on well-established,
-deterministic biophysical descriptors (no network, no GPU), so poor-developability
-designs can be down-ranked before any wet-lab or GPU spend:
+manufacture. This module computes sequence-level biophysical descriptors (no
+network, no GPU) so poor-developability designs can be down-ranked before any
+wet-lab or GPU spend.
+
+**Three of them are combined into ``developability_score``**, and only these
+three affect any ranking:
 
 - **Instability index** (Guruprasad 1990) — > 40 predicts an unstable protein.
 - **GRAVY** (Kyte-Doolittle grand average hydropathy) — higher ⇒ more hydrophobic
   ⇒ harder to express / more aggregation-prone.
-- **Isoelectric point** & **aromaticity** — formulation / handling liabilities.
 - **Aggregation-prone fraction** — fraction of the chain inside a hydrophobic
   (Kyte-Doolittle window) aggregation-prone region (APR), a standard first-order
   aggregation signal.
-- **Free cysteines** — odd cysteine counts flag disulfide / oxidation liabilities.
 
-All descriptors come from Biopython's ``ProtParam`` (the reference implementation) —
-deterministic, offline, and exact. (T-cell–epitope / immunogenicity scoring, which
-needs a licensed or heavy MHC predictor, is intentionally left for a follow-up so
-this module ships only signals it can compute exactly here.)
+**The rest are reported and not scored.** They are real liabilities and a reader
+should see them, but nothing down-ranks a design for them, and saying otherwise
+would claim a filter that does not exist:
+
+- **Isoelectric point** and **aromaticity** — formulation / handling liabilities.
+- **Cysteine count** — ``n_cys`` is the *total* number of cysteines in the
+  sequence, not the free ones. An odd count flags a probable unpaired cysteine
+  and so a disulfide / oxidation liability; pairing cannot be determined from
+  sequence alone, and this module does not read a structure.
+- **Length** and **molecular weight** — context for everything above.
+
+Five descriptors come from Biopython's ``ProtParam`` (the reference
+implementation): molecular weight, GRAVY, instability index, isoelectric point
+and aromaticity. The other three — length, cysteine count and aggregation-prone
+fraction — are computed here; the APR window is this module's own
+implementation, not ProtParam's. All are deterministic, offline and exact.
+
+(T-cell–epitope / immunogenicity scoring, which needs a licensed or heavy MHC
+predictor, is intentionally left for a follow-up so this module ships only
+signals it can compute exactly here.)
 """
 
 from __future__ import annotations

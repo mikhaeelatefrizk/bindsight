@@ -433,7 +433,8 @@ PANEL: list[AntigenCohort] = [
         tier="approved",
         usable="scored",
         note="Nectin-4 is expressed in the large majority of urothelial carcinomas. "
-        "Only 19 normals, the weakest retained cohort, so its power estimate must be "
+        "Only 19 normals — the second-weakest retained cohort, after TCGA-ESCA at 13 "
+        "— so its power estimate must be "
         "published. Note the TROP2 alternative for this indication is unusable: "
         "sacituzumab govitecan's urothelial approval was withdrawn in October 2024.",
     ),

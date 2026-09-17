@@ -1240,3 +1240,50 @@ class TestThePanelNotesAgreeWithTheArtifact:
                 "these panel notes promise an unpaired secondary analysis, and "
                 f"study.py runs none: {promising}"
             )
+
+
+class TestTheStudyReportIsWhatItsArtifactRenders:
+    """`study_report.py:21` claims the page "cannot drift from the artifacts".
+
+    Nothing enforced it. The page is generated from `results.json`, so the two
+    can only agree if someone regenerates after every change to the renderer —
+    and a renderer change that nobody regenerates leaves the committed page
+    stating one thing while the code that claims to produce it says another.
+
+    This is the check the docstring was asserting. It renders the committed
+    artifact and compares, so a renderer edit without a regeneration fails here
+    rather than shipping a page the code no longer produces.
+    """
+
+    def test_regenerating_the_page_from_its_artifact_changes_nothing(self) -> None:
+        import json
+
+        from bindsight.benchmark.study_report import render_markdown
+
+        artifact = REPO / "benchmarks" / "study" / "results.json"
+        page = REPO / "benchmarks" / "study" / "RESULTS.md"
+        if not artifact.is_file() or not page.is_file():
+            pytest.skip("the study artifacts ship with the repository, not the wheel")
+
+        rendered = render_markdown(json.loads(artifact.read_text(encoding="utf-8")))
+        committed = page.read_text(encoding="utf-8")
+
+        if rendered == committed:
+            return
+
+        import difflib
+
+        diff = list(
+            difflib.unified_diff(
+                committed.splitlines(),
+                rendered.splitlines(),
+                fromfile="committed RESULTS.md",
+                tofile="rendered from results.json",
+                lineterm="",
+                n=1,
+            )
+        )
+        raise AssertionError(
+            "benchmarks/study/RESULTS.md is not what results.json renders to. "
+            "Re-run the generator and commit the result:\n  " + "\n  ".join(diff[:24])
+        )

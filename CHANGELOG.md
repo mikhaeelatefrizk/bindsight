@@ -1352,10 +1352,13 @@ already claimed to do, and corrects claims the evidence did not support.
   live ESM-2 path under `importorskip` (verified locally).
 
 ### Added — binder developability scoring (sequence biophysics)
-- New `bindsight/design/developability.py` scores a designed binder's *sequence* on deterministic,
-  offline biophysical descriptors via Biopython ProtParam: instability index, GRAVY, isoelectric
-  point, aromaticity, free cysteines, an aggregation-prone fraction (Kyte-Doolittle window), and a
-  composite `developability_score` ∈ [0,1]. Wired into `rank/scoring.py` as a sequence-optional
+- New `bindsight/design/developability.py` computes deterministic, offline sequence descriptors:
+  instability index, GRAVY, isoelectric point, aromaticity and molecular weight from Biopython
+  ProtParam, plus length, total cysteine count and an aggregation-prone fraction (Kyte-Doolittle
+  window) computed here. The composite `developability_score` ∈ [0,1] combines **three** of them —
+  instability, GRAVY and the APR fraction; the rest are reported, not scored. (This entry said
+  "free cysteines" and credited every descriptor to ProtParam; `n_cys` is the total count, pairing
+  is not knowable from sequence alone, and three of the eight are computed in-module.) Wired into `rank/scoring.py` as a sequence-optional
   `score_developability` component (new `RankWeights.developability`; inert when no sequence column).
   `benchmarks/designer_benchmark/score_developability.py` computes it for the real committed binders
   → `binders/developability.tsv` (mean score 0.69, 11/20 predicted stable). Tests:

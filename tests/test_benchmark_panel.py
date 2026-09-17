@@ -235,3 +235,63 @@ class TestSampleCounts:
         projects = P.projects_in_panel()
         assert "TCGA-BRCA" in projects
         assert "TCGA-THCA" in projects
+
+
+class TestAPanelNoteDoesNotRankCohortsWrongly:
+    """A note called TCGA-BLCA "the weakest retained cohort" at 19 normals.
+
+    TCGA-ESCA's own note, four entries earlier, records 13. The claim is a
+    superlative over a set the file itself contains, so it is checkable — and it
+    was wrong. The note is copied verbatim into `benchmarks/study/results.json`
+    and is structurally reachable from the evidence page, so a reader comparing
+    two notes in the same artifact finds them contradicting each other.
+    """
+
+    @staticmethod
+    def _recorded_normals() -> dict[tuple[str, str], int]:
+        """Normal-sample counts as the notes themselves state them."""
+        import re
+
+        from bindsight.benchmark import panel as P
+
+        found: dict[tuple[str, str], int] = {}
+        for entry in P.PANEL:
+            note = entry.note or ""
+            m = re.search(r"Only (\d+) normals", note) or re.search(
+                r"(\d+) normals but only \d+ matched pairs", note
+            )
+            if m:
+                found[(entry.project, entry.symbol)] = int(m.group(1))
+        return found
+
+    def test_the_sweep_finds_the_counts_it_checks(self) -> None:
+        """Guards the guard: a regex that stops matching would pass forever."""
+        assert len(self._recorded_normals()) >= 3
+
+    def test_no_note_claims_to_be_the_weakest_unless_it_is(self) -> None:
+        import re
+
+        from bindsight.benchmark import panel as P
+
+        counts = self._recorded_normals()
+        smallest = min(counts.values())
+
+        wrong: list[str] = []
+        for entry in P.PANEL:
+            note = entry.note or ""
+            # Only superlatives about the *normal-sample count*. TCGA-UCEC says
+            # "the weakest pairing", a claim about matched pairs (23) — a
+            # different quantity, and one no other note records, so the panel
+            # cannot adjudicate it and this guard must not pretend to.
+            if not re.search(r"\bthe weakest retained cohort\b", note):
+                continue
+            mine = counts.get((entry.project, entry.symbol))
+            if mine is not None and mine != smallest:
+                wrong.append(
+                    f"{entry.project} {entry.symbol} calls itself the weakest at {mine} "
+                    f"normals; the smallest recorded in the panel is {smallest}"
+                )
+
+        assert not wrong, "a panel note claims a rank the panel contradicts:\n  " + "\n  ".join(
+            wrong
+        )
