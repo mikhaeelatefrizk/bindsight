@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [0.3.0]
+## [0.3.0] - 2026-09-17
 
 Prepared for publication as a fresh repository. The work below is of three kinds:
 defects that were invisible because they only manifested on other people's

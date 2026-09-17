@@ -132,8 +132,8 @@ all became true in late 2025 and not before:
         meaningful scale, removing the institutional-cluster barrier.
 \end{enumerate}
 
-We present \texttt{bindsight} (v0.1.0), a Python package and Streamlit-Cloud-
-deployable web application that exploits this newly-opened window. It
+We present \texttt{bindsight} (v0.3.0), a Python package with a
+server-rendered web interface that exploits this newly-opened window. It
 takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
 binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
 JSON-LD provenance graph and an RO-Crate~\cite{SoilandReyes2022} packaged
@@ -198,15 +198,17 @@ digest of every step.
 
 \subsection{Web interface}
 
-A Streamlit~\cite{Streamlit} multi-page web application exposes the same
-pipeline through a zero-install browser UI. The deployed instance at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight} provides:
-a Home page describing the project, a Demo button that runs the full
-discovery pipeline live and renders a paper-style HTML report inline, a
-Run-on-my-data file-upload form for user-supplied counts and design tables,
-a Browse-a-run inspector for any output directory, and an About page with
-documentation links and citation information. The same application can be
-launched locally via \texttt{bindsight ui} once the package is installed.
+A server-rendered web interface built on FastAPI~\cite{FastAPI} and Jinja
+exposes the same pipeline through a zero-install browser UI, with no build
+step and no network fetch once installed. The deployed instance at
+\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight} provides
+five sections: an Overview stating what the tool has and has not shown; an
+Evidence page rendered from the committed benchmark artifacts, including the
+twenty predicted binder--target complexes in 3-D; a one-click demo that runs
+the discovery pipeline live and renders a paper-style HTML report; a
+\textit{Your data} page that validates a user's counts matrix and design table
+in the browser, without uploading either; and a Runs inspector for any output
+directory. The same application is launched locally with \texttt{bindsight ui}.
 
 \subsection{Architecture diagram}
 
@@ -321,9 +323,11 @@ integration tests} that run in a few minutes and cover: the Pydantic
 v2 manifest schema; the Open Targets, AlphaFoldDB, and SURFY clients; the
 discovery pipeline end-to-end with mocked GPU runners; the rank module's
 composite scoring with several weight schemes; the RO-Crate exporter; and
-the Streamlit-Cloud entry point. Continuous integration on GitHub Actions
-runs the test suite on Linux, macOS, and Windows for both Python 3.11 and
-3.12; all six platform jobs pass on every commit to \texttt{main}.
+the served web interface. Continuous integration on GitHub Actions runs the
+test suite on Linux, macOS, and Windows for Python 3.11, 3.12 and 3.13; all
+nine platform jobs pass on every commit to 	exttt{main}, alongside a lint job,
+a pinned-environment job that regenerates the published pages to confirm they
+do not change, and a wheel build.
 
 The package itself is licensed \textbf{GNU AGPL-3.0-or-later}: it may be used,
 studied, modified and redistributed freely, with the copyleft condition that a
@@ -338,7 +342,7 @@ gated behind a CLI banner that warns users at invocation time.
 A per-component license inventory is shipped in \texttt{LICENSING.md} and
 checkable interactively via the \texttt{bindsight verify-licenses} command.
 
-The full source code, including the Streamlit web application, Snakemake
+The full source code, including the web interface, Snakemake
 pipeline, conda environment specifications, container Dockerfile, GitHub
 Actions workflows, examples, and documentation, is publicly available at
 \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight}
@@ -443,7 +447,7 @@ expected practice in the field.
 the upstream tool authors cited throughout this manuscript. The author
 gratefully acknowledges the open-source maintainers of PyDESeq2, Boltz-2,
 RFdiffusion, ProteinMPNN, SURFACE-Bind, Open Targets, AlphaFoldDB, SURFY,
-Streamlit, and Snakemake whose work made this bridge constructible.
+FastAPI, and Snakemake whose work made this bridge constructible.
 
 \section*{Funding}
 

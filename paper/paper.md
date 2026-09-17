@@ -175,11 +175,14 @@ demonstrated: no shipped backend yet builds an environment in which the four
 additional designers and validators can run, and Chai-1r additionally requires
 bfloat16, which no free-tier GPU provides.
 
-A multi-page web interface, deployed as a Hugging Face Space at
+A server-rendered web interface, deployed as a Hugging Face Space at
 <https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight>, exposes the same pipeline through a
-zero-install browser UI with seven views: a Home page, a "Real results" page
-backed by the committed benchmarks, a one-click Demo, a "Run on my data"
-file-upload form, a "Browse a run" inspector, a Glossary, and an About page.
+zero-install browser UI with five sections: an Overview, an Evidence page backed
+by the committed benchmarks — including the twenty predicted binder–target
+complexes rendered in 3-D — a one-click demo (Try it), a "Your data" page that
+validates a counts matrix and design table in the browser without uploading
+them, and a Runs inspector. It needs no build step and fetches nothing from a
+network once installed.
 
 # Quality assurance
 
@@ -188,8 +191,10 @@ minutes and cover: the Pydantic v2 manifest schema, every API client
 (Open Targets, AlphaFoldDB), the SURFY filter, the discovery pipeline end-
 to-end with mocked GPU runners, the rank module, the RO-Crate exporter, and
 the served web interface. Continuous integration on GitHub Actions
-runs the suite on Linux, macOS, and Windows for both Python 3.11 and 3.12;
-the v0.3.0 release is green across all six platforms.
+runs the suite on Linux, macOS, and Windows for Python 3.11, 3.12 and 3.13 —
+nine jobs — alongside a lint job, a job that installs the pinned environment the
+release records and regenerates the published pages to confirm they do not
+change, and a wheel build.
 
 # Acknowledgements
 

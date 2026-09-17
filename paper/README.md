@@ -55,7 +55,8 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** the current tagged release (`v0.3.0` at time of writing)
+   - **Version:** `v0.3.0` — the tag, not the branch. JOSS archives what the
+     tag points at, so a moving `main` is not a submission.
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
    - **Software archive:** `https://doi.org/10.5281/zenodo.PENDING`
 4. Submit. The JOSS editor assigns a handling editor and at least two
