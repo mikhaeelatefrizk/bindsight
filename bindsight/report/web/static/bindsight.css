@@ -439,8 +439,17 @@ hr { border: none; border-top: 1px solid var(--rule); margin: var(--s-8) 0; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: var(--ink-faint); }
 }
 
+.print-only { display: none; }
+
 @media print {
-  /* A WebGL canvas prints as a blank rectangle. The caption beside it carries
-     the claim, so the box is dropped rather than printed empty. */
-  .viewer { display: none; }
+  /* A WebGL canvas prints as a blank rectangle, so the box is dropped. Its
+     furniture has to go with it: a paper page kept the design picker, the
+     colour legend for a picture that was not there, and an instruction to
+     "Rotate it". The caption's print-only half says where the files are
+     instead. */
+  .viewer,
+  .viewer + .viewer-legend,
+  .viewer-picker { display: none !important; }
+  .screen-only { display: none !important; }
+  .print-only { display: inline !important; }
 }

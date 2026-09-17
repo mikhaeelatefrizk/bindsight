@@ -144,3 +144,65 @@ class TestTheChartFallbackMatchesTheToken:
         assert re.search(r'cssVar\("--[a-z0-9-]+",\s*"#', js), (
             "no cssVar fallbacks found in charts.js; the check above tests nothing"
         )
+
+
+class TestThePrintedPageDoesNotDescribeAViewerItOmits:
+    """`.viewer` is dropped in print; its furniture was not.
+
+    A WebGL canvas prints as a blank rectangle, so hiding it is right. What
+    stayed behind was the design picker, a colour legend for a picture that is
+    not on the page, and a paragraph telling the reader to "Rotate it" -- on
+    paper.
+
+    The rule the rest of this interface follows applies here too: when a thing
+    cannot be shown, say where it is rather than leaving its furniture behind.
+    """
+
+    @staticmethod
+    def _print_rules() -> str:
+        blocks = re.findall(r"@media print\s*\{(.*?)\n\}", CSS.read_text("utf-8"), re.S)
+        assert blocks, "the stylesheet has no @media print block"
+        return "\n".join(blocks)
+
+    def test_the_print_block_exists(self) -> None:
+        """Guards the guard: no print block means the checks below prove nothing."""
+        assert "display" in self._print_rules()
+
+    @pytest.mark.parametrize(
+        "selector", [".viewer", ".viewer-picker", ".viewer-legend", ".screen-only"]
+    )
+    def test_the_viewer_and_its_furniture_are_hidden(self, selector: str) -> None:
+        rules = self._print_rules()
+
+        assert selector in rules, (
+            f"{selector} is not mentioned in @media print, so it survives onto "
+            "paper beside a viewer that does not"
+        )
+
+    def test_the_print_only_caption_is_shown(self) -> None:
+        rules = self._print_rules()
+
+        assert re.search(r"\.print-only\s*\{[^}]*display:\s*inline", rules), (
+            "nothing replaces the viewer on paper, so the section names files "
+            "the reader is given no way to find"
+        )
+
+    def test_the_print_only_caption_is_hidden_on_screen(self) -> None:
+        """Otherwise every reader sees both halves of the sentence at once."""
+        css = CSS.read_text("utf-8")
+        outside_print = re.sub(r"@media print\s*\{.*?\n\}", "", css, flags=re.S)
+
+        assert re.search(r"\.print-only\s*\{[^}]*display:\s*none", outside_print), (
+            ".print-only has no default of display:none, so it shows on screen too"
+        )
+
+    def test_the_template_carries_both_halves_of_the_caption(self) -> None:
+        template = (
+            REPO / "bindsight" / "report" / "web" / "templates" / "evidence.html.j2"
+        ).read_text("utf-8")
+
+        assert 'class="screen-only"' in template
+        assert 'class="print-only"' in template
+        assert "benchmarks/designer_benchmark/" in template, (
+            "the print caption does not say where the structures are"
+        )

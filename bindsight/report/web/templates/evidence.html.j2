@@ -259,10 +259,13 @@
     <h3 class="card__title" style="margin-top:1.5rem">The complexes themselves</h3>
     <p class="small muted" style="margin-top:0">
       Boltz-2's predicted binder&ndash;target complex for each design, as committed
-      to this repository. Rotate it. The numbers above are summaries of these
-      files, not of anything else.
+      to this repository. <span class="screen-only">Rotate it.</span><span
+      class="print-only">Each is committed as mmCIF under
+      <code>benchmarks/designer_benchmark/</code>; the viewer is not printed
+      because a WebGL canvas prints blank.</span> The numbers above are summaries
+      of these files, not of anything else.
     </p>
-    <div class="field" style="max-width:32rem">
+    <div class="field viewer-picker" style="max-width:32rem">
       <label for="binder-pick">Design</label>
       <select id="binder-pick">
         {% for b in structures %}
