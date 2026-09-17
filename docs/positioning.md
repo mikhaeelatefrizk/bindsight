@@ -62,8 +62,10 @@ reproducible.
   often (50% against 30%), see
   `benchmarks/calibration/README.md`), every one carrying
   a target chain byte-identical to the native domain IV. Multi-page web UI live.
-- **v0.3.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
-  fully wired; scRNA-seq input.
+- **v0.4.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
+  fully wired; scRNA-seq input. None of this is in v0.3.0: no shipped backend
+  builds an environment BindCraft or BoltzGen can run in, which is why the
+  three-way designer comparison is deferred rather than delivered.
 - **v1.0.0** — JOSS submission + validation paper. The rediscovery study is
   already run and published in `benchmarks/study/`: fifteen unstratified TCGA
   projects against a pre-registered panel, recall at rank 20 of 1 in 17 with a

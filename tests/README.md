@@ -1,6 +1,6 @@
 # `tests/` — 1,600+ tests, and most of them are not about code
 
-78 test modules. The unusual thing about this suite is how much of it guards
+80 test modules (a floor, not a census -- it is checked as one). The unusual thing about this suite is how much of it guards
 **published claims** rather than functions.
 
 ## What the categories are
@@ -40,5 +40,5 @@ pip install -e ".[dev,discover,report]"
 python -m pytest -q          # no network, no GPU
 ```
 
-Nine are skipped without `snakemake`, which will not build on every Python
+Five are skipped without `snakemake`, which will not build on every Python
 version; those run in CI.

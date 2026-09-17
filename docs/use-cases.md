@@ -68,7 +68,9 @@ apples-to-apples.
 **With `bindsight`:**
 
 1. Implement your designer as a `bindsight.design.Designer` plugin
-   (Protocol in `bindsight/design/protocol.py`, ~50 lines).
+   (the `Designer` Protocol in `bindsight/design/protocol.py` is 26 lines;
+   the file also carries the `DesignSpec` and `DesignResult` models it
+   exchanges).
 2. Register it via `pyproject.toml`:
    ```toml
    [project.entry-points."bindsight.designers"]

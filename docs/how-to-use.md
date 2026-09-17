@@ -217,7 +217,7 @@ The GPU work runs in `bindsight.runners.job_exec` on the backend you pick:
 |---|---|---|
 | `colab` | Free (T4) / Pro (A100) | Writes a ready-to-run notebook you execute in Colab |
 | `kaggle` | Free (T4×2, quota) | Headless via the Kaggle API |
-| `modal` | ~$0.6–4/GPU-hr | Headless cloud GPUs, no queue |
+| `modal` | $0.59–4.56/GPU-hr (T4 → H100; see `bindsight/cost.py`) | Headless cloud GPUs, no queue |
 | `local_docker` | Your hardware | A local NVIDIA GPU (native or Docker) |
 | `mock` | Free, instant | CI / testing (mock results only) |
 
