@@ -627,6 +627,12 @@ def _score_dict(s: DesignerScore) -> dict[str, Any]:
         "designer": s.designer,
         "n_targets": s.n_targets,
         "n_designs": s.n_designs,
+        "n_scored": s.n_scored,
+        # The denominator the success rate was actually computed over.
+        # `_success_cell` reads it and discloses any gap from n_designs --
+        # but it was never written here, so the fallback always fired and the
+        # cell printed "8/20 = 50%", a rate over 16 beside a denominator of
+        # 20. The two numbers in one cell did not describe the same thing.
         "mean_iptm": s.mean_iptm,
         "median_iptm": s.median_iptm,
         "mean_pae_interaction": s.mean_pae_interaction,

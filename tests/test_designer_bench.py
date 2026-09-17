@@ -532,3 +532,66 @@ class TestTheSummaryRecordsItsSeed:
             )
         else:
             assert f"- Seed: `{summary['seed']}`" in page
+
+
+class TestTheSuccessCellKnowsItsOwnDenominator:
+    """The rate was computed over one number and printed beside another.
+
+    `_success_cell` reads `n_scored` — the designs the rate was actually computed
+    over — and discloses any gap from `n_designs`. But `_score_dict` never wrote
+    `n_scored`, so the fallback fired every time and the cell rendered
+    `8/20 = 50%`: a rate over sixteen beside a denominator of twenty. The two
+    numbers in one cell did not describe the same thing, and 8/20 is 40%.
+    """
+
+    @staticmethod
+    def _score(**kw):
+        from bindsight.benchmark.designer_bench import DesignerScore
+
+        s = DesignerScore(
+            designer="rfdiff_mpnn",
+            n_designs=kw.get("n_designs", 20),
+            n_success=kw.get("n_success", 8),
+            success_rate=kw.get("success_rate", 0.5),
+            success_ci_low=0.3,
+            success_ci_high=0.7,
+        )
+        s.n_scored = kw.get("n_scored", 16)
+        return s
+
+    def test_the_denominator_reaches_the_serialised_artifact(self) -> None:
+        from bindsight.benchmark.designer_bench import _score_dict
+
+        assert _score_dict(self._score())["n_scored"] == 16, (
+            "n_scored is not written to results.json, so the report cannot know "
+            "which denominator the rate belongs to"
+        )
+
+    def test_the_cell_prints_the_denominator_the_rate_was_computed_over(self) -> None:
+        from bindsight.benchmark.designer_bench import _score_dict, _success_cell
+
+        cell = _success_cell(_score_dict(self._score()))
+
+        assert "8/16" in cell, f"the cell prints a denominator the rate is not over: {cell}"
+        assert "8/20" not in cell
+
+    def test_the_gap_is_disclosed_rather_than_hidden(self) -> None:
+        """Narrowing a denominator is itself a claim, so it is stated."""
+        from bindsight.benchmark.designer_bench import _score_dict, _success_cell
+
+        cell = _success_cell(_score_dict(self._score()))
+
+        assert "20" in cell and "unscored" in cell, (
+            f"the cell narrows the denominator without saying so: {cell}"
+        )
+
+    def test_an_older_summary_without_n_scored_still_renders(self) -> None:
+        """Guards the guard: artifacts written before this field must not break."""
+        from bindsight.benchmark.designer_bench import _success_cell
+
+        cell = _success_cell(
+            {"success_rate": 0.5, "n_success": 8, "n_designs": 16,
+             "success_ci_low": 0.3, "success_ci_high": 0.7}
+        )
+
+        assert "8/16" in cell

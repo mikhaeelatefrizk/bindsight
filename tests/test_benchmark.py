@@ -141,3 +141,54 @@ def test_cli_benchmark(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert out.exists()
     assert "recall@5" in result.output
+
+
+class TestTheBenchmarkTableSurvivesAnEmptyRecall:
+    """`score_run` leaves `recall_at` empty on purpose; the CLI indexed into it.
+
+    There is no recall to compute when the candidate table could not be read, or
+    when no known antigen is on-indication for the run. `score_run` says so by
+    leaving the mapping empty and setting `recall_basis`. The HTML report renders
+    those cells as `n/a` (benchmark/core.py:321). The console table did
+    `s.recall_at[k]`, so the documented command exited 1 with a `KeyError` on
+    exactly the runs where the distinction matters most.
+    """
+
+    def test_a_run_with_no_candidate_table_still_prints_a_table(self, tmp_path) -> None:
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        run = tmp_path / "emptyrun"
+        run.mkdir()
+
+        result = CliRunner().invoke(
+            main, ["benchmark", str(run), "--known-antigens", "benchmarks/known.tsv"]
+        )
+
+        assert result.exit_code == 0, (
+            f"the documented benchmark command exited {result.exit_code} "
+            f"({result.exception!r}) on a run with no candidates"
+        )
+        assert "recall@" in result.output, "no summary table was rendered"
+
+    def test_the_missing_cutoffs_read_as_not_available_not_as_zero(self, tmp_path) -> None:
+        """`n/a` and `0%` are different findings, and only one of them is true.
+
+        Printing 0% would say the pipeline looked and found nothing. It did not
+        look — there was no candidate table to look in.
+        """
+        from click.testing import CliRunner
+
+        from bindsight.cli import main
+
+        run = tmp_path / "emptyrun"
+        run.mkdir()
+
+        result = CliRunner().invoke(
+            main, ["benchmark", str(run), "--known-antigens", "benchmarks/known.tsv"]
+        )
+
+        assert "n/a" in result.output, (
+            "a cutoff with nothing to compute over must render as n/a, not as a number"
+        )

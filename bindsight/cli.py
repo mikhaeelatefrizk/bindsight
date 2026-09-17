@@ -875,7 +875,13 @@ def benchmark(
         table.add_row(
             s.run_name,
             f"{s.n_found}/{s.n_known}",
-            *[f"{s.recall_at[k]:.0%}" for k in cutoffs],
+            # `n/a`, not a crash. `score_run` leaves `recall_at` empty on
+            # purpose when there is nothing to compute a recall over -- an
+            # unreadable candidate table, or no on-indication antigen -- and
+            # this indexed into it, so the documented command exited 1 with a
+            # KeyError on exactly the runs it is most useful for. The HTML
+            # report at benchmark/core.py:321 already renders those as n/a.
+            *[f"{s.recall_at[k]:.0%}" if k in s.recall_at else "n/a" for k in cutoffs],
         )
     console.print(table)
     console.print(
