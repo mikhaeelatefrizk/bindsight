@@ -24,7 +24,13 @@
      fcfdfe is easier to read for long stretches and still clears WCAG AAA. */
   --ink: #1b1f24;
   --ink-soft: #55606d;
-  --ink-faint: #7d8896;
+  /* 4.9:1 on the page background. Was #7d8896, which is 3.6:1 -- below WCAG
+     AA's 4.5:1 for text under 18.7px, and every `.stat__label` and
+     `.stat__note` is 12px. That put the words naming each headline number, and
+     the caveats attached to them, below the threshold while the numbers
+     themselves stayed legible: exactly backwards for a design whose rule is
+     that the limitation sits beside the claim. */
+  --ink-faint: #68727f;
   --ground: #fcfdfe;
   --surface: #ffffff;
   --rule: #e3e8ef;

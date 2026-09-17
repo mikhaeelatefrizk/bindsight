@@ -226,7 +226,7 @@
     if (spec.reference !== undefined && spec.reference !== null) {
       el("line", {
         x1: x(spec.reference), x2: x(spec.reference), y1: 0, y2: ih,
-        stroke: cssVar("--ink-faint", "#7d8896"), "stroke-width": 1.5, "stroke-dasharray": "4 3",
+        stroke: cssVar("--ink-faint", "#68727f"), "stroke-width": 1.5, "stroke-dasharray": "4 3",
       }, g);
     }
 

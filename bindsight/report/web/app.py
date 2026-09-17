@@ -447,6 +447,14 @@ def _discover_runs(root: Path) -> list[dict[str, Any]]:
     for path in sorted(root.iterdir()):
         if not path.is_dir():
             continue
+        if path.name.startswith("_"):
+            # `runs/_design` is the GPU work cache, keyed by cache_key, not a
+            # run. Listing it as one told the reader two untrue things at once:
+            # that a run called `_design` exists, and that it is missing the
+            # manifest it was never supposed to have. The leading underscore is
+            # what marks these internal, and `submit_via_runner` is what creates
+            # them.
+            continue
         manifest = path / "run_manifest.jsonld"
         candidates = path / "targets" / "candidates.parquet"
         body = load_run_manifest(path)
