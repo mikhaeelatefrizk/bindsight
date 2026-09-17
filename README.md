@@ -97,23 +97,25 @@ reporting only one would make the other the finding:
   nominally significant; **none survives Benjamini-Hochberg** across the panel. The
   smallest adjusted value this panel could have produced is 0.022, so a pair could
   genuinely have survived — the negative is a measurement, but not a sensitive one.
-- **Against cohorts carrying no panel antigen — positive.** Antigens sit at mean
-  standing 0.765 in the cancer they are actually used in against 0.417 in KICH and
-  THCA, which carry none of them: a **within-antigen difference of 0.348 (95% CI
-  0.188–0.513), cluster-bootstrapped over 13 antigens**, each antigen its own
-  control, interval excluding zero.
-- **Against a permuted assignment of indications — positive.** A separate test on a
-  separate denominator: mean standing **0.858** against every reassignment of
-  cohorts to antigens, **exact permutation p = 3.97e-04 over all 5,040 orderings**.
-  5,040 is 7!, because the test is restricted to the **7 antigens with a single
-  indication** in the panel — an antigen used in two cancers has no one cohort to
-  permute. That p is the floor this design can express, so it says the result is as
-  extreme as an exhaustive enumeration of this panel can show, not that it is
-  vanishingly unlikely. It is not the significance of the 0.348 above, which no test
-  reports.
+- **Against a permuted assignment of indications — positive.** Mean standing
+  **0.858** against every reassignment of cohorts to antigens, **exact permutation
+  p = 3.97e-04 over all 5,040 orderings**. 5,040 is 7!, because the test is
+  restricted to the **7 antigens with a single indication** in the panel — an
+  antigen used in two cancers has no one cohort to permute. That p is the floor
+  this design can express, so it says the result is as extreme as an exhaustive
+  enumeration of this panel can show, not that it is vanishingly unlikely.
 
-That second result is the strongest claim this project supports, and it is a claim
-about the **ordering**, not about any individual hit. Absolute recall is low and
+  *Calibration, on its own denominator.* KICH and THCA carry no panel antigen and
+  were run to show what no signal looks like on this scale. Antigens sit at mean
+  standing **0.765** in the cancer they are actually used in against **0.417**
+  there: a **within-antigen difference of 0.348 (95% CI 0.188–0.513),
+  cluster-bootstrapped over 13 antigens**, each antigen its own control, interval
+  excluding zero. It carries an interval and no p-value — the permutation p above
+  belongs to the 7-antigen test and is not the significance of this difference,
+  which no test reports.
+
+The indication-specificity null is the strongest claim this project supports, and
+it is a claim about the **ordering**, not about any individual hit. Absolute recall is low and
 stated as such: at rank 20 it is 1 of 17 on approved-agent antigens (95% CI
 0.01–0.27). Most clinically validated antigens are simply not significantly
 over-expressed in an unstratified bulk contrast.

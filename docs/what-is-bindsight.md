@@ -185,16 +185,20 @@ the panel is distinguishable once the panel is corrected for its own size — a
 negative result, and the study reports it as one. But the ranking *is*
 indication-specific, and two separate analyses say so.
 
-Known antigens sit at mean standing 0.765 in the cancer they are actually used
-in, against 0.417 in KICH and THCA, which carry no panel antigen at all: a
-within-antigen difference of **0.348** (95% CI 0.188–0.513), cluster-bootstrapped
-over 13 antigens, each antigen its own control. Separately, against every
-reassignment of cohorts to antigens, the mean standing is **0.858** with an exact
-permutation p of 3.97e-04 over all 5,040 orderings — 5,040 being 7!, because that
-test covers only the 7 antigens with a single indication. The p-value belongs to
-the permutation test and not to the 0.348, which carries an interval rather than
-a p. That is the strongest claim this project makes, and it is about the
-ordering, not about any single hit.
+The null itself is a permutation test: against every reassignment of cohorts to
+antigens, the mean standing is **0.858**, with an exact permutation p of
+3.97e-04 over all 5,040 orderings — 5,040 being 7!, because that test covers only
+the 7 antigens carrying a single indication.
+
+Calibrating it, KICH and THCA carry no panel antigen at all, and known antigens
+sit at mean standing 0.765 in the cancer they are actually used in against 0.417
+there: a within-antigen difference of **0.348** (95% CI 0.188–0.513),
+cluster-bootstrapped over 13 antigens, each antigen its own control. That
+difference carries an interval and no p-value; the permutation p above belongs to
+the 7-antigen test and is not its significance, which no test reports.
+
+The indication-specificity null is the strongest claim this project makes, and it
+is about the ordering, not about any single hit.
 
 ### Validation (the design half — and what it does not show)
 
