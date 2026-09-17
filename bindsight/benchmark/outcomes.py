@@ -86,6 +86,13 @@ _INFRASTRUCTURE_DISPOSITIONS = frozenset(
         "safety_unassessed",
         "normal_tissue_unassessed",
         "structure_confidence_unassessed",
+        # pydeseq2's independent filtering removed the gene before testing it,
+        # so there is no adjusted p-value to compare against anything. This is
+        # the same distinction :func:`eligible_ranking` already draws a few
+        # hundred lines down: *not tested* is not *tested and found null*, and
+        # merging them put an unmeasured antigen into the recall denominator as
+        # a miss, under a reason naming a comparison that never happened.
+        "significance_unassessed",
     }
 )
 
@@ -135,6 +142,11 @@ GATE_EXPLANATIONS: dict[str, str] = {
     "structure_confidence_unassessed": (
         "carries a structure whose mean pLDDT could not be read, so the "
         "confidence gate never assessed it — not the same as clearing it"
+    ),
+    "significance_unassessed": (
+        "pydeseq2's independent filtering removed it before testing, so it has "
+        "no adjusted p-value — the significance rule never ran on it, which is "
+        "not the same as failing it"
     ),
     "no_surface_bind_site": "no targetable site in the SURFACE-Bind data",
     "surface_bind_lookup_failed": (

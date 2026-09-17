@@ -405,3 +405,153 @@ class TestAnUnscoredSiteDoesNotPassAThresholdInSilence:
         self._run([high], 0.9, caplog)
 
         assert not [r for r in caplog.records if "no score" in r.getMessage()]
+
+
+class TestAGeneNobodyTestedIsNotAGeneThatFailedTheTest:
+    """pydeseq2's independent filtering removes low-power genes before testing.
+
+    It returns `padj = NaN` for them. `_postprocess` computes
+    `significant` as `padj.fillna(1.0) < fdr_threshold`, which makes an untested
+    gene indistinguishable from one that was tested and came back null. The
+    cascade then filed both as `not_significant`, which `outcomes.classify`
+    returns as `gated_out` with `counts_in_denominator=True` and the reason:
+
+        "did not clear the significance rule, which requires BOTH an adjusted
+         p-value below the FDR threshold AND an absolute log2 fold change at or
+         above the floor"
+
+    -- naming a comparison that never happened. So an antigen nobody measured
+    entered the published recall denominator as a measured miss, under a false
+    reason.
+
+    `outcomes.eligible_ranking` had already found and fixed this exact merge for
+    the counterfactual ordering, quoting the taxonomy's own rule back at it. The
+    `significant` column every disposition is built on was left alone.
+
+    The committed study is unaffected -- all 22 panel pairs carry a padj -- but
+    any cohort with a low-power antigen would have published one.
+    """
+
+    @staticmethod
+    def _taxonomy(padj_values):
+        """Run the disposition cascade over a DEG table with the given padj values."""
+        import numpy as np
+
+        from bindsight.config import TargetDiscoveryParams
+        from bindsight.pipelines.discover import _build_taxonomy
+
+        deg = pd.DataFrame(
+            {
+                "gene_id": [f"ENSG{i}" for i in range(len(padj_values))],
+                "symbol": [f"G{i}" for i in range(len(padj_values))],
+                "log2fc": [3.0] * len(padj_values),
+                "padj": padj_values,
+                "significant": [bool(np.nan_to_num(v, nan=1.0) < 0.05) for v in padj_values],
+                "baseMean": [100.0] * len(padj_values),
+            }
+        )
+        return _build_taxonomy(
+            deg,
+            set(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+            pd.DataFrame(),
+            frozenset(),
+            TargetDiscoveryParams(),
+            surface_bind_active=False,
+            structure_queried=frozenset(),
+        )
+
+    def test_an_untested_gene_gets_its_own_disposition(self) -> None:
+        import numpy as np
+
+        taxonomy = self._taxonomy([np.nan, 0.9, 0.001])
+
+        dispositions = dict(zip(taxonomy["gene_id"], taxonomy["disposition"], strict=False))
+        assert dispositions["ENSG0"] == "significance_unassessed", (
+            "a gene with no adjusted p-value was filed as having failed the "
+            f"significance rule: {dispositions}"
+        )
+
+    def test_a_tested_gene_that_failed_is_still_not_significant(self) -> None:
+        """The fix must not relabel genes that really were tested."""
+        import numpy as np
+
+        taxonomy = self._taxonomy([np.nan, 0.9])
+
+        dispositions = dict(zip(taxonomy["gene_id"], taxonomy["disposition"], strict=False))
+        assert dispositions["ENSG1"] == "not_significant"
+
+    def test_the_untested_gene_leaves_the_denominator(self) -> None:
+        """The consequence, at the place it is measured."""
+        from bindsight.benchmark.outcomes import classify
+
+        reachability = {
+            "uniprot_resolved": True,
+            "in_surfaceome": True,
+            "in_deg_table": True,
+            "structure_available": True,
+        }
+
+        untested = classify(
+            reachability=reachability,
+            disposition="significance_unassessed",
+            rank=None,
+            shortlist_size=300,
+        )
+        tested = classify(
+            reachability=reachability,
+            disposition="not_significant",
+            rank=None,
+            shortlist_size=300,
+        )
+
+        assert untested.counts_in_denominator is False, (
+            "an antigen the significance test never ran on still counts as a miss"
+        )
+        assert tested.counts_in_denominator is True, (
+            "a genuine gate failure stopped counting; the fix went too far"
+        )
+
+    def test_the_reason_does_not_claim_a_comparison_that_never_happened(self) -> None:
+        from bindsight.benchmark.outcomes import classify
+
+        outcome = classify(
+            reachability={
+                "uniprot_resolved": True,
+                "in_surfaceome": True,
+                "in_deg_table": True,
+                "structure_available": True,
+            },
+            disposition="significance_unassessed",
+            rank=None,
+            shortlist_size=300,
+        )
+
+        assert "never ran on it" in outcome.reason, outcome.reason
+        assert "did not clear the significance rule" not in outcome.reason
+
+    def test_the_new_disposition_is_in_every_list_that_enumerates_them(self) -> None:
+        """Three hand-kept lists carry this vocabulary; a fourth would be a bug.
+
+        `TAXONOMY_DISPOSITIONS` is asserted to sum to the gene count, and
+        `_DISPOSITION_ORDER` drives the report's table. A disposition missing
+        from either is a row the reader never sees.
+        """
+        from bindsight.benchmark.outcomes import _INFRASTRUCTURE_DISPOSITIONS, GATE_EXPLANATIONS
+        from bindsight.pipelines.discover import TAXONOMY_DISPOSITIONS
+        from bindsight.report.html import _DISPOSITION_ORDER
+
+        for where, names in (
+            ("TAXONOMY_DISPOSITIONS", TAXONOMY_DISPOSITIONS),
+            ("_DISPOSITION_ORDER", _DISPOSITION_ORDER),
+            ("_INFRASTRUCTURE_DISPOSITIONS", _INFRASTRUCTURE_DISPOSITIONS),
+            ("GATE_EXPLANATIONS", GATE_EXPLANATIONS),
+        ):
+            assert "significance_unassessed" in names, f"missing from {where}"
+
+    def test_it_is_not_also_a_gate(self) -> None:
+        """A disposition in both sets would be classified by whichever is read first."""
+        from bindsight.benchmark.outcomes import _GATE_DISPOSITIONS
+
+        assert "significance_unassessed" not in _GATE_DISPOSITIONS

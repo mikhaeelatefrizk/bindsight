@@ -920,6 +920,7 @@ def _do_discover(
 # outage can never be published as a negative result.
 TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "not_significant",
+    "significance_unassessed",
     "down_regulated",
     "below_enrichment_cutoff",
     "uniprot_lookup_failed",
@@ -940,6 +941,22 @@ TAXONOMY_DISPOSITIONS: tuple[str, ...] = (
     "surface_bind_lookup_failed",
     "surfaced",
 )
+
+
+def _padj_is_absent(row: object) -> bool:
+    """Whether this gene has no adjusted p-value, so nothing tested it.
+
+    pydeseq2 returns ``padj = NaN`` for genes its independent filtering removed
+    before testing. NaN is not equal to itself, which is the check; a gene with
+    no ``padj`` column at all is also untested rather than assumed null.
+    """
+    padj = getattr(row, "padj", None)
+    if padj is None:
+        return True
+    try:
+        return bool(padj != padj)  # NaN
+    except TypeError:  # pragma: no cover - a non-numeric padj is not a p-value
+        return True
 
 
 def _build_taxonomy(
@@ -1151,6 +1168,19 @@ def _build_taxonomy(
                 disp = "safety_unassessed"
             else:
                 disp = "fails_safety"
+        elif _padj_is_absent(r):
+            # pydeseq2's independent filtering drops low-power genes before
+            # testing them and returns padj = NaN. `_postprocess` fills that
+            # with 1.0 to compute `significant`, which makes an untested gene
+            # indistinguishable from a tested one that came back null -- and
+            # `not_significant` is a gate, so it would enter every recall
+            # denominator as a measured miss, under a reason naming a
+            # comparison that never happened.
+            #
+            # `outcomes.eligible_ranking` already fixed this exact merge for the
+            # counterfactual ordering, quoting this module's rule back at it.
+            # The `significant` column it is computed from was left alone.
+            disp = "significance_unassessed"
         elif not significant:
             disp = "not_significant"
         elif (log2fc or 0.0) <= 0.0:

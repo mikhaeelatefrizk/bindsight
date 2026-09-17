@@ -249,6 +249,7 @@ _EPITOPE_DISPLAY_COLS = [
 # diverge again.
 _DISPOSITION_ORDER = (
     "not_significant",
+    "significance_unassessed",
     "down_regulated",
     "below_enrichment_cutoff",
     "uniprot_lookup_failed",
