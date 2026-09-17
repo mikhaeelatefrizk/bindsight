@@ -94,6 +94,34 @@ def _setup_logging(verbose: bool) -> None:
 # ---------------------------------------------------------------------------
 # Top-level group
 # ---------------------------------------------------------------------------
+def _designer_choice() -> click.Choice[str]:
+    """The designers this installation can run, for `--designer`.
+
+    These were three `click.Choice` literals repeated across `design`, `run` and
+    the benchmark, each of which rejected a designer registered through the
+    `bindsight.designers` entry-point group before the command body ran -- so
+    `--designer my_designer`, the command `docs/use-cases.md` tells a method
+    developer to run, could not work no matter what they registered.
+    """
+    from bindsight.plugins import all_designers
+
+    return click.Choice(sorted(all_designers()))
+
+
+def _validator_choice() -> click.Choice[str]:
+    """The validators this installation can run, for `--validator`."""
+    from bindsight.plugins import all_validators
+
+    return click.Choice(sorted(all_validators()))
+
+
+def _backend_choice() -> click.Choice[str]:
+    """The runner backends this installation can run, for `--backend`."""
+    from bindsight.plugins import all_runners
+
+    return click.Choice(sorted(all_runners()))
+
+
 @click.group(
     name="bindsight",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -194,19 +222,19 @@ def discover(config: Path, out_dir: Path, top_n: int | None, verbose: bool) -> N
 )
 @click.option(
     "--backend",
-    type=click.Choice(["colab", "modal", "kaggle", "local_docker", "mock"]),
+    type=_backend_choice(),
     default="colab",
     show_default=True,
 )
 @click.option(
     "--designer",
-    type=click.Choice(["rfdiff_mpnn", "bindcraft", "boltzgen"]),
+    type=_designer_choice(),
     default="rfdiff_mpnn",
     show_default=True,
 )
 @click.option(
     "--validator",
-    type=click.Choice(["boltz2", "chai1r", "af2_ig"]),
+    type=_validator_choice(),
     default="boltz2",
     show_default=True,
     help="Validator run on each design (structure + affinity prediction).",
@@ -379,13 +407,13 @@ def design(
 )
 @click.option(
     "--backend",
-    type=click.Choice(["colab", "modal", "kaggle", "local_docker", "mock"]),
+    type=_backend_choice(),
     default="colab",
     show_default=True,
 )
 @click.option(
     "--validator",
-    type=click.Choice(["boltz2", "chai1r", "af2_ig"]),
+    type=_validator_choice(),
     default="boltz2",
     show_default=True,
 )
@@ -664,9 +692,9 @@ def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
     type=click.Path(file_okay=False, path_type=Path),
     required=True,
 )
-@click.option("--backend", type=click.Choice(["colab", "modal", "kaggle", "local_docker", "mock"]))
-@click.option("--designer", type=click.Choice(["rfdiff_mpnn", "bindcraft", "boltzgen"]))
-@click.option("--validator", type=click.Choice(["boltz2", "chai1r", "af2_ig"]))
+@click.option("--backend", type=_backend_choice())
+@click.option("--designer", type=_designer_choice())
+@click.option("--validator", type=_validator_choice())
 @click.option("--cheap", is_flag=True, help="Use the --cheap profile (T4-friendly defaults).")
 @click.option("--dry-run", is_flag=True, help="Print a cost estimate, don't execute.")
 def run(
@@ -696,11 +724,11 @@ def run(
     cfg = RunConfig.from_yaml(config)
     cfg.out_dir = out_dir
     if backend:
-        cfg.backend = backend  # type: ignore[assignment]
+        cfg.backend = backend
     if designer:
-        cfg.params.design.designer = designer  # type: ignore[assignment]
+        cfg.params.design.designer = designer
     if validator:
-        cfg.params.validate_.validator = validator  # type: ignore[assignment]
+        cfg.params.validate_.validator = validator
     if cheap:
         _apply_cheap_profile(cfg)
 
@@ -1013,16 +1041,25 @@ def verify_licenses(config: Path | None) -> None:
         backend = cfg.backend
 
         # Map the config's plugin choices to the components they pull in.
+        # `.get`, not `[...]`. Now that a third-party plugin can be selected,
+        # a bare lookup would raise a KeyError naming nothing useful. A plugin
+        # this table has never heard of has components, but not ones bindsight
+        # can enumerate -- say that instead of crashing or claiming none.
         designer_components = {
             "rfdiff_mpnn": ["RFdiffusion", "ProteinMPNN"],
             "bindcraft": ["BindCraft"],
             "boltzgen": ["BoltzGen"],
-        }[designer]
+        }.get(designer, [])
         validator_components = {
             "boltz2": ["Boltz-2"],
             "chai1r": ["Chai-1r"],
             "af2_ig": ["AF2-IG (opt-in)"],
-        }[validator]
+        }.get(validator, [])
+        unresolved = [
+            name
+            for name, found in ((designer, designer_components), (validator, validator_components))
+            if not found
+        ]
 
         # Core discovery components are always pulled in, regardless of config.
         core = [
@@ -1042,6 +1079,17 @@ def verify_licenses(config: Path | None) -> None:
             selected,
         )
 
+        if unresolved:
+            # A green clearance covering a plugin whose licence was never looked
+            # at is worse than no clearance: it is a legal statement about
+            # software this table has never seen. Name it, and withhold the
+            # verdict below.
+            console.print(
+                "\n[yellow bold]⚠ Not assessed:[/yellow bold] "
+                f"{', '.join(unresolved)} — registered through an entry point, so "
+                "bindsight does not know which components or licences it pulls in."
+            )
+
         nc = [r for r in selected if not r[2]]
         if nc:
             names = ", ".join(r[0] for r in nc)
@@ -1050,6 +1098,13 @@ def verify_licenses(config: Path | None) -> None:
                 "[yellow]This configuration is NOT cleared for commercial use. Switch the "
                 "offending stage (e.g. validator -> boltz2 or chai1r) for a fully "
                 "commercial-friendly run.[/yellow]"
+            )
+        elif unresolved:
+            console.print(
+                "\n[yellow]Every component bindsight could identify is "
+                "commercial-friendly. That is not a clearance for this "
+                "configuration, because the plugin(s) above were not assessed."
+                "[/yellow]"
             )
         else:
             console.print(
@@ -1135,7 +1190,7 @@ def _apply_cheap_profile(cfg: RunConfig) -> None:
         cfg: The run configuration to modify.
     """
     design = cfg.params.design
-    design.designer = CHEAP_DESIGNER  # type: ignore[assignment]
+    design.designer = CHEAP_DESIGNER
     design.n_trajectories = CHEAP_TRAJECTORIES
     design.gpu_type = CHEAP_GPU_TYPE
     design.prescreen_top_k = min(CHEAP_PRESCREEN_TOP_K, CHEAP_TRAJECTORIES)

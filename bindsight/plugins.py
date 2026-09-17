@@ -38,9 +38,54 @@ _FALLBACK = {
 }
 
 
-ALL_DESIGNERS: frozenset[str] = frozenset(_FALLBACK["bindsight.designers"])
-ALL_VALIDATORS: frozenset[str] = frozenset(_FALLBACK["bindsight.validators"])
-ALL_PLUGINS: frozenset[str] = ALL_DESIGNERS | ALL_VALIDATORS
+def registered(group: str) -> frozenset[str]:
+    """Every plugin name in ``group``: entry points, plus the bundled fallbacks.
+
+    These constants were built from ``_FALLBACK`` alone, so the registry's own
+    idea of "everything we know about" omitted the entry points the loader
+    resolves -- and the config and CLI, which enumerate the same names again by
+    hand, rejected a registered plugin before :func:`_load` was ever called. The
+    module exists to let third parties register a designer without forking; this
+    is what makes that reachable.
+
+    The bundled names are unioned in rather than used only as a fallback: an
+    editable install without resolvable metadata must still offer the three
+    designers that ship with the package.
+    """
+    names = set(_FALLBACK.get(group, {}))
+    try:
+        names.update(ep.name for ep in entry_points(group=group))
+    except Exception as exc:  # pragma: no cover - metadata edge cases
+        LOG.warning("could not read the %s entry-point group (%s)", group, exc)
+    return frozenset(names)
+
+
+def all_designers() -> frozenset[str]:
+    """Designer names that can be selected. Resolved on each call.
+
+    A function rather than a constant because entry points are resolved from
+    installed metadata, and a module-level frozenset would freeze whatever was
+    installed when :mod:`bindsight.plugins` was first imported.
+    """
+    return registered("bindsight.designers")
+
+
+def all_validators() -> frozenset[str]:
+    """Validator names that can be selected. Resolved on each call."""
+    return registered("bindsight.validators")
+
+
+def all_runners() -> frozenset[str]:
+    """Runner backend names that can be selected. Resolved on each call."""
+    return registered("bindsight.runners")
+
+
+#: The bundled names, for the places that mean *these three* rather than
+#: *whatever is installed* -- a default set for a benchmark, say.
+BUNDLED_DESIGNERS: frozenset[str] = frozenset(_FALLBACK["bindsight.designers"])
+BUNDLED_VALIDATORS: frozenset[str] = frozenset(_FALLBACK["bindsight.validators"])
+BUNDLED_RUNNERS: frozenset[str] = frozenset(_FALLBACK["bindsight.runners"])
+
 
 SUPPORTED = "supported"
 UNTESTED = "untested"
@@ -130,7 +175,13 @@ BACKEND_CAPABILITIES: dict[str, BackendCapability] = {
     # The mock backend synthesises results and runs no tool, so every name is
     # accepted. That is what makes it useful for testing orchestration and
     # useless as evidence, which its own output says on every row.
-    "mock": BackendCapability(provides=ALL_PLUGINS, note="synthetic results; runs no tool"),
+    # Resolved when the table is read rather than frozen at import, so a
+    # registered third-party plugin is runnable against the mock backend --
+    # which is how anyone would first test one.
+    "mock": BackendCapability(
+        provides=frozenset(),
+        note="synthetic results; runs no tool",
+    ),
 }
 
 
@@ -147,6 +198,12 @@ def plugin_support(backend: str, plugin: str) -> tuple[str, str]:
         runner registered through the entry points is never blocked by a table
         it could not have been added to.
     """
+    # The mock backend runs no tool at all, so every name it is asked for is
+    # "supported" in the only sense that matters here -- including one this
+    # process learned about from an entry point. Its capability row carries an
+    # empty `provides` because the answer is not a fixed set.
+    if backend == "mock":
+        return SUPPORTED, ""
     capability = BACKEND_CAPABILITIES.get(backend)
     if capability is None:
         return UNTESTED, f"{backend!r} is not a bundled backend, so its environment is unknown"

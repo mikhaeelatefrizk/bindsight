@@ -15,7 +15,6 @@ change).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
 
 import yaml
 
@@ -251,12 +250,42 @@ class TargetDiscoveryParams(BaseModel):
     top_n: int = Field(5, ge=1)
 
 
+def _registered_or_raise(value: str, kind: str, group: str) -> str:
+    """Accept a plugin name the registry can resolve; reject anything else.
+
+    These fields were `Literal`s, which rejected every plugin registered through
+    an entry point -- the mechanism `bindsight.plugins` exists for, and that
+    `docs/use-cases.md` documents with a worked example. Dropping the `Literal`
+    restored the capability and would have dropped the validation with it, so a
+    misspelled bundled name would have reached the loader and failed there with
+    a less useful message.
+
+    Imported inside the function because `bindsight.config` is imported by
+    nearly everything and the registry reads installed metadata.
+    """
+    from bindsight.plugins import registered
+
+    known = registered(group)
+    if value in known:
+        return value
+    raise ValueError(
+        f"unknown {kind} {value!r}; this installation offers "
+        f"{', '.join(sorted(known))}. A third-party {kind} is selected by "
+        f"registering it in the {group!r} entry-point group."
+    )
+
+
 class DesignParams(BaseModel):
     """De novo binder design parameters (consumed by the GPU half)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    designer: Literal["rfdiff_mpnn", "bindcraft", "boltzgen"] = "rfdiff_mpnn"
+    # Validated against the plugin registry rather than a `Literal`, because a
+    # `Literal` rejected any designer registered through the
+    # `bindsight.designers` entry-point group -- the mechanism `bindsight.plugins`
+    # exists for and `docs/use-cases.md` documents step by step. The loader
+    # worked; nothing could reach it.
+    designer: str = "rfdiff_mpnn"
     n_trajectories: int = Field(50, ge=1)
     binder_length_min: int = Field(50, ge=20)
     binder_length_max: int = Field(100, ge=20)
@@ -279,6 +308,11 @@ class DesignParams(BaseModel):
     # with min > max and the designer was handed an empty length range. An
     # after-validator runs on the assembled model, so it sees the pair however
     # either half arrived.
+    @field_validator("designer")
+    @classmethod
+    def _designer_is_registered(cls, v: str) -> str:
+        return _registered_or_raise(v, "designer", "bindsight.designers")
+
     @model_validator(mode="after")
     def _check_length_range(self) -> DesignParams:
         if self.binder_length_max < self.binder_length_min:
@@ -294,7 +328,12 @@ class ValidateParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    validator: Literal["boltz2", "chai1r", "af2_ig"] = "boltz2"
+    validator: str = "boltz2"
+
+    @field_validator("validator")
+    @classmethod
+    def _validator_is_registered(cls, v: str) -> str:
+        return _registered_or_raise(v, "validator", "bindsight.validators")
 
     # How many structures the validator draws per binder, and how many of those
     # it diffuses at once.
@@ -391,7 +430,13 @@ class RunConfig(BaseModel):
     out_dir: Path = Field(..., description="Output directory. Will be created.")
     inputs: InputsConfig
     params: StageParams
-    backend: Literal["colab", "modal", "kaggle", "local_docker", "mock"] = "colab"
+    backend: str = "colab"
+
+    @field_validator("backend")
+    @classmethod
+    def _backend_is_registered(cls, v: str) -> str:
+        return _registered_or_raise(v, "backend", "bindsight.runners")
+
     # Declared but not consumed by any stage. An example config described it as
     # dropping to a T4 with fewer trajectories; the T4 is now the only GPU the
     # Kaggle runner asks for, and nothing has ever read the flag. It is kept so
