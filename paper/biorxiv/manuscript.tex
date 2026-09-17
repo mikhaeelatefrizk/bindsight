@@ -277,7 +277,11 @@ selection is deterministic.
 
 \paragraph{Reproducible result.} The pipeline finds 42 antibody-tractable,
 cell-surface, up-regulated candidates; the top entries by fold-change are
-shown below (verbatim from the run, abbreviated):
+shown below (verbatim from the run, abbreviated). Unlike every other number
+in this manuscript, these are not read from an artifact committed to the
+repository: \texttt{bindsight demo} fetches the cohort from the GDC and runs
+DESeq2 afresh, and \texttt{runs/} is not tracked. They are reproduced by
+running that command, not by reading a file, and no test guards them.
 
 \vspace{0.4em}
 \begin{center}
@@ -318,14 +322,14 @@ download + analysis and the result is cached for subsequent visitors.
 % --------------------------------------------------------------------
 \section{Quality assurance and reproducibility}
 
-The \texttt{bindsight} release ships \textbf{200+ unit and
+The \texttt{bindsight} release ships \textbf{1,800+ unit and
 integration tests} that run in a few minutes and cover: the Pydantic
 v2 manifest schema; the Open Targets, AlphaFoldDB, and SURFY clients; the
 discovery pipeline end-to-end with mocked GPU runners; the rank module's
 composite scoring with several weight schemes; the RO-Crate exporter; and
 the served web interface. Continuous integration on GitHub Actions runs the
 test suite on Linux, macOS, and Windows for Python 3.11, 3.12 and 3.13; all
-nine platform jobs pass on every commit to 	exttt{main}, alongside a lint job,
+nine platform jobs pass on every commit to \texttt{main}, alongside a lint job,
 a pinned-environment job that regenerates the published pages to confirm they
 do not change, and a wheel build.
 
