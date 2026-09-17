@@ -34,6 +34,9 @@ class RFdiffMPNNDesigner:
     """Plugin: RFdiffusion backbone + ProteinMPNN sequence."""
 
     name = "rfdiff_mpnn"
+    # The adapter's own version, not the upstream tool's. Pinned upstream
+    # revisions live in the spec's extra_params and in the cache key; this
+    # number moves only when this adapter's behaviour does.
     version = "0.1.0"
     license_notice = "RFdiffusion: BSD-3. ProteinMPNN: MIT. Both commercial-OK."
 

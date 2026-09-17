@@ -100,7 +100,8 @@ def _with_payload(cache_key: str, payload_dir: Path) -> str:
     exists to prevent, one level further in.
 
     Both the relative path and the content of every shipped file are covered:
-    renaming a binder changes which row is which downstream.
+    renaming a binder changes which row is which downstream. Files are ordered
+    by their POSIX relative path so the key is the same on every platform.
 
     Args:
         cache_key: the key so far.
@@ -112,8 +113,19 @@ def _with_payload(cache_key: str, payload_dir: Path) -> str:
     import hashlib
 
     digest = hashlib.sha256()
-    for path in sorted(p for p in payload_dir.rglob("*") if p.is_file()):
-        digest.update(path.relative_to(payload_dir).as_posix().encode())
+    # Sorted by the POSIX relative path *string*, not by the Path objects.
+    # `PurePath.__lt__` compares the parts tuple, and case-insensitively on
+    # Windows, so an identical payload hashed in a different order depending on
+    # the operating system: {"a.txt", "a/b.txt", "B.txt"} came out
+    # ["B.txt", "a/b.txt", "a.txt"] on Linux and ["a/b.txt", "a.txt", "B.txt"]
+    # on Windows. The key is meant to be the identity of the content, and an
+    # identity that changes with the machine is not one -- a rerun on CI could
+    # not reuse a local result, and two keys that differed said the payloads did.
+    relative = sorted(
+        (q.relative_to(payload_dir).as_posix(), q) for q in payload_dir.rglob("*") if q.is_file()
+    )
+    for rel, path in relative:
+        digest.update(rel.encode())
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
     return hashlib.sha256(f"{cache_key}|payload={digest.hexdigest()}".encode()).hexdigest()
@@ -368,7 +380,29 @@ _RESULT_AFFECTING_PARAMS = (
     "diffusion_samples",
     "max_parallel_samples",
     "mode",
+    # Read by ``job_exec`` at the BoltzGen call site and absent from this tuple,
+    # so two BoltzGen jobs differing only in protocol -- a different design task
+    # entirely -- shared a key, and the second silently returned the first's
+    # designs. ``use_kernels`` selects a different compute path for the same
+    # sampler and is not guaranteed bit-identical to the reference one.
+    #
+    # This is the third time an entry the executor acts on was missing from a
+    # hand-kept list; ``tests/test_cache_key_scope.py`` now derives the set the
+    # executor actually reads and fails when one is added without a decision.
+    "boltzgen_protocol",
+    "boltzgen_use_kernels",
 )
+
+#: ``extra_params`` keys the executor reads that deliberately stay out of the key.
+#:
+#: Each needs a reason, because the default for anything the executor acts on is
+#: to be in the key.
+_CACHE_KEY_EXEMPT_PARAMS = {
+    # Assigned after the key is computed, and names the file rather than its
+    # content -- the content is already hashed into the key as ``structure_digest``.
+    # Including it would make the key depend on bookkeeping.
+    "target_structure_name",
+}
 
 
 def make_cache_key(spec: DesignSpec, *, extra: tuple[str, ...] = ()) -> str:

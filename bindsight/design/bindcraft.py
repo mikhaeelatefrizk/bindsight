@@ -28,6 +28,9 @@ class BindCraftDesigner:
     """Plugin: BindCraft one-shot binder design (≥32 GB VRAM)."""
 
     name = "bindcraft"
+    # The adapter's own version, not the upstream tool's. Pinned upstream
+    # revisions live in the spec's extra_params and in the cache key; this
+    # number moves only when this adapter's behaviour does.
     version = "0.1.0"
     license_notice = "BindCraft: MIT. Commercial-OK. Requires ≥32 GB VRAM."
 

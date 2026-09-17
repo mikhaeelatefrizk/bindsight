@@ -108,15 +108,26 @@ def pca_2d(embeddings: np.ndarray) -> np.ndarray:
     """Project an (N, D) embedding matrix to (N, 2) principal coordinates.
 
     Pure NumPy (centred SVD) so it needs no scikit-learn/UMAP and runs anywhere.
-    Returns zeros for fewer than 2 rows.
+    Returns zeros for fewer than 2 rows. An embedding with a single feature has
+    only one principal axis; the second coordinate is then zero, and the shape
+    is still (N, 2) because every caller relies on it.
     """
     x = np.asarray(embeddings, dtype=float)
     if x.ndim != 2 or x.shape[0] < 2:
         return np.zeros((x.shape[0] if x.ndim == 2 else 0, 2), dtype=float)
     xc = x - x.mean(axis=0, keepdims=True)
     _u, _s, vt = np.linalg.svd(xc, full_matrices=False)
-    coords = xc @ vt[:2].T  # principal coordinates (N, 2)
-    return np.asarray(coords, dtype=float)
+    coords = np.asarray(xc @ vt[:2].T, dtype=float)  # principal coordinates
+    if coords.shape[1] < 2:
+        # A one-dimensional embedding has one principal axis, so `vt[:2]` is a
+        # single row and this returned (N, 1) while promising (N, 2) -- which
+        # `render_embedding_png` then unpacks as x and y. The second axis is not
+        # missing, it is zero: there is no variance left to put on it. Say that
+        # rather than hand back a shape the signature rules out.
+        coords = np.concatenate(
+            [coords, np.zeros((coords.shape[0], 2 - coords.shape[1]), dtype=float)], axis=1
+        )
+    return coords
 
 
 def render_embedding_png(

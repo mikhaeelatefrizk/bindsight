@@ -61,7 +61,15 @@ class DesignResult(BaseModel):
         ..., description="Local path to per-design metrics JSONL (one row per design)."
     )
     designer_name: str
-    designer_version: str
+    designer_version: str = Field(
+        ...,
+        description=(
+            "Version of the bindsight adapter, NOT of the upstream tool it drives. "
+            "The upstream revision is pinned in designer_commit_sha and in the "
+            "spec's extra_params (e.g. rfdiff_commit, proteinmpnn_commit), which "
+            "are what the cache key and reproducibility depend on."
+        ),
+    )
     designer_commit_sha: str | None = None
     weights_sha256: str | None = None
     cache_key: str = Field(..., description="Used to deduplicate identical jobs across runs.")

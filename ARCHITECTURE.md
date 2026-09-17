@@ -175,7 +175,8 @@ over the work itself:
 sha256(target_uniprot ‖ target_structure_content ‖ epitope_chain ‖ epitope_residues
        ‖ design_ranges ‖ binder_length_bounds ‖ n_trajectories ‖ seed
        ‖ validator ‖ designer ‖ designer_version ‖ prescreen_top_k
-       ‖ diffusion_samples ‖ max_parallel_samples ‖ mode ‖ designer_commits)
+       ‖ diffusion_samples ‖ max_parallel_samples ‖ mode
+       ‖ boltzgen_protocol ‖ boltzgen_use_kernels ‖ designer_commits)
 ```
 
 `designer` and `designer_version` were missing from this list. `job_exec` reads
@@ -224,6 +225,18 @@ produced, a wrong answer that looked right:
   stream differently at batch 1 and batch 5 and produces different structures.
 - **Mode.** A `validate_only` job runs no designer at all; it scores binders it
   was handed.
+- **BoltzGen protocol and kernel path.** `job_exec` reads both out of
+  `extra_params` and passes them to the BoltzGen invocation. The protocol is the
+  design task itself, so two jobs differing only in it were different work
+  sharing a key; the kernel path selects a different compute route through the
+  same sampler and is not guaranteed bit-identical to the reference one. This
+  was the third entry the executor acted on to be missing from a hand-kept list,
+  which is why the list is no longer trusted to be complete: `tests/
+  test_cache_key_scope.py` walks `job_exec`'s AST for every `extra_params` key it
+  reads and fails when one is neither keyed nor explicitly exempted with a
+  reason. The one standing exemption is `target_structure_name`, which is
+  assigned after the key is computed and names a file whose content is already
+  hashed in.
 - **Payload digest** — the content and the relative path of every shipped binder.
   The spec-derived key covers what a *designer* would be told to produce, and a
   validate-only job produces nothing: the binders travel in the payload and the

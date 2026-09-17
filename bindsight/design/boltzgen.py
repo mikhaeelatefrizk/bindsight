@@ -29,6 +29,9 @@ class BoltzGenDesigner:
     """Plugin: BoltzGen universal binder design."""
 
     name = "boltzgen"
+    # The adapter's own version, not the upstream tool's. Pinned upstream
+    # revisions live in the spec's extra_params and in the cache key; this
+    # number moves only when this adapter's behaviour does.
     version = "0.1.0"
     license_notice = "BoltzGen: MIT (code + weights). Commercial-OK."
 

@@ -59,10 +59,22 @@ class PrescreenResult:
         return len(self.dropped)
 
 
-def _fallback(n: int, reason: str) -> PrescreenResult:
-    """Keep everything, recording why the screen did not run."""
+def _fallback(n: int, reason: str, *, benign: bool = False) -> PrescreenResult:
+    """Keep everything, recording why the screen did not run.
+
+    ``benign`` separates "nothing needed screening" from "the screen could not
+    run". Both keep every design and both must be recorded in provenance, but
+    only the second is worth a warning: a run with fewer designs than its cap is
+    behaving exactly as configured, and logging that as a problem trains readers
+    to ignore the line that does signal one.
+    """
     if reason:
-        LOG.warning("ESM-2 pre-screen skipped: %s; validating all %d designs", reason, n)
+        LOG.log(
+            logging.INFO if benign else logging.WARNING,
+            "ESM-2 pre-screen not applied: %s; validating all %d designs",
+            reason,
+            n,
+        )
     return PrescreenResult(kept=list(range(n)), dropped=[], applied=False, reason=reason)
 
 
@@ -84,7 +96,16 @@ def select_representative(sequences: list[str], top_k: int | None) -> PrescreenR
     if top_k <= 0:
         return _fallback(n, f"top_k={top_k} is not positive")
     if n <= top_k:
-        return _fallback(n, "")
+        # Distinct from `top_k is None`. The screen *was* configured; there were
+        # simply not enough designs to cut. Reporting both as an empty reason
+        # made the provenance line say "no top_k set" about a run that set one,
+        # so an auditor reading it would conclude the screen had never been
+        # asked for.
+        return _fallback(
+            n,
+            f"only {n} design{'s' if n != 1 else ''} to screen, top_k={top_k}",
+            benign=True,
+        )
     if any(not s for s in sequences):
         return _fallback(n, "one or more designs have an empty sequence")
 
