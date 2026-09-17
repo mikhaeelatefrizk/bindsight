@@ -703,3 +703,117 @@ class TestNoConditionIsDecorative:
             "a blocked design no longer has a card of its own, so the page falls "
             "back to offering a command that cannot work"
         )
+
+
+# ---------------------------------------------------------------------------
+# An interval on the page carries the level the artifact recorded
+# ---------------------------------------------------------------------------
+class TestAnIntervalOnThePageCarriesItsLevel:
+    """`interval()` reads the level; the pages have to hand it over.
+
+    The helper was unit-tested and correct. Two of its four call sites -- both
+    rendering the Wilson recall interval, which is the study's headline number
+    -- did not pass `confidence`, so the Evidence page showed `CI 0.01-0.27`
+    while the artifact records `confidence: 0.95` on all forty-eight of its
+    interval blocks. A reader could not tell a 95% interval from a 90% one.
+
+    The nulls chart had the mirror-image fault: `"95% CI"` was hardcoded into
+    the chart spec, and the renderer fell back to the same literal when the spec
+    omitted it, so a study computed at any other level would have been captioned
+    95% by two independent hardcodes.
+
+    Testing the helper says nothing about whether a page uses it, which is
+    exactly the distance this covers.
+    """
+
+    #: A `CI` that is not preceded by a percentage, e.g. `CI 0.01-0.27`.
+    #: `(?<!% )` is the whole check: a labelled interval reads `95% CI ...`.
+    _UNLABELLED = re.compile(r"(?<!%\s)\bCI\s+[\d.]")
+
+    @staticmethod
+    def _artifact_records_a_level() -> bool:
+        """Whether the committed study artifact carries a level to render.
+
+        Without this the test below would pass vacuously on a machine whose
+        artifact recorded none -- reporting that every interval is labelled when
+        the truth is that none could be.
+        """
+        path = REPO / "benchmarks" / "study" / "results.json"
+        if not path.is_file():
+            return False
+        blocks: list[dict] = []
+
+        def walk(node: object) -> None:
+            if isinstance(node, dict):
+                if "low" in node and "high" in node:
+                    blocks.append(node)
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        walk(json.loads(path.read_text(encoding="utf-8")))
+        return bool(blocks) and all(b.get("confidence") is not None for b in blocks)
+
+    def test_the_artifact_has_levels_to_render(self) -> None:
+        """Guards the guard: a vacuous pass here would read as a clean one."""
+        assert self._artifact_records_a_level(), (
+            "the committed study artifact no longer records a confidence level on "
+            "every interval block, so the checks below would pass without testing "
+            "anything"
+        )
+
+    @pytest.mark.parametrize("path", PAGES)
+    def test_no_page_prints_an_interval_without_its_level(
+        self, client: TestClient, path: str
+    ) -> None:
+        text = re.sub(r"<[^>]+>", " ", client.get(path).text)
+
+        found = self._UNLABELLED.findall(text)
+        contexts = [
+            text[max(0, m.start() - 40) : m.end() + 20] for m in self._UNLABELLED.finditer(text)
+        ]
+        assert not found, (
+            f"{path} prints a confidence interval with no level, though the "
+            f"artifact records one: {contexts}"
+        )
+
+    def test_the_evidence_page_states_the_level_on_the_headline_recall(
+        self, client: TestClient
+    ) -> None:
+        """The specific number this was found on, named so the fix cannot lapse."""
+        text = re.sub(r"<[^>]+>", " ", client.get("/evidence").text)
+
+        assert re.search(r"95%\s*CI\s*0\.0\d", text), (
+            "the headline recall interval on /evidence no longer states its level"
+        )
+
+    def test_the_scan_would_notice_an_unlabelled_interval(self) -> None:
+        """The regex has to actually match the thing it is looking for."""
+        assert self._UNLABELLED.search("recall CI 0.01-0.27")
+        assert not self._UNLABELLED.search("recall 95% CI 0.01-0.27")
+        assert not self._UNLABELLED.search("see CITATION.cff")
+
+    def test_the_chart_renderer_does_not_invent_a_level(self) -> None:
+        """A spec without a label must caption `CI`, not `95% CI`.
+
+        The fallback lived in the JavaScript, out of reach of the Python that
+        reads the artifact, so it could disagree with it silently.
+        """
+        charts = (REPO / "bindsight" / "report" / "web" / "static" / "charts.js").read_text(
+            encoding="utf-8"
+        )
+
+        assert '"95% CI"' not in charts, (
+            "charts.js hardcodes a confidence level; it must render the one the "
+            "chart spec carries and plain 'CI' when there is none"
+        )
+
+    def test_the_chart_spec_reads_the_level_from_the_artifact(self) -> None:
+        from bindsight.report.web.app import _ci_label
+
+        assert _ci_label(0.95) == "95% CI"
+        assert _ci_label(0.9) == "90% CI"
+        assert _ci_label(None) == "CI"
+        assert _ci_label("not a number") == "CI"

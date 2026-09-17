@@ -277,6 +277,18 @@ def _paired_chart(designer: Any) -> dict[str, Any] | None:
     }
 
 
+def _ci_label(confidence: Any) -> str:
+    """``95% CI`` when the artifact recorded a level, plain ``CI`` when it did not.
+
+    The same rule :func:`bindsight.report.format.interval` applies, in the form
+    the chart spec needs.
+    """
+    try:
+        return f"{float(confidence) * 100:g}% CI"
+    except (TypeError, ValueError):
+        return "CI"
+
+
 def _nulls_chart(study: Any) -> dict[str, Any] | None:
     """The two null models as intervals against the value that means 'nothing'."""
     if study is None:
@@ -292,7 +304,10 @@ def _nulls_chart(study: Any) -> dict[str, Any] | None:
                 "low": float(gap["low"]),
                 "high": float(gap["high"]),
                 "n": gap.get("n_clusters"),
-                "ciLabel": "95% CI",
+                # Read, not assumed. Hardcoding the level here and again as
+                # the renderer's fallback would have captioned a study
+                # computed at another level as 95% from two places at once.
+                "ciLabel": _ci_label(gap.get("confidence")),
             }
         ],
         "reference": 0.0,
@@ -310,12 +325,17 @@ def _recall_chart(study: Any) -> dict[str, Any] | None:
         num, den = w.get("numerator"), w.get("denominator")
         if num is None or den is None:
             continue
+        # The level is recorded on every interval block in the study artifact.
+        # Dropping it printed a bare `CI` beside the number a reviewer reads
+        # first, and a 90% interval would have been indistinguishable from a 95%
+        # one.
+        ci = interval(w.get("low"), w.get("high"), digits=2, confidence=w.get("confidence"))
         rows.append(
             {
                 "label": key,
                 "value": num / den if den else 0,
                 "display": f"{num}/{den}",
-                "tip": f"{num} of {den} · {interval(w.get('low'), w.get('high'), digits=2)}",
+                "tip": f"{num} of {den} · {ci}",
             }
         )
     if not rows:

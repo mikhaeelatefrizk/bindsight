@@ -20,6 +20,7 @@ meets the number as text, so text is what has to be right.
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -1286,4 +1287,121 @@ class TestTheStudyReportIsWhatItsArtifactRenders:
         raise AssertionError(
             "benchmarks/study/RESULTS.md is not what results.json renders to. "
             "Re-run the generator and commit the result:\n  " + "\n  ".join(diff[:24])
+        )
+
+
+# ---------------------------------------------------------------------------
+# The two indication-specificity analyses are not one analysis
+# ---------------------------------------------------------------------------
+class TestThePermutationPBelongsToItsOwnDenominator:
+    """Two results, two denominators, and one of them has no p-value at all.
+
+    `null_calibration.paired_difference` is a cluster bootstrap over the
+    **13** antigens that appear in the calibration cohorts: 0.348, 95% CI
+    0.188-0.513. It reports an interval and no p.
+
+    `specificity_null` is an exact permutation test over the **7** antigens
+    carrying a single indication -- 5,040 orderings is 7!, and an antigen used in
+    two cancers has no one cohort to permute. It reports observed 0.858 and
+    p = 3.97e-04.
+
+    README, docs/what-is-bindsight.md and the Evidence page each stated the
+    13-antigen effect size and then attached the 7-antigen test's p-value to it,
+    naming neither denominator. A reader would take 3.97e-04 as the significance
+    of 0.348.
+
+    `benchmarks/study/RESULTS.md` always reported them separately and correctly,
+    which is where the wording now used on the other surfaces came from.
+    """
+
+    #: Surfaces that state both results. RESULTS.md is generated and already
+    #: correct; the rest are hand-written and were not.
+    SURFACES = (
+        "README.md",
+        "docs/what-is-bindsight.md",
+    )
+
+    @staticmethod
+    def _flat(text: str) -> str:
+        """Tags stripped and whitespace collapsed, so a line break cannot hide a phrase."""
+        return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text))
+
+    @staticmethod
+    def _study() -> dict:
+        return json.loads(
+            (REPO / "benchmarks" / "study" / "results.json").read_text(encoding="utf-8")
+        )
+
+    def test_the_two_analyses_really_do_have_different_denominators(self) -> None:
+        """Guards the guard: if they ever coincide, the checks below prove nothing."""
+        study = self._study()
+
+        permutation_n = study["specificity_null"]["n_antigens"]
+        bootstrap_n = study["null_calibration"]["paired_difference"]["n_clusters"]
+
+        assert permutation_n != bootstrap_n, (
+            f"both analyses now cover {permutation_n} antigens; this test can no "
+            "longer distinguish a correct page from a fused one"
+        )
+
+    def test_the_permutation_count_is_the_factorial_of_its_own_denominator(self) -> None:
+        """The arithmetic that makes the mismatch visible: 5,040 is 7!, not 13!."""
+        study = self._study()
+        spec = study["specificity_null"]
+
+        assert math.factorial(spec["n_antigens"]) == spec["n_permutations"], (
+            f"{spec['n_permutations']} orderings is not "
+            f"{spec['n_antigens']}! -- the permutation test's denominator and its "
+            "enumeration disagree"
+        )
+
+    @pytest.mark.parametrize("rel", SURFACES)
+    def test_a_surface_stating_the_p_value_states_its_denominator(self, rel: str) -> None:
+        study = self._study()
+        spec = study["specificity_null"]
+        text = self._flat(_doc(rel))
+
+        if f"{spec['p_value']:.2e}" not in text:
+            pytest.skip(f"{rel} does not state the permutation p-value")
+
+        assert f"{spec['n_antigens']} antigens" in text, (
+            f"{rel} states the permutation p-value without naming the "
+            f"{spec['n_antigens']} antigens it was computed over, so a reader "
+            "attaches it to the 13-antigen difference stated beside it"
+        )
+
+    @pytest.mark.parametrize("rel", SURFACES)
+    def test_a_surface_stating_the_difference_states_its_denominator(self, rel: str) -> None:
+        study = self._study()
+        diff = study["null_calibration"]["paired_difference"]
+        text = self._flat(_doc(rel))
+
+        if f"{diff['point']:.3f}" not in text:
+            pytest.skip(f"{rel} does not state the within-antigen difference")
+
+        assert f"{diff['n_clusters']} antigens" in text, (
+            f"{rel} states the {diff['point']:.3f} difference without naming the "
+            f"{diff['n_clusters']} antigens it was bootstrapped over"
+        )
+
+    def test_the_evidence_page_keeps_them_apart(self) -> None:
+        """The page renders both; it must say the p is not the difference's."""
+        fastapi = pytest.importorskip("fastapi", reason="the web interface needs the report extra")
+        assert fastapi is not None
+        from fastapi.testclient import TestClient
+
+        from bindsight.report.web.app import create_app
+
+        study = self._study()
+        text = self._flat(TestClient(create_app()).get("/evidence").text)
+
+        assert f"{study['specificity_null']['n_antigens']} antigens" in text, (
+            "the Evidence page states the permutation p without its denominator"
+        )
+        assert f"{study['null_calibration']['paired_difference']['n_clusters']} antigens" in text, (
+            "the Evidence page states the within-antigen difference without its denominator"
+        )
+        assert "not the significance of the" in text, (
+            "the Evidence page prints the permutation p under the within-antigen "
+            "difference without saying it is not that difference's significance"
         )

@@ -39,7 +39,7 @@
     <div class="stat">
       <span class="stat__label">Recall @ 20</span>
       <span class="stat__value">{{ w20.get('numerator', ABSENT) }}/{{ w20.get('denominator', ABSENT) }}</span>
-      <span class="stat__ci">{{ interval(w20.get('low'), w20.get('high'), digits=2) }}</span>
+      <span class="stat__ci">{{ interval(w20.get('low'), w20.get('high'), digits=2, confidence=w20.get('confidence')) }}</span>
       <span class="stat__note">
         Approved-agent antigens only — the tiers the study pre-registered.
       </span>
@@ -140,7 +140,7 @@
   <section class="card">
     <h4 class="card__title">
       <span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">✓</span>positive</span>
-      Against a permuted indication
+      Against cohorts carrying no panel antigen, and against a permuted indication
     </h4>
     {% set gap = study.indication_gap %}
     {% set spec = study.specificity_null %}
@@ -155,11 +155,26 @@
       </div>
     {% endif %}
     {% if spec.get('p_value') is not none %}
+      {#
+        A second analysis, not a p-value for the difference above. The difference
+        is a cluster bootstrap over the antigens that appear in the calibration
+        cohorts; this is an exact permutation test over the antigens carrying a
+        single indication, because the permutation assigns one cohort per antigen.
+        The two denominators differ, and stating the p under the difference
+        without saying so invited the reader to read it as its significance.
+      #}
       <p class="small" style="margin-top:.75rem">
-        Exact permutation p = <strong>{{ fmt_p(spec.p_value) }}</strong> over
-        {{ fmt_int(spec.get('n_permutations')) }} enumerated orderings{% if study.specificity_is_at_its_floor %} —
+        <strong>A second test, on its own denominator.</strong> Against every
+        reassignment of cohorts to antigens, the mean standing is
+        <strong>{{ fmt(spec.get('observed'), 3) }}</strong>: exact permutation p =
+        <strong>{{ fmt_p(spec.p_value) }}</strong> over
+        {{ fmt_int(spec.get('n_permutations')) }} enumerated orderings of
+        {{ fmt_int(spec.get('n_antigens')) }} antigens{% if study.specificity_is_at_its_floor %} —
         the floor for this design, so it is as extreme as an exhaustive
         enumeration of this panel can show rather than vanishingly small{% endif %}.
+        Restricted to antigens with a single indication, because the permutation
+        assigns one cohort to each. This p is not the significance of the
+        difference above, which is reported with an interval and no p.
       </p>
     {% endif %}
     {% if nulls %}

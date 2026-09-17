@@ -257,7 +257,7 @@
       bindTip(
         dot,
         `<strong>${r.label}</strong><br>${r.point.toFixed(3)} ` +
-          `(${r.ciLabel || "95% CI"} ${r.low.toFixed(3)} to ${r.high.toFixed(3)})` +
+          `(${r.ciLabel || "CI"} ${r.low.toFixed(3)} to ${r.high.toFixed(3)})` +
           (r.n ? `<br>n = ${r.n}` : "") +
           (excludes === null ? "" : `<br>${excludes ? "excludes" : "includes"} ${spec.reference}`)
       );
