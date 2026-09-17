@@ -66,9 +66,28 @@ GATED_OUT: OutcomeClass = "gated_out"
 RANKED: OutcomeClass = "ranked"
 INFRASTRUCTURE: OutcomeClass = "infrastructure"
 
-#: Dispositions meaning a lookup errored or was never attempted. These are not
-#: findings about biology and must never be published as negative results.
-_INFRASTRUCTURE_DISPOSITIONS = frozenset({"uniprot_lookup_failed", "structure_not_queried"})
+#: Dispositions meaning a lookup errored, was never attempted, or returned
+#: nothing to judge by. These are not findings about biology and must never be
+#: published as negative results.
+#:
+#: The three ``*_unassessed`` members are here because the pipeline that sets
+#: them says so itself. ``discover.py`` records ``safety_unassessed`` rather
+#: than ``fails_safety`` with the comment "Withheld for want of an answer, not
+#: for failing one. Reporting this as fails_safety would publish a network
+#: outage as a negative result about the gene." Leaving them out of this set
+#: sent them to the gated-out fallthrough, which counts in the denominator --
+#: so the outage was published as a miss against the gene anyway, one module
+#: later. Their own explanations already say the gate *could not* assess them,
+#: which is not the gate excluding them.
+_INFRASTRUCTURE_DISPOSITIONS = frozenset(
+    {
+        "uniprot_lookup_failed",
+        "structure_not_queried",
+        "safety_unassessed",
+        "normal_tissue_unassessed",
+        "structure_confidence_unassessed",
+    }
+)
 
 #: Dispositions meaning the gene was measured and then excluded by a named gate,
 #: before ever entering the candidate table.
@@ -266,6 +285,24 @@ def classify(
             shortlist_size=shortlist_size,
             reason=GATE_EXPLANATIONS.get(disposition, str(disposition)),
             counts_in_denominator=True,
+        )
+
+    if disposition is None or not str(disposition).strip():
+        # No disposition at all means nothing ever classified this antigen, which
+        # is not the same as a gate excluding it. Counting it as a miss publishes
+        # "we did not measure this" as "this failed". The reachable way in is a
+        # cohort whose discover stage never ran: every antigen in it arrives here,
+        # and the study reports a clean sweep of misses with nothing saying why.
+        return Outcome(
+            outcome_class=INFRASTRUCTURE,
+            disposition=disposition,
+            rank=None,
+            shortlist_size=shortlist_size,
+            reason=(
+                "no disposition was recorded, so nothing is known about this "
+                "antigen in this cohort — it was not measured and then excluded"
+            ),
+            counts_in_denominator=False,
         )
 
     return Outcome(

@@ -92,10 +92,57 @@ class TestClassification:
         assert not o.counts_in_denominator
         assert "re-run" in o.reason
 
-    def test_an_unrecorded_disposition_still_classifies(self) -> None:
+    def test_an_unrecorded_disposition_is_not_a_gate(self) -> None:
+        """No disposition means nothing classified it, which is not exclusion.
+
+        This asserted ``GATED_OUT``, so an antigen nothing ever measured counted
+        in the recall denominator as a miss. The reachable way in is a cohort
+        whose discover stage never ran: every antigen in it arrives here, and the
+        study reports a clean sweep of misses with nothing saying why.
+        """
         o = O.classify(reachability=REACHABLE, disposition=None, rank=None, shortlist_size=5)
-        assert o.outcome_class == O.GATED_OUT
-        assert "unrecorded" in o.reason
+
+        assert o.outcome_class == O.INFRASTRUCTURE
+        assert not o.counts_in_denominator, (
+            "an antigen that was never measured is counted as a miss against the ranker"
+        )
+        assert "not measured" in o.reason
+
+    def test_an_unassessed_gate_is_infrastructure_not_a_negative_result(self) -> None:
+        """`discover.py` and `outcomes.py` disagreed about what these mean.
+
+        `discover.py:1147` records ``safety_unassessed`` rather than
+        ``fails_safety`` precisely so a network outage is not published as a
+        negative result about the gene — and then `outcomes.py` published it as
+        one, because the disposition was in neither set and fell through to the
+        gated-out branch, which counts in the denominator.
+        """
+        for disposition in (
+            "safety_unassessed",
+            "normal_tissue_unassessed",
+            "structure_confidence_unassessed",
+        ):
+            o = O.classify(
+                reachability=REACHABLE, disposition=disposition, rank=None, shortlist_size=5
+            )
+
+            assert o.outcome_class == O.INFRASTRUCTURE, (
+                f"{disposition} is published as a gate, so an outage becomes a "
+                "negative result about the gene"
+            )
+            assert not o.counts_in_denominator, f"{disposition} counts as a miss"
+
+    def test_a_real_gate_still_counts(self) -> None:
+        """Guards the guard: widening the infrastructure set must not swallow
+        the gates, or every exclusion would stop counting and recall would rise
+        for no reason."""
+        for disposition in ("not_significant", "down_regulated", "fails_safety"):
+            o = O.classify(
+                reachability=REACHABLE, disposition=disposition, rank=None, shortlist_size=5
+            )
+
+            assert o.outcome_class == O.GATED_OUT, f"{disposition} stopped being a gate"
+            assert o.counts_in_denominator, f"{disposition} stopped counting in the denominator"
 
     def test_only_ranked_and_gated_pairs_enter_a_denominator(self) -> None:
         """Reachability and infrastructure failures say nothing about the ranker."""
