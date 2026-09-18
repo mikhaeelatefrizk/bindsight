@@ -10,9 +10,13 @@
 # Run:    docker run --rm -v "$PWD:/work" bindsight:local discover /work/my.yaml --out /work/runs/x
 #
 # NOTE: this is the CLI image (it runs `bindsight` and exits). It is NOT the
-# Hugging Face Space web entrypoint — the Space has its own Dockerfile that
-# launches uvicorn on port 8501 and lives in the Space's own git repo
-# (see .huggingface/README.md).
+# Hugging Face Space web entrypoint. That one launches uvicorn on port 8501 and
+# is version-controlled here as `.huggingface/Dockerfile`, which
+# `.github/workflows/sync-hf-space.yml` uploads to the Space on every release.
+#
+# This used to say it lived in the Space's own git repo, which was true and is
+# the reason it no longer does: hand-maintained there, it was invisible to
+# review, and the Space silently ignored a config file for its whole life.
 # Pinned by digest, not by tag: `python:3.11.9-slim-bookworm` is republished
 # whenever its base is patched, so the tag alone does not identify an image and
 # a rebuild in a year would not be the same environment. The tag is kept

@@ -141,7 +141,7 @@ A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (K
 
 The real Boltz-2 predicted complex behind every ipTM below is committed
 alongside its metrics. Rotate them in 3-D on the
-[live app](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) → **Real results**.
+[live app](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) → **Evidence** → *The complexes themselves*.
 
 | design | ipTM | PAE-int (Å) | developability | length | instability |
 |---|--:|--:|--:|--:|--:|

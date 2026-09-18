@@ -93,10 +93,19 @@ PLAIN_SUMMARY = (
     "it reached every answer."
 )
 
-#: Plain-English glossary of the core terms the app and docs use. Single source
-#: of truth: the web app's Glossary page renders this, and
-#: ``scripts/build_docs_results.py`` regenerates ``docs/glossary.md`` from it, so
-#: the two can never drift. Each entry is ``(term, plain-language definition)``.
+#: Plain-English glossary of the core terms this project uses.
+#:
+#: ``scripts/build_docs_results.py`` regenerates ``docs/glossary.md`` from this
+#: tuple and ``tests/test_docs_results.py`` fails when the committed file drifts
+#: from it, so the definitions a reader sees are these ones.
+#:
+#: This said "single source of truth: the web app's Glossary page renders this"
+#: as well, which described a second renderer that the served interface does not
+#: have. One sink is not a drift risk; it is just a source.
+#:
+#: It lives in the package rather than beside the generator so the vocabulary
+#: travels with the software, and a reader who has the package has the
+#: definitions. Each entry is ``(term, plain-language definition)``.
 GLOSSARY: tuple[tuple[str, str], ...] = (
     (
         "RNA-seq",

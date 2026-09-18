@@ -431,7 +431,11 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
     lines += [
         "The real Boltz-2 predicted complex behind every ipTM below is committed",
         "alongside its metrics. Rotate them in 3-D on the",
-        f"[live app]({showcase_hf()}) → **Real results**.",
+        # "Real results" was a page in the removed app. The served interface
+        # puts the viewer on Evidence, under "The complexes themselves", and
+        # this line renders into docs/results.md -- so the published page was
+        # giving directions to a page that no longer exists.
+        f"[live app]({showcase_hf()}) → **Evidence** → *The complexes themselves*.",
         "",
         "| design | ipTM | PAE-int (Å) | developability | length | instability |",
         "|---|--:|--:|--:|--:|--:|",

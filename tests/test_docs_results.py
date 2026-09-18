@@ -52,9 +52,13 @@ def test_generated_page_is_up_to_date(builder) -> None:
 def test_generated_glossary_is_up_to_date(builder) -> None:
     """docs/glossary.md matches what the generator produces from theme.GLOSSARY.
 
-    Keeps the docs glossary and the app's Glossary page (both rendered from the
-    same source) from drifting. If this fails, run
-    ``python scripts/build_docs_results.py`` and commit.
+    ``theme.GLOSSARY`` is the source and this is what keeps the committed file
+    honest to it. If this fails, run ``python scripts/build_docs_results.py``
+    and commit.
+
+    This docstring used to say it kept the docs glossary and "the app's Glossary
+    page" from drifting. The served interface has no glossary page, so there was
+    never a second renderer to drift from.
     """
     glossary = ROOT / "docs" / "glossary.md"
     assert glossary.is_file()
