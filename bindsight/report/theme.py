@@ -210,7 +210,7 @@ def docs_url(page: str = "") -> str:
     return f"{DOCS_URL}{page.strip('/')}/"
 
 
-# The Streamlit stylesheet lived here. It is gone with the app it styled:
-# the interface is server-rendered now, and its design system is one CSS
-# file under ``report/web/static/`` shared with the standalone HTML report,
-# rather than a Python f-string emitting a <style> block into a widget.
+# No stylesheet is emitted from this module. The design system is one CSS file
+# under ``report/web/static/``, shared between the served interface and the
+# standalone HTML report, so the two cannot drift apart. What lives here is the
+# palette and the vocabulary those surfaces are built from.

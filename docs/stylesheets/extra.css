@@ -1,9 +1,9 @@
 /*
  * bindsight documentation site — brand layer.
  *
- * Values mirror bindsight/report/theme.py so the docs site, the Streamlit app
- * and the generated HTML report read as one product. Before this file the docs
- * were teal while both other surfaces were navy.
+ * Values mirror bindsight/report/theme.py so the docs site, the served
+ * interface and the generated HTML report read as one product. Before this file
+ * the docs were teal while the other surfaces were navy.
  */
 
 :root {

@@ -200,8 +200,13 @@ class TestRevalidateAtTheCommandLine:
         assert "Nothing to revalidate" in result.output
 
 
-class TestTheStreamlitEntrypoints:
-    """Two ready rows whose "How to try" command nothing exercised."""
+class TestTheWebInterfaceEntrypoints:
+    """Two ready rows whose "How to try" command nothing exercised.
+
+    Named for Streamlit until the app was removed, which left a live class
+    asserting things about `bindsight ui` under the name of software this
+    project no longer ships.
+    """
 
     @staticmethod
     def _capture(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:

@@ -32,7 +32,8 @@ Real results page rendered nothing while the README promised twenty binders in
 ``tests/test_packaging_pins.py`` checks that it still does.
 
 Only the standard library is imported at module scope, so this stays importable
-without pandas or Streamlit.
+without pandas -- which is what lets the CLI read a committed result on a machine
+that never installed the discovery extra.
 """
 
 from __future__ import annotations
