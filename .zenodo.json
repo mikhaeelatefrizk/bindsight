@@ -11,7 +11,14 @@
   "upload_type": "software",
   "access_right": "open",
   "license": "AGPL-3.0-or-later",
-  "version": "v0.3.0",
+  "version": "v0.3.1",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.20121495",
+      "relation": "continues",
+      "resource_type": "software"
+    }
+  ],
   "keywords": [
     "protein-design",
     "de-novo-binder-design",

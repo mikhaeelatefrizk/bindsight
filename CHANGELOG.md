@@ -6,6 +6,234 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.1] - 2026-09-18
+
+A release that exists so that the archive has something to hold, carrying
+the seventeen commits made after v0.3.0 was tagged.
+
+This repository was recreated on GitHub on 2026-09-14. A new repository
+object keeps the history and none of the settings: the Zenodo integration,
+the `ghcr.io` package's access list, every secret and every variable. Three
+publication channels stalled on that, and each reported it differently. The
+container workflow went red on every push until it was taught to say why and
+pass; the Space sync skips every step without a token and reports success;
+and the archive has no workflow at all, so v0.3.0 — published 2026-09-17 and
+described in its own entry below as "deposited under a new Zenodo concept
+DOI" — was never deposited anywhere. `10.5281/zenodo.20121495` still resolved
+to v0.2.2. Nothing in the tree could have said so: a deposit is a side effect
+of a GitHub event that a setting outside the tree decides whether to forward.
+
+### Changed — the archive is re-established
+
+- The GitHub–Zenodo integration is enabled again for the recreated
+  repository, which Zenodo treats as new: this release mints a new concept
+  DOI rather than extending the one v0.1.0–v0.2.2 sit under. `.zenodo.json`
+  declares that the new lineage `continues` `10.5281/zenodo.20121495`, so the
+  record points back; the old record is not edited and does not point
+  forward. The DOI-agreement guard reads that declaration as a reference to
+  another record, not as a second concept DOI, and a test holds it to that.
+- A DOI does not exist until the deposit that mints it, so the tree tagged
+  v0.3.1 still carries the deliberately invalid `PENDING` placeholder, and the
+  archived snapshot cites an identifier it does not know. The commit after
+  this tag writes the minted value into every file that names one with
+  `scripts/set_doi.py`, and the entry above this one records it.
+- Two files still cited the previous concept DOI while the rest of the tree
+  had moved to the placeholder: `paper/paper.bib`, whose entry for this
+  software also still said `v0.2.1`, and the JSON-LD in `overrides/main.html`.
+  The guard that discovers DOI-bearing files did not read `.bib` or `.html`,
+  so "nothing left of the old deposit" was a claim about the file types it
+  read. It reads them now, both files are in `scripts/set_doi.py`'s list, and
+  the guard checks that list against what it finds. `CHANGELOG.md` leaves
+  the list: its 0.2.1 entry describes a move to the identifier that was
+  current then, and names it again.
+- Version 0.3.1 across `pyproject.toml`, `CITATION.cff`, `.zenodo.json` and
+  `codemeta.json`. `CITATION.cff` and `codemeta.json` had carried `2026-08-09`
+  — v0.2.2's date — as the date of 0.3.0. The manuscript, the JOSS submission notes, the Space
+  README, the issue form and the roadmap name v0.3.1, because that is the tag
+  the archive holds; there is no archived v0.3.0 to name. Recorded provenance
+  is untouched: `benchmarks/**` still says 0.2.2.
+- The container image is published again. The `ghcr.io` package lists this
+  repository under its Actions access with role Write, the `PUBLISH_GHCR`
+  variable is set, and the root `Dockerfile` carries the
+  `org.opencontainers.image.source` label so the connection to this
+  repository object no longer depends on the access list alone.
+  `ARCHITECTURE.md`, `paper/README.md` and the workflow's own comments no
+  longer say the push is refused.
+- The Space's `requirements.txt` is version-controlled here as
+  `.huggingface/requirements.txt` and uploaded by the sync workflow, for the
+  reason the Dockerfile already was: the Space's own copy still listed
+  `streamlit>=1.36` after the release that removed Streamlit, and nothing in
+  this repository could see it. The same workflow now deletes
+  `src/streamlit_app.py` from the Space — the entry point that release
+  removed, which nothing uploaded would overwrite. The live demo is not
+  restored by this release: the workflow stays dormant until an `HF_TOKEN`
+  secret exists, and `keep-warm.yml` stays red until the Space is rebuilt.
+
+### Removed — four working-tree wheels, with their identities recorded first
+
+`benchmarks/designer_benchmark/results.json` names its code identity as
+`working-tree wheel bindsight-0.2.2-py3-none-any.whl`. Four files by that
+name sat in gitignored directories of this working tree, no two alike, and
+nothing committed recorded which was which. They are deleted, with this
+entry; these are their digests, recorded first.
+
+| Path | Bytes | SHA-256 |
+|---|---|---|
+| `benchmarks/designer_benchmark/run_t4/_wheel/` | 406,948 | `4f57bd0edbd376fcecc38c509f2e946576981cd540b8fffa82dfbf31341c53da` |
+| `runs/calibration/_wheel/` | 437,764 | `c226f651e800cfc0b9b8c00b55fca809f0125a5ada791967a1e11a7eb0260bd3` |
+| `runs/calibration_paired/_wheel/` | 454,954 | `053bf74d8ea77a535c9b8adf4ddde54b0cfe2d6cbd4b662371fae9c671fc189c` |
+| `runs/join/_wheel/` | 418,547 | `8424f8bf36bac2a47936c5458c449a5d477d87700e340db198c672d0dd7eb30f` |
+
+The one committed byte count of such a wheel, `wheel bytes: 418547` in
+`benchmarks/gpu_capacity/t4-ca9-377aa.log`, matches the `runs/join/` file and
+not the designer-benchmark one. The v0.2.2 tag can be rebuilt; a rebuild will
+not reproduce these bytes.
+
+### Fixed — a gene nobody tested was published as a gene that failed the test
+
+pydeseq2's independent filtering removes low-power genes before testing them
+and leaves their adjusted p-value empty. The taxonomy compared that empty
+value as if it were 1.0, so an untested gene was indistinguishable from one
+tested and found null, and was filed under a reason naming a comparison that
+never ran. It is `significance_unassessed` now, in the `*_unassessed` family
+that already sits outside every denominator; a gene that was tested and
+failed is still `not_significant`. The committed study's 22 panel pairs all
+carry an adjusted p-value, so its numbers do not move — but any cohort with a
+low-power antigen would have published one as a miss.
+
+### Fixed — an empty result read as an absent request
+
+`_list_cohort_files` takes `cases: list[str] | None`, and every guard inside
+it was `if cases:`, so a restriction that matched nobody took the `None`
+branch — the unrestricted cohort. The query builder now raises on an empty
+list, naming the project and condition, and `prepare_cohort` raises earlier
+still when no patient carries the requested subtype, naming the cohort and
+the subtype. The same shape at the other end of the pipeline: the RO-Crate
+exporter swallowed a `JSONDecodeError` on `run_manifest.jsonld` with a bare
+`pass` and shipped a crate with no run identity and no digests. It logs a
+warning naming the file now.
+
+### Fixed — the plugin interface the docs document could not be used
+
+`docs/use-cases.md` walks a method developer through registering a designer
+by entry point. The loader was correct and nothing could reach it:
+`DesignParams.designer` was a `Literal` of the three bundled names, the CLI's
+`click.Choice` lists rejected anything else before a command body ran, and the
+`ALL_*` constants were frozen from the bundled dict at import. Those fields
+validate against the registry now, resolved per call, and an unknown name is
+rejected with a message naming what is registered and how to register more.
+`verify-licenses` indexed a bare dict by name and, handed a plugin, would have
+dropped it from the table and printed the green "all components are
+commercial-friendly" banner; it now names what it could not assess and
+withholds the clearance.
+
+### Fixed — one sentence reported two analyses and gave them one p-value
+
+The study holds two results under "the ranking is indication-specific", and
+they are not the same measurement: a cluster bootstrap over the 13 antigens
+in the calibration cohorts (a within-antigen difference of 0.348, 95% CI
+0.188–0.513, no p-value) and an exact permutation test over the 7 antigens
+with a single indication (mean standing 0.858, p = 3.97e-04 over all 5,040
+orderings, which is 7!). README, `docs/what-is-bindsight.md` and the Evidence
+page each stated the first and attached the second's p-value to it, naming
+neither denominator. They present them in the order the study reports them
+now — the permutation null first, the KICH/THCA comparison beneath it as a
+calibration — and say which number carries a p-value and which does not.
+
+On the same page, the headline recall interval printed with no level while
+the artifact records `confidence: 0.95` on all forty-eight of its interval
+blocks: `interval()` reads the level and never assumes one, and two of its
+call sites did not pass it. The nulls chart hard-coded "95% CI" in the spec
+and again in the renderer's fallback. Both read the artifact now, and a
+page-level guard checks the level on the page against the artifact.
+
+### Fixed — what the served interface told a reader
+
+- **The design check chose a factor column and showed the choice as a
+  finding.** A `condition` column with one level beside a `batch` column with
+  two produced a tick, a filled contrast selector and a recommended run
+  against `batch` — a technical covariate, contrasted, returning plausible
+  genes to a question nobody asked. The check now collects every two-level
+  column, prefers one named for the condition, and no longer presents a guess
+  as a finding. The page still sends nothing anywhere: the check is
+  client-side, and a counts matrix is patient data.
+- **The caveats were the least legible text on the Evidence page.**
+  `--ink-faint` was 3.6:1 against the background, under WCAG AA's 4.5:1 for
+  text below 18.7px, while the numbers beside them stayed crisp. It is 4.9:1
+  now, and `tests/test_contrast.py` checks every text token against both
+  grounds it is drawn on, and the chart renderer's fallback colours against
+  the stylesheet.
+- **The structure viewer could draw nothing and say nothing.** The page
+  checks for WebGL before creating the viewer instead of showing a dead
+  canvas under a caption promising a rotatable complex.
+- **The printed page described a viewer it does not print.** The print
+  stylesheet dropped the canvas and kept the design picker, the colour legend
+  and "Rotate it." beside the empty rectangle. They go with the viewer, and a
+  print-only caption says where the mmCIF files are.
+
+### Fixed — the live-demo monitor asked whether something answered, not whether it was ours
+
+`keep-warm.yml` finished on `GET / → 200` and annotated the demo healthy. The
+Space has spent this entire release serving the Streamlit application the
+release removed, which answers 200 just as well. The probe now fetches
+`/static/bindsight.css` and looks for a token inside it, and that assertion
+is its own job rather than one swallowed by the keepalive's
+`continue-on-error`. It is red, and stays red until the Space is rebuilt
+against this code. That is the point.
+
+### Fixed — the repository describing itself
+
+- **Five counts stated and never recomputed:** "nine skipped without
+  snakemake" (five), "78 test modules" (81 at the time of the fix, 86 now;
+  the page states a checked floor of 80), a
+  "~50 line" designer Protocol (26 lines), a Modal price of "~$0.6–4/GPU-hr"
+  against the priced $0.59–4.56, and `positioning.md` labelling both a
+  shipped feature set and an unbuilt one v0.3.0 — the unbuilt half is
+  v0.4.0. `tests/test_counted_self_claims.py` recomputes each, collecting the
+  suite in a subprocess to hold the "1,XXX+ tests" floors to the count.
+- **The manuscript had a macro typeset as a literal tab.** `\texttt{main}` had
+  lost its backslash to an escape, so `manuscript.tex` set a tab followed by
+  `exttt{main}`; `tests/test_manuscript_typesets.py` scans the file for the
+  control characters a resolved escape leaves behind, with a fixture built
+  from `chr(9)` so it cannot be repaired by the mechanism it describes. The
+  same file said "200+" tests beside a `paper.md` saying "over 1,300"; it
+  says "1,800+" now, and its demo table says its 42 candidates are reproduced
+  by `bindsight demo` rather than pinned to a committed artifact.
+- **Four things that cost a newcomer their first hour.** `bindsight doctor`
+  used to report "ok" for any Python at or above the floor — a floor check
+  with no ceiling; it now names the tested range, 3.11–3.13, kept in one
+  constant and checked against the CI matrix. The glossary was unreachable from the README. The optional
+  SURFACE-Bind row in `doctor` did not say it was optional. `mkdocs.yml`
+  still described the Streamlit app.
+- **Two more hand-written lists are tied to what they enumerate:** the
+  score-column/weight pairs in `rank/scoring.py` against the fields of
+  `RankWeights`, in both directions, and the outcome taxonomy against the
+  titles and notes the study report renders it with.
+- **Streamlit mentions that described a world where the app still runs are
+  corrected**, and the last API surface with no vendor name in it —
+  `PAGE_TITLE`, `PAGE_ICON`, `PAGE_LAYOUT`, typed for `st.set_page_config` —
+  is gone. `tests/test_no_streamlit.py` guards the dependency, the imports,
+  the template calls and every requirements file, including the Space's. Four
+  more stale claims were found by searching for the behaviour rather than
+  the word: a glossary page the served interface does not have, described in
+  two docstrings; a "Real results" page the generated results page still sent
+  readers to; and a Dockerfile comment saying the Space's build lived in the
+  Space's own repository. What this changelog records about the migration,
+  and the comments explaining why the `httpx2` pin and the version-controlled
+  Space Dockerfile exist, stay on purpose.
+
+### Notes
+
+Observed on the release machine (Windows 11, CPython 3.14.7) on 2026-09-18,
+not recorded anywhere in the tree: `pytest -m "not gpu and not slow"` passed
+1,862 tests with 13 skipped at 86% coverage, and `ruff check`, `ruff format
+--check` and `mypy` were clean across `bindsight`, `tests`, `scripts` and
+`benchmarks`. Seven test modules are new since v0.3.0. Before that run,
+Streamlit and the ten packages nothing else on the machine required were
+uninstalled from its system Python, and an import watch (`-X importtime` and a
+`sys.meta_path` hook) saw none of them load during the suite. CI's matrix —
+three operating systems, Python 3.11–3.13 — remains the gate.
+
 ## [0.3.0] - 2026-09-18
 
 Prepared for publication as a fresh repository. The work below is of three kinds:
@@ -173,12 +401,15 @@ and `SUPPORT.md`.
 ### Changed — recorded artifact fields and identity
 
 - Version 0.3.0 across `pyproject.toml`, `CITATION.cff`, `.zenodo.json` and
-  `codemeta.json`. This release is deposited under a new Zenodo concept DOI;
-  until that deposit exists the repository ships a deliberately invalid
-  placeholder, so it cannot be published by accident, and `scripts/set_doi.py`
-  writes the minted value into every file that names one. Recorded provenance is
-  untouched: `benchmarks/**` and the run manifests still say 0.2.2, because that
-  is the code that produced them.
+  `codemeta.json`. This entry said the release "is deposited under a new Zenodo
+  concept DOI". It was not deposited at all: the repository had been recreated
+  on GitHub three days earlier, which severed the GitHub–Zenodo integration,
+  and nothing in the tree could tell — see 0.3.1. Until a deposit exists the
+  repository ships a deliberately invalid placeholder, so it cannot be
+  published by accident, and `scripts/set_doi.py` writes the minted value into
+  every file that names one. Recorded provenance is untouched: `benchmarks/**`
+  and the run manifests still say 0.2.2, because that is the code that produced
+  them.
 - The Hugging Face Space now ships `benchmarks/`. `showcase.py` claimed it
   "deploys the full repository"; it does not, and the Real results page had been
   rendering nothing while the README promised twenty binders in 3-D.
@@ -1171,7 +1402,7 @@ already claimed to do, and corrects claims the evidence did not support.
   manuscripts. Anyone following the citation landed on a record that does not contain
   the work being cited. The specific identifier is not repeated here: it belongs to a
   deposit this repository does not have, and naming it would send a reader to it.
-- Every reference now uses the **concept DOI `10.5281/zenodo.PENDING`**, which always
+- Every reference now uses the **concept DOI `10.5281/zenodo.20121495`**, which always
   resolves to the latest archived version and is the correct identifier for citing "the
   software" rather than one release. Updated in the README badges, citation block and BibTeX,
   `CITATION.cff` (now also carrying `doi:` and `identifiers:`), `docs/index.md`,

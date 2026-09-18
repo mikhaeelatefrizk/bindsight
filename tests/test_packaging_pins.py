@@ -262,8 +262,9 @@ def test_every_dockerfile_pins_its_base_image_by_digest(path: Path) -> None:
 @pytest.mark.parametrize("path", DOCKERFILES, ids=lambda p: p.relative_to(REPO_ROOT).as_posix())
 def test_every_dockerfile_installs_through_pinned_versions(path: Path) -> None:
     """Two mechanisms are acceptable and both are pinned: ``-c envs/constraints.txt``
-    (the root image) and ``-r requirements.txt`` (the Space, whose file is kept in
-    step with pyproject by tests/test_requirements_mirror.py). An unpinned
+    (the root image) and ``-r requirements.txt`` (the Space, whose file installs
+    ``bindsight[discover,report]`` from git at ``main`` and so cannot drift from
+    pyproject). An unpinned
     ``pip install`` in either is a build that cannot be reproduced.
     """
     text = path.read_text(encoding="utf-8")

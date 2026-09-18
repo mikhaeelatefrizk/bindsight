@@ -22,8 +22,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# bindsight itself arrives through the Space's own requirements.txt, which
-# installs it from git at `main`. Nothing is copied from a source tree, so a
+# bindsight itself arrives through requirements.txt, version-controlled here as
+# `.huggingface/requirements.txt` and uploaded with this file. It installs the
+# package from git at `main`; nothing is copied from a source tree, so a
 # rebuild serves the released code rather than whatever the Space last held.
 COPY requirements.txt ./
 # bindsight's _find_repo_root() walks up from the installed package looking

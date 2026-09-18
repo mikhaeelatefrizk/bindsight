@@ -45,10 +45,13 @@ FILES = (
     "tests/test_packaging_pins.py",
     "paper/biorxiv/manuscript.tex",
     "README.md",
-    # The CHANGELOG names the concept DOI in a historical entry describing the
-    # move to it. That statement becomes true once the identifier is real, and
-    # stays a placeholder forever if this file does not reach it.
-    "CHANGELOG.md",
+    # The software's own BibTeX entry and the JSON-LD the documentation site
+    # embeds. Both went on citing the previous concept DOI after the rest of
+    # the tree had moved to the placeholder, because the guard that discovers
+    # DOI-bearing files did not read .bib or .html. It does now, and it checks
+    # that every file it finds is in this list.
+    "paper/paper.bib",
+    "overrides/main.html",
 )
 
 _DOI = re.compile(r"^10\.\d{4,9}/[-._;()/:A-Za-z0-9]+$")

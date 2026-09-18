@@ -55,7 +55,7 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** `v0.3.0` — the tag, not the branch. JOSS archives what the
+   - **Version:** `v0.3.1` — the tag, not the branch. JOSS archives what the
      tag points at, so a moving `main` is not a submission.
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
    - **Software archive:** `https://doi.org/10.5281/zenodo.PENDING`
@@ -74,9 +74,10 @@ JOSS submission criteria (already met):
 - ✅ Documentation (README + `docs/`)
 - ✅ Tests with CI (over 1,300 test functions; 9 platform/Python jobs — 3 OS ×
   Python 3.11/3.12/3.13 — plus lint, a pinned-environment job, and a wheel build)
-- ⬜ The Docker workflow is **not** a passing gate: the image builds, and the
-  push to `ghcr.io` is refused because the package is not linked to this
-  repository object. Listed here because it was previously claimed as green.
+- ✅ Docker image published to `ghcr.io` on every push to `main` and every
+  release (`.github/workflows/docker.yml`). Not a JOSS criterion; listed
+  because it was once claimed as green while the push was being refused. As of
+  0.3.1 the package grants this repository write access and the push succeeds.
 - ✅ Statement of need in `paper.md`
 
 ---

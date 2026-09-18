@@ -3,23 +3,28 @@ name: Sync Hugging Face Space
 # Push this repository's Space assets to the Hugging Face Space and
 # factory-rebuild it, so the mirror can never drift from `main` again.
 #
-# The Space's own requirements.txt installs
+# The Space's requirements.txt installs
 # `bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@main`,
 # so a rebuild is what makes it serve current code. Three things do NOT arrive
 # that way, because they are not part of the installed package, and each is
 # uploaded here instead:
 #
-#   README.md   the Space landing page
-#   Dockerfile  the Space build, previously hand-maintained in the Space repo
-#               and invisible to review
+#   README.md         the Space landing page
+#   Dockerfile        the Space build, previously hand-maintained in the Space
+#                     repo and invisible to review
+#   requirements.txt  the build input, for the same reason: the Space's own
+#                     copy still listed `streamlit>=1.36` after the release
+#                     that removed Streamlit, and nothing here could see it
 #
-# There used to be a third, `.streamlit/config.toml`, and it is the reason this
+# There used to be a `.streamlit/config.toml` as well, and it is the reason this
 # list exists: it sat at this repository's root, the Space never received it,
 # and Streamlit read its config from the working directory — so for the Space's
 # whole life the theme and the telemetry opt-out applied to local clones only,
 # while the file's own comment named the Space as covered. The interface is
 # server-rendered now and carries its styling inside the package, so there is no
-# third file to drift.
+# config file to drift. The Space repository also kept `src/streamlit_app.py`,
+# the entry point that release deleted; nothing uploaded here overwrites a file
+# that no longer exists here, so it is removed by name below.
 #
 # Dormant until an `HF_TOKEN` secret exists (Settings → Secrets and variables →
 # Actions → New repository secret; the token needs *write* access to
@@ -90,6 +95,7 @@ jobs:
           uploads = [
               (".huggingface/Dockerfile", "Dockerfile"),
               (".huggingface/README.md", "README.md"),
+              (".huggingface/requirements.txt", "requirements.txt"),
           ]
           for local, remote in uploads:
               api.upload_file(
@@ -117,6 +123,23 @@ jobs:
                   commit_message=f"Sync {folder}/ from the bindsight repository",
               )
               print(f"uploaded {folder}/ to {space}")
+
+          # The Streamlit entry point the release removed. Guarded, because
+          # delete_file raises once the path is gone, and this runs on every
+          # release.
+          stale = [
+              path
+              for path in ("src/streamlit_app.py",)
+              if path in api.list_repo_files(space, repo_type="space")
+          ]
+          for path in stale:
+              api.delete_file(
+                  path_in_repo=path,
+                  repo_id=space,
+                  repo_type="space",
+                  commit_message=f"Remove {path}: the Space no longer serves it",
+              )
+              print(f"deleted {path} from {space}")
           PY
 
       - name: Factory-rebuild the Space

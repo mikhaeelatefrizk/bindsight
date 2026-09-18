@@ -470,11 +470,15 @@ backend, so they are listed unchecked rather than folded into the tick above.
 - [x] `--dry-run` GPU cost estimator
 - [x] Held-out evaluation set + `bindsight benchmark`
 - [x] `v0.1.0`, Zenodo DOI
-- [ ] Published Docker image with pinned digests (`.github/workflows/docker.yml`)
-      — the image **builds** on every push and the push to `ghcr.io` is refused
-      (`denied: permission_denied: write_package`). The package predates the
-      current repository object, so it is not linked to it; re-linking is an
-      account-level action. Ticked before it was ever true.
+- [x] Published Docker image with pinned digests (`.github/workflows/docker.yml`)
+      — `:latest`, `:<sha>` and `:<tag>` on every push to `main` and every
+      release, since 0.3.1. Between the repository's recreation on 2026-09-14
+      and then, the image built on every push and the push to `ghcr.io` was
+      refused (`denied: permission_denied: write_package`): the package
+      predates the current repository object and was not linked to it, and
+      re-linking is an account-level action. This box was ticked before that
+      was true; it is ticked now because the package grants this repository
+      write access and the `PUBLISH_GHCR` variable is set.
 - [x] mkdocs-material documentation site (`.github/workflows/docs.yml`)
 
 ### Phase 4 — Validation paper (in progress)

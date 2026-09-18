@@ -33,19 +33,21 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          # Publishing is opt-in, and off by default, because it cannot
-          # succeed from here: the ghcr.io package predates this repository
-          # object and is not linked to it, so GITHUB_TOKEN is refused
-          # (`denied: permission_denied: write_package`) no matter what
-          # `permissions:` says. Every push-to-main run failed on that, none
-          # on the build -- so the red X reported a settings problem as a
-          # code problem, on every commit, which is how a check stops being
-          # read at all.
-          #
-          # To publish: link the package to this repository (its own settings
-          # page -> Manage Actions access -> Add repository, role Write), then
-          # set the repository variable PUBLISH_GHCR to `true`. The build
+          # Publishing is opt-in. It needs two account-level settings that
+          # `permissions:` cannot grant: the ghcr.io package must list this
+          # repository under Manage Actions access with role Write (the
+          # package predates the current repository object -- the repository
+          # was recreated on 2026-09-14 -- and nothing re-links them on its
+          # own), and the repository variable PUBLISH_GHCR must be `true`.
+          # Until both were done, every push-to-main run failed on
+          # `denied: permission_denied: write_package` and none on the build,
+          # so a red X reported a settings problem as a code problem on every
+          # commit -- which is how a check stops being read at all. The build
           # below runs either way, so a broken Dockerfile still fails here.
+          #
+          # Both are in place as of 0.3.1. The `org.opencontainers.image.source`
+          # label in the Dockerfile keeps the package connected to this
+          # repository object from here on.
           push: ${{ github.event_name != 'pull_request' && vars.PUBLISH_GHCR == 'true' }}
           # A version tag on tag pushes. The workflow triggers on `v*` and
           # published only `:latest` and `:<sha>`, so a release produced no
@@ -59,5 +61,5 @@ jobs:
       - name: Say so when the image was built but not published
         if: github.event_name != 'pull_request' && vars.PUBLISH_GHCR != 'true'
         run: |
-          echo "::notice title=Image built, not published::The image built successfully and was NOT pushed to ghcr.io. Publishing is disabled because the package is not linked to this repository. Link it in the package's settings, then set the repository variable PUBLISH_GHCR=true."
+          echo "::notice title=Image built, not published::The image built successfully and was NOT pushed to ghcr.io: the repository variable PUBLISH_GHCR is not 'true'. Publishing also needs the package to list this repository under Manage Actions access with role Write."
 

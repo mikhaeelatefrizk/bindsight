@@ -23,6 +23,11 @@
 # alongside for readability only — the digest is what Docker resolves.
 FROM python:3.11.9-slim-bookworm@sha256:8fb099199b9f2d70342674bd9dbccd3ed03a258f26bbd1d556822c6dfc60c317
 
+# ghcr.io reads this label to connect the image's package to the repository
+# that built it. The package predates the current repository object (the
+# repository was recreated on 2026-09-14) and nothing else re-links them.
+LABEL org.opencontainers.image.source="https://github.com/mikhaeelatefrizk/bindsight"
+
 # git: VCS-aware pip + the design tools' runtime clone; build-essential: wheels
 # that need a compiler on slim.
 RUN apt-get update \

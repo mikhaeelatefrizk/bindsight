@@ -1511,17 +1511,45 @@ def test_the_benchmark_schema_identifier_has_one_definition() -> None:
     )
 
 
+_ZENODO_DOI = re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
+
+
+def _dois_named_by(path: Path) -> set[str]:
+    """The Zenodo DOIs ``path`` names as this software's own.
+
+    ``.zenodo.json`` may also name *other* records under ``related_identifiers``
+    -- the lineage this repository ``continues``, deposited before the
+    repository was recreated on 2026-09-14 and left under its own concept DOI.
+    Those are references to another record, not citations of this software,
+    so they are set aside rather than read as a second concept DOI.
+    """
+    text = path.read_text(encoding="utf-8")
+    found = set(_ZENODO_DOI.findall(text))
+    if path.name == ".zenodo.json":
+        for related in json.loads(text).get("related_identifiers", []):
+            found -= set(_ZENODO_DOI.findall(str(related.get("identifier", ""))))
+    return found
+
+
 #: Every shipped file that names a Zenodo concept DOI, discovered rather than
 #: listed. Twelve files carried the previous identifier and a hand-written list
-#: is how one of them gets left behind.
+#: is how one of them gets left behind. The suffix set is part of the guard: it
+#: once stopped at ``.tex``, and ``paper/paper.bib`` and ``overrides/main.html``
+#: went on citing the previous concept DOI for a release while this passed.
 def _doi_bearing_files() -> tuple[str, ...]:
-    import re as _re
-
-    pattern = _re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
     tracked = _tracked_files()
     out: list[str] = []
     for path in sorted(ROOT.rglob("*")):
-        if path.is_dir() or path.suffix not in {".md", ".cff", ".json", ".py", ".toml", ".tex"}:
+        if path.is_dir() or path.suffix not in {
+            ".md",
+            ".cff",
+            ".json",
+            ".py",
+            ".toml",
+            ".tex",
+            ".bib",
+            ".html",
+        }:
             continue
         rel = path.relative_to(ROOT).as_posix()
         if tracked is not None and rel not in tracked:
@@ -1534,11 +1562,10 @@ def _doi_bearing_files() -> tuple[str, ...]:
             # tool that enforces agreement the reason agreement fails.
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            if _dois_named_by(path):
+                out.append(rel)
         except (OSError, UnicodeDecodeError):  # pragma: no cover
             continue
-        if pattern.search(text):
-            out.append(rel)
     return tuple(out)
 
 
@@ -1684,15 +1711,12 @@ def test_the_concept_doi_is_the_same_everywhere() -> None:
     So this asserts agreement, not a particular value: green with the
     placeholder in place, green after it is filled, red the moment they diverge.
     """
-    import re as _re
-
-    pattern = _re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
     found: dict[str, set[str]] = {}
     for rel in DOI_BEARING_FILES:
         path = ROOT / rel
         if not path.is_file():
             continue
-        dois = set(pattern.findall(path.read_text(encoding="utf-8")))
+        dois = _dois_named_by(path)
         if dois:
             found[rel] = dois
 
@@ -1703,6 +1727,28 @@ def test_the_concept_doi_is_the_same_everywhere() -> None:
         f"shipped files name {len(everything)} different DOIs: "
         + "; ".join(f"{rel} -> {sorted(d)}" for rel, d in sorted(found.items()))
     )
+
+
+def test_the_zenodo_lineage_link_is_not_read_as_a_second_concept_doi() -> None:
+    """``.zenodo.json`` declares that this lineage ``continues`` the one the
+    repository had before it was recreated. That is a reference to another
+    record, and the agreement check above must neither read it as a second
+    concept DOI nor go blind to the file: the exemption is exercised here, so
+    a future edit that widens it to the whole file fails this test.
+    """
+    zenodo = ROOT / ".zenodo.json"
+    raw = set(_ZENODO_DOI.findall(zenodo.read_text(encoding="utf-8")))
+    related = {
+        doi
+        for entry in json.loads(zenodo.read_text(encoding="utf-8")).get("related_identifiers", [])
+        for doi in _ZENODO_DOI.findall(str(entry.get("identifier", "")))
+    }
+    assert related, ".zenodo.json declares no related Zenodo record; the exemption is vacuous"
+    assert related <= raw
+    assert _dois_named_by(zenodo) == raw - related
+    # The exemption is per-entry, not per-file: a DOI outside related_identifiers
+    # would still count.
+    assert "related_identifiers" in zenodo.read_text(encoding="utf-8")
 
 
 def test_the_doi_filler_covers_every_file_that_names_one() -> None:
