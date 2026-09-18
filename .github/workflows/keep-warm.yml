@@ -110,23 +110,39 @@ jobs:
             exit 1
           fi
 
-          # A 200 from / says something answered, not that it is this software.
-          # The Space spent this release serving the Streamlit app that was
-          # removed -- an empty page titled "Streamlit" -- which answers 200
-          # just as well, so this check reported a healthy demo for an
-          # application that is not bindsight. `docs/index.md` links that Space
-          # as "Try it live".
-          #
+          echo "::notice title=HF demo reachable::stage=RUNNING, health=200. Whether it is serving THIS build is asserted by the build-identity job, which is allowed to fail."
+
+  # Deliberately NOT continue-on-error. The job above is forgiving because a
+  # dropped connection must never email the author over nothing; this one asks a
+  # question whose answer does not flicker. The Space either serves this build or
+  # it does not, and it has not for the life of this release -- a finding that
+  # was emitting its error into a run marked green, which is the same failure the
+  # check exists to catch, one level up.
+  hf-build-identity:
+    name: HF Space serves this build
+    needs: hf-space
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assert the Space is serving this interface
+        env:
+          APP_URL: https://mikhaeelatefrizk-bindsight.hf.space
+        run: |
+          set -euo pipefail
+
           # `/static/bindsight.css` is published only by the served interface,
-          # and `--ink-faint` is a token inside it, so a 200 carrying that
-          # string means the running Space is this interface and not something
-          # else that happens to be up.
+          # and `--ink-faint` is a token inside it. A 200 from `/` says only that
+          # something answered: the Streamlit app this release removed answers
+          # 200 too, from a page titled "Streamlit" with an empty body, and
+          # `docs/index.md` links that Space as "Try it live".
           css=$(curl -sSL --max-time 60 --retry 3 --retry-delay 10 \
                      -A 'bindsight-keep-warm/2' \
                      "${APP_URL}/static/bindsight.css" || true)
-          if ! printf '%s' "${css}" | grep -q -- '--ink-faint'; then
-            echo "::error title=HF demo is not this interface::GET /static/bindsight.css did not return the interface stylesheet. The Space is running, but it is not serving this build -- most likely it never received one, because sync-hf-space.yml is dormant until an HF_TOKEN secret exists and skips every step (reporting success) without it."
-            exit 1
-          fi
-          echo "::notice title=HF demo healthy::stage=RUNNING, health=200, serving the current interface"
 
+          if printf '%s' "${css}" | grep -q -- '--ink-faint'; then
+            echo "::notice title=HF demo is this build::the Space serves the current interface"
+            exit 0
+          fi
+
+          echo "::error title=HF demo is not this interface::GET /static/bindsight.css did not return the interface stylesheet. The Space is running, but it is not serving this build -- most likely it never received one, because sync-hf-space.yml is dormant until an HF_TOKEN secret exists and skips every step (reporting success) without it. Add the secret, then run that workflow."
+          exit 1
