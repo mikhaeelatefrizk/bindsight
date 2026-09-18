@@ -1,0 +1,78 @@
+name: Archive on Zenodo
+
+# Deposit every published release on Zenodo through its deposit API, from the
+# tag's own .zenodo.json and the tag's source archive.
+#
+# The GitHub–Zenodo integration did this for v0.1.0–v0.2.2. It cannot do it for
+# this repository object: Zenodo keeps repositories by GitHub id, still holds
+# the previous object under this name, refuses to enable the recreated one
+# (HTTP 403) and answered the v0.3.1 release event with "The repository does
+# not exist". Only Zenodo can repair that mapping; this workflow does not need
+# it. `scripts/zenodo_deposit.py` explains the lineage rule: a new concept
+# while CITATION.cff still carries the placeholder, a new version of the cited
+# concept once `scripts/set_doi.py` has written the minted DOI in.
+#
+# Needs a ZENODO_TOKEN secret: a personal access token with the deposit:write
+# and deposit:actions scopes. Without it the job FAILS rather than skipping.
+# An unarchived release is a defect, and a green tick that archived nothing is
+# the kind of tick this repository has already had to stop reporting.
+#
+# A manual run leaves a draft unless `publish` is ticked, so a first deposit
+# can be inspected on Zenodo before it becomes permanent. The next run reuses
+# that draft rather than creating a second one.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to archive (e.g. v0.3.1)"
+        required: true
+        type: string
+      publish:
+        description: "Publish the deposition (otherwise leave it as a draft)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zenodo
+  cancel-in-progress: false
+
+jobs:
+  deposit:
+    name: Deposit the release archive
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      # The script and the tag are read separately: the workflow's own ref
+      # supplies the script, `git show <tag>:...` supplies the metadata, so a
+      # tag made before this workflow existed can still be archived.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the two libraries the script uses
+        run: python -m pip install --quiet "requests>=2.32,<3" "pyyaml>=6.0,<7"
+
+      - name: Deposit
+        id: deposit
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH: ${{ github.event_name == 'release' || inputs.publish }}
+          RELEASE_DATE: ${{ github.event.release.published_at }}
+        run: |
+          args=(--tag "$TAG")
+          if [ "$PUBLISH" = "true" ]; then args+=(--publish); fi
+          if [ -n "$RELEASE_DATE" ]; then args+=(--date "${RELEASE_DATE%%T*}"); fi
+          python scripts/zenodo_deposit.py "${args[@]}"

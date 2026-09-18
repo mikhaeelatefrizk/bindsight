@@ -19,6 +19,12 @@ Run these when the thing they generate needs to change; the output is committed.
 page is read from committed files, so running it should produce no diff. A test
 fails if it does.
 
+## Release automation — a workflow calls this
+
+| Script | Does | Needs |
+|---|---|---|
+| `zenodo_deposit.py` | deposits a tagged release on Zenodo from the tag's own `.zenodo.json` and GitHub's source archive of the tag; called by `.github/workflows/zenodo.yml` on every published release | `ZENODO_TOKEN` |
+
 ## Stage entry points — Snakemake calls these
 
 `run_deg.py`, `run_discover.py`, `run_design.py`, `run_validate.py`,

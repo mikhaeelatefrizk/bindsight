@@ -115,8 +115,13 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 5. On release publish, `release-artifacts.yml` builds the wheel + sdist and attaches
    them with SHA-256 checksums. The PyPI upload job is gated on the
    `PYPI_TRUSTED_PUBLISHING` repository variable and is currently inert. The Zenodo
-   DOI is minted by the GitHub–Zenodo integration when the release is published —
-   there is no Zenodo workflow in this repository.
+   deposit is made by `zenodo.yml` through Zenodo's deposit API
+   (`scripts/zenodo_deposit.py`, with the `ZENODO_TOKEN` secret): the GitHub–Zenodo
+   integration cannot see this repository object since the repository was recreated
+   on 2026-09-14, and the job fails rather than skips when the secret is missing.
+   The first deposit of a lineage mints the concept DOI; write it in with
+   `python scripts/set_doi.py <concept DOI>`, after which every later release is
+   deposited as a new version of that concept.
 
 ---
 

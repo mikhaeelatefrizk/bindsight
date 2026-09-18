@@ -23,7 +23,8 @@ so on the release that introduces it, not before.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
 - The Zenodo concept DOI [10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING)
   resolves to the latest archived release; every tagged release gets its own
-  version DOI on publish via the GitHub–Zenodo integration (CERN-operated).
+  version DOI on publish via `.github/workflows/zenodo.yml`, which deposits
+  through Zenodo's (CERN-operated) API.
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)

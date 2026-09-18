@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added — the archive is made by this repository
+
+- `.github/workflows/zenodo.yml` deposits every published release on Zenodo
+  through its deposit API, from the tag's own `.zenodo.json` and GitHub's
+  source archive of the tag (`scripts/zenodo_deposit.py`). It exists because
+  the GitHub–Zenodo integration cannot see this repository object: after the
+  recreation on 2026-09-14, Zenodo refused to enable the recreated repository
+  (HTTP 403) and answered the v0.3.1 release event with "The repository does
+  not exist", which only Zenodo can repair. The workflow needs a
+  `ZENODO_TOKEN` secret and fails without it — an unarchived release is a
+  defect, not a skip. The lineage rule is `CITATION.cff`'s: a new concept
+  while it carries the placeholder, a new version of the cited concept once
+  `scripts/set_doi.py` has written the minted DOI in. A manual run leaves a
+  draft unless told to publish, and the next run reuses that draft rather
+  than creating a second one. The 0.3.1 entry below said the integration had
+  been re-enabled; it is corrected there.
+
 ## [0.3.1] - 2026-09-18
 
 A release that exists so that the archive has something to hold, carrying
@@ -25,13 +44,18 @@ of a GitHub event that a setting outside the tree decides whether to forward.
 
 ### Changed — the archive is re-established
 
-- The GitHub–Zenodo integration is enabled again for the recreated
-  repository, which Zenodo treats as new: this release mints a new concept
-  DOI rather than extending the one v0.1.0–v0.2.2 sit under. `.zenodo.json`
-  declares that the new lineage `continues` `10.5281/zenodo.20121495`, so the
-  record points back; the old record is not edited and does not point
-  forward. The DOI-agreement guard reads that declaration as a reference to
-  another record, not as a second concept DOI, and a test holds it to that.
+- The GitHub–Zenodo integration could not be re-enabled for the recreated
+  repository, and this bullet said it had been. Zenodo keeps repositories by
+  GitHub id, still holds the previous object under this name, answered the
+  enable request with HTTP 403 and this release's webhook with "The
+  repository does not exist". The archive is made by this repository instead
+  — see the entry above — and the lineage is as this bullet intended: a new
+  concept DOI rather than an extension of the one v0.1.0–v0.2.2 sit under.
+  `.zenodo.json` declares that the new lineage `continues`
+  `10.5281/zenodo.20121495`, so the record points back; the old record is not
+  edited and does not point forward. The DOI-agreement guard reads that
+  declaration as a reference to another record, not as a second concept DOI,
+  and a test holds it to that.
 - A DOI does not exist until the deposit that mints it, so the tree tagged
   v0.3.1 still carries the deliberately invalid `PENDING` placeholder, and the
   archived snapshot cites an identifier it does not know. The commit after
