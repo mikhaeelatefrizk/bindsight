@@ -17,15 +17,7 @@ importable without the web extra (see ``tests/test_package_imports.py``).
 
 from __future__ import annotations
 
-from typing import Literal
-
 # --- Identity --------------------------------------------------------------
-
-PAGE_TITLE = "bindsight"
-PAGE_ICON = "🧬"
-#: Literal, not a bare str: st.set_page_config types this parameter as
-#: Literal["centered", "wide"], so a plain str fails strict type checking.
-PAGE_LAYOUT: Literal["centered", "wide"] = "wide"
 
 TAGLINE = (
     "RNA-seq counts → ranked de novo protein binder candidates, "
