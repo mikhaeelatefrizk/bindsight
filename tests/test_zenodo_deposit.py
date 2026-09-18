@@ -265,12 +265,36 @@ def test_the_lineage_is_whatever_citation_cff_cites(mod: Any, citation: dict[str
         mod.concept_recid_from_citation({"doi": "10.1000/something-else"})
 
 
-def test_the_deposit_is_dated_by_the_tag(mod: Any, tag: str) -> None:
-    """Two runs on different days must make the same deposit; the wall clock is not an input."""
-    date = mod.date_of_tag(tag)
-    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", date), date
-    with pytest.raises(FileNotFoundError):
-        mod.date_of_tag("v0.0.0-no-such-tag")
+def test_the_deposit_is_dated_by_the_tag(mod: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Two runs on different days must make the same deposit; the wall clock is not an
+    input. Git is scripted here because CI checks the repository out without its
+    tags, and the rule under test is which of git's answers wins."""
+    answers: dict[tuple[str, ...], str] = {}
+
+    def fake_git(*args: str) -> str:
+        try:
+            return answers[args]
+        except KeyError:
+            raise FileNotFoundError(f"git {' '.join(args)}: failed") from None
+
+    monkeypatch.setattr(mod, "_git", fake_git)
+
+    # An annotated tag is dated by its tagger, not by the commit it points at.
+    answers[("for-each-ref", "--format=%(taggerdate:short)", "refs/tags/v1.2.3")] = "2026-09-18\n"
+    answers[("log", "-1", "--format=%cs", "v1.2.3")] = "2026-09-01\n"
+    assert mod.date_of_tag("v1.2.3") == "2026-09-18"
+
+    # A lightweight tag has no tagger; the commit's date is the tag's date.
+    answers[("for-each-ref", "--format=%(taggerdate:short)", "refs/tags/v1.2.4")] = "\n"
+    answers[("tag", "--list", "v1.2.4")] = "v1.2.4\n"
+    answers[("log", "-1", "--format=%cs", "v1.2.4")] = "2026-09-02\n"
+    assert mod.date_of_tag("v1.2.4") == "2026-09-02"
+
+    # A tag that does not exist is an error, not today's date.
+    answers[("for-each-ref", "--format=%(taggerdate:short)", "refs/tags/v0.0.0")] = "\n"
+    answers[("tag", "--list", "v0.0.0")] = "\n"
+    with pytest.raises(FileNotFoundError, match=r"no tag named v0\.0\.0"):
+        mod.date_of_tag("v0.0.0")
 
 
 # --- The deposit flows ----------------------------------------------------------------
