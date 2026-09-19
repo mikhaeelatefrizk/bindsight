@@ -6,7 +6,89 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.3.2] - 2026-09-19
+
+### Added — the demo runs on the documentation site, with no server and no secret
+
+The hosted Hugging Face Space serves a blank page titled "Streamlit" and cannot
+be rebuilt without a secret only the repository owner can create. Meanwhile
+`docs/results.md` promised the twenty predicted complexes and then told the
+reader to install something — a promise that was a redirect, and before that a
+redirect to a hosted build this repository cannot keep running on its own.
+
+Nothing new was needed to fix that. 3Dmol.js was already vendored rather than
+fetched from a CDN, the twenty complexes were already committed as mmCIF,
+`showcase.py` was already stdlib-only and reading only committed files, and the
+Evidence page's sole dependence on the server was one line —
+`fetch("/api/structure/" + id)`. So the published page draws them now, from
+files served beside it.
+
+- The viewer is authored once, at `bindsight/report/web/static/binder_viewer.js`,
+  and loaded by three surfaces: `bindsight ui`, the documentation site, and the
+  self-contained HTML report. Copies of a viewer diverge, and the copy nobody is
+  looking at is the one that drifts. What differs between the three is only
+  where a structure comes from, and that is read off the host element rather
+  than branched on by surface. A test asserts the viewer's own markers appear in
+  no template and in no generator.
+- Every URL resolves against the script's own location rather than the page's,
+  which is what lets one file work under `mkdocs serve` at `/`, under Pages at
+  `/bindsight/`, and in the app unchanged, with nothing encoding a site root.
+  The boot subscribes to mkdocs-material's `document$` as well as
+  `DOMContentLoaded`: `navigation.instant` is on, and without it a reader
+  arriving from another docs page would find an inert picker and an empty box.
+- The picker names the designs and not their scores. It was going to show ipTM
+  beside each id until the withdrawn-figure guard caught it: 0.84 is a withdrawn
+  figure, and a control listing twenty scores on one line cannot keep a
+  retraction within a paragraph of the twentieth. The numbers stay in the table,
+  where their caveat is.
+- The counts and design checker is published too, at `Try your data`. It was
+  already pure client-side — no fetch, no XHR, no form action — so it needed
+  nothing but a page to live on, and its promise that nothing is uploaded is
+  more load-bearing on a public site than it ever was on localhost. Verified on
+  the built site by feeding it a counts matrix and a design table with `fetch`
+  and `XMLHttpRequest.open` both instrumented: it found the two-level factor,
+  matched four of four sample names, and made zero network calls.
+- The copied structures are byte-identical to the originals, so git — being
+  content-addressed — stores one blob for both. Measured: the pack was 7.17 MiB
+  before the commit and 7.17 MiB after, for 2.8 MB of new working-tree files.
+  The tests assert that identity, which is the thing that makes it true.
+
+### Added — the HTML report draws its complexes, and is still one file
+
+`bindsight/report/html.py` excluded 3-D viewing on the grounds that "a structure
+viewer needs a script from a CDN and that would break self-containment". That
+was never true here: the viewer is vendored into the package, and CDN-fetching
+was rejected project-wide long ago. A false reason outlives the thing it was
+invented for.
+
+The real constraint is size, and it is a budget now rather than an exclusion:
+structures are embedded best-ranked first up to `_STRUCTURE_BUDGET_BYTES`, and
+the report states in its own text how many it left out and where the rest are. A
+report that silently showed three of twenty would be this project's own defect
+class wearing a size limit as an excuse. On the committed provenance-join run
+that is 4.79 MB with the complexes and 146 kB with `--no-embed-structures`, 23
+of 40 embedded and the other 17 named, with zero external references either way.
+
+The embedded JSON is escaped so a structure cannot close the `<script>` element
+carrying it. mmCIF has no reason to contain that sequence, which is exactly when
+an assumption like that stops being checked; a test feeds it one anyway.
+
+### Fixed — a drift check that could not see a new file
+
+The `pinned` job regenerated the published pages and ran `git diff --exit-code`
+over them. `git diff` does not see untracked files, which did not matter while
+the generator only overwrote two existing PNGs. With twenty per-design assets it
+would: a re-run producing a new design would write an uncommitted `.cif`, the
+page would offer it, the gate would stay green, and the published site would 404
+on the one structure nobody had committed. The pathspec is the whole
+`docs/assets` directory now — a list stops covering what is added after it — and
+`git status --porcelain --untracked-files=all` runs beside the diff.
+
+Two sweeps in `tests/test_web_ui.py` read only `.j2` and would have gone quietly
+blind the moment the scripts moved out of the templates: the
+unreferenced-vendored-asset scan and the tautology scan. Both read `.js` now,
+excluding `vendor/`, which is not this project's code to answer for.
+
 
 ### Removed — the archive, and the identifier that was standing in for one
 

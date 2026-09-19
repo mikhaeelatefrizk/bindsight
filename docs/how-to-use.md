@@ -26,7 +26,7 @@ pip install -e ".[discover,report]"
 Then:
 
 ```bash
-bindsight --version           # 0.3.1
+bindsight --version           # 0.3.2
 bindsight doctor              # check the install + cache state
 bindsight verify-licenses     # see the per-component license inventory
 ```

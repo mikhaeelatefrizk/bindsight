@@ -55,7 +55,7 @@ reproducible.
 
 ## Roadmap
 
-- **v0.3.1 (now)** — discovery half end-to-end on CPU; design + validation
+- **v0.3.2 (now)** — discovery half end-to-end on CPU; design + validation
   **demonstrated on a free Kaggle T4** under the corrected ProteinMPNN protocol:
   20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65 (8/20, 95% CI 15–70% over backbones — **withdrawn as a
   measure of design quality**: shuffles of the designs' own sequences clear 0.65 more
@@ -63,7 +63,7 @@ reproducible.
   `benchmarks/calibration/README.md`), every one carrying
   a target chain byte-identical to the native domain IV. Multi-page web UI live.
 - **v0.4.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
-  fully wired; scRNA-seq input. None of this is in v0.3.1: no shipped backend
+  fully wired; scRNA-seq input. None of this is in v0.3.2: no shipped backend
   builds an environment BindCraft or BoltzGen can run in, which is why the
   three-way designer comparison is deferred rather than delivered.
 - **v1.0.0** — JOSS submission + validation paper. The rediscovery study is
