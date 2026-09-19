@@ -123,11 +123,17 @@ CHECKED = [rel for rel in DOCUMENTS if rel not in MAY_DESCRIBE_THE_PROBLEM]
 def test_the_sweep_finds_the_documents_that_name_the_space() -> None:
     """Without this, a bad glob would make every scan below vacuously pass."""
     assert len(DOCUMENTS) >= 5, f"the sweep found only {DOCUMENTS}"
+    # Anchors, to catch a glob that has stopped reading anything. Not
+    # `docs/index.md`: it named the Space beside a button that sent readers
+    # onto the blank page, and now points at the complexes and the checker,
+    # which run in the reader's own browser. A document that stops mentioning
+    # the Space is the outcome this file wants, not a broken sweep, so the
+    # anchors are files whose subject genuinely is the deployment.
     for expected in (
-        "docs/index.md",
         "paper/paper.md",
         "paper/biorxiv/manuscript.tex",
         "bindsight/report/theme.py",
+        "overrides/main.html",
     ):
         assert expected in DOCUMENTS, f"{expected} names the Space but the sweep missed it"
     assert CHECKED, "every document naming the Space is exempt; nothing is checked"

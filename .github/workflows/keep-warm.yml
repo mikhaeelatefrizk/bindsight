@@ -133,8 +133,12 @@ jobs:
           # `/static/bindsight.css` is published only by the served interface,
           # and `--ink-faint` is a token inside it. A 200 from `/` says only that
           # something answered: the Streamlit app this release removed answers
-          # 200 too, from a page titled "Streamlit" with an empty body, and
-          # `docs/index.md` links that Space as "Try it live".
+          # 200 too, from a page titled "Streamlit" with an empty body. The
+          # home page used to send readers there under "Try it live"; it now
+          # points at the pages that draw the complexes and run the checker in
+          # the reader's own browser, so this check is the only thing still
+          # watching the Space -- which is why it stays red rather than being
+          # softened into a notice.
           css=$(curl -sSL --max-time 60 --retry 3 --retry-delay 10 \
                      -A 'bindsight-keep-warm/2' \
                      "${APP_URL}/static/bindsight.css" || true)

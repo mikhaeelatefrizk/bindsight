@@ -114,8 +114,10 @@ locally.
     <h3>In your browser</h3>
     <p><code>bindsight ui</code> serves the interface locally in seconds: the
     committed evidence, the twenty designed binders in 3-D, and a one-click run
-    of the discovery half on a real TCGA cohort. The same interface is published
-    as a Hugging Face Space.</p>
+    of the discovery half on a real TCGA cohort. Its evidence surface is
+    published here too, with nothing to install: <a href="results/">the twenty
+    complexes</a> draw in this page's browser, and <a href="try-your-data/">the
+    input checker</a> is the same file <code>bindsight ui</code> loads.</p>
   </div>
   <div class="bs-card">
     <h3>One command</h3>

@@ -70,14 +70,16 @@ path needs a human with a browser tab open because Google's API does not permit
 launching a free-tier notebook from a CLI; it is a demonstration rather than a
 reproducibility path.
 
-The same interface is published as a **public Hugging Face Space** at
-<https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight>; locally, `bindsight ui`
-serves it with no build step. Its
-guided demo over a **real TCGA breast-carcinoma cohort** (tumor vs. adjacent
-normal, auto-downloaded from NIH/GDC) shows the pipeline discovering
-antibody-tractable cell-surface antigens over-expressed in tumor, with full
-provenance; established targets such as ERBB2 (HER2) appear among the
-candidates when their expression signal is present in the sampled cohort.
+`bindsight ui` serves that interface locally with no build step, and its
+evidence surface is published on the documentation site as static pages that
+run entirely in the reader's browser: the twenty predicted complexes draw in
+3-D from committed mmCIF, and the input checker runs on the reader's own files
+without uploading them. Its guided demo over a **real TCGA breast-carcinoma
+cohort** (tumor vs. adjacent normal, auto-downloaded from NIH/GDC) shows the
+pipeline discovering antibody-tractable cell-surface antigens over-expressed
+in tumor, with full provenance; established targets such as ERBB2 (HER2)
+appear among the candidates when their expression signal is present in the
+sampled cohort.
 A companion rediscovery study (`benchmarks/study/`,
 `paper/validation/manuscript.md`) runs the discovery half on **fifteen whole,
 unstratified TCGA projects** as patient-paired tumour-versus-normal contrasts,
