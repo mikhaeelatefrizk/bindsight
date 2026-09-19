@@ -28,8 +28,15 @@ name: Sync Hugging Face Space
 #
 # Dormant until an `HF_TOKEN` secret exists (Settings → Secrets and variables →
 # Actions → New repository secret; the token needs *write* access to
-# Mikhaeelatefrizk/bindsight). Without it every job skips rather than failing,
-# so this never turns the checks red.
+# Mikhaeelatefrizk/bindsight).
+#
+# Without it the upload job is *skipped*, not passed. It used to run and report
+# success with every meaningful step skipped inside it, so a reader looking at
+# a release saw a green tick beside "Push Space assets + rebuild" for a push
+# that never happened -- the silent success this repository exists to catch,
+# committed by the workflow whose whole job is stopping the Space from drifting.
+# Not failing is still right: a missing optional secret is not a broken build.
+# Skipped says that; success said something false.
 
 on:
   release:
@@ -52,35 +59,49 @@ env:
   SPACE_ID: Mikhaeelatefrizk/bindsight
 
 jobs:
-  sync:
-    name: Push Space assets + rebuild
+  # A job of its own, so the upload below can be skipped rather than run and
+  # report success over a body of skipped steps. `secrets` is not readable from
+  # a job-level `if`, so the answer has to travel as an output.
+  gate:
+    name: Is there a token?
     runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.check.outputs.has_token }}
     steps:
-      - uses: actions/checkout@v7
-
       - name: Check for a token
-        id: gate
+        id: check
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
             echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::HF_TOKEN is not set — skipping. The Space will keep serving whatever build it last made."
+            echo "::notice::HF_TOKEN is not set — the Space was NOT updated and keeps serving whatever build it last made."
+            {
+              echo "### The Space was not updated"
+              echo
+              echo "No \`HF_TOKEN\` secret, so nothing was uploaded and no rebuild was"
+              echo "requested. The Space keeps serving whatever build it last made."
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
 
+  sync:
+    name: Push Space assets + rebuild
+    needs: gate
+    if: needs.gate.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/setup-python@v5
-        if: steps.gate.outputs.has_token == 'true'
         with:
           python-version: "3.12"
 
       - name: Install huggingface_hub
-        if: steps.gate.outputs.has_token == 'true'
         run: python -m pip install --quiet "huggingface_hub>=0.25,<1"
 
       - name: Upload the Space assets
-        if: steps.gate.outputs.has_token == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -143,7 +164,7 @@ jobs:
           PY
 
       - name: Factory-rebuild the Space
-        if: steps.gate.outputs.has_token == 'true' && (github.event_name == 'release' || inputs.rebuild)
+        if: github.event_name == 'release' || inputs.rebuild
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
