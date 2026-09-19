@@ -47,6 +47,14 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+# Only the small viewer bootstrap is loaded site-wide; it returns immediately
+# on any page with no [data-binder-viewer] host. The 537 kB 3Dmol library is
+# deliberately NOT listed here -- the script injects it on demand, so eight
+# pages do not pay for the one that draws structures.
+extra_javascript:
+  - assets/js/binder_viewer.js
+  - assets/js/your_data_check.js
+
 extra:
   social:
     - icon: fontawesome/brands/github
@@ -62,6 +70,7 @@ nav:
   - What is bindsight?: what-is-bindsight.md
   - Glossary: glossary.md
   - How to use: how-to-use.md
+  - Try your data: try-your-data.md
   - Use cases: use-cases.md
   - Designing on Colab: colab-design-howto.md
   - Positioning: positioning.md

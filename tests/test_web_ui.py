@@ -479,12 +479,17 @@ class TestTheStructuresAreActuallyShown:
 
         It is also a licence obligation carried for no benefit, and — worse —
         a claim: the file's presence is what made "renders in 3-D" look true.
+
+        ``.js`` is in the suffix set because the viewer's script left the
+        template for a file of its own. A sweep that reads only ``.j2``,
+        ``.py`` and ``.css`` would have stopped seeing the reference on the day
+        it moved, and reported nothing.
         """
         web = REPO / "bindsight" / "report" / "web"
         sources = "\n".join(
             p.read_text(encoding="utf-8", errors="ignore")
             for p in web.rglob("*")
-            if p.suffix in {".j2", ".py", ".css"} and p.is_file()
+            if p.suffix in {".j2", ".py", ".css", ".js"} and p.is_file() and "vendor" not in p.parts
         )
 
         vendored = [
@@ -675,7 +680,16 @@ class TestNoConditionIsDecorative:
     def test_no_inline_script_short_circuits_its_own_check(self) -> None:
         web = REPO / "bindsight" / "report" / "web"
         offenders: list[str] = []
-        for path in sorted(web.rglob("*.j2")):
+        # Scripts this project authors now live in .js as well as in templates,
+        # so a sweep reading only .j2 stopped covering the code it was written
+        # for when the viewer moved out. Vendored libraries are excluded: they
+        # are not this project's code to answer for.
+        authored = [
+            p
+            for p in sorted(web.rglob("*"))
+            if p.suffix in {".j2", ".js"} and p.is_file() and "vendor" not in p.parts
+        ]
+        for path in authored:
             text = path.read_text(encoding="utf-8")
             for lineno, line in enumerate(text.splitlines(), 1):
                 if line.lstrip().startswith(("//", "*", "/*", "{#")):
@@ -696,9 +710,12 @@ class TestNoConditionIsDecorative:
         partial overlap, none matching, and no two-level column. This asserts the
         wiring that makes those agree still exists.
         """
-        page = (
-            REPO / "bindsight" / "report" / "web" / "templates" / "your_data.html.j2"
-        ).read_text(encoding="utf-8")
+        # The checker moved out of the template into a file of its own. Read
+        # the script: left pointed at the template, this would assert the
+        # absence of code that had simply moved, and pass by checking nothing.
+        page = (REPO / "bindsight" / "report" / "web" / "static" / "your_data_check.js").read_text(
+            encoding="utf-8"
+        )
 
         assert "designBlocked" in page, (
             "the design table's verdict no longer reaches the card that tells the "
@@ -843,7 +860,10 @@ class TestTheDesignCheckSaysWhenItGuessedTheFactor:
     beyond "this column happens to hold two values".
     """
 
-    TEMPLATE = REPO / "bindsight" / "report" / "web" / "templates" / "your_data.html.j2"
+    # The checker, not the template it used to live in: these assertions are
+    # about the code, and the most important of them -- that nothing is
+    # uploaded -- would pass vacuously against a template with no script.
+    TEMPLATE = REPO / "bindsight" / "report" / "web" / "static" / "your_data_check.js"
 
     def _script(self) -> str:
         return self.TEMPLATE.read_text("utf-8")

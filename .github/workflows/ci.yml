@@ -101,12 +101,21 @@ jobs:
       - name: Regenerating the published pages changes nothing
         run: |
           python scripts/build_docs_results.py
-          # Every output the generator writes, figures included. It copies
-          # PNGs into docs/assets/figures (build_docs_results.py:468) and the
-          # diff covered only the two markdown files -- so a benchmark re-run
-          # that moved a figure but not the prose passed this gate while the
-          # committed image silently diverged from the data behind it.
-          git diff --exit-code -- docs/results.md docs/glossary.md docs/assets/figures
+          # Every output the generator writes, assets included. It copies
+          # figures, the twenty predicted complexes, the vendored viewer and its
+          # licence into docs/assets, and the diff once covered only the two
+          # markdown files -- so a benchmark re-run that moved a figure but not
+          # the prose passed this gate while the committed image silently
+          # diverged from the data behind it. The pathspec is the whole
+          # directory rather than a list of its subdirectories, for the same
+          # reason: a list stops covering what is added after it.
+          git diff --exit-code -- docs/results.md docs/glossary.md docs/assets
+          # git diff does not see untracked files, and that mattered the moment
+          # the generator started writing per-design assets: a re-run that
+          # produced a new design would write an uncommitted .cif, the page
+          # would offer it, this gate would stay green, and the published site
+          # would 404 on the one structure nobody had committed.
+          test -z "$(git status --porcelain --untracked-files=all -- docs/assets)"
 
   build:
     name: Build wheel + sdist

@@ -140,9 +140,20 @@ A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (K
 <div class="bs-stat"><div class="v">15.6 Å</div><div class="k">mean PAE-int</div><div class="d">lower is more confident</div></div>
 </div>
 
-The real Boltz-2 predicted complex behind every ipTM below is committed
-alongside its metrics. Rotate them in 3-D with `bindsight ui`
-→ **Evidence** → *The complexes themselves*.
+The real Boltz-2 predicted complex behind every ipTM in the table below
+is committed alongside its metrics — and drawn here, in your browser,
+from those files. No install, no server, nothing uploaded.
+
+<div class="bs-viewer-picker"><label for="binder-pick">Design</label><select id="binder-pick" data-binder-picker><option value="P04626_binder_0_seq1">P04626_binder_0_seq1</option><option value="P04626_binder_9_seq1">P04626_binder_9_seq1</option><option value="P04626_binder_3_seq0">P04626_binder_3_seq0</option><option value="P04626_binder_4_seq0">P04626_binder_4_seq0</option><option value="P04626_binder_9_seq0">P04626_binder_9_seq0</option><option value="P04626_binder_0_seq0">P04626_binder_0_seq0</option><option value="P04626_binder_1_seq0">P04626_binder_1_seq0</option><option value="P04626_binder_1_seq1">P04626_binder_1_seq1</option><option value="P04626_binder_3_seq1">P04626_binder_3_seq1</option><option value="P04626_binder_2_seq1">P04626_binder_2_seq1</option><option value="P04626_binder_5_seq1">P04626_binder_5_seq1</option><option value="P04626_binder_6_seq1">P04626_binder_6_seq1</option><option value="P04626_binder_7_seq1">P04626_binder_7_seq1</option><option value="P04626_binder_6_seq0">P04626_binder_6_seq0</option><option value="P04626_binder_8_seq1">P04626_binder_8_seq1</option><option value="P04626_binder_4_seq1">P04626_binder_4_seq1</option><option value="P04626_binder_7_seq0">P04626_binder_7_seq0</option><option value="P04626_binder_2_seq0">P04626_binder_2_seq0</option><option value="P04626_binder_8_seq0">P04626_binder_8_seq0</option><option value="P04626_binder_5_seq0">P04626_binder_5_seq0</option></select></div>
+<div id="viewer" class="bs-viewer" role="img" data-binder-viewer data-viewer-lib="../vendor/3Dmol-min.js" data-structure-url="../structures/{id}_complex.cif" aria-label="Three-dimensional view of the predicted binder-target complex"><p class="bs-viewer__fallback">The structure viewer needs JavaScript. Every complex is also committed as mmCIF under <code>benchmarks/designer_benchmark/</code>, which is the file this viewer reads.</p></div>
+<div class="bs-viewer-legend"><span><span class="bs-swatch" style="background:#9aa5b1"></span> chain <strong>T</strong> — the target</span><span><span class="bs-swatch" style="background:#0f7d73"></span> chain <strong>B</strong> — the designed binder</span></div>
+
+Ordered by interface confidence, best first; the corrected-protocol ipTM
+for each is in the table below.
+
+Every complex is also browsable as mmCIF in
+[benchmarks/designer_benchmark/binders/](https://github.com/mikhaeelatefrizk/bindsight/tree/main/benchmarks/designer_benchmark/binders),
+which is the file this viewer reads.
 
 | design | ipTM | PAE-int (Å) | developability | length | instability |
 |---|--:|--:|--:|--:|--:|

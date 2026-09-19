@@ -1,0 +1,223 @@
+// SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Check a counts matrix and a sample design table -- entirely in the browser.
+//
+// Authored once and loaded by two surfaces: `bindsight ui` (templates/
+// your_data.html.j2) and the published documentation site (docs/try-your-data.md).
+// Neither owns it, because two copies of one checker diverge and the published
+// one would be the copy that silently stopped matching what the pipeline does.
+//
+// Nothing here uploads anything. There is no fetch, no XHR, no form action: the
+// files are read with File.slice().text() and never leave the machine. That is
+// a stronger promise on a public website than it was on localhost, and it is
+// the reason this file may never grow a network call --
+// tests/test_web_ui.py asserts exactly that.
+//
+// The contract with both surfaces is three element ids: `counts`, `design`
+// and `checks`.
+
+// Parsed in the browser. A header and a few hundred rows are enough to tell a
+// reader whether this is the file they meant, and it costs no round trip and no
+// upload of data that may be sensitive.
+async function head(file, n) {
+  const text = await file.slice(0, 256 * 1024).text();
+  return text.split(/\r?\n/).filter(function (l) { return l.trim(); }).slice(0, n);
+}
+
+function card(title, body, kind) {
+  const glyph = kind === "ok" ? "✓" : kind === "warn" ? "!" : "✗";
+  return (
+    '<div class="note note--' + kind + '">' +
+    '<span class="note__glyph" aria-hidden="true">' + glyph + "</span>" +
+    '<div class="note__body"><p style="margin:0"><strong>' + title + "</strong></p>" +
+    '<div class="small">' + body + "</div></div></div>"
+  );
+}
+
+function splitRow(line) {
+  return line.indexOf("\t") >= 0 ? line.split("\t") : line.split(/\s*,\s*/);
+}
+
+async function check() {
+  // Reset every run: a fixed file must clear the previous verdict.
+  var designBlocked = false;
+  const counts = document.getElementById("counts").files[0];
+  const design = document.getElementById("design").files[0];
+  const out = document.getElementById("checks");
+  if (!counts && !design) { out.innerHTML = ""; return; }
+
+  let html = "";
+  let countsSamples = null;
+
+  if (counts) {
+    if (counts.name.endsWith(".gz")) {
+      html += card("Counts matrix", counts.name + " — compressed; checked when the run starts.", "ok");
+    } else {
+      const rows = await head(counts, 5);
+      const header = rows.length ? splitRow(rows[0]) : [];
+      countsSamples = header.slice(1);
+      html += card(
+        "Counts matrix",
+        counts.name + "<br>" + header.length + " columns, " +
+          (header.length - 1) + " samples, " + (rows.length - 1) + "+ genes read." +
+          (header.length < 3
+            ? " <strong>That is too few columns</strong> — is the file tab-separated?"
+            : ""),
+        header.length < 3 ? "warn" : "ok"
+      );
+    }
+  }
+
+  if (design) {
+    const rows = await head(design, 500);
+    if (rows.length) {
+      const header = splitRow(rows[0]);
+      const body = rows.slice(1).map(splitRow);
+
+      // Every two-level column, not just the winner. This used to keep only
+      // the first match (preferring a name containing "cond") and report it as
+      // "Two-level factor: x" with a tick. A design table whose `condition`
+      // column has one level and whose `batch` column has two was therefore
+      // reported ready to run -- against `batch` -- and the run it recommends
+      // would contrast a technical covariate and return plausible genes
+      // answering a question nobody asked.
+      const candidates = [];
+      const conditionish = [];
+      header.forEach(function (name, i) {
+        const values = Array.from(new Set(body.map(function (r) { return r[i]; }).filter(Boolean)));
+        const named = name.toLowerCase().indexOf("cond") >= 0 || name.toLowerCase() === "group";
+        if (named) { conditionish.push({ name: name, count: values.length }); }
+        if (values.length === 2) {
+          candidates.push({ name: name, levels: values, named: named });
+        }
+      });
+      const named = candidates.filter(function (c) { return c.named; });
+      const chosen = named.length ? named[0] : candidates[0] || null;
+      const factor = chosen ? chosen.name : null;
+      const levels = chosen ? chosen.levels : null;
+      // Not a count of alternatives. The question is whether the page had any
+      // basis for its pick beyond "this column happens to hold two values". A
+      // name that reads as a condition is a basis; nothing else is, however few
+      // columns were in the running. The case that prompted this had exactly
+      // one candidate -- a `batch` column, in a file whose `condition` column
+      // held a single level -- and reported it with a tick.
+      const guessed = !!chosen && !chosen.named;
+
+      let body_html = design.name + "<br>" + body.length + " samples, " + header.length + " columns.";
+      if (factor) {
+        body_html +=
+          "<br>Two-level factor: <code>" + factor + "</code> — " +
+          levels.map(function (l) { return "<code>" + l + "</code>"; }).join(" against ") +
+          '<div class="field" style="margin-top:.75rem"><label for="num">Contrast</label>' +
+          '<select id="num">' +
+          levels.map(function (l) { return '<option value="' + l + '">' + l + "</option>"; }).join("") +
+          "</select></div>";
+        if (candidates.length > 1) {
+          body_html +=
+            "<br>Columns with exactly two values: " +
+            candidates.map(function (c) { return "<code>" + c.name + "</code>"; }).join(", ") +
+            ".";
+        }
+        if (guessed) {
+          // The user's own factor, named, because that is what they have to fix.
+          const wrongLevels = conditionish.filter(function (c) { return c.count !== 2; });
+          body_html +=
+            "<br><strong>This column was chosen because it has two values, not " +
+            "because it is your factor.</strong> " +
+            (wrongLevels.length
+              ? "The column you probably meant, <code>" + wrongLevels[0].name +
+                "</code>, holds " + wrongLevels[0].count +
+                (wrongLevels[0].count === 1 ? " level" : " levels") +
+                ", and a contrast needs exactly two. "
+              : "No column here is named like a condition. ") +
+            "The pipeline contrasts whichever column your config names — check " +
+            "that it is the comparison you mean.";
+        }
+      } else {
+        body_html += "<br><strong>No two-level column found.</strong> The contrast needs a column with exactly two distinct values.";
+      }
+
+      // Three states, not two. The two files usually come from different
+      // exports, so a name mismatch is the ordinary way this goes wrong.
+      var overlap = null;
+      if (countsSamples && countsSamples.length) {
+        const designSamples = body.map(function (r) { return r[0]; }).filter(Boolean);
+        const shared = designSamples.filter(function (s) { return countsSamples.indexOf(s) >= 0; });
+        overlap = { shared: shared.length, total: designSamples.length };
+        body_html +=
+          "<br>Sample names shared with the counts matrix: <strong>" + shared.length +
+          "</strong> of " + designSamples.length;
+        if (shared.length === 0) {
+          body_html +=
+            " — <strong>none match</strong>, so the contrast cannot be built. The" +
+            " two files are probably from different exports; the design's first" +
+            " column has to hold the counts matrix's column headers.";
+        } else if (shared.length < designSamples.length) {
+          body_html +=
+            " — the other " + (designSamples.length - shared.length) +
+            " are not columns of the counts matrix and will be dropped.";
+        }
+      }
+
+      // The severity follows the finding. Marking this OK beside "the contrast
+      // cannot be built" is the failure this page exists to prevent, one step
+      // earlier in the pipeline.
+      var blocked = !factor || (overlap && overlap.shared === 0);
+      // A guessed factor is not a clean bill of health: the page chose by
+      // column order, and only the reader knows whether that is the biology.
+      var partial =
+        guessed || (overlap && overlap.shared > 0 && overlap.shared < overlap.total);
+      html += card("Design table", body_html, blocked ? "err" : partial ? "warn" : "ok");
+      designBlocked = blocked;
+    }
+  }
+
+  if (counts && design) {
+    const privacy =
+      "Nothing on this page was sent anywhere — the checks above ran in this " +
+      "browser, on the first 256&nbsp;kB of each file, so a counts matrix of " +
+      "patient data never left the machine. ";
+    if (designBlocked) {
+      html += card(
+        "Not ready to run",
+        privacy +
+          "The pipeline would fail on these two files for the reason above, so " +
+          "there is no command to give yet. Fix the design table and re-check.",
+        "err"
+      );
+    } else {
+      html += card(
+        "Running it",
+        privacy +
+          "To run the pipeline on it, point the CLI at a config naming these two " +
+          "files:" +
+          "<pre><code>bindsight discover my.yaml --out runs/mine</code></pre>" +
+          "then <code>bindsight ui</code> to read the result here.",
+        "ok"
+      );
+    }
+  }
+
+  out.innerHTML = html;
+}
+
+function boot() {
+  var counts = document.getElementById("counts");
+  var design = document.getElementById("design");
+  if (!counts || !design) return;
+  // mkdocs-material's instant navigation swaps page content without a reload,
+  // so this runs again on a page that may already be wired up.
+  if (counts.dataset.checkReady === "1") return;
+  counts.dataset.checkReady = "1";
+  counts.addEventListener("change", check);
+  design.addEventListener("change", check);
+}
+
+if (window.document$ && typeof window.document$.subscribe === "function") {
+  window.document$.subscribe(boot);
+} else if (document.readyState !== "loading") {
+  boot();
+} else {
+  document.addEventListener("DOMContentLoaded", boot);
+}

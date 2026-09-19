@@ -243,3 +243,50 @@
     flex: 1 1 100%;
   }
 }
+
+
+/* ---------------------------------------------------------------- 3-D viewer
+   The published twin of `.viewer` in bindsight/report/web/static/bindsight.css.
+   Prefixed `bs-` to stay clear of Material's `md-` namespace, and hooked by
+   data attributes rather than these class names, so the two stylesheets can
+   differ without the shared viewer script caring. */
+.bs-viewer-picker { margin: 1rem 0 0.5rem; max-width: 32rem; }
+.bs-viewer-picker label { display: block; font-size: 0.8rem; color: var(--bs-muted); margin-bottom: 0.25rem; }
+.bs-viewer-picker select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--bs-rule); border-radius: 6px; background: inherit; color: inherit; }
+
+/* Height is explicit and must stay that way: 3Dmol measures its container when
+   the viewer is created, and a container that is zero-high at that moment
+   renders a canvas nothing can see, with no error anywhere. */
+.bs-viewer { width: 100%; height: 26rem; position: relative; border-radius: 11px; overflow: hidden; border: 1px solid var(--bs-rule); background: #fff; }
+.bs-viewer__fallback { padding: 1rem; font-size: 0.8rem; color: var(--bs-muted); }
+
+.bs-viewer-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; font-size: 0.8rem; }
+.bs-swatch { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 2px; vertical-align: middle; margin-right: 0.25rem; }
+
+
+/* ------------------------------------------------------------- data checker
+   The published twin of the card/field/note rules in
+   bindsight/report/web/static/bindsight.css. The `note note--ok|warn|err`
+   class names are emitted by your_data_check.js itself, so they are NOT
+   prefixed: renaming them here would silently unstyle the checker's output. */
+.bs-card { border: 1px solid var(--bs-rule); border-radius: 11px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.bs-field { margin-bottom: 1rem; }
+.bs-field label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+.bs-field input[type="file"] { display: block; margin: 0.3rem 0; }
+.bs-field__help { font-size: 0.78rem; color: var(--bs-muted); margin: 0.2rem 0 0; }
+.bs-muted { color: var(--bs-muted); font-weight: 400; }
+
+.note { display: flex; gap: 0.6rem; align-items: flex-start; border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.5rem 0; font-size: 0.85rem; border: 1px solid var(--bs-rule); }
+.note__glyph { flex: 0 0 auto; font-weight: 700; }
+.note__body { flex: 1 1 auto; }
+.note__body p { margin: 0; }
+.note--ok { border-color: #1f7a3d; }
+.note--ok .note__glyph { color: #1f7a3d; }
+.note--warn { border-color: #b08400; }
+.note--warn .note__glyph { color: #b08400; }
+.note--err { border-color: #c62828; }
+.note--err .note__glyph { color: #c62828; }
+.note--info { border-color: var(--bs-navy); }
+.note--info .note__glyph { color: var(--bs-navy); }
+.small { font-size: 0.85rem; }
+.muted { color: var(--bs-muted); }

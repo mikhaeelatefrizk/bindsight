@@ -267,7 +267,7 @@
     </p>
     <div class="field viewer-picker" style="max-width:32rem">
       <label for="binder-pick">Design</label>
-      <select id="binder-pick">
+      <select id="binder-pick" data-binder-picker>
         {% for b in structures %}
           <option value="{{ b.binder_id }}">
             {{ b.binder_id }} — ipTM {{ fmt(b.iptm) }}
@@ -275,7 +275,8 @@
         {% endfor %}
       </select>
     </div>
-    <div id="viewer" class="viewer" role="img"
+    <div id="viewer" class="viewer" role="img" data-binder-viewer
+         data-structure-url="/api/structure/{id}"
          aria-label="Three-dimensional view of the predicted binder-target complex">
       <p class="viewer__fallback small muted">
         The structure viewer needs JavaScript. Every complex is also committed as
@@ -324,128 +325,16 @@ python scripts/build_docs_results.py   # rewrites the published pages; nothing s
 
 {% block scripts %}
 {% if structures %}
+{#- Vendored, not from a CDN: `bindsight ui` is meant to work on a laptop with
+    no connection once installed, and a page that silently needs one does not.
+    The literal path stays in this template rather than moving into the script:
+    tests/test_web_ui.py sweeps .j2, .py and .css for references to every
+    vendored asset, so a path that lives only in a .js would make that sweep
+    go quietly blind.
+
+    The viewer itself is bindsight/report/web/static/binder_viewer.js, shared
+    with the published documentation site so the two cannot diverge. -#}
 <script src="/static/vendor/3Dmol-min.js"></script>
-<script>
-// Vendored, not from a CDN: `bindsight ui` is meant to work on a laptop with no
-// connection once installed, and a page that silently needs one does not.
-(function () {
-  // bindsight writes the designed chain as B and the target it was designed
-  // against as T. tests/test_web_ui.py asserts that of every committed
-  // structure, so if it ever stops being true this stops being a silent
-  // mis-colouring and becomes a failing test.
-  var BINDER_CHAIN = "B";
-  var host = document.getElementById("viewer");
-  var pick = document.getElementById("binder-pick");
-  if (!host || !pick || typeof $3Dmol === "undefined") return;
-
-  // Composed as nodes rather than markup, for the reason the fetch handler
-  // below gives: a message that later starts carrying something a server said
-  // must not be interpolated into innerHTML.
-  function replaceViewerWith(text) {
-    host.innerHTML = "";
-    var note = document.createElement("p");
-    note.className = "small";
-    note.style.padding = "1rem";
-    note.textContent = text;
-    var where = document.createElement("p");
-    where.className = "small muted";
-    where.style.padding = "0 1rem 1rem";
-    where.textContent =
-      "Every complex is committed as mmCIF under " +
-      "benchmarks/designer_benchmark/, which is the file this viewer reads.";
-    host.appendChild(note);
-    host.appendChild(where);
-  }
-
-  // WebGL is unavailable in more places than it looks: locked-down machines,
-  // remote desktops, some VMs, browsers with hardware acceleration off. There
-  // `createViewer` does not throw -- it returns a viewer over a canvas with a
-  // dead context, so the page drew a white rectangle under a caption promising
-  // a rotatable complex and said nothing. The rule is the one the fetch
-  // handler below states: a blank viewer and a design that produced nothing
-  // are different facts and must not look the same.
-  function webglAvailable() {
-    try {
-      var probe = document.createElement("canvas");
-      return !!(probe.getContext("webgl2") || probe.getContext("webgl"));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  if (!webglAvailable()) {
-    replaceViewerWith(
-      "This browser cannot draw 3-D structures: WebGL is unavailable or " +
-        "switched off. The structures are here, the viewer is not."
-    );
-    return;
-  }
-
-  host.innerHTML = "";
-  var viewer;
-  try {
-    viewer = $3Dmol.createViewer(host, { backgroundColor: "white" });
-  } catch (e) {
-    replaceViewerWith("Could not start the structure viewer: " + String(e && e.message));
-    return;
-  }
-  if (!viewer) {
-    replaceViewerWith("Could not start the structure viewer.");
-    return;
-  }
-
-  function show(id) {
-    fetch("/api/structure/" + encodeURIComponent(id))
-      .then(function (r) {
-        if (!r.ok) throw new Error("no structure for " + id);
-        return r.text();
-      })
-      .then(function (cif) {
-        viewer.clear();
-        var model = viewer.addModel(cif, "cif");
-        // An mmCIF the parser did not understand yields a model with no atoms,
-        // and 3Dmol renders that as an empty canvas without complaint -- the
-        // same white rectangle a reader would get from a design that produced
-        // nothing. Counted rather than assumed, for the reason the catch block
-        // below gives.
-        var atoms = 0;
-        try {
-          atoms = model && model.selectedAtoms ? model.selectedAtoms({}).length : 0;
-        } catch (e) {
-          atoms = 0;
-        }
-        if (!atoms) {
-          throw new Error("the structure file for " + id + " parsed to no atoms");
-        }
-        // Paint everything first, then override the binder. Styling named
-        // chains only meant a file whose chains are named something else kept
-        // 3Dmol's default line style and rendered as a wireframe haze -- with
-        // no error, and under a caption claiming it was grey cartoon.
-        viewer.setStyle({}, { cartoon: { color: "#9aa5b1" } });
-        viewer.setStyle({ chain: BINDER_CHAIN }, { cartoon: { color: "#0f7d73" } });
-        viewer.zoomTo();
-        viewer.render();
-      })
-      .catch(function (err) {
-        // Said plainly. A viewer that stays blank is indistinguishable from a
-        // design that produced nothing, and those are different facts.
-        //
-        // Built as a node with textContent rather than assembled into
-        // innerHTML. The message is composed here today, but an error string
-        // is exactly the kind of value that later starts carrying something a
-        // server said, and by then the interpolation looks harmless.
-        host.innerHTML = "";
-        var note = document.createElement("p");
-        note.className = "small";
-        note.style.padding = "1rem";
-        note.textContent = "Could not load this structure: " + String(err && err.message);
-        host.appendChild(note);
-      });
-  }
-
-  pick.addEventListener("change", function () { show(pick.value); });
-  show(pick.value);
-})();
-</script>
+<script src="/static/binder_viewer.js"></script>
 {% endif %}
 {% endblock %}
