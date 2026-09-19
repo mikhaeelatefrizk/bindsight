@@ -66,7 +66,8 @@ with pandas genuinely absent.
 embedded whatever its size, so a single oversized complex produced a report
 larger than the budget that exists to keep it sendable. "Up to
 `_STRUCTURE_BUDGET_BYTES`" was false in exactly the case the budget is for.
-Measured before the fix, a 1 KiB budget embedded 51,200 bytes.
+Measured before the fix against a run built for the purpose, a 1 KiB budget
+embedded a single 50 KiB structure whole.
 
 `break` charged every lower-ranked complex for that one: a 5 KiB structure was
 dropped because a 50 KiB structure outranked it, with room to spare. It now

@@ -308,6 +308,57 @@ class TestTheDocumentationSiteIsLegibleToo:
         assert _ground_for(".nothing-like-this", rules) is None
 
 
+class TestTheTwoPalettesAgree:
+    """`extra.css` says its values mirror `theme.py`. Nothing checked that.
+
+    Six of its seven brand tokens did match, by hand and by luck. Darkening
+    `--bs-muted` for contrast broke the seventh, and nothing noticed -- the
+    claim is a comment at the top of a stylesheet, and a comment cannot fail.
+
+    Only tokens that exist in both are compared. `theme.py` carries names the
+    documentation layer has no use for, and inventing a rule that every
+    constant must appear in the stylesheet would be a different claim from the
+    one the file actually makes.
+    """
+
+    @staticmethod
+    def _theme_tokens() -> dict[str, str]:
+        source = (REPO / "bindsight" / "report" / "theme.py").read_text("utf-8")
+        return dict(re.findall(r"^([A-Z][A-Z_]*) = \"(#[0-9a-fA-F]{3,8})\"", source, re.M))
+
+    @staticmethod
+    def _docs_tokens() -> dict[str, str]:
+        css = DOCS_CSS.read_text("utf-8")
+        root = re.search(r":root\s*\{([^{}]*)\}", css)
+        assert root is not None, "extra.css has no :root block"
+        return dict(re.findall(r"--bs-([a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;", root.group(1)))
+
+    def test_both_palettes_are_readable(self) -> None:
+        """Without this, a renamed constant would make the check below vacuous."""
+        theme, docs = self._theme_tokens(), self._docs_tokens()
+
+        assert len(theme) >= 10, f"only {len(theme)} constants parsed from theme.py"
+        assert len(docs) >= 6, f"only {len(docs)} tokens parsed from extra.css"
+
+        shared = {n for n in docs if n.upper().replace("-", "_") in theme}
+        assert len(shared) >= 5, f"only {sorted(shared)} are named in both"
+
+    def test_every_shared_token_has_the_same_value(self) -> None:
+        theme, docs = self._theme_tokens(), self._docs_tokens()
+
+        drifted = []
+        for name, value in sorted(docs.items()):
+            declared = theme.get(name.upper().replace("-", "_"))
+            if declared is not None and declared.lower() != value.lower():
+                drifted.append(f"--bs-{name} is {value}, theme.py says {declared}")
+
+        assert not drifted, (
+            "extra.css says its values mirror bindsight/report/theme.py, and these "
+            f"no longer do: {drifted}. One product, one palette -- change both, or "
+            "change the sentence at the top of the stylesheet."
+        )
+
+
 class TestTheChartFallbackMatchesTheToken:
     """`charts.js` repeats the colour as a fallback for `cssVar`.
 

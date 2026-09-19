@@ -34,7 +34,11 @@ NAVY_TINT = "#e8f0fb"
 ACCENT = "#0f9d8f"
 
 INK = "#1b1f24"
-MUTED = "#6c757d"
+# Moved with docs/stylesheets/extra.css's --bs-muted, which mirrors this
+# table. At #6c757d it was 4.08:1 on NAVY_TINT and 4.45:1 on CANVAS, both
+# under WCAG AA, and it is used for the label under a headline number --
+# the caveat, not the claim, which is the wrong half to make unreadable.
+MUTED = "#5f6873"
 RULE = "#e3e6ea"
 SURFACE = "#ffffff"
 CANVAS = "#f7f9fc"

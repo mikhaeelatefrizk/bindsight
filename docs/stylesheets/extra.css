@@ -22,9 +22,11 @@
    * the label under each headline number -- .bs-stat .k at .74rem, and
    * .bs-flow .s small at .7rem -- sat below AA while the number above it
    * stayed crisp. That is the defect tests/test_contrast.py was written
-   * for, reproduced on the published site. It is not --ink-faint from
-   * theme.py (#68727f): that clears AA on the app's grounds and misses on
-   * this one, because the tinted panels here are lighter. */
+   * for, reproduced on the published site. Nor is it --ink-faint from
+   * bindsight/report/web/static/bindsight.css (#68727f): that clears AA on
+   * the app's grounds and is 4.25:1 here, because these tinted panels are
+   * lighter. theme.py's MUTED moved with it, so the mirror below still
+   * holds and tests/test_contrast.py now checks that it does. */
   --bs-muted:      #5f6873;
   --bs-canvas:     #f7f9fc;
 }

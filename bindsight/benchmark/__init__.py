@@ -8,11 +8,13 @@ resurface the literature-validated known antigens in ``benchmarks/known.tsv``
 HTML report. This is the implementation behind the ``bindsight benchmark``
 command referenced in ``docs/use-cases.md``.
 
-Every public name here is resolved lazily. Importing them eagerly pulled
+Every public name here except ``DEFAULT_KS`` is resolved lazily, and
+``DEFAULT_KS`` is the reason the rest are. Importing them all eagerly pulled
 :mod:`bindsight.benchmark.core`, and therefore pandas, into anything that
 touched this package by any route -- including ``from
 bindsight.benchmark.defaults import DEFAULT_KS``, which needs nothing but a
-tuple. :mod:`bindsight.cli` reads that tuple at import time, so a plain ``pip
+tuple. So that one name is bound here directly and costs nothing; everything
+that needs pandas waits until it is asked for. :mod:`bindsight.cli` reads that tuple at import time, so a plain ``pip
 install bindsight`` (pandas lives in the ``discover`` extra) shipped a command
 that raised ``ModuleNotFoundError`` before ``--version`` could print.
 
