@@ -582,7 +582,8 @@ def _viewer_block(d: showcase.DesignerShowcase) -> list[str]:
         ' data-viewer-lib="../vendor/3Dmol-min.js"'
         ' data-structure-url="../structures/{id}_complex.cif"'
         ' aria-label="Three-dimensional view of the predicted binder-target complex">'
-        '<p class="bs-viewer__fallback">The structure viewer needs JavaScript. Every '
+        '<p class="bs-viewer__fallback" role="alert">The structure viewer needs '
+        "JavaScript. Every "
         "complex is also committed as mmCIF under <code>benchmarks/designer_benchmark/"
         "</code>, which is the file this viewer reads.</p></div>"
     )

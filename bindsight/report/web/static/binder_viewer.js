@@ -53,6 +53,10 @@
     var note = document.createElement("p");
     note.className = "small";
     note.style.padding = "1rem";
+    // Announced, not just drawn: this replaces a fallback that a screen
+    // reader had already been given, so losing the role would make the
+    // message silent for exactly the reader who needs it most.
+    note.setAttribute("role", "alert");
     note.textContent = text;
     var where = document.createElement("p");
     where.className = "small muted";
@@ -178,6 +182,7 @@
           var note = document.createElement("p");
           note.className = "small";
           note.style.padding = "1rem";
+          note.setAttribute("role", "alert");
           note.textContent = "Could not load this structure: " + String(err && err.message);
           host.appendChild(note);
         });

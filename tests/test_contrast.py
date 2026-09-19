@@ -120,6 +120,194 @@ class TestEveryTextTokenClearsAa:
         )
 
 
+# --- the documentation site -------------------------------------------------
+
+#: The published site's brand layer. It mirrors the app palette but draws it on
+#: different grounds -- lighter tinted panels -- so a token that clears AA in
+#: the app can miss here, and `--bs-muted` did.
+DOCS_CSS = REPO / "docs" / "stylesheets" / "extra.css"
+
+#: mkdocs-material switches schemes with an attribute, not a media query.
+SLATE = '[data-md-color-scheme="slate"]'
+
+_HEX = r"#[0-9a-fA-F]{3,8}"
+_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+_COLOUR = re.compile(r"(?<![-a-z])color:\s*([^;]+);")
+_GROUND = re.compile(r"background(?:-color)?:\s*([^;]+);")
+_VAR = re.compile(r"var\(\s*--([a-z0-9-]+)")
+
+
+def _docs_rules() -> dict[str, dict[str, str]]:
+    """Selector -> its declared colour and background, comma groups split out."""
+    text = DOCS_CSS.read_text("utf-8")
+    rules: dict[str, dict[str, str]] = {}
+    for match in _RULE.finditer(text):
+        head, body = match.group(1), match.group(2)
+        if head.lstrip().startswith(("@", "/*")):
+            continue
+        declared = {}
+        colour = _COLOUR.search(body)
+        ground = _GROUND.search(body)
+        if colour:
+            declared["color"] = colour.group(1).strip()
+        if ground:
+            declared["background"] = ground.group(1).strip()
+        if not declared:
+            continue
+        for selector in head.split(","):
+            selector = " ".join(selector.split())
+            if selector:
+                rules.setdefault(selector, {}).update(declared)
+    return rules
+
+
+def _docs_palette() -> tuple[dict[str, str], dict[str, str]]:
+    """The light tokens, and the dark ones with the slate block applied."""
+    text = DOCS_CSS.read_text("utf-8")
+
+    def block(pattern: str) -> str:
+        found = re.search(pattern + r"\s*\{([^{}]*)\}", text)
+        return found.group(1) if found else ""
+
+    light = dict(re.findall(rf"--([a-z0-9-]+):\s*({_HEX})\s*;", block(r":root")))
+    dark = dict(light)
+    dark.update(dict(re.findall(rf"--([a-z0-9-]+):\s*({_HEX})\s*;", block(re.escape(SLATE)))))
+    return light, dark
+
+
+def _resolve(value: str | None, palette: dict[str, str]) -> str | None:
+    if not value:
+        return None
+    named = _VAR.match(value)
+    if named:
+        return palette.get(named.group(1))
+    literal = re.match(rf"({_HEX})\b", value)
+    return literal.group(1) if literal else None
+
+
+def _ground_for(selector: str, rules: dict[str, dict[str, str]]) -> str | None:
+    """The background this text is drawn on: its own, else its nearest ancestor.
+
+    Derived from the selector rather than listed. `.bs-stat .k` has no
+    background of its own, so the ground is `.bs-stat`'s -- which is how a
+    reader sees it, and which means a panel added tomorrow is covered without
+    anyone remembering to add it here.
+    """
+    parts = selector.split()
+    for cut in range(len(parts), 0, -1):
+        prefix = " ".join(parts[:cut])
+        ground = rules.get(prefix, {}).get("background")
+        if ground:
+            return ground
+    return None
+
+
+def _docs_pairs() -> list[tuple[str, str, str, str]]:
+    """(scheme, selector, foreground, background) for everything measurable."""
+    rules = _docs_rules()
+    light, dark = _docs_palette()
+    pairs: list[tuple[str, str, str, str]] = []
+
+    for selector, declared in rules.items():
+        if "color" not in declared:
+            continue
+        if selector.startswith(SLATE):
+            base = selector[len(SLATE) :].strip()
+            ground = _ground_for(selector, rules) or _ground_for(base, rules)
+            fg = _resolve(declared["color"], dark)
+            bg = _resolve(ground, dark)
+            if fg and bg:
+                pairs.append(("dark", selector, fg, bg))
+            continue
+
+        ground = _ground_for(selector, rules)
+        fg = _resolve(declared["color"], light)
+        bg = _resolve(ground, light)
+        if fg and bg:
+            pairs.append(("light", selector, fg, bg))
+
+        # The same rule still applies in dark for whatever slate does not
+        # override, and the tokens underneath it change.
+        override = rules.get(f"{SLATE} {selector}", {})
+        fg_dark = _resolve(override.get("color", declared["color"]), dark)
+        bg_dark = _resolve(override.get("background", ground), dark)
+        if fg_dark and bg_dark and (fg_dark, bg_dark) != (fg, bg):
+            pairs.append(("dark", selector, fg_dark, bg_dark))
+
+    return sorted(set(pairs))
+
+
+DOCS_PAIRS = _docs_pairs()
+
+
+class TestTheDocumentationSiteIsLegibleToo:
+    """`bindsight.css` was checked; the site a reader lands on was not.
+
+    `--bs-muted` was `#6c757d`: 4.08:1 on `--bs-navy-tint` and 4.45:1 on
+    `--bs-canvas`. `.bs-stat .k` is the label under each headline number at
+    .74rem, and `.bs-flow .s small` is the caption under each pipeline stage at
+    .7rem -- so the words naming the numbers were below AA while the numbers
+    stayed crisp. That is the same defect, on the same kind of element, as the
+    one this file was written for, reproduced on the published site because the
+    sweep read one stylesheet and the palette had since become two.
+    """
+
+    def test_the_sweep_reads_the_stylesheet(self) -> None:
+        """Without this, a moved file would make every check below vacuous."""
+        assert DOCS_CSS.is_file(), "the documentation stylesheet is not where the sweep looks"
+
+        light, dark = _docs_palette()
+        assert len(light) >= 8, f"only {len(light)} tokens parsed from :root"
+        assert dark["bs-muted"] != light["bs-muted"], "the slate block was not parsed"
+        assert len(DOCS_PAIRS) >= 10, f"only {len(DOCS_PAIRS)} measurable pairs found"
+
+    def test_every_text_token_is_actually_measured(self) -> None:
+        """A token nobody draws text with would pass by never being looked at."""
+        light, _ = _docs_palette()
+        measured = {fg.lower() for _, _, fg, _ in DOCS_PAIRS}
+
+        for token in ("bs-muted", "bs-navy", "bs-navy-dark"):
+            assert light[token].lower() in measured, (
+                f"--{token} ({light[token]}) is never checked against a ground"
+            )
+
+    @pytest.mark.parametrize(
+        ("scheme", "selector", "fg", "bg"),
+        DOCS_PAIRS,
+        ids=[f"{s}-{sel}" for s, sel, _, _ in DOCS_PAIRS],
+    )
+    def test_it_clears_aa_on_the_ground_it_is_drawn_on(
+        self, scheme: str, selector: str, fg: str, bg: str
+    ) -> None:
+        ratio = contrast(fg, bg)
+
+        assert ratio >= AA_NORMAL, (
+            f"[{scheme}] {selector}: {fg} on {bg} is {ratio:.2f}:1, below WCAG "
+            f"AA's {AA_NORMAL}:1. The text on this site is read at 12px or less "
+            "in several places, so the stricter bar is the honest one."
+        )
+
+    def test_it_would_have_failed_the_value_this_site_shipped(self) -> None:
+        """Guards the guard, with the real colours rather than invented ones."""
+        light, _ = _docs_palette()
+
+        assert contrast("#6c757d", "#e8f0fb") < AA_NORMAL, "the old muted grey now passes?"
+        assert contrast("#6c757d", light["bs-canvas"]) < AA_NORMAL
+        # And the value that replaced it clears both, with room.
+        assert contrast(light["bs-muted"], "#e8f0fb") >= AA_NORMAL
+        assert contrast(light["bs-muted"], light["bs-canvas"]) >= AA_NORMAL
+
+    def test_the_ground_is_inherited_when_the_element_declares_none(self) -> None:
+        """`.bs-stat .k` has no background; the pair is meaningless without one."""
+        rules = _docs_rules()
+
+        assert "background" not in rules.get(".bs-stat .k", {})
+        assert _ground_for(".bs-stat .k", rules) == rules[".bs-stat"]["background"]
+        # A selector with no ancestor that paints anything yields nothing,
+        # rather than being silently measured against a guessed page colour.
+        assert _ground_for(".nothing-like-this", rules) is None
+
+
 class TestTheChartFallbackMatchesTheToken:
     """`charts.js` repeats the colour as a fallback for `cssVar`.
 

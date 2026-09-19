@@ -278,7 +278,7 @@
     <div id="viewer" class="viewer" role="img" data-binder-viewer
          data-structure-url="/api/structure/{id}"
          aria-label="Three-dimensional view of the predicted binder-target complex">
-      <p class="viewer__fallback small muted">
+      <p class="viewer__fallback small muted" role="alert">
         The structure viewer needs JavaScript. Every complex is also committed as
         mmCIF under <code>benchmarks/designer_benchmark/</code>, which is the file
         this viewer reads.
@@ -328,9 +328,10 @@ python scripts/build_docs_results.py   # rewrites the published pages; nothing s
 {#- Vendored, not from a CDN: `bindsight ui` is meant to work on a laptop with
     no connection once installed, and a page that silently needs one does not.
     The literal path stays in this template rather than moving into the script:
-    tests/test_web_ui.py sweeps .j2, .py and .css for references to every
-    vendored asset, so a path that lives only in a .js would make that sweep
-    go quietly blind.
+    tests/test_web_ui.py sweeps .j2, .py, .css and .js for references to
+    every vendored asset. .js was added to that set when the viewer's script
+    left this template for a file of its own; before that, a path living
+    only in a .js would have made the sweep go quietly blind.
 
     The viewer itself is bindsight/report/web/static/binder_viewer.js, shared
     with the published documentation site so the two cannot diverge. -#}

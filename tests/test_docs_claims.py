@@ -1856,6 +1856,40 @@ def test_every_docs_file_is_a_page_or_explicitly_excluded() -> None:
     )
 
 
+def test_the_docs_folder_map_lists_every_page() -> None:
+    """``docs/README.md`` is a map, and a map missing a road is worse than none.
+
+    It was written by hand and never checked, so ``try-your-data.md`` -- a page
+    in the nav, built and published -- was absent from it. The neighbouring
+    test above checks the *nav* against the directory and passed throughout,
+    because the table is not the nav: the drift had nowhere to show up.
+
+    The table is contributor-facing rather than published, which is exactly why
+    it rots quietly. Deriving it from the directory would make this test
+    vacuous, so it is compared against the directory instead, in both
+    directions -- a row for a page that no longer exists is the same defect
+    pointing the other way.
+    """
+    docs = ROOT / "docs"
+    if not docs.is_dir():
+        pytest.skip("no docs directory")
+
+    readme = docs / "README.md"
+    listed = set(re.findall(r"^\|\s*`([A-Za-z0-9_\-]+\.md)`", readme.read_text("utf-8"), re.M))
+    assert len(listed) >= 5, f"the table parser found only {sorted(listed)}"
+
+    present = {p.name for p in docs.glob("*.md")} - {"README.md"}
+
+    missing = sorted(present - listed)
+    assert not missing, (
+        f"docs/README.md does not list {missing}. A contributor opening the "
+        "folder on GitHub is given a map that omits a page the site publishes."
+    )
+
+    stale = sorted(listed - present)
+    assert not stale, f"docs/README.md lists pages that no longer exist: {stale}"
+
+
 def test_the_generator_sweep_covers_every_module_that_writes() -> None:
     """The scope must be derived, not narrowed back to a directory name.
 

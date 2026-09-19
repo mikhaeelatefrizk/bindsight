@@ -17,7 +17,15 @@
   --bs-navy-tint:  #e8f0fb;
   --bs-accent:     #0f9d8f;
   --bs-rule:       #e3e6ea;
-  --bs-muted:      #6c757d;
+  /* 4.5:1 on every ground it is drawn on, the tightest being --bs-navy-tint
+   * (4.92:1). At #6c757d it was 4.08:1 there and 4.45:1 on --bs-canvas, so
+   * the label under each headline number -- .bs-stat .k at .74rem, and
+   * .bs-flow .s small at .7rem -- sat below AA while the number above it
+   * stayed crisp. That is the defect tests/test_contrast.py was written
+   * for, reproduced on the published site. It is not --ink-faint from
+   * theme.py (#68727f): that clears AA on the app's grounds and misses on
+   * this one, because the tinted panels here are lighter. */
+  --bs-muted:      #5f6873;
   --bs-canvas:     #f7f9fc;
 }
 
@@ -241,6 +249,13 @@
 
   .bs-flow .s {
     flex: 1 1 100%;
+  }
+
+  /* 26rem is roughly 416px: taller than a phone shows at once in portrait,
+     which pushed the design picker and the chain legend below the fold --
+     the two things that say what is being looked at. */
+  .bs-viewer {
+    height: 17rem;
   }
 }
 

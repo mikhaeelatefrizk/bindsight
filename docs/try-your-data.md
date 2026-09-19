@@ -9,9 +9,11 @@ this path knows about cancer — `tumor` and `normal` are values you supply, not
 values the code expects.
 
 **Nothing here is uploaded.** The files are read in your browser with
-`File.slice().text()` and never leave your machine: this page has no upload, no
-form action and makes no network request of any kind. It runs the same checker
-`bindsight ui` runs, from the same file.
+`File.slice().text()` and never leave your machine: the checker has no upload,
+no form action, and makes no network request of any kind — your data is never
+part of any request this page sends. (The page itself is an ordinary page on
+this site and loads its web font the way the rest of them do.) It runs the
+same checker `bindsight ui` runs, from the same file.
 
 <div class="bs-card" markdown="0">
   <div class="bs-field">
@@ -24,7 +26,7 @@ form action and makes no network request of any kind. It runs the same checker
     <input type="file" id="design" accept=".tsv,.txt,.gz">
     <p class="bs-field__help">One row per sample, with a column naming the condition.</p>
   </div>
-  <div id="checks"></div>
+  <div id="checks" aria-live="polite" aria-atomic="false"></div>
 </div>
 
 Files are checked the moment you choose them — shape, separator, and whether the
