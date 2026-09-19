@@ -106,7 +106,7 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 
 ## Releasing (maintainer notes)
 
-1. Bump version in `pyproject.toml`, `CITATION.cff`, `.zenodo.json` and `codemeta.json`.
+1. Bump version in `pyproject.toml`, `CITATION.cff` and `codemeta.json`.
 2. Move `## [Unreleased]` entries in `CHANGELOG.md` to a new `## [vX.Y.Z] - YYYY-MM-DD` section.
 3. Tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`. (Tags and commits in this repository are
    **not** GPG-signed — see [SECURITY.md](SECURITY.md) for what is and is not
@@ -114,14 +114,11 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 4. Push: `git push origin vX.Y.Z`, then publish the GitHub release for that tag.
 5. On release publish, `release-artifacts.yml` builds the wheel + sdist and attaches
    them with SHA-256 checksums. The PyPI upload job is gated on the
-   `PYPI_TRUSTED_PUBLISHING` repository variable and is currently inert. The Zenodo
-   deposit is made by `zenodo.yml` through Zenodo's deposit API
-   (`scripts/zenodo_deposit.py`, with the `ZENODO_TOKEN` secret): the GitHub–Zenodo
-   integration cannot see this repository object since the repository was recreated
-   on 2026-09-14, and the job fails rather than skips when the secret is missing.
-   The first deposit of a lineage mints the concept DOI; write it in with
-   `python scripts/set_doi.py <concept DOI>`, after which every later release is
-   deposited as a new version of that concept.
+   `PYPI_TRUSTED_PUBLISHING` repository variable and is currently inert. There is no
+   software archive and no DOI: the archive integration could not see this
+   repository object after the repository was recreated on 2026-09-14, and an
+   identifier that does not resolve is worse than none. A release is identified by
+   its tag, its checksummed artifacts and the digest-pinned container image.
 
 ---
 

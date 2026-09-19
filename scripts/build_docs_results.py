@@ -168,12 +168,14 @@ def _nulls_section(st: showcase.StudyShowcase) -> list[str]:
         observed = spec.get("observed")
         p_value = spec.get("p_value")
         n_perm = spec.get("n_permutations")
+        n_antigens = spec.get("n_antigens")
+        n_cohorts = spec.get("n_cohorts")
         lines += [
-            "**Against a permuted indication — positive.** The same antigens, ranked "
-            "in the cancer they are actually used in against a permuted assignment to "
-            "the other cohorts. This asks a different question: not whether any single "
-            "antigen beats its lookalikes, but whether the ordering knows which "
-            "disease it is looking at.",
+            "**Against a permuted indication — positive.** A narrower panel than the "
+            "decoy null above, ranked in the cancer each antigen is actually used in "
+            "against a permuted assignment to the other cohorts. This asks a "
+            "different question: not whether any single antigen beats its lookalikes, "
+            "but whether the ordering knows which disease it is looking at.",
             "",
         ]
         if observed is not None and p_value is not None:
@@ -184,7 +186,19 @@ def _nulls_section(st: showcase.StudyShowcase) -> list[str]:
                 if st.specificity_is_at_its_floor
                 else ""
             )
+            # The denominator, stated with the p-value rather than left to the
+            # reader. It is narrower than the decoy null's directly above, and
+            # this page was the one surface quoting the p-value without saying
+            # so -- the README, docs/what-is-bindsight.md and the study's own
+            # RESULTS.md all name the restriction inline. The count is read
+            # from the study rather than written here, so it cannot drift.
             lines += [
+                f"- Computed over **{n_antigens} antigens**"
+                + (f" of the {len(st.decoy_rows)} pairs above" if st.decoy_rows else "")
+                + f", across {n_cohorts} cohorts — those carrying a single "
+                "indication. The test assigns one cohort per antigen, so an antigen "
+                "licensed in several cancers has no single correct one to permute "
+                "and cannot enter it",
                 f"- Observed mean standing **{observed:.3f}**, where 1.0 is the top of "
                 "the eligible surfaceome and 0.0 the bottom",
                 f"- p = **{p_value:.2e}** over {n_perm} enumerated permutations{floor_note}",
@@ -430,12 +444,15 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
 
     lines += [
         "The real Boltz-2 predicted complex behind every ipTM below is committed",
-        "alongside its metrics. Rotate them in 3-D on the",
         # "Real results" was a page in the removed app. The served interface
         # puts the viewer on Evidence, under "The complexes themselves", and
         # this line renders into docs/results.md -- so the published page was
-        # giving directions to a page that no longer exists.
-        f"[live app]({showcase_hf()}) → **Evidence** → *The complexes themselves*.",
+        # giving directions to a page that no longer exists. It then pointed at
+        # the hosted build, which is a promise this repository cannot keep on
+        # its own: the Space serves whatever it last received. `bindsight ui`
+        # serves this tree, which is the copy a reader of this page has.
+        "alongside its metrics. Rotate them in 3-D with `bindsight ui`",
+        "→ **Evidence** → *The complexes themselves*.",
         "",
         "| design | ipTM | PAE-int (Å) | developability | length | instability |",
         "|---|--:|--:|--:|--:|--:|",

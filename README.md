@@ -214,7 +214,7 @@ reference resources, none of which is wired in.
                                                   Multi-objective ranking
                                                               │
                                                               ▼
-                                       HTML report + RO-Crate (Zenodo)
+                                       HTML report + RO-Crate (FAIR)
                                        with full PROV-O provenance
 ```
 
@@ -231,7 +231,7 @@ reference resources, none of which is wired in.
 | **`bindsight design --dry-run`** — GPU cost estimate before spending | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight rank`** — multi-objective composite scoring | ✅ ready | `bindsight rank runs/x` |
-| **`bindsight export`** — RO-Crate zip for a Zenodo deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
+| **`bindsight export`** — RO-Crate zip for deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |
 | **`bindsight benchmark`** — score rediscovery of held-out known antigens | ✅ ready | `bindsight benchmark runs/x --known-antigens benchmarks/known.tsv` |
 | **`bindsight doctor`** — diagnose deps, caches, vendored data | ✅ ready | `bindsight doctor` |
 | **`bindsight verify-licenses`** — per-component license inventory | ✅ ready | `bindsight verify-licenses` |
@@ -350,7 +350,7 @@ subdirectories are documented in the table below rather than individually.
 | Hardware | HPC assumed | CPU laptop + offload to a free Kaggle T4 |
 | Cost-awareness | None | `--dry-run` estimates GPU spend before running |
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`), and published |
-| Citability | Code dump | DOI per release, JSON-Schema-validated outputs |
+| Citability | Code dump | Tagged releases with SHA-256 checksums, JSON-Schema-validated outputs |
 
 For the full landscape comparison, see
 [ARCHITECTURE.md § 8](ARCHITECTURE.md#8-comparison-vs-existing-tools).
@@ -373,19 +373,19 @@ builds on most directly:
 
 ## Citation
 
-Cite the software by its Zenodo **concept DOI**, which always resolves to the
-latest archived version:
+This software is not archived and has no DOI. Cite the repository, the release
+tag you actually ran, and the author:
 
-> `10.5281/zenodo.PENDING`
-
-> **The DOI is a placeholder until this repository's first Zenodo deposit.** It is
-> deliberately not a valid identifier, so it cannot be published by accident.
-> After minting, run `python scripts/set_doi.py <the minted DOI>` — it writes the
-> value into every file that names one, and a test fails if any is left behind.
+> Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de
+> novo protein binder design* (version X.Y.Z).
+> <https://github.com/mikhaeelatefrizk/bindsight>
 
 Citation metadata also lives in [CITATION.cff](CITATION.cff); GitHub's "Cite this
-repository" button generates BibTeX and APA from it. Please also cite the upstream
-tools you used — each run emits a `software.bib` to make that straightforward.
+repository" button generates BibTeX and APA from it. Every release attaches a
+wheel, an sdist and a `SHA256SUMS` file, and every image is digest-pinned, so
+the artifacts behind a version are checkable even though the version has no
+DOI. Please also cite the upstream tools you used — each run emits a
+`software.bib` to make that straightforward.
 
 ## About the author
 

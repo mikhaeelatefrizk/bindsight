@@ -16,14 +16,13 @@ paper/
 ```
 
 > ℹ️ **No compiled PDF is committed.** One used to be, but it predated the
-> v0.2.1 corrections and carried the wrong licence ("MIT"), a superseded Zenodo
-> version DOI and the pre-correction Boltz-2 reference — a deposit hazard sitting
+> v0.2.1 corrections and carried the wrong licence ("MIT"), a superseded
+> archive DOI and the pre-correction Boltz-2 reference — a deposit hazard sitting
 > in the tree. It has been removed. Compile a fresh one from `manuscript.tex`
 > (Step 1 below) at submission time, and do not commit the output.
 
-Both cite the software by its Zenodo **concept DOI** `10.5281/zenodo.PENDING`,
-which always resolves to the latest archived version — the right thing to cite
-for "the software"; use a version DOI only to pin an exact release.
+Neither cites a software DOI: bindsight is not archived, so both cite the
+repository and the tagged release instead.
 Same author (Mikhaeel Atef Rizk Wahba, ORCID `0009-0006-1069-9558`). Same code
 and demo. Different audiences and review processes.
 
@@ -58,7 +57,8 @@ review happens transparently on GitHub.
    - **Version:** `v0.3.1` — the tag, not the branch. JOSS archives what the
      tag points at, so a moving `main` is not a submission.
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
-   - **Software archive:** `https://doi.org/10.5281/zenodo.PENDING`
+   - **Software archive:** none yet. JOSS asks for an archive DOI *after*
+     review, not at submission — create one then and give the editor the DOI.
 4. Submit. The JOSS editor assigns a handling editor and at least two
    reviewers. Reviewers open issues in your GitHub repo with comments;
    you address them; the editor publishes when the criteria are met.
@@ -137,8 +137,8 @@ compile.
    - **Funding:** None
    - **Competing interests:** None
    - **Data availability:** "All source code, data, and materials are
-     available at https://github.com/mikhaeelatefrizk/bindsight and
-     archived at Zenodo (concept DOI 10.5281/zenodo.PENDING)."
+     available at https://github.com/mikhaeelatefrizk/bindsight, at the
+     release tag cited in the manuscript."
 8. Review and submit. bioRxiv editors do an initial check (typically
    within 48 hours) and assign a DOI like `10.1101/2026.05.11.NNNNNN`.
 

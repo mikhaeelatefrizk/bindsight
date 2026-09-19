@@ -54,8 +54,9 @@ Both are reported because reporting only the flattering one would make the other
 
 Read that with the panel's resolution in mind. Each pair's p is bounded below by the size of its own decoy stratum, so the smallest BH-adjusted value this panel could have produced is **0.022** — under 0.05, so a pair genuinely could have survived, but only one sitting essentially on its floor. The negative is a measurement, not a foregone conclusion; it is also not a sensitive one.
 
-**Against a permuted indication — positive.** The same antigens, ranked in the cancer they are actually used in against a permuted assignment to the other cohorts. This asks a different question: not whether any single antigen beats its lookalikes, but whether the ordering knows which disease it is looking at.
+**Against a permuted indication — positive.** A narrower panel than the decoy null above, ranked in the cancer each antigen is actually used in against a permuted assignment to the other cohorts. This asks a different question: not whether any single antigen beats its lookalikes, but whether the ordering knows which disease it is looking at.
 
+- Computed over **7 antigens** of the 22 pairs above, across 15 cohorts — those carrying a single indication. The test assigns one cohort per antigen, so an antigen licensed in several cancers has no single correct one to permute and cannot enter it
 - Observed mean standing **0.858**, where 1.0 is the top of the eligible surfaceome and 0.0 the bottom
 - p = **3.97e-04** over 5040 enumerated permutations — the floor for this many permutations, so it is as extreme as an exhaustive enumeration of this panel can show rather than vanishingly small
 - Within-antigen difference **0.348** (95% CI 0.188–0.513) between an antigen's standing in its own indication and in cohorts carrying no panel antigen — each antigen is its own control, and the interval excludes zero
@@ -140,8 +141,8 @@ A **real GPU run**, not a simulation — backend `kaggle`, GPU `Tesla T4-16GB (K
 </div>
 
 The real Boltz-2 predicted complex behind every ipTM below is committed
-alongside its metrics. Rotate them in 3-D on the
-[live app](https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight) → **Evidence** → *The complexes themselves*.
+alongside its metrics. Rotate them in 3-D with `bindsight ui`
+→ **Evidence** → *The complexes themselves*.
 
 | design | ipTM | PAE-int (Å) | developability | length | instability |
 |---|--:|--:|--:|--:|--:|

@@ -206,7 +206,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class TestTheBibliographyCreditsTheToolsThatDidTheWork:
-    """software.bib is deposited to Zenodo as the run's citation record. It named
+    """software.bib travels with the crate as the run's citation record. It named
     ``bindsight.design.rfdiff_mpnn`` and ``bindsight.validate.boltz2`` -- both
     bindsight's own wrappers, at bindsight's version, under bindsight's AGPL --
     so it credited none of RFdiffusion, ProteinMPNN or Boltz-2, and asserted a

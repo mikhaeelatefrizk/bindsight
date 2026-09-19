@@ -53,28 +53,41 @@ ERR_TINT = "#ffebee"
 GITHUB_URL = "https://github.com/mikhaeelatefrizk/bindsight"
 DOCS_URL = "https://mikhaeelatefrizk.github.io/bindsight/"
 HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
-# The concept DOI, which always resolves to the latest release; a version DOI
-# would pin readers to whichever release happened to be current when this was
-# written.
-ZENODO_DOI = "10.5281/zenodo.PENDING"
-ZENODO_DOI_URL = f"https://doi.org/{ZENODO_DOI}"
 
-#: Whether the DOI above is still the shipped placeholder. The repository ships
-#: a deliberately invalid identifier until the first Zenodo deposit, and
-#: ``scripts/set_doi.py`` replaces it -- but the app rendered it as a live link
-#: behind a button labelled "Cite", so the one thing a reader is most likely to
-#: click during a demonstration resolved to a 404.
-DOI_IS_PENDING = ZENODO_DOI.endswith("PENDING")
+#: Whether the published Space is known to be serving *this* build.
+#:
+#: It is not, and has not been since the release that deleted the Streamlit
+#: app. ``.github/workflows/sync-hf-space.yml`` skips every step and reports
+#: success until an ``HF_TOKEN`` secret exists, so the Space keeps serving
+#: whatever build it last received -- and a workflow that is green while doing
+#: nothing is why no check caught it. The job that does catch it is
+#: ``keep-warm.yml``'s ``hf-build-identity``, which fetches the interface
+#: stylesheet and fails unless it carries this build's own token; it has been
+#: red for the life of this release, which is correct.
+#:
+#: Flip this to True only on a green run of that job.
+#: ``tests/test_hosted_demo_claims.py`` checks it in both directions, so it can
+#: be flipped neither early nor forgotten late.
+HF_SPACE_IS_SERVING_THIS_BUILD = False
 
 
 def citation_line() -> str:
-    """How to cite, or an honest statement that the DOI does not exist yet."""
-    if DOI_IS_PENDING:
-        return (
-            "DOI pending — assigned at the first Zenodo deposit. "
-            "Cite the repository and its version in the meantime."
-        )
-    return f"[{ZENODO_DOI}]({ZENODO_DOI_URL})"
+    """How to cite: the repository and the release tag, since there is no DOI.
+
+    This function used to hold a DOI and return it as a *Markdown* link. Its
+    one consumer, ``overview.html.j2``, interpolates the result into HTML under
+    Jinja's autoescape with no Markdown filter, so the paragraph would have
+    rendered the brackets. It never did: the identifier was a placeholder, the
+    placeholder branch returned prose, and the branch that returned Markdown
+    never ran. The test of this very paragraph was written as
+    ``if theme.DOI_IS_PENDING:``, so it would have stopped running at the
+    instant the bug started rendering. Plain text now; the template makes the
+    link, and the test of it is unconditional.
+    """
+    return (
+        "Cite the repository and the release tag you ran. There is no DOI: "
+        "this software is not archived."
+    )
 
 
 LICENSE_NAME = "AGPL-3.0-or-later"

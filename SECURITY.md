@@ -1,7 +1,7 @@
 # Security & provenance
 
 `bindsight` backs its results with per-run provenance manifests, content
-hashes and archived releases. This page describes what those guarantees
+hashes and checksummed releases. This page describes what those guarantees
 actually are.
 
 ## Commit signing
@@ -20,17 +20,18 @@ so on the release that introduces it, not before.
 ## What the provenance guarantees actually are
 
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
-- [CITATION.cff](CITATION.cff) carries the author + ORCID + DOI metadata.
-- The Zenodo concept DOI [10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING)
-  resolves to the latest archived release; every tagged release gets its own
-  version DOI on publish via `.github/workflows/zenodo.yml`, which deposits
-  through Zenodo's (CERN-operated) API.
+- [CITATION.cff](CITATION.cff) carries the author + ORCID metadata.
+- **There is no software archive and no DOI.** The archive integration could
+  not see this repository object after the repository was recreated on
+  2026-09-14, and an identifier that does not resolve is not a citation. A
+  release is identified by its tag, the SHA-256 checksums published with its
+  wheel and sdist, and the digest-pinned container image.
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
-  identifies the author across the Zenodo record and the repository
-  metadata. ORCID is an identifier registry, not a cryptographic
-  attestation, and it does not sign or verify commits.
+  identifies the author across the repository metadata. ORCID is an identifier
+  registry, not a cryptographic attestation, and it does not sign or verify
+  commits.
 
 ## Reporting a vulnerability
 

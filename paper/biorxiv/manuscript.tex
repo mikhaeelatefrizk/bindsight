@@ -73,17 +73,17 @@ Kaggle T4, which is the path the committed binder benchmark used. Paid Modal
 serverless GPU and local NVIDIA Docker are implemented but have not been run
 end to end, and the Colab path needs a human with a browser tab open because
 Google's API does not permit launching a free-tier notebook from a CLI; it is
-a demonstration rather than a reproducibility path. A public web demo at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}
-runs the full discovery pipeline in any browser without installation. On a real
+a demonstration rather than a reproducibility path. A server-rendered web
+interface runs the same discovery pipeline in a browser; it is launched locally with \texttt{bindsight ui} and
+published as a public Hugging Face Space at
+\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}. On a real
 TCGA breast-carcinoma cohort (tumor vs.\ adjacent normal, auto-downloaded from
 NIH/GDC), the pipeline discovers antibody-tractable cell-surface antigens
 over-expressed in tumor with full provenance; established targets such as ERBB2
 (HER2) surface among the candidates when their expression signal is present.
 Software is
-licensed GNU AGPL-3.0-or-later and archived at Zenodo under the concept DOI
-\href{https://doi.org/10.5281/zenodo.PENDING}{10.5281/zenodo.PENDING}, which
-resolves to the latest archived version.
+licensed GNU AGPL-3.0-or-later and available at
+\href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight}.
 \end{abstract}
 
 % --------------------------------------------------------------------
@@ -137,7 +137,7 @@ server-rendered web interface that exploits this newly-opened window. It
 takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
 binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
 JSON-LD provenance graph and an RO-Crate~\cite{SoilandReyes2022} packaged
-artifact for direct deposit to Zenodo.
+artifact for direct deposit in a data repository.
 
 % --------------------------------------------------------------------
 \section{Methods and architecture}
@@ -189,7 +189,8 @@ output artifact, the parameters in canonical JSON, and (where the stage ran
 in a container) the container image digest. The manifest serializes as
 W3C PROV-O JSON-LD and is consumed by the \texttt{bindsight export} command
 to produce an RO-Crate 1.1~\cite{SoilandReyes2022} \texttt{.crate.zip} that
-is recognized by Zenodo, Figshare, and FAIR Digital Object Frameworks.
+is recognized by research data repositories and FAIR Digital Object
+Frameworks.
 The result is that every binder PDB the pipeline outputs is one click away
 from the patient cohort it came from, the differential-expression statistics
 that flagged the target, the AlphaFoldDB model used, the SURFACE-Bind site
@@ -200,15 +201,16 @@ digest of every step.
 
 A server-rendered web interface built on FastAPI~\cite{FastAPI} and Jinja
 exposes the same pipeline through a zero-install browser UI, with no build
-step and no network fetch once installed. The deployed instance at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight} provides
+step and no network fetch once installed. It provides
 five sections: an Overview stating what the tool has and has not shown; an
 Evidence page rendered from the committed benchmark artifacts, including the
 twenty predicted binder--target complexes in 3-D; a one-click demo that runs
 the discovery pipeline live and renders a paper-style HTML report; a
 \textit{Your data} page that validates a user's counts matrix and design table
 in the browser, without uploading either; and a Runs inspector for any output
-directory. The same application is launched locally with \texttt{bindsight ui}.
+directory. It is launched locally with \texttt{bindsight ui} and published as a
+Hugging Face Space at
+\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
 
 \subsection{Architecture diagram}
 
@@ -234,7 +236,7 @@ directory. The same application is launched locally with \texttt{bindsight ui}.
   \node[gpu, below=8mm of mpnn] (boltz) {Validate\\(Boltz-2)};
   \node[cpu, right=of boltz] (rank) {Rank};
   \node[outbox, right=of rank] (report) {HTML\\report};
-  \node[outbox, right=of report] (crate) {RO-Crate\\(Zenodo)};
+  \node[outbox, right=of report] (crate) {RO-Crate\\(FAIR)};
 
   \draw[arr] (counts) -- (deg);
   \draw[arr] (deg) -- (surf);
@@ -314,10 +316,13 @@ report (volcano plot, ranked candidate table, PROV-O manifest) and a PROV-O
 artifact, plus a cohort \texttt{provenance.json} listing the exact GDC file
 UUIDs and case barcodes.
 
-\paragraph{Web demo.} The same demo is reachable in any web browser at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight} without
-local installation; the first visitor on a fresh container triggers the
-download + analysis and the result is cached for subsequent visitors.
+\paragraph{Web demo.} The same demo runs in a web browser through the interface
+described above, with no local installation; a public deployment is published as
+a Hugging Face Space at
+\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
+The first run on a fresh container pays the GDC download; that download is
+cached to disk, so a second run on the same container reads from there rather
+than the network.
 
 % --------------------------------------------------------------------
 \section{Quality assurance and reproducibility}
@@ -349,9 +354,8 @@ checkable interactively via the \texttt{bindsight verify-licenses} command.
 The full source code, including the web interface, Snakemake
 pipeline, conda environment specifications, container Dockerfile, GitHub
 Actions workflows, examples, and documentation, is publicly available at
-\href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight}
-and permanently archived at Zenodo
-(\href{https://doi.org/10.5281/zenodo.PENDING}{10.5281/zenodo.PENDING}).
+\href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight},
+at the release tag this manuscript cites.
 The web demo is hosted as a Hugging Face Space at
 \href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
 
@@ -439,7 +443,6 @@ expected practice in the field.
 
 \begin{itemize}
   \item \textbf{Source code:} \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight} (GNU AGPL-3.0-or-later)
-  \item \textbf{Permanent archive:} Zenodo, concept DOI \href{https://doi.org/10.5281/zenodo.PENDING}{10.5281/zenodo.PENDING} (resolves to the latest version)
   \item \textbf{Web demo:} \href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}
   \item \textbf{Documentation:} \href{https://github.com/mikhaeelatefrizk/bindsight#readme}{github.com/mikhaeelatefrizk/bindsight\#readme}
   \item \textbf{Demo data:} bundled in \texttt{examples/demo/} (CC0)

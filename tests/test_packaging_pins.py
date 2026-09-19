@@ -3,7 +3,7 @@
 """Tests for the packaging metadata that makes a published number re-derivable.
 
 These files are not code, but they decide which numeric stack a fresh install
-resolves to and which licence a Zenodo deposit claims — the historical v0.1.0
+resolves to and which licence the release metadata claims — the historical v0.1.0
 record asserted MIT for AGPL-3.0-or-later code because nothing here checked.
 """
 
@@ -20,7 +20,6 @@ from packaging.version import Version
 
 REPO_ROOT = Path(__file__).parent.parent
 PYPROJECT = REPO_ROOT / "pyproject.toml"
-ZENODO = REPO_ROOT / ".zenodo.json"
 CODEMETA = REPO_ROOT / "codemeta.json"
 CONSTRAINTS = REPO_ROOT / "envs" / "constraints.txt"
 
@@ -88,28 +87,6 @@ def _requirements() -> dict[str, str]:
             name = match.group(1).lower()
             specs[name] = req[match.end() :]
     return specs
-
-
-# ---------------------------------------------------------------------------
-# Zenodo deposit metadata
-# ---------------------------------------------------------------------------
-def test_zenodo_metadata_parses() -> None:
-    data = json.loads(ZENODO.read_text(encoding="utf-8"))
-    assert data["title"].strip()
-    assert data["upload_type"] == "software"
-    assert data["creators"]
-
-
-def test_zenodo_license_is_agpl_and_matches_pyproject() -> None:
-    """The v0.1.0 record said MIT for AGPL code; the deposit must state the SPDX id."""
-    data = json.loads(ZENODO.read_text(encoding="utf-8"))
-    assert data["license"] == "AGPL-3.0-or-later"
-    assert data["license"] == _pyproject()["project"]["license"]
-
-
-def test_zenodo_version_matches_the_package_version() -> None:
-    data = json.loads(ZENODO.read_text(encoding="utf-8"))
-    assert data["version"].lstrip("v") == _pyproject()["project"]["version"]
 
 
 # ---------------------------------------------------------------------------
@@ -283,23 +260,30 @@ def test_every_dockerfile_installs_through_pinned_versions(path: Path) -> None:
 # ---------------------------------------------------------------------------
 # codemeta.json — read by software registries and citation indexers
 # ---------------------------------------------------------------------------
-def test_codemeta_agrees_with_pyproject_and_zenodo() -> None:
-    """Three metadata files describe one release; drift misattributes it."""
+def test_codemeta_agrees_with_pyproject() -> None:
+    """Two metadata files describe one release; drift misattributes it.
+
+    There were three. The deposit metadata was the third, and it is gone with
+    the archive it described.
+    """
     codemeta = json.loads(CODEMETA.read_text(encoding="utf-8"))
     pyproject = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
-    zenodo = json.loads(ZENODO.read_text(encoding="utf-8"))
 
     assert codemeta["version"] == pyproject["version"]
-    assert codemeta["version"] == zenodo["version"].removeprefix("v")
+    assert codemeta["version"] == codemeta["softwareVersion"]
     # SPDX identifier, expressed as the licence URL codemeta expects.
     assert codemeta["license"].rstrip("/").endswith(pyproject["license"])
-    assert zenodo["license"] == pyproject["license"]
 
 
-def test_codemeta_cites_the_concept_doi() -> None:
-    """A version DOI would pin indexers to one release forever."""
+def test_codemeta_publishes_no_identifier() -> None:
+    """Software registries and citation indexers read this file.
+
+    It carried an identifier that could not resolve, which is how a deliberately
+    invalid placeholder reached the indexes as though it were a DOI. The field
+    is absent rather than empty: an empty one would be published too.
+    """
     codemeta = json.loads(CODEMETA.read_text(encoding="utf-8"))
-    assert codemeta["identifier"].endswith("10.5281/zenodo.PENDING")
+    assert "identifier" not in codemeta
 
 
 # ---------------------------------------------------------------------------

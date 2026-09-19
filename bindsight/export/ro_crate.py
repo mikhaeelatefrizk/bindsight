@@ -3,8 +3,8 @@
 """RO-Crate exporter.
 
 Bundles a finished bindsight run into a single ``.crate.zip`` that is
-recognized by Zenodo, Figshare, FAIR Digital Object Frameworks, and the
-broader Research Object Crate ecosystem.
+recognized by research data repositories, FAIR Digital Object Frameworks, and
+the broader Research Object Crate ecosystem.
 
 We emit the lightweight RO-Crate 1.1 metadata format
 (https://www.researchobject.org/ro-crate/1.1/) — a single ``ro-crate-metadata.json``
@@ -16,8 +16,9 @@ hundred KB of code for one JSON file.
 Every payload file in the crate is byte-identical for runs with the same
 manifest; the only varying field is ``datePublished`` in the metadata, which
 records when the crate was packaged rather than anything about the run. So
-this is a reproducibility primitive — depositing the crate to Zenodo gives a
-DOI that anyone can dereference to pull the exact artifacts we packaged.
+this is a reproducibility primitive — depositing the crate in an archive that
+mints identifiers gives one anybody can dereference to pull the exact artifacts
+we packaged. Which archive is the depositor's choice; the crate names none.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ def export_ro_crate(
     run_dir: Path | str,
     out_path: Path | str | None = None,
 ) -> Path:
-    """Bundle ``run_dir`` into an RO-Crate zip suitable for Zenodo deposit.
+    """Bundle ``run_dir`` into an RO-Crate zip suitable for deposit.
 
     Args:
         run_dir: directory produced by ``bindsight discover`` (and optionally

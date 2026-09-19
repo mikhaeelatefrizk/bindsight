@@ -165,7 +165,7 @@ Adds:
 - Boltz-2 affinity + iPTM scores per design
 - Composite ranking
 - Self-contained HTML report (embedded volcano plot + tables + PROV-O manifest)
-- RO-Crate export for Zenodo deposit
+- RO-Crate export for deposit in a research data repository
 
 ### Validation (done — discovery half)
 

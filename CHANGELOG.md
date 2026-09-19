@@ -8,22 +8,116 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
-### Added — the archive is made by this repository
+### Removed — the archive, and the identifier that was standing in for one
 
-- `.github/workflows/zenodo.yml` deposits every published release on Zenodo
-  through its deposit API, from the tag's own `.zenodo.json` and GitHub's
-  source archive of the tag (`scripts/zenodo_deposit.py`). It exists because
-  the GitHub–Zenodo integration cannot see this repository object: after the
-  recreation on 2026-09-14, Zenodo refused to enable the recreated repository
-  (HTTP 403) and answered the v0.3.1 release event with "The repository does
-  not exist", which only Zenodo can repair. The workflow needs a
-  `ZENODO_TOKEN` secret and fails without it — an unarchived release is a
-  defect, not a skip. The lineage rule is `CITATION.cff`'s: a new concept
-  while it carries the placeholder, a new version of the cited concept once
-  `scripts/set_doi.py` has written the minted DOI in. A manual run leaves a
-  draft unless told to publish, and the next run reuses that draft rather
-  than creating a second one. The 0.3.1 entry below said the integration had
-  been re-enabled; it is corrected there.
+Zenodo is gone: `.zenodo.json`, `.github/workflows/zenodo.yml`,
+`scripts/zenodo_deposit.py`, `scripts/set_doi.py` and the tests that held
+them — 1,398 lines, and the entry that used to sit here announcing the first
+three of them.
+
+It could not be repaired from inside this repository. Zenodo keys repositories
+by GitHub id, and the recreation on 2026-09-14 left it holding the previous
+object under this name: it answers HTTP 403 to enabling the new one, and
+answered the v0.3.1 release with "The repository does not exist". The deposit
+script written last week was the way around that, and it was a good way around
+it, but it needed a `ZENODO_TOKEN` that had to exist before any citation in the
+tree resolved — so the tree's correctness was waiting on a setting outside it,
+which is the shape of every other failure in the 0.3.1 entry below.
+
+What the placeholder was actually doing while it waited is the part worth
+recording. `10.5281/zenodo.PENDING` is deliberately invalid, and it was being
+published as though it were not. GitHub's "Cite this repository" button reads
+`CITATION.cff`'s `doi` key, so it went into readers' bibliographies as a 404;
+`codemeta.json` published it to software indexers; the JSON-LD in
+`overrides/main.html` published it as `sameAs` on every page of the
+documentation site. Nine documents carried it and exactly one — the README —
+said it was a placeholder. The other eight said the software **is archived**,
+among them a manuscript abstract and the block of text `paper/README.md`
+instructs the author to paste verbatim into a submission form.
+
+No test failed, because the guard asserted that every file named the *same*
+DOI. A placeholder satisfies that perfectly. Agreement was the wrong property
+to check when the value agreed upon could not resolve.
+
+A release is now identified by what this repository can actually produce: its
+tag, the SHA-256 checksums published beside its wheel and sdist, the
+digest-pinned container image, and the PROV-O manifest inside every run. There
+is no DOI, and no document claims one.
+
+Three things were deliberately **not** removed:
+
+- **Forty DOIs belonging to other people.** PyDESeq2, DESeq2, edgeR, AlphaFold,
+  RFdiffusion, ProteinMPNN, Boltz-2, SURFY, SURFACE-Bind, Snakemake, Open
+  Targets, and the clinical trials behind `benchmarks/binders.tsv`. One of them
+  is written into the provenance manifest of every run. A sweep for "DOI" that
+  could be satisfied by deleting these would be pointed at the wrong thing, so
+  `tests/test_no_zenodo.py` asserts they are still there — it fails in both
+  directions.
+- **The RO-Crate exporter.** It names no service now, but a run bundle is still
+  built for deposit; where the depositor puts it is their choice.
+- **This file's history.** The Zenodo episode is in the entries below and stays
+  there. Deleting the word would falsify the record rather than correct it.
+
+The records already published cannot be removed by anyone here — Zenodo records
+are permanent by design — so five of them go on resolving to releases through
+v0.2.2. This repository is simply silent about them.
+
+### Fixed — a citation that would have rendered its own brackets
+
+`bindsight.report.theme.citation_line` returned a *Markdown* link, and its one
+consumer interpolates into HTML under Jinja's autoescape with no Markdown
+filter, so the "Citing this" paragraph would have shown the brackets to every
+visitor. It never did: the identifier was a placeholder, the placeholder branch
+returned prose, and the branch that built the Markdown never ran. The test of
+that paragraph was itself written as `if theme.DOI_IS_PENDING:` — so it would
+have stopped running at the exact moment the defect started rendering. A flag
+guarding both the bug and its test is a bug with no way to be found.
+
+The function returns text, the template makes the link, and the test is
+unconditional and checks for a literal `](`. The `doi_pending` value passed
+into the template globals, which no template ever read, is gone with it.
+
+### Fixed — ten documents said the hosted demo runs; two said it does not
+
+The Hugging Face Space serves a blank page titled "Streamlit", the framework
+the interface release deleted, and has since that release: `sync-hf-space.yml`
+skips every step and reports success until an `HF_TOKEN` secret exists.
+
+This was never unknown. The 0.3.1 entry below says the demo is not restored,
+and `report/showcase.py` says the Space does not deploy the full repository.
+Meanwhile a manuscript abstract said a public web demo "runs the full discovery
+pipeline in any browser", and the documentation home page made "Try it live"
+its primary button — the first thing a visitor clicks, landing on the blank
+page. The true sentence existed twice and the false one ten times, which is a
+propagation failure, not a gap in what anyone knew.
+
+Every document now names the Space as an address rather than a promise, wording
+that stays true once it is rebuilt, so none of it has to be un-written. The one
+exception is that button, which is read after it is clicked and so cannot be
+hedged: it points at the results page until the Space serves this build.
+`theme.HF_SPACE_IS_SERVING_THIS_BUILD` records which of those two worlds we are
+in, and `tests/test_hosted_demo_claims.py` holds it to the workflow in both
+directions — it cannot be flipped early, and it cannot be forgotten late.
+
+One claim was false regardless of any rebuild: the manuscript said a first
+visitor's analysis "is cached for subsequent visitors". Only the GDC download
+is cached, to disk, for a second run on the same container.
+
+### Fixed — the one page that quoted a p-value without its denominator
+
+The permuted-indication test reports p = 3.97e-04 over 5,040 orderings, and it
+covers 7 of the 22 antigen-cohort pairs: those with a single indication, since
+the test assigns one cohort per antigen and an antigen licensed in several
+cancers has no single correct one to permute. The README, `what-is-bindsight.md`
+and the study's own `RESULTS.md` all say so beside the number. `docs/results.md`
+did not — and there the number sits two paragraphs under the decoy null's "Of
+22 pairs", so the narrower denominator read as the same one. That page is the
+one `docs/index.md` sends readers to for the headline figures.
+
+The count was already in the study's output and already rendered by
+`study_report.py`; `scripts/build_docs_results.py` was the one renderer not
+reading it. It reads it now, so the denominator is generated rather than
+written, and the page states it in the same bullet list as the p-value.
 
 ## [0.3.1] - 2026-09-18
 

@@ -236,8 +236,8 @@ bindsight export runs/my_first_run --format ro-crate --out runs/my_first_run.cra
 ```
 
 The HTML report is a single self-contained file (embedded volcano plot, ranked
-tables, and the full PROV-O manifest). The RO-Crate zip is ready for Zenodo /
-Figshare deposit. `bindsight report --format web` serves the same run as an
+tables, and the full PROV-O manifest). The RO-Crate zip is ready to deposit in
+a research data repository. `bindsight report --format web` serves the same run as an
 interactive local web interface instead.
 
 Run the whole chain at once with `bindsight run my_config.yaml --out runs/x`

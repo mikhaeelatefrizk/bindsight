@@ -132,7 +132,6 @@ def create_app(*, run_root: Path | None = None) -> Any:
         version=__version__,
         tojson=lambda obj: json.dumps(obj),
         citation=theme.citation_line,
-        doi_pending=theme.DOI_IS_PENDING,
         github=theme.GITHUB_URL,
     )
 

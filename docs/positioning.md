@@ -51,7 +51,7 @@ reproducible.
 | Hardware | HPC assumed | CPU laptop + a free Kaggle T4 for the GPU half (the one verified backend; Modal is the paid escape hatch and Colab needs a human) |
 | Cost-awareness | None | `--dry-run` estimates GPU $ before running |
 | Negative results | Discarded | Catalogued (`failure_taxonomy.parquet`) |
-| Citability | Code dump | DOI per release, schema-validated outputs (Pydantic v2) |
+| Citability | Code dump | Tagged releases with checksums, schema-validated outputs (Pydantic v2) |
 
 ## Roadmap
 

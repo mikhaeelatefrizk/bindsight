@@ -26,7 +26,8 @@ tags:
 > reproducible workflow, with machine-readable provenance from every
 > ranked binder back to the patient samples it came from.
 
-This Space hosts the bindsight web app. The canonical source repo and the
+This Space hosts the bindsight web interface -- the same one `bindsight ui`
+serves locally. The canonical source repo and the
 full documentation live at
 <https://github.com/mikhaeelatefrizk/bindsight>.
 
@@ -43,11 +44,12 @@ This Space is a Docker-based deployment that pulls `bindsight` from the
 GitHub `main` branch at build time (see `requirements.txt` and
 `Dockerfile` on this Space).
 
-Both the deployed code and this page follow `main` automatically:
-`sync-hf-space.yml` in the source repo uploads `.huggingface/README.md`
-over this file and issues a **factory** rebuild on every published
-release (requires the `HF_TOKEN` secret; the workflow skips silently
-otherwise). A plain restart would reuse the cached image and keep serving
+Both the deployed code and this page follow `main` **once an `HF_TOKEN`
+secret exists in the source repo**: `sync-hf-space.yml` uploads
+`.huggingface/README.md` over this file and issues a **factory** rebuild on
+every published release. Without that secret the workflow skips every step
+and reports success, so the Space keeps serving whatever build it last
+made -- including this page. A plain restart would reuse the cached image and keep serving
 whatever bindsight revision the last build resolved, so only a factory
 reboot picks up new code. Do not edit this page on the Space — the next
 release overwrites it; edit `.huggingface/README.md` in the repo instead.
@@ -100,10 +102,9 @@ on GitHub for the full text and per-component commercial-use audit.
 
 ## Citation
 
-If you use bindsight in research, please cite the Zenodo concept DOI
-[10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING), which
-always resolves to the latest archived version (v0.3.1 at the time of
-writing).
+bindsight is not archived and has no DOI. If you use it in research, please
+cite the repository and the release tag you ran; ready-made entries are in
+`CITATION.cff` in the GitHub repo.
 
 A JOSS software paper and a bioRxiv preprint are drafted but not yet
 submitted (sources under `paper/` in the GitHub repo); both will be

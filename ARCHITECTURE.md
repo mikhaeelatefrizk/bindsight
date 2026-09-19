@@ -51,7 +51,7 @@ counts.tsv + design.tsv ─┐
    HTML report +         │
    web interface         │
         ▼                │
-   RO-Crate zip (Zenodo) │
+   RO-Crate zip (FAIR)   │
 ```
 
 ---
@@ -75,7 +75,7 @@ bindsight/
 ├── benchmark/       # Rediscovery study: pre-registered panel, four-way outcome
 │                    #   classification, null models + intervals, designer bench
 ├── provenance/      # Pydantic schema for run_manifest.jsonld + provenance fragments
-├── export/          # RO-Crate emitter (FAIR bundle for Zenodo)
+├── export/          # RO-Crate emitter (FAIR bundle for deposit)
 ├── report/          # HTML report template + web interface (+ Limitations section)
 ├── cost.py          # Per-run cost estimation (GPU-type aware)
 ├── plugins.py       # Designer/validator plugin registry
@@ -118,7 +118,7 @@ yet and nothing in the codebase depends on it.
 | Structures | mmCIF (preferred), PDB (fallback) | mmCIF handles >9999 residues and modern naming |
 | Per-stage params | YAML | Human-editable |
 | Provenance | PROV-O JSON-LD | W3C standard, plays with RO-Crate |
-| Final bundle | RO-Crate zip | FAIR, Zenodo-friendly |
+| Final bundle | RO-Crate zip | FAIR, archive-ready |
 
 ---
 
@@ -421,7 +421,7 @@ See [LICENSING.md](LICENSING.md) for the full inventory and commercial-use guida
 5. **SURFACE-Bind coverage gaps** — roughly 2,800 proteins against a shipped surfaceome of 4,801 (SURFY's 2,886 unioned with a UniProt cell-membrane extension). Extending the surfaceome widened this gap rather than closing it: more proteins are now reachable by expression than have a known targetable site. Mitigation: graceful drop tagged `no_surfacebind_entry`, which is recorded rather than silent. The fpocket fallback that would close it is not implemented.
 6. **Designer choice will age.** Mitigation: a plugin interface, with RFdiff+MPNN as the shipped default and BindCraft and BoltzGen wired behind flags. Only the first is executable: no shipped backend builds an environment the other two can run in, so the three-way benchmark is deferred, not delivered.
 7. **Disease specificity is hard, and the signal is weaker than this section used to claim.** "Up in cancer, low in vital tissue" does *not* predictably find known antigens. Measured against a pre-registered panel over fifteen unstratified TCGA projects, recall at rank 20 is 1 of 17 on approved-agent antigens (95% CI 0.01 to 0.27) and 0 of 8 over independent antigens. Twelve of seventeen are not over-expressed in a bulk tumour-versus-normal contrast: eleven fail the significance rule and a twelfth is measured as down-regulated. (This said "thirteen", which is the count across all twenty-two pairs, not across the seventeen approved-tier ones.) Their agents are licensed, so the antigens are real; the limit is in the signal, not the ranking. The earlier claim survived because the headline cohort was stratified by a PAM50 subtype call, and ERBB2 is one of the fifty genes that classifier is built from. Layering scRNA-seq, co-expression and immunopeptidomics is the plausible route to a stronger signal, and none of it is implemented.
-8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + Zenodo + GitHub stars is a real moat for academic users.
+8. **Competing with VC-funded teams** (Tamarind, Chai, Generate). Mitigation: compete on transparency + reproducibility + provenance + academic integration. JOSS + bioRxiv + GitHub stars is a real moat for academic users.
 9. **PyDESeq2 ≠ DESeq2 numerically.** Documented in `bindsight/deg/pydeseq2_runner.py`. There is no R bridge: users who need exact DESeq2/edgeR numbers must run those tools themselves and feed the resulting DEG table in.
 10. **R-strong dev learning Python+Snakemake.** The DEG step is pure Python (pydeseq2); Snakemake's R rule support is unused.
 
@@ -469,7 +469,7 @@ backend, so they are listed unchecked rather than folded into the tick above.
 - [x] Server-rendered web interface (FastAPI + Jinja2)
 - [x] `--dry-run` GPU cost estimator
 - [x] Held-out evaluation set + `bindsight benchmark`
-- [x] `v0.1.0`, Zenodo DOI
+- [x] `v0.1.0`, released with checksummed artifacts
 - [x] Published Docker image with pinned digests (`.github/workflows/docker.yml`)
       — `:latest`, `:<sha>` and `:<tag>` on every push to `main` and every
       release, since 0.3.1. Between the repository's recreation on 2026-09-14
@@ -519,7 +519,7 @@ backend, so they are listed unchecked rather than folded into the tick above.
 - v0.3: ESMFold fallback; fpocket fallback; scRNA-seq input via scanpy markers; BoltzGen as primary; live async Modal/Colab submission
 - v0.4: nf-core compatibility; HPC SLURM runner; immunogenicity layer (NetMHCpan)
 - v0.5: bispecific / multi-epitope; LigandMPNN
-- v1.0: JOSS submission; tutorial workshop; Zenodo all-versions DOI
+- v1.0: JOSS submission (needs a software archive); tutorial workshop
 
 ---
 

@@ -3,7 +3,7 @@
 """Guard the repository's public prose against regressing to overclaiming.
 
 The v0.2.1 audit found six classes of defect in text that ships to readers
-rather than to an interpreter: a superseded Zenodo *version* DOI cited in
+rather than to an interpreter: a superseded *version* DOI cited in
 seventeen places, a dead Boltz-2 reference in both bibliographies, a
 deposit-ready preprint asserting the software is MIT-licensed when ``LICENSE``
 is AGPL-3.0-or-later, an unqualified "the first open-source pipeline" priority
@@ -36,8 +36,6 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 # --- The exact strings the E-docs fixes turned on ----------------------------
-
-CONCEPT_DOI = "10.5281/zenodo.PENDING"
 
 # The Boltz-2 preprint DOI that returns HTTP 404, and the record it moved to.
 DEAD_BOLTZ2_DOI = "10.1101/2025.01.20.633574"
@@ -258,21 +256,6 @@ def test_prose_inventory_resolves_the_public_documents() -> None:
         assert expected in PROSE_IDS, f"not collected: {expected}"
 
 
-# --- P5: the Zenodo DOI -------------------------------------------------------
-
-
-@pytest.mark.parametrize("rel", ["README.md", "CITATION.cff"])
-def test_readme_and_citation_carry_the_concept_doi(rel: str) -> None:
-    assert CONCEPT_DOI in _read(rel)
-
-
-def test_citation_cff_declares_the_concept_doi_as_a_field() -> None:
-    """GitHub's "Cite this repository" reads these keys, not the prose."""
-    cff = yaml.safe_load(_read("CITATION.cff"))
-    assert cff["doi"] == CONCEPT_DOI
-    assert any(entry.get("value") == CONCEPT_DOI for entry in cff["identifiers"])
-
-
 # --- I4: the bibliographies ---------------------------------------------------
 
 
@@ -404,14 +387,17 @@ def test_the_corrected_protocol_is_named_where_the_figures_appear(rel: str) -> N
 # --- Release metadata coherence -----------------------------------------------
 
 
-def test_version_agrees_across_pyproject_citation_and_zenodo() -> None:
-    """``bindsight --version``, the citation and the deposit must not disagree."""
+def test_version_agrees_across_pyproject_and_citation() -> None:
+    """``bindsight --version`` and the citation must not disagree.
+
+    There was a third file in this check, the deposit metadata, and it is gone
+    with the archive it described. ``codemeta.json`` is held to the same
+    version by tests/test_packaging_pins.py, so nothing lost a guard here.
+    """
     pyproject = tomllib.loads(_read("pyproject.toml"))["project"]["version"]
     citation = str(yaml.safe_load(_read("CITATION.cff"))["version"])
-    zenodo = json.loads(_read(".zenodo.json"))["version"].removeprefix("v")
     assert re.fullmatch(r"\d+\.\d+\.\d+", pyproject), pyproject
     assert citation == pyproject, f"CITATION.cff {citation} != pyproject {pyproject}"
-    assert zenodo == pyproject, f".zenodo.json {zenodo} != pyproject {pyproject}"
 
 
 #: ``bindsight --version`` shown with its output, e.g. in a fenced example:
@@ -455,14 +441,12 @@ def test_documented_version_output_matches_the_package() -> None:
         )
 
 
-def test_licence_agrees_across_pyproject_citation_and_zenodo() -> None:
-    """The v0.1.0 Zenodo record said MIT for AGPL code; that is what to prevent."""
+def test_licence_agrees_across_pyproject_and_citation() -> None:
+    """An early archive record said MIT for AGPL code; that is what to prevent."""
     pyproject = tomllib.loads(_read("pyproject.toml"))["project"]["license"]
     citation = yaml.safe_load(_read("CITATION.cff"))["license"]
-    zenodo = json.loads(_read(".zenodo.json"))["license"]
     assert pyproject == "AGPL-3.0-or-later"
     assert citation == pyproject
-    assert zenodo == pyproject
 
 
 # ---------------------------------------------------------------------------
@@ -1511,67 +1495,6 @@ def test_the_benchmark_schema_identifier_has_one_definition() -> None:
     )
 
 
-_ZENODO_DOI = re.compile(r"10\.\d{4,9}/zenodo\.[A-Za-z0-9]+")
-
-
-def _dois_named_by(path: Path) -> set[str]:
-    """The Zenodo DOIs ``path`` names as this software's own.
-
-    ``.zenodo.json`` may also name *other* records under ``related_identifiers``
-    -- the lineage this repository ``continues``, deposited before the
-    repository was recreated on 2026-09-14 and left under its own concept DOI.
-    Those are references to another record, not citations of this software,
-    so they are set aside rather than read as a second concept DOI.
-    """
-    text = path.read_text(encoding="utf-8")
-    found = set(_ZENODO_DOI.findall(text))
-    if path.name == ".zenodo.json":
-        for related in json.loads(text).get("related_identifiers", []):
-            found -= set(_ZENODO_DOI.findall(str(related.get("identifier", ""))))
-    return found
-
-
-#: Every shipped file that names a Zenodo concept DOI, discovered rather than
-#: listed. Twelve files carried the previous identifier and a hand-written list
-#: is how one of them gets left behind. The suffix set is part of the guard: it
-#: once stopped at ``.tex``, and ``paper/paper.bib`` and ``overrides/main.html``
-#: went on citing the previous concept DOI for a release while this passed.
-def _doi_bearing_files() -> tuple[str, ...]:
-    tracked = _tracked_files()
-    out: list[str] = []
-    for path in sorted(ROOT.rglob("*")):
-        if path.is_dir() or path.suffix not in {
-            ".md",
-            ".cff",
-            ".json",
-            ".py",
-            ".toml",
-            ".tex",
-            ".bib",
-            ".html",
-        }:
-            continue
-        rel = path.relative_to(ROOT).as_posix()
-        if tracked is not None and rel not in tracked:
-            continue
-        if rel.startswith("benchmarks/") or "CHANGELOG" in rel:
-            continue  # recorded history, not a current citation
-        if rel == "scripts/set_doi.py":
-            # The filler itself, not a citation: its usage text shows an example
-            # DOI so the reader knows what to pass. Including it would make the
-            # tool that enforces agreement the reason agreement fails.
-            continue
-        try:
-            if _dois_named_by(path):
-                out.append(rel)
-        except (OSError, UnicodeDecodeError):  # pragma: no cover
-            continue
-    return tuple(out)
-
-
-DOI_BEARING_FILES = _doi_bearing_files()
-
-
 def test_the_documented_runner_protocol_matches_the_code() -> None:
     """ARCHITECTURE prints the GPURunner Protocol as the interface contract, and
     showed ``submit(spec: DesignSpec)`` and ``estimate_cost(spec: DesignSpec)`` —
@@ -1695,78 +1618,6 @@ def test_the_social_card_reads_its_numbers_from_the_artifacts() -> None:
     assert "results.json" in facts, (
         "the social card should read its figures from the committed study rather "
         "than carry literals that a re-scored run leaves behind"
-    )
-
-
-def test_the_concept_doi_is_the_same_everywhere() -> None:
-    """Every file that names a concept DOI must name the same one.
-
-    A DOI cannot exist before its deposit, so this repository ships
-    ``10.5281/zenodo.PENDING`` and ``scripts/set_doi.py`` replaces it once the
-    record is minted. The failure worth guarding is not the placeholder -- it is
-    a half-finished replacement, where some files cite the new identifier and
-    others still cite the old one, and a reader following the wrong one lands on
-    a different piece of software.
-
-    So this asserts agreement, not a particular value: green with the
-    placeholder in place, green after it is filled, red the moment they diverge.
-    """
-    found: dict[str, set[str]] = {}
-    for rel in DOI_BEARING_FILES:
-        path = ROOT / rel
-        if not path.is_file():
-            continue
-        dois = _dois_named_by(path)
-        if dois:
-            found[rel] = dois
-
-    assert found, "no shipped file names a concept DOI at all"
-
-    everything = set().union(*found.values())
-    assert len(everything) == 1, (
-        f"shipped files name {len(everything)} different DOIs: "
-        + "; ".join(f"{rel} -> {sorted(d)}" for rel, d in sorted(found.items()))
-    )
-
-
-def test_the_zenodo_lineage_link_is_not_read_as_a_second_concept_doi() -> None:
-    """``.zenodo.json`` declares that this lineage ``continues`` the one the
-    repository had before it was recreated. That is a reference to another
-    record, and the agreement check above must neither read it as a second
-    concept DOI nor go blind to the file: the exemption is exercised here, so
-    a future edit that widens it to the whole file fails this test.
-    """
-    zenodo = ROOT / ".zenodo.json"
-    raw = set(_ZENODO_DOI.findall(zenodo.read_text(encoding="utf-8")))
-    related = {
-        doi
-        for entry in json.loads(zenodo.read_text(encoding="utf-8")).get("related_identifiers", [])
-        for doi in _ZENODO_DOI.findall(str(entry.get("identifier", "")))
-    }
-    assert related, ".zenodo.json declares no related Zenodo record; the exemption is vacuous"
-    assert related <= raw
-    assert _dois_named_by(zenodo) == raw - related
-    # The exemption is per-entry, not per-file: a DOI outside related_identifiers
-    # would still count.
-    assert "related_identifiers" in zenodo.read_text(encoding="utf-8")
-
-
-def test_the_doi_filler_covers_every_file_that_names_one() -> None:
-    """``scripts/set_doi.py`` has a list of files, and a list goes stale.
-
-    If a new document starts citing the DOI and the script does not know about
-    it, minting the real identifier leaves that one document behind -- which is
-    the divergence the test above would then catch, one commit too late.
-    """
-    import re as _re
-
-    script = _read("scripts/set_doi.py")
-    listed = set(_re.findall(r'^\s*"([^"]+)",$', script, _re.M))
-
-    missing = sorted(rel for rel in DOI_BEARING_FILES if rel not in listed)
-
-    assert not missing, (
-        f"these files name the concept DOI but scripts/set_doi.py will not update them: {missing}"
     )
 
 

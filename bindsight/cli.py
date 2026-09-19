@@ -827,7 +827,7 @@ def run(
     required=True,
 )
 def export(run_dir: Path, fmt: str, out_path: Path) -> None:
-    """Export a finished run as an RO-Crate zip suitable for Zenodo deposit."""
+    """Export a finished run as an RO-Crate zip suitable for deposit."""
     from bindsight.export import export_ro_crate
 
     out = export_ro_crate(run_dir, out_path)
@@ -853,7 +853,7 @@ def export(run_dir: Path, fmt: str, out_path: Path) -> None:
     console.print(
         Panel(
             f"[green]RO-Crate written.[/green]\n[bold]File:[/bold] {out}\n\n"
-            "Upload to Zenodo (https://zenodo.org/uploads/new) for a citable DOI.",
+            "Deposit it in a research data repository to make the run citable.",
             title="bindsight export",
             border_style="green",
         )

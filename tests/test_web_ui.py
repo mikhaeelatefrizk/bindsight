@@ -262,19 +262,24 @@ class TestTheRetractedFigureIsNotAHeadline:
         if "success@0.65" in body:
             assert "withdrawn" in body, "the evidence page names the rate without withdrawing it"
 
-    def test_a_placeholder_doi_is_not_a_live_link(self, client: TestClient) -> None:
-        """A 404 behind a button labelled "Cite" is the worst possible click."""
+    def test_the_citation_names_no_doi_and_links_the_repository(self, client: TestClient) -> None:
+        """A 404 behind a button labelled "Cite" is the worst possible click.
+
+        This test's predecessor was written as ``if theme.DOI_IS_PENDING:``, so
+        its body would have stopped running at the exact moment a real DOI made
+        ``citation_line`` return Markdown into a template that renders none --
+        the check going quiet as the defect went live. Nothing here is
+        conditional, and the ``](`` assertion is what catches that rendering.
+        """
         from bindsight.report import theme
 
         body = client.get("/").text
-        if theme.DOI_IS_PENDING:
-            # Assembled, not written out: a literal here reads to the DOI
-            # sweep as a surface that scripts/set_doi.py has to update, and
-            # a test asserting the placeholder's absence is the one file
-            # that must keep naming it after the DOI is minted.
-            placeholder = f"doi.org/10.5281/zenodo.{theme.ZENODO_DOI.rsplit('.', 1)[-1]}"
-            assert placeholder not in body, "the placeholder DOI is rendered as a resolvable link"
-            assert "pending" in body.lower()
+
+        assert "Citing this" in body, "the overview page lost its citation block"
+        block = body[body.index("Citing this") :][:600]
+        assert "10.5281" not in block, "the overview page names a DOI again"
+        assert "](" not in block, "a Markdown link is rendering as literal text"
+        assert theme.GITHUB_URL in block, "the citation does not link the repository"
 
 
 class TestEveryFigureCarriesWhatMakesItReadable:

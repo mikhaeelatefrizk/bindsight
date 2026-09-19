@@ -18,9 +18,9 @@ hide:
     &ldquo;given a target structure&rdquo;. bindsight is the reproducible, citable bridge between them.
   </p>
   <div class="bs-cta">
-    <a class="primary" href="https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight">Try it live</a>
-    <a href="results/">See real results</a>
+    <a class="primary" href="results/">See real results</a>
     <a href="what-is-bindsight/">What is bindsight?</a>
+    <a href="how-to-use/">Run it yourself</a>
     <a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a>
   </div>
 </div>
@@ -104,15 +104,18 @@ produced](results.md).**
 Amber stages need a GPU. A free Kaggle T4 is the verified route, and the one the
 committed benchmark used; Modal is the paid escape hatch, Colab needs you present
 with a browser tab open, and local Docker works if you have your own card.
-Everything else runs on a CPU laptop, and in your browser on the hosted app.
+Everything else runs on a CPU laptop; `bindsight ui` serves the same interface
+locally.
 
 ## Try it, three ways
 
 <div class="bs-cards" markdown="0">
   <div class="bs-card">
     <h3>In your browser</h3>
-    <p>Zero install. The hosted app runs the discovery half live on a real TCGA
-    cohort, and lets you explore the designed binders in 3-D.</p>
+    <p><code>bindsight ui</code> serves the interface locally in seconds: the
+    committed evidence, the twenty designed binders in 3-D, and a one-click run
+    of the discovery half on a real TCGA cohort. The same interface is published
+    as a Hugging Face Space.</p>
   </div>
   <div class="bs-card">
     <h3>One command</h3>
@@ -122,7 +125,7 @@ Everything else runs on a CPU laptop, and in your browser on the hosted app.
   <div class="bs-card">
     <h3>Your own cohort</h3>
     <p>Point it at your counts matrix and sample design, choose a GPU backend
-    when you are ready to design, and export an RO-Crate for Zenodo.</p>
+    when you are ready to design, and export an RO-Crate for deposit.</p>
   </div>
 </div>
 
@@ -156,9 +159,7 @@ how to add a designer / validator / runner plugin.
 
 ## Cite it
 
-bindsight is AGPL-3.0-or-later and archived on Zenodo with a DOI. If it helps
-your work, please cite the concept DOI
-[10.5281/zenodo.PENDING](https://doi.org/10.5281/zenodo.PENDING) — it always
-resolves to the latest archived version, which is what you want when citing the
-software rather than one specific release. Ready-made entries are in
+bindsight is AGPL-3.0-or-later. It is not archived and has no DOI — if it helps
+your work, cite the repository, the release tag you ran, and the author.
+Ready-made entries are in
 [`CITATION.cff`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CITATION.cff).
