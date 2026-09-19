@@ -663,6 +663,108 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
         assert _df_to_records(frame, ["symbol", "padj"])[0]["padj"] == "<1e-300"
 
 
+class TestNoScriptParsesDataAsMarkup:
+    """Values a reader supplied are text, and are composed as nodes.
+
+    `your_data_check.js` built its verdict cards by string concatenation and
+    assigned the result to `innerHTML`. Every value in those strings came from
+    the reader's own files -- the filename, the column headers, the cell values
+    read as contrast levels -- and the page was then published on the public
+    documentation site, which turned "a filename is whatever someone typed"
+    into script execution in that origin, from a `.tsv` handed to them by a
+    stranger.
+
+    Escaping on the way in was considered and rejected. The level list was built
+    into `<option value="..">`, where a value of `" onmouseover="..` escapes the
+    attribute without ever using an angle bracket, so one helper cannot be
+    correct in both contexts and a reader of the call site cannot tell which
+    context they are in. `charts.js` had the same shape in its tooltips, fed by
+    gene symbols out of the user's counts matrix.
+
+    So the rule is mechanical rather than careful, because careful is what
+    produced the bug: `innerHTML` is only ever assigned the empty string.
+    Anything else -- a concatenation, a template literal, a variable -- is a
+    value being handed to the HTML parser.
+    """
+
+    #: Assignments this rule allows: the empty string, and nothing else.
+    #:
+    #: The right-hand side is ``.*?`` rather than ``.+?`` on purpose. A line
+    #: ending at the ``=``, with the value on the next one, is how the chart
+    #: failure notice was written -- and a pattern that required something
+    #: after the ``=`` walked straight past it. An empty right-hand side means
+    #: the value is on a continuation line, which is exactly the case to catch.
+    #: The right-hand side runs to the statement's own semicolon, not to the end
+    #: of the line: ``if (...) { out.innerHTML = ""; return; }`` is a legitimate
+    #: clear, and a pattern anchored at ``$`` read ``""; return; }`` as a value.
+    _ASSIGN = re.compile(r"\.innerHTML\s*=\s*([^;]*)")
+    _EMPTY = re.compile(r"""^(?:""|'')$""")
+
+    @staticmethod
+    def _authored() -> list[Path]:
+        web = REPO / "bindsight" / "report" / "web"
+        return [
+            p
+            for p in sorted(web.rglob("*.js"))
+            if p.is_file() and "vendor" not in p.parts
+        ]
+
+    @classmethod
+    def _offenders(cls, source: str, name: str = "?") -> list[str]:
+        out: list[str] = []
+        for lineno, line in enumerate(source.splitlines(), 1):
+            stripped = line.lstrip()
+            if stripped.startswith(("//", "*", "/*")):
+                continue
+            match = cls._ASSIGN.search(line)
+            if match and not cls._EMPTY.match(match.group(1).strip()):
+                out.append(f"{name}:{lineno} {stripped[:90]}")
+        return out
+
+    def test_the_sweep_finds_the_scripts(self) -> None:
+        """Without this, a bad glob would make the scan below pass on nothing."""
+        authored = self._authored()
+
+        assert len(authored) >= 3, f"the sweep found only {[p.name for p in authored]}"
+        names = {p.name for p in authored}
+        assert {"your_data_check.js", "charts.js", "binder_viewer.js"} <= names
+        assert not any("vendor" in p.parts for p in authored)
+
+    def test_no_authored_script_assigns_a_built_up_value_to_innerhtml(self) -> None:
+        offenders: list[str] = []
+        for path in self._authored():
+            offenders += self._offenders(path.read_text(encoding="utf-8"), path.name)
+
+        assert not offenders, (
+            "these assign something other than an empty string to innerHTML, which "
+            f"hands it to the HTML parser: {offenders}. Build nodes and set "
+            "textContent instead."
+        )
+
+    def test_the_scan_catches_what_this_repository_actually_wrote(self) -> None:
+        """The controls are the real lines, taken from the commit before the fix.
+
+        A synthetic sample would prove the regex matches something; these prove
+        it matches the defect it exists for.
+        """
+        real = [
+            "  out.innerHTML = html;",
+            "      t.innerHTML = html;",
+            "        host.innerHTML =",
+            '  out.innerHTML = "<div>" + name + "</div>";',
+            "  el.innerHTML = `<strong>${label}</strong>`;",
+        ]
+        for line in real:
+            assert self._offenders(line), f"the scan would have missed: {line!r}"
+
+    def test_the_scan_permits_clearing_and_ignores_comments(self) -> None:
+        for line in ['  out.innerHTML = "";', "  t.innerHTML = '';", "  host.innerHTML = \"\";"]:
+            assert not self._offenders(line), line
+        # The docstring above and the comments in those files describe the rule
+        # in the words the scan looks for; they must not trip it.
+        assert not self._offenders("  // t.innerHTML = html; -- what this replaced")
+        assert not self._offenders("   * assigned innerHTML = markup, which was the bug")
+
 class TestNoConditionIsDecorative:
     """A condition that cannot change the answer is worse than no condition.
 

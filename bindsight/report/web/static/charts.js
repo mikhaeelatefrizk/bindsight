@@ -50,10 +50,29 @@
     return tip;
   }
 
-  function bindTip(node, html) {
+  // The tooltip is a bold label and some lines under it -- never richer than
+  // that, and never markup. It took `html` and assigned it to innerHTML, and
+  // every value in it (`r.label`, `p.label`, `p.tip`, `p.id`) comes from run
+  // data: gene symbols and binder ids that trace back to the reader's own
+  // counts matrix and config. Composed as nodes, that is text; concatenated
+  // into a string, it was markup that happened to look like text so far.
+  function fillTip(t, label, lines) {
+    t.innerHTML = "";
+    if (label) {
+      const bold = document.createElement("strong");
+      bold.textContent = String(label);
+      t.appendChild(bold);
+    }
+    (lines || []).forEach(function (line, i) {
+      if (label || i) t.appendChild(document.createElement("br"));
+      t.appendChild(document.createTextNode(String(line)));
+    });
+  }
+
+  function bindTip(node, label, lines) {
     node.addEventListener("pointerenter", function (ev) {
       const t = tooltip();
-      t.innerHTML = html;
+      fillTip(t, label, lines);
       t.hidden = false;
       move(ev);
     });
@@ -66,7 +85,7 @@
     node.setAttribute("tabindex", "0");
     node.addEventListener("focus", function () {
       const t = tooltip();
-      t.innerHTML = html;
+      fillTip(t, label, lines);
       t.hidden = false;
       const r = node.getBoundingClientRect();
       t.style.left = r.right + 8 + "px";
@@ -188,12 +207,13 @@
       const cb = el("rect", {
         class: "mark", x: xb - 4, y: y(p.b) - 4, width: 8, height: 8, fill: teal,
       }, g);
-      const label =
-        `<strong>${p.id}</strong><br>${spec.labelA}: ${p.a.toFixed(3)}` +
-        `<br>${spec.labelB}: ${p.b.toFixed(3)}` +
-        `<br>difference: ${(p.b - p.a).toFixed(3)}`;
-      bindTip(ca, label);
-      bindTip(cb, label);
+      const lines = [
+        `${spec.labelA}: ${p.a.toFixed(3)}`,
+        `${spec.labelB}: ${p.b.toFixed(3)}`,
+        `difference: ${(p.b - p.a).toFixed(3)}`,
+      ];
+      bindTip(ca, p.id, lines);
+      bindTip(cb, p.id, lines);
     });
 
     if (spec.title) svg.setAttribute("aria-label", spec.title);
@@ -256,10 +276,14 @@
 
       bindTip(
         dot,
-        `<strong>${r.label}</strong><br>${r.point.toFixed(3)} ` +
-          `(${r.ciLabel || "CI"} ${r.low.toFixed(3)} to ${r.high.toFixed(3)})` +
-          (r.n ? `<br>n = ${r.n}` : "") +
-          (excludes === null ? "" : `<br>${excludes ? "excludes" : "includes"} ${spec.reference}`)
+        r.label,
+        [
+          `${r.point.toFixed(3)} (${r.ciLabel || "CI"} ${r.low.toFixed(3)} to ${r.high.toFixed(3)})`,
+        ]
+          .concat(r.n ? [`n = ${r.n}`] : [])
+          .concat(
+            excludes === null ? [] : [`${excludes ? "excludes" : "includes"} ${spec.reference}`]
+          )
       );
     });
 
@@ -288,7 +312,7 @@
         fill: r.colour || cssVar("--navy", "#0b5394"), rx: 3,
       }, g);
       el("text", { x: iw + 8, y: y0 + 14, "font-weight": 600 }, g).textContent = r.display;
-      bindTip(bar, `<strong>${r.label}</strong><br>${r.tip || r.display}`);
+      bindTip(bar, r.label, [r.tip || r.display]);
     });
 
     if (spec.title) svg.setAttribute("aria-label", spec.title);
@@ -333,7 +357,9 @@
         class: "mark", cx: x(p.x), cy: y(p.y), r: p.r || 5,
         fill: p.colour || cssVar("--navy", "#0b5394"), opacity: 0.85,
       }, g);
-      bindTip(node, p.tip || `${p.label || ""}<br>${p.x}, ${p.y}`);
+      // `p.tip`, when the spec supplies one, replaced the label as well --
+      // kept, so what a reader sees does not change.
+      bindTip(node, p.tip ? "" : p.label || "", [p.tip || `${p.x}, ${p.y}`]);
     });
 
     if (spec.title) svg.setAttribute("aria-label", spec.title);
@@ -359,9 +385,13 @@
       } catch (e) {
         // A chart that cannot draw must not take the page with it: the numbers
         // it illustrates are already in the text beside it.
-        host.innerHTML =
-          '<p class="small muted">This chart could not be drawn. The figures it ' +
-          "shows are stated in the text above.</p>";
+        host.innerHTML = "";
+        const note = document.createElement("p");
+        note.className = "small muted";
+        note.textContent =
+          "This chart could not be drawn. The figures it shows are stated in " +
+          "the text above.";
+        host.appendChild(note);
       }
     });
   }

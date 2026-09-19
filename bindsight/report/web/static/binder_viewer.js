@@ -126,9 +126,17 @@
       });
     }
 
+    // Which selection is allowed to draw. A reader clicking through the picker
+    // has several loads in flight, and they do not resolve in the order they
+    // were asked for -- so the slowest would win and the viewer would show a
+    // complex the picker is no longer naming, with nothing on screen to say so.
+    var latestPick = 0;
+
     function show(id) {
+      var thisPick = ++latestPick;
       load(id)
         .then(function (cif) {
+          if (thisPick !== latestPick) return;
           viewer.clear();
           var model = viewer.addModel(cif, "cif");
           // An mmCIF the parser did not understand yields a model with no atoms,
@@ -155,6 +163,7 @@
           viewer.render();
         })
         .catch(function (err) {
+          if (thisPick !== latestPick) return;
           // Said plainly. A viewer that stays blank is indistinguishable from a
           // design that produced nothing, and those are different facts.
           //
