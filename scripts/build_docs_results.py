@@ -484,13 +484,6 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
     return lines
 
 
-def showcase_hf() -> str:
-    """Return the primary hosted-app URL."""
-    from bindsight.report import theme
-
-    return theme.HF_SPACE_URL
-
-
 def _copy_assets(
     v: showcase.StudyShowcase | None, d: showcase.DesignerShowcase | None
 ) -> dict[str, int]:

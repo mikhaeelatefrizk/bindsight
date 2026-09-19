@@ -56,23 +56,13 @@ ERR_TINT = "#ffebee"
 
 GITHUB_URL = "https://github.com/mikhaeelatefrizk/bindsight"
 DOCS_URL = "https://mikhaeelatefrizk.github.io/bindsight/"
-HF_SPACE_URL = "https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight"
 
-#: Whether the published Space is known to be serving *this* build.
-#:
-#: It is not, and has not been since the release that deleted the Streamlit
-#: app. ``.github/workflows/sync-hf-space.yml`` skips every step and reports
-#: success until an ``HF_TOKEN`` secret exists, so the Space keeps serving
-#: whatever build it last received -- and a workflow that is green while doing
-#: nothing is why no check caught it. The job that does catch it is
-#: ``keep-warm.yml``'s ``hf-build-identity``, which fetches the interface
-#: stylesheet and fails unless it carries this build's own token; it has been
-#: red for the life of this release, which is correct.
-#:
-#: Flip this to True only on a green run of that job.
-#: ``tests/test_hosted_demo_claims.py`` checks it in both directions, so it can
-#: be flipped neither early nor forgotten late.
-HF_SPACE_IS_SERVING_THIS_BUILD = False
+# There was a third URL here, for a hosted deployment, and a flag recording
+# whether that deployment was serving this build. It never was: the sync
+# workflow uploaded nothing without a secret and reported success anyway. The
+# deployment is retired and both are gone -- ``tests/test_no_hosted_space.py``
+# asserts they stay gone, because a URL nothing points at is a URL something
+# points at again.
 
 
 def citation_line() -> str:

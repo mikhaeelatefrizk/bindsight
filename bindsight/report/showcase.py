@@ -23,13 +23,12 @@ than raising: ``benchmarks/`` is not packaged into the wheel
 (``pyproject.toml`` ships only the ``bindsight`` package), so a user who
 installed from a wheel has no such tree and sees the page degrade.
 
-The Hugging Face Space does **not** deploy the full repository -- its image is
-built from ``.huggingface/Dockerfile``, which copies a named set of paths. That
-docstring used to claim otherwise, and the claim was false: ``benchmarks/`` was
-not among them, so ``benchmarks_root()`` returned ``None`` on the Space and the
-Real results page rendered nothing while the README promised twenty binders in
-3-D. The Dockerfile now copies it, and
-``tests/test_packaging_pins.py`` checks that it still does.
+There was a second deployment once, built from an image that copied a named
+set of paths and did not include ``benchmarks/`` -- so ``benchmarks_root()``
+returned ``None`` there and the Real results page rendered nothing while the
+landing page promised twenty binders in 3-D. A named subset is how that
+happens. The container this project publishes copies the working tree whole,
+and the deployment that did not is retired.
 
 Only the standard library is imported at module scope, so this stays importable
 without pandas -- which is what lets the CLI read a committed result on a machine

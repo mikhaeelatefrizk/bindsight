@@ -74,9 +74,10 @@ serverless GPU and local NVIDIA Docker are implemented but have not been run
 end to end, and the Colab path needs a human with a browser tab open because
 Google's API does not permit launching a free-tier notebook from a CLI; it is
 a demonstration rather than a reproducibility path. A server-rendered web
-interface runs the same discovery pipeline in a browser; it is launched locally with \texttt{bindsight ui} and
-published as a public Hugging Face Space at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}. On a real
+interface runs the same discovery pipeline in a browser, launched locally
+with \texttt{bindsight ui}; its evidence surface is additionally published
+as static pages on the project documentation site at
+\href{https://mikhaeelatefrizk.github.io/bindsight/}{mikhaeelatefrizk.github.io/bindsight}. On a real
 TCGA breast-carcinoma cohort (tumor vs.\ adjacent normal, auto-downloaded from
 NIH/GDC), the pipeline discovers antibody-tractable cell-surface antigens
 over-expressed in tumor with full provenance; established targets such as ERBB2
@@ -132,7 +133,7 @@ all became true in late 2025 and not before:
         meaningful scale, removing the institutional-cluster barrier.
 \end{enumerate}
 
-We present \texttt{bindsight} (v0.3.3), a Python package with a
+We present \texttt{bindsight} (v0.3.4), a Python package with a
 server-rendered web interface that exploits this newly-opened window. It
 takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
 binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
@@ -200,17 +201,23 @@ digest of every step.
 \subsection{Web interface}
 
 A server-rendered web interface built on FastAPI~\cite{FastAPI} and Jinja
-exposes the same pipeline through a zero-install browser UI, with no build
-step and no network fetch once installed. It provides
+exposes the same pipeline through a browser UI that needs no build step and
+fetches nothing from a network once installed. It provides
 five sections: an Overview stating what the tool has and has not shown; an
 Evidence page rendered from the committed benchmark artifacts, including the
 twenty predicted binder--target complexes in 3-D; a one-click demo that runs
 the discovery pipeline live and renders a paper-style HTML report; a
 \textit{Your data} page that validates a user's counts matrix and design table
 in the browser, without uploading either; and a Runs inspector for any output
-directory. It is launched locally with \texttt{bindsight ui} and published as a
-Hugging Face Space at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
+directory. It is launched locally with \texttt{bindsight ui}; there is no
+hosted deployment of the interactive pipeline. Two of those five surfaces are
+additionally published as static pages on the documentation site, where they
+run in the reader's own browser and need no installation: the twenty complexes
+in 3-D at \href{https://mikhaeelatefrizk.github.io/bindsight/results/}{mikhaeelatefrizk.github.io/bindsight/results}
+and the \textit{Your data} checker at
+\href{https://mikhaeelatefrizk.github.io/bindsight/try-your-data/}{mikhaeelatefrizk.github.io/bindsight/try-your-data}. The
+one-click demo and the Runs inspector run only from a local
+\texttt{bindsight ui}.
 
 \subsection{Architecture diagram}
 
@@ -317,12 +324,15 @@ artifact, plus a cohort \texttt{provenance.json} listing the exact GDC file
 UUIDs and case barcodes.
 
 \paragraph{Web demo.} The same demo runs in a web browser through the interface
-described above, with no local installation; a public deployment is published as
-a Hugging Face Space at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
-The first run on a fresh container pays the GDC download; that download is
-cached to disk, so a second run on the same container reads from there rather
-than the network.
+described above, launched locally with \texttt{bindsight ui}; there is no
+hosted deployment of it. The first run pays the GDC download; that download is
+cached to disk, so a second run reads from there rather than the network. What
+a reader can exercise without installing anything is the evidence surface
+rather than the pipeline: the twenty predicted complexes at
+\href{https://mikhaeelatefrizk.github.io/bindsight/results/}{mikhaeelatefrizk.github.io/bindsight/results} and the
+checker at \href{https://mikhaeelatefrizk.github.io/bindsight/try-your-data/}{mikhaeelatefrizk.github.io/bindsight/try-your-data},
+which validates the reader's own counts matrix and design table in their
+browser without uploading either.
 
 % --------------------------------------------------------------------
 \section{Quality assurance and reproducibility}
@@ -356,13 +366,14 @@ pipeline, conda environment specifications, container Dockerfile, GitHub
 Actions workflows, examples, and documentation, is publicly available at
 \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight},
 at the release tag this manuscript cites.
-The web demo is hosted as a Hugging Face Space at
-\href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}.
+The published evidence surface --- the twenty predicted complexes in 3-D and
+the browser-side input checker --- is generated from that same repository and
+served as static pages at \href{https://mikhaeelatefrizk.github.io/bindsight/}{mikhaeelatefrizk.github.io/bindsight}.
 
 % --------------------------------------------------------------------
 \section{Discussion and future work}
 
-\paragraph{Limitations of v0.3.3.} The CPU half of the pipeline
+\paragraph{Limitations of v0.3.4.} The CPU half of the pipeline
 (differential expression through structural pre-flight) is fully validated. Of
 the GPU half, one path is executed end to end and the rest is not.
 RFdiffusion $\to$ ProteinMPNN $\to$ Boltz-2 produced the twenty committed ERBB2
@@ -443,8 +454,8 @@ expected practice in the field.
 
 \begin{itemize}
   \item \textbf{Source code:} \href{https://github.com/mikhaeelatefrizk/bindsight}{github.com/mikhaeelatefrizk/bindsight} (GNU AGPL-3.0-or-later)
-  \item \textbf{Web demo:} \href{https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight}{huggingface.co/spaces/Mikhaeelatefrizk/bindsight}
-  \item \textbf{Documentation:} \href{https://github.com/mikhaeelatefrizk/bindsight#readme}{github.com/mikhaeelatefrizk/bindsight\#readme}
+  \item \textbf{Documentation and published evidence:} \href{https://mikhaeelatefrizk.github.io/bindsight/}{mikhaeelatefrizk.github.io/bindsight} --- twenty predicted complexes in 3-D at \texttt{/results/}, browser-side input checker at \texttt{/try-your-data/}
+  \item \textbf{README:} \href{https://github.com/mikhaeelatefrizk/bindsight#readme}{github.com/mikhaeelatefrizk/bindsight\#readme}
   \item \textbf{Demo data:} bundled in \texttt{examples/demo/} (CC0)
 \end{itemize}
 

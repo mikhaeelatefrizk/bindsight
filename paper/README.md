@@ -54,7 +54,7 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** `v0.3.3` — the tag, not the branch. JOSS archives what the
+   - **Version:** `v0.3.4` — the tag, not the branch. JOSS archives what the
      tag points at, so a moving `main` is not a submission.
    - **Path to paper:** `paper/paper.md` (JOSS bot auto-discovers this standard path; no need to specify)
    - **Software archive:** none yet. JOSS asks for an archive DOI *after*

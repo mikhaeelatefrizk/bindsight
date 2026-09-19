@@ -447,54 +447,39 @@ class TestThePrintedPageDoesNotDescribeAViewerItOmits:
         )
 
 
-class TestTheLiveDemoProbeChecksWhatIsServed:
-    """`keep-warm.yml` finished on `GET / -> 200` and called that healthy.
+class TestTheInterfaceServesItsOwnStylesheet:
+    """The app must actually serve the stylesheet its pages reference.
 
-    The Space spent this release serving the Streamlit application that was
-    removed -- an empty page titled "Streamlit" -- which answers 200 just as
-    well. So the monitor reported a healthy demo for software that is not this
-    one, and `docs/index.md` links that Space as "Try it live".
+    This began as a check on a hosted deployment's health probe. That probe
+    finished on `GET / -> 200` and called it healthy, while the deployment
+    served an empty page titled "Streamlit" -- which answers 200 just as well.
+    The fix was to ask for the interface's own stylesheet and require a token
+    from inside it, which no other application serves.
 
-    The probe now asks for the interface's own stylesheet and requires a token
-    from inside it, which no other application serves. These tests keep the
-    probe and the stylesheet agreeing: a marker the CSS no longer contains would
-    make the check fail forever, and a check for a string every server returns
-    would make it pass forever.
+    The deployment is retired and the probe went with it. The check it forced
+    is worth more than the thing it was watching: a stylesheet the app fails to
+    serve, or a marker the stylesheet has lost, breaks the interface itself --
+    and nothing else in this suite asks the running app for it.
     """
 
-    WORKFLOW = REPO / ".github" / "workflows" / "keep-warm.yml"
+    #: A custom property only this interface's stylesheet declares. A check for
+    #: a string every server returns would pass forever.
+    MARKER = "--ink-faint"
 
-    def test_the_probe_asks_for_the_interface_stylesheet(self) -> None:
-        text = self.WORKFLOW.read_text("utf-8")
-
-        assert "/static/bindsight.css" in text, (
-            "the keep-warm probe no longer asks for anything only this "
-            "interface serves, so it would pass for any application that is up"
-        )
-
-    def test_the_marker_it_greps_for_is_in_the_stylesheet(self) -> None:
-        workflow = self.WORKFLOW.read_text("utf-8")
-        match = re.search(r"grep -q -- '([^']+)'", workflow)
-        assert match, "the probe no longer greps the stylesheet for a marker"
-
-        marker = match.group(1)
-
-        assert marker in CSS.read_text("utf-8"), (
-            f"the probe greps for {marker!r}, which the stylesheet does not "
-            "contain; the live-demo check would fail on every run for a reason "
-            "unrelated to the Space"
+    def test_the_marker_is_in_the_stylesheet(self) -> None:
+        assert self.MARKER in CSS.read_text("utf-8"), (
+            f"{self.MARKER!r} is not in bindsight.css, so the end-to-end check "
+            "below would be asserting on a string this project no longer uses"
         )
 
     def test_the_app_actually_serves_that_marker(self) -> None:
-        """End to end, against the app rather than the file on disk."""
+        """End to end, against the running app rather than the file on disk."""
         pytest.importorskip("fastapi", reason="the web interface needs the report extra")
         from fastapi.testclient import TestClient
 
         from bindsight.report.web.app import create_app
 
-        workflow = self.WORKFLOW.read_text("utf-8")
-        marker = re.search(r"grep -q -- '([^']+)'", workflow).group(1)
         response = TestClient(create_app()).get("/static/bindsight.css")
 
         assert response.status_code == 200
-        assert marker in response.text
+        assert self.MARKER in response.text

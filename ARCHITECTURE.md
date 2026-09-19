@@ -12,7 +12,7 @@ The bridge is buildable as a one-person project in 2026 because three keystones 
 
 1. **[SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind)** (BSD-3) ships pre-computed targetable sites + binder seeds for ~2,800 human surface proteins.
 2. **[Boltz-2](https://github.com/jwohlwend/boltz)** (MIT, code + weights) gives commercial-friendly structure + affinity validation.
-3. **Free GPU tiers** (Colab T4, Kaggle T4, HuggingFace Spaces) are now powerful enough to run RFdiffusion + ProteinMPNN at meaningful scale.
+3. **Free GPU tiers** (Colab T4, Kaggle T4) are now powerful enough to run RFdiffusion + ProteinMPNN at meaningful scale.
 
 The combination means a CPU-only laptop user can drive a real binder-design pipeline by templating GPU jobs onto free cloud, while keeping all orchestration, data analysis, and provenance local.
 

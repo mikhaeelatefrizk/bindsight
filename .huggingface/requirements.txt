@@ -1,8 +1,0 @@
-# The Hugging Face Space's build input, version-controlled here and uploaded by
-# .github/workflows/sync-hf-space.yml alongside the Dockerfile.
-#
-# It used to exist only in the Space repository, where it still listed
-# `streamlit>=1.36` after the release that removed Streamlit, because nothing
-# in this repository could see it. The package's extras resolve from
-# pyproject.toml at `main`, so this file cannot drift from them.
-bindsight[discover,report] @ git+https://github.com/mikhaeelatefrizk/bindsight.git@main

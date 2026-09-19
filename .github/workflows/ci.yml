@@ -44,8 +44,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # 3.13 is here because the hosted demo Space runs it. An interpreter
-        # the project deploys on and does not test is an untested claim.
+        # 3.13 is here because pyproject's classifiers claim it. An interpreter
+        # the project claims and does not test is an untested claim.
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7

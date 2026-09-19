@@ -215,13 +215,16 @@ def test_constraints_respect_the_pyproject_bounds() -> None:
 # ---------------------------------------------------------------------------
 # Container base image
 # ---------------------------------------------------------------------------
-def test_the_dockerfile_scan_finds_both_images() -> None:
-    """Guards the guard. These checks read one hard-coded path, so the public
-    demo Space's image — the one real users meet — was outside both of them."""
+def test_the_dockerfile_scan_finds_the_image() -> None:
+    """Guards the guard: an empty scan would collect zero parametrised cases.
+
+    ``_dockerfiles()`` walks the tree rather than naming a path, which is the
+    point -- these checks once read one hard-coded path and a second image
+    sat outside all of them. A Dockerfile added anywhere is covered by the
+    digest and pinned-install checks below on the day it lands."""
     names = {p.relative_to(REPO_ROOT).as_posix() for p in DOCKERFILES}
 
     assert "Dockerfile" in names, names
-    assert ".huggingface/Dockerfile" in names, f"the Space image is not in scope; found {names}"
 
 
 @pytest.mark.parametrize("path", DOCKERFILES, ids=lambda p: p.relative_to(REPO_ROOT).as_posix())
@@ -238,22 +241,20 @@ def test_every_dockerfile_pins_its_base_image_by_digest(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DOCKERFILES, ids=lambda p: p.relative_to(REPO_ROOT).as_posix())
 def test_every_dockerfile_installs_through_pinned_versions(path: Path) -> None:
-    """Two mechanisms are acceptable and both are pinned: ``-c envs/constraints.txt``
-    (the root image) and ``-r requirements.txt`` (the Space, whose file installs
-    ``bindsight[discover,report]`` from git at ``main`` and so cannot drift from
-    pyproject). An unpinned
-    ``pip install`` in either is a build that cannot be reproduced.
-    """
+    """Every install resolves through ``-c envs/constraints.txt``.
+
+    A second mechanism, ``-r requirements.txt``, was accepted here while a
+    second image used it. That image is gone, and an accepted-but-unexercised
+    branch is a hole the next unpinned install slips through, so it went with
+    it. An unpinned ``pip install`` is a build that cannot be reproduced."""
     text = path.read_text(encoding="utf-8")
     installs = [line for line in text.splitlines() if re.search(r"\bpip3?\s+install\b", line)]
     assert installs, f"{path.name} installs nothing"
     for line in installs:
-        pinned = re.search(r"-c\s+envs/constraints\.txt", line) or re.search(
-            r"-r\s+requirements\.txt", line
-        )
+        pinned = re.search(r"-c\s+envs/constraints\.txt", line)
         assert pinned, (
             f"{path.relative_to(REPO_ROOT).as_posix()}: {line.strip()!r} installs "
-            "without a constraints or requirements file, so the build is not reproducible"
+            "without -c envs/constraints.txt, so the build is not reproducible"
         )
 
 
@@ -464,9 +465,11 @@ class TestTheDocumentedExtrasMatchTheDeclaredOnes:
 
 
 class TestThePythonVersionsAgreeAcrossTheProject:
-    """The hosted demo Space ran a Python the classifiers did not claim and the CI
-    matrix did not test. Three files describe one supported set; two of them
-    disagreed with the one that is actually deployed.
+    """Three files describe one supported set, and they have disagreed.
+
+    The image this project publishes runs one interpreter; the CI matrix tests
+    a set; the classifiers claim a set. A container built on a Python nobody
+    tests is a build nobody has exercised, and it reached users first.
     """
 
     @staticmethod
@@ -487,27 +490,28 @@ class TestThePythonVersionsAgreeAcrossTheProject:
 
     @staticmethod
     def _deployed_version() -> str:
+        """The interpreter of the container this project publishes."""
         import re
 
-        text = (REPO_ROOT / ".huggingface" / "Dockerfile").read_text(encoding="utf-8")
+        text = DOCKERFILE.read_text(encoding="utf-8")
         match = re.search(r"FROM python:(\d+\.\d+)", text)
-        assert match, "the Space Dockerfile names no Python version"
+        assert match, "the published Dockerfile names no Python version"
         return match.group(1)
 
     def test_the_deployed_interpreter_is_tested(self) -> None:
         deployed = self._deployed_version()
 
         assert deployed in self._matrix_versions(), (
-            f"the public demo runs Python {deployed}, which the CI matrix "
-            f"{sorted(self._matrix_versions())} never tests"
+            f"the published container image runs Python {deployed}, which the "
+            f"CI matrix {sorted(self._matrix_versions())} never tests"
         )
 
     def test_the_deployed_interpreter_is_claimed(self) -> None:
         deployed = self._deployed_version()
 
         assert deployed in self._classifier_versions(), (
-            f"the public demo runs Python {deployed}, which the classifiers "
-            f"{sorted(self._classifier_versions())} do not claim"
+            f"the published container image runs Python {deployed}, which the "
+            f"classifiers {sorted(self._classifier_versions())} do not claim"
         )
 
     def test_every_tested_version_is_claimed(self) -> None:
@@ -519,46 +523,49 @@ class TestThePythonVersionsAgreeAcrossTheProject:
         )
 
 
-def test_the_space_ships_what_its_pages_render() -> None:
-    """The Space image must carry the artifacts its Real results page reads.
+def test_the_image_ships_what_its_pages_render() -> None:
+    """The published image must carry the artifacts its pages read.
 
     ``bindsight/report/showcase.py`` locates evidence by walking up for a
-    ``benchmarks/`` directory, and the README tells visitors the Space renders
-    twenty binders in 3-D. The Dockerfile copies a named set of paths and
-    ``benchmarks/`` was not one of them, so ``benchmarks_root()`` returned
-    ``None``, the page rendered nothing, and the module docstring asserted the
-    opposite -- that the Space "deploys the full repository".
+    ``benchmarks/`` directory, and the Real results page renders nothing
+    without it. A second image once copied a *named subset* of paths and
+    ``benchmarks/`` was not among them, so that page was blank for the whole
+    life of the deployment while the landing page promised twenty binders in
+    3-D. That image is retired.
 
-    A promise on the front page about a hosted demo is the one claim a reader
-    can check in ten seconds without installing anything.
+    This image copies the working tree whole, so the way it can now lose
+    ``benchmarks/`` is ``.dockerignore`` -- which is checked here instead. The
+    mechanism changed; the thing that goes wrong did not.
     """
-    dockerfile = (REPO_ROOT / ".huggingface" / "Dockerfile").read_text(encoding="utf-8")
+    dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+    copies = [line for line in dockerfile.splitlines() if line.strip().startswith("COPY ")]
+    assert copies, "the image copies nothing"
 
-    copied = {
-        line.split()[1].rstrip("/")
-        for line in dockerfile.splitlines()
-        if line.strip().startswith("COPY ") and len(line.split()) >= 3
-    }
+    wholesale = any(line.split()[1] == "." for line in copies if len(line.split()) >= 3)
+    named = {line.split()[1].rstrip("/") for line in copies if len(line.split()) >= 3}
 
-    assert "benchmarks" in copied, (
-        "the Space image does not copy benchmarks/, so its Real results page "
-        f"renders nothing. It copies: {sorted(copied)}"
-    )
-    assert "examples" in copied, "the demo cohort is not shipped"
+    if not wholesale:
+        assert "benchmarks" in named, (
+            "the image copies a named subset that omits benchmarks/, so the "
+            f"Real results page renders nothing. It copies: {sorted(named)}"
+        )
+        assert "examples" in named, "the demo cohort is not shipped"
+        return
 
+    ignore = REPO_ROOT / ".dockerignore"
+    patterns = set()
+    if ignore.is_file():
+        patterns = {
+            line.strip().strip("/")
+            for line in ignore.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        }
 
-def test_the_showcase_docstring_does_not_claim_a_full_deploy() -> None:
-    """Guards the guard: the docstring was the reason nobody looked."""
-    source = (REPO_ROOT / "bindsight" / "report" / "showcase.py").read_text(encoding="utf-8")
-
-    # Flattened, because the sentence wrapped across two lines and a
-    # substring check on the raw text would miss it for that reason alone.
-    flattened = " ".join(source.split())
-
-    assert "deploys the full repository" not in flattened, (
-        "showcase.py claims the Space deploys the full repository; it deploys "
-        "the paths .huggingface/Dockerfile names"
-    )
+    for needed in ("benchmarks", "examples"):
+        assert needed not in patterns, (
+            f".dockerignore excludes {needed}/ from an image that copies the tree whole, "
+            "so the pages that read it render nothing"
+        )
 
 
 def test_the_result_affecting_scope_covers_the_recorded_stack() -> None:

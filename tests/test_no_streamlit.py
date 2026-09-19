@@ -15,11 +15,14 @@ A `grep` for "streamlit" never found them, because the comment says
 does not search for the word: an API surface does not have to name its vendor.
 
 What is deliberately NOT asserted here is the absence of the word. Several
-mentions must survive -- the CHANGELOG records the migration, `pyproject.toml`
-explains that the `httpx2` pin exists because the removed package was supplying
-httpx transitively, and `keep-warm.yml` records why its probe does not ask for
-`/_stcore/health`. Deleting those would delete the reasons, and a reason
-deleted is a change waiting to be reverted. What must not come back is the
+mentions must survive -- the CHANGELOG records the migration, and
+`pyproject.toml` explains that the `httpx2` pin exists because the removed
+package was supplying httpx transitively. Deleting those would delete the
+reasons, and a reason deleted is a change waiting to be reverted. (A third
+lived in the workflow that probed the retired hosted deployment, and was
+deleted with it; the CHANGELOG entry recording that retirement carries why
+its probe did not ask for a health endpoint that release removed.) What must
+not come back is the
 dependency, the import, and the API surface.
 """
 
@@ -153,7 +156,7 @@ class TestTheDependencyIsGone:
 
     def test_no_requirements_file_pins_it(self) -> None:
         checked = 0
-        for path in _tracked("requirements*.txt", "envs/*.txt", ".huggingface/requirements*.txt"):
+        for path in _tracked("requirements*.txt", "envs/*.txt"):
             if not path.is_file():
                 continue
             checked += 1

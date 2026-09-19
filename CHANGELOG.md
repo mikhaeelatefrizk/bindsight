@@ -6,6 +6,97 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.4] - 2026-09-20
+
+### Removed — the hosted Space, and everything that watched it
+
+The Hugging Face Space served a blank page titled "Streamlit" -- the framework
+the interface release deleted -- from a build it made before that release, and
+it had done so for the life of two releases. It could not be repaired from
+inside this repository: `sync-hf-space.yml` uploaded nothing without an
+`HF_TOKEN` secret only the owner can create, and it skipped every step and
+reported success, so no check ever went red about it. The owner has retired it
+rather than keep a deployment nobody maintains.
+
+Deleted: `.github/workflows/keep-warm.yml`, `.github/workflows/sync-hf-space.yml`,
+and `.huggingface/` (its `Dockerfile`, `README.md` and `requirements.txt`).
+`theme.HF_SPACE_URL` and `theme.HF_SPACE_IS_SERVING_THIS_BUILD` go with them,
+along with `showcase_hf()` in the docs generator, which had no callers at all.
+
+What replaced the claim was already published. The documentation site serves
+the twenty predicted complexes in 3-D at `/results/` and the input checker at
+`/try-your-data/`, both running in the reader's own browser with nothing
+installed and nothing uploaded. Every sentence that pointed at the Space now
+points there: one in the JOSS paper, five in the bioRxiv manuscript, and the
+`sameAs` entry in `overrides/main.html` that had been asserting the dead Space
+as this software's canonical home on every page of the site.
+
+Two of those manuscript sentences were promises the previous guard permitted
+because it only forbade promising the Space *worked* and read only sentences
+that named it: "The web demo is hosted as a Hugging Face Space" and "The same
+demo runs in a web browser ... with no local installation". A third,
+"zero-install browser UI, with no build step and no network fetch once
+installed", contradicted itself three words later. All three are gone and all
+three are now in the guard's vocabulary.
+
+`tests/test_hosted_demo_claims.py` is replaced by `tests/test_no_hosted_space.py`
+rather than deleted. Its rule was "naming the Space as an address is fine;
+promising it runs is not", which existed because the Space did. The new rule is
+flat -- nothing shipped refers to it -- and it keeps what was not
+Space-specific: the promise vocabulary, whose every branch is a sentence this
+repository actually shipped, and the home page's single-primary-call-to-action
+invariant. It runs in both directions, like `test_no_zenodo.py` before it: the
+Space stays out, and the author's own Hugging Face profile in the `author.sameAs`
+identity graph stays in. That profile is a person, two lines from where the
+software's `sameAs` claimed the deployment, and a `grep -rl huggingface | xargs
+sed` would have taken both. A new test also parses the JSON-LD, because
+removing a line from it leaves a trailing comma that voids the whole block and
+changes how no page looks.
+
+Four guards watched the Space and are re-pointed rather than dropped. The
+interpreter check now reads the container image this project actually publishes
+(Python 3.11.9) instead of the Space's (3.13.5) -- the invariant, that the
+interpreter a user meets is one CI tests and the classifiers claim, still has a
+subject. The "ships what its pages render" check moved with the mechanism: the
+Space copied a named subset of paths and omitted `benchmarks/`, so its Real
+results page was blank for its whole life; the published image copies the tree
+whole, so the way it can lose `benchmarks/` now is `.dockerignore`, and that is
+what is checked. The end-to-end stylesheet probe -- which exists because `GET /
+-> 200` called an empty Streamlit page healthy -- now asks the running app
+directly. And the pinned-install check no longer accepts `-r requirements.txt`,
+a second mechanism only the Space used; an accepted-but-unexercised branch is a
+hole the next unpinned install slips through.
+
+The retired probe carried one reason worth keeping: it deliberately stopped
+asking for `/_stcore/health`, which was Streamlit's endpoint and which nothing
+serves now, because a liveness check that fails for a reason unrelated to
+liveness is worse than none.
+
+### Fixed — two claims about free GPU tiers that were never true
+
+`ARCHITECTURE.md` and `bindsight/runners/protocol.py` listed "HuggingFace
+Spaces" beside Colab T4 and Kaggle T4 as free GPU tiers "powerful enough to run
+RFdiffusion + ProteinMPNN at meaningful scale". This project's own Space ran on
+free **CPU** -- which is precisely why its design half went to Kaggle for a GPU
+-- and there has never been a Hugging Face runner backend. Both now say
+`(Colab T4, Kaggle T4)`. The error predates the retirement and would have
+outlived it; the evidence for it was in `.huggingface/README.md`, which this
+release deletes, so it is corrected here while that evidence is still in the
+tree.
+
+`ci.yml` justified testing Python 3.13 with "the hosted demo Space runs it".
+The matrix is unchanged -- the classifiers claim 3.13 and
+`tests/test_counted_self_claims.py` binds the two together in both directions --
+but the reason is now the true one.
+
+### Changed — the repository points at its own documentation site
+
+The GitHub repository's homepage field was empty, so the published
+documentation site was invisible from the repository header. It now points at
+it, which is where the evidence surface lives.
+
+---
+
 ## [0.3.3] - 2026-09-20
 
 Everything here is a defect in 0.3.2, most of it introduced by the demo work

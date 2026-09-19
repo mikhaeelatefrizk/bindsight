@@ -134,7 +134,7 @@ def _root_documents() -> tuple[str, ...]:
         for path in ROOT.glob("*.md")
         if path.is_file() and (tracked is None or path.name in tracked)
     )
-    extra = ("SECURITY.md", "CITATION.cff", ".huggingface/README.md")
+    extra = ("SECURITY.md", "CITATION.cff")
     seen: list[str] = []
     for rel in [*roots, *extra]:
         if rel not in seen and (ROOT / rel).is_file():
@@ -156,7 +156,6 @@ PRIORITY_CLAIM_DOCS = (
     "README.md",
     "docs/index.md",
     "docs/what-is-bindsight.md",
-    ".huggingface/README.md",
     "paper/paper.md",
     MANUSCRIPT_TEX,
 )
@@ -245,7 +244,6 @@ def test_prose_inventory_resolves_the_public_documents() -> None:
         "README.md",
         "SECURITY.md",
         "CITATION.cff",
-        ".huggingface/README.md",
         "docs/index.md",
         "docs/what-is-bindsight.md",
         "paper/paper.md",

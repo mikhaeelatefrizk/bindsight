@@ -183,11 +183,12 @@ browser UI with five sections: an Overview, an Evidence page backed
 by the committed benchmarks — including the twenty predicted binder–target
 complexes rendered in 3-D — a one-click demo (Try it), a "Your data" page that
 validates a counts matrix and design table in the browser without uploading
-them, and a Runs inspector. It is launched locally with `bindsight ui` and is
-published as a Hugging Face Space at
-<https://huggingface.co/spaces/Mikhaeelatefrizk/bindsight>. The interface itself
-needs no build step and fetches nothing from a network; the demo it hosts
-downloads its cohort from NIH/GDC on first run.
+them, and a Runs inspector. It is launched locally with `bindsight ui`; there is no
+hosted deployment of it. Two of those surfaces are additionally published as
+static pages on the documentation site, where they need no installation: the
+3-D complexes at <https://mikhaeelatefrizk.github.io/bindsight/results/> and the input checker at <https://mikhaeelatefrizk.github.io/bindsight/try-your-data/>. The
+interface itself needs no build step and fetches nothing from a network; the
+demo it runs downloads its cohort from NIH/GDC on first run.
 
 # Quality assurance
 

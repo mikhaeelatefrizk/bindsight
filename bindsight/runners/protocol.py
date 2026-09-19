@@ -52,7 +52,7 @@ class CostEstimate(BaseModel):
     usd_estimate: float | None = Field(
         None,
         ge=0.0,
-        description="Best-effort USD estimate. None for free tiers (Colab/Kaggle/HF Spaces).",
+        description="Best-effort USD estimate. None for free tiers (Colab/Kaggle).",
     )
     queue_minutes_estimate: float | None = Field(None, ge=0.0)
     notes: str | None = None
