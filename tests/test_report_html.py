@@ -504,6 +504,55 @@ class TestTheComplexesTravelInsideTheReport:
         assert sorted(embedded) == sorted([order[0], order[2]])
         assert omitted == 1
 
+    def test_a_binder_ranked_twice_is_charged_once(self, tmp_path: Path) -> None:
+        """A ranking table is a column of ids, not a set.
+
+        `ranked_ids` comes straight off the parquet, and nothing promises the
+        same binder appears once. A repeat was charged to the budget twice --
+        `embedded` is a dict and absorbed it silently while `spent` did not --
+        so a lower-ranked structure that fit was dropped to pay for a copy of
+        one already embedded.
+        """
+        from bindsight.report import html as html_mod
+
+        run = self._run_with_structures(tmp_path, n=2)
+        first, second = (f"P32970_binder_{i}_seq0" for i in range(2))
+
+        everything, _ = html_mod._binder_structures(run, [first, second], budget=10**9)
+        both = sum(len(everything[b].encode("utf-8")) for b in (first, second))
+
+        embedded, omitted = html_mod._binder_structures(run, [first, first, second], budget=both)
+
+        assert second in embedded, (
+            "the second structure fits inside the budget, but a duplicate of the "
+            "first was charged to it twice and pushed the second out"
+        )
+        assert sorted(embedded) == sorted([first, second])
+        assert omitted == 0
+
+    def test_a_binder_ranked_twice_is_not_reported_as_left_out(self, tmp_path: Path) -> None:
+        """The tally counted `order` against `embedded`: a list against a dict.
+
+        With room for everything and one id repeated, the report said a
+        structure had been left out for size while it was embedded and sitting
+        in the picker -- a false sentence in the one place the reader is told
+        what is missing.
+        """
+        from bindsight.report import html as html_mod
+        from bindsight.report import render_run
+
+        run = self._run_with_structures(tmp_path, n=2)
+        first, second = (f"P32970_binder_{i}_seq0" for i in range(2))
+
+        embedded, omitted = html_mod._binder_structures(run, [first, first, second], budget=10**9)
+
+        assert sorted(embedded) == sorted([first, second])
+        assert omitted == 0, f"nothing was left out, but {omitted} was reported"
+
+        page = self._collapse(render_run(run).read_text(encoding="utf-8"))
+        assert "more are in" not in page
+        assert "more is in" not in page
+
     def test_a_structure_cannot_close_the_script_that_carries_it(self, tmp_path: Path) -> None:
         """mmCIF has no reason to contain "</script>", which is exactly when an
         assumption like that stops being checked."""

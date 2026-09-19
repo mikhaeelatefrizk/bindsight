@@ -252,7 +252,19 @@ def _binder_structures(
 
     embedded: dict[str, str] = {}
     spent = 0
+    considered: set[str] = set()
     for binder_id in order:
+        # A ranking table is a column of ids, not a set, and nothing promises
+        # the same binder appears once. A repeat used to be charged to the
+        # budget twice -- `embedded` is a dict and absorbed it silently while
+        # `spent` did not -- which starved a lower-ranked structure that fit.
+        # It was also counted twice in the tally below, because that counted
+        # `order` against `embedded`: a list against a dict. With ample budget
+        # and one duplicate, the report said a structure had been left out for
+        # size when it was embedded and sitting in the picker.
+        if binder_id in considered:
+            continue
+        considered.add(binder_id)
         structure = found.get(binder_id)
         if structure is None:
             continue
@@ -274,7 +286,7 @@ def _binder_structures(
             continue
         embedded[binder_id] = structure
         spent += cost
-    return embedded, max(0, len([b for b in order if b in found]) - len(embedded))
+    return embedded, max(0, len(considered & found.keys()) - len(embedded))
 
 
 def _binder_sequences(run_dir: Path) -> dict[str, str]:

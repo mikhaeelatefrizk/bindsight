@@ -359,6 +359,10 @@
       }, g);
       // `p.tip`, when the spec supplies one, replaced the label as well --
       // kept, so what a reader sees does not change.
+      // The label is emphasised, which the string this replaced did not do.
+      // Deliberate: every other tooltip here bolds its label, and scatter was
+      // the one that did not. Keeping the old plain text would preserve an
+      // inconsistency in a chart type no template in this repository emits.
       bindTip(node, p.tip ? "" : p.label || "", [p.tip || `${p.x}, ${p.y}`]);
     });
 
