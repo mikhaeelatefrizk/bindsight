@@ -592,6 +592,53 @@ def test_the_result_affecting_scope_covers_the_recorded_stack() -> None:
     )
 
 
+def test_the_bot_does_not_propose_updates_that_move_a_number() -> None:
+    """``dependabot.yml``'s ignore list must equal the recorded scientific stack.
+
+    The list is there because these distributions can move a number a run
+    reports, and its own comment says their updates "should be deliberate and
+    accompanied by a re-scored artifact, not merged because CI went green".
+
+    It was a hand-written subset of six against a declaration of fifteen, which
+    is the failure this repository keeps finding in itself: a scope that stops
+    covering its category without anything going red. Nine were outside it,
+    including ``torch`` and ``transformers`` -- both driving the prescreen that
+    decides which designs reach validation -- and the bot opened pull requests
+    for three, one of which also proposed raising the ``pyarrow<25`` bound that
+    exists so a published result stays re-derivable.
+
+    Checked in both directions. A name that appears here but is not recorded as
+    result-affecting is also wrong: ``matplotlib`` is declared presentation-only,
+    and silencing its updates would stop a real one from ever being offered.
+    """
+    import yaml
+
+    from bindsight.provenance.manifest import PRESENTATION_ONLY, SCIENTIFIC_STACK
+
+    config = yaml.safe_load((REPO_ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8"))
+    pip = [u for u in config["updates"] if u["package-ecosystem"] == "pip"]
+    assert len(pip) == 1, f"expected one pip ecosystem block, found {len(pip)}"
+
+    ignored = {entry["dependency-name"] for entry in pip[0].get("ignore", [])}
+    declared = set(SCIENTIFIC_STACK) - set(PRESENTATION_ONLY)
+
+    assert declared, "the manifest declares nothing result-affecting; nothing is checked"
+
+    missing = sorted(declared - ignored)
+    assert not missing, (
+        f"dependabot may open version-update pull requests for {missing}, which "
+        "the manifest records as result-affecting. Add them to the ignore list "
+        "in .github/dependabot.yml, or stop recording them as result-affecting."
+    )
+
+    extra = sorted(ignored - declared)
+    assert not extra, (
+        f"dependabot silences {extra}, which the manifest does not record as "
+        "result-affecting. Silencing an update nobody decided to silence is how "
+        "a dependency goes years without being looked at."
+    )
+
+
 def test_ci_installs_with_the_constraints_file() -> None:
     """Checking that the filename *appears* is not checking that it is applied.
 

@@ -12,13 +12,37 @@ updates:
     # libraries whose release can move a number a run reports. Their updates
     # should be deliberate and accompanied by a re-scored artifact, not merged
     # because CI went green.
+    #
+    # This list is exactly `SCIENTIFIC_STACK - PRESENTATION_ONLY` from
+    # `bindsight/provenance/manifest.py`, which is the project's own declaration
+    # of which distributions move a reported number. It was a hand-written
+    # subset of six, and had silently stopped covering its category: `pyarrow`,
+    # `scikit-learn`, `h5py`, `torch`, `transformers`, `anndata`, `biopython`,
+    # `numcodecs` and `zarr` were all outside it. The bot duly opened pull
+    # requests for three of them, one of which also proposed widening the
+    # `pyarrow<25` bound that exists to keep a published result re-derivable.
+    #
+    # `matplotlib` is deliberately absent: the manifest records it as
+    # presentation-only, so its releases move pixels rather than numbers.
+    #
+    # `tests/test_packaging_pins.py` asserts this list still equals that
+    # declaration, so it cannot quietly fall behind it again.
     ignore:
-      - dependency-name: "pydeseq2"
-      - dependency-name: "pandas"
-      - dependency-name: "numpy"
-      - dependency-name: "scipy"
+      - dependency-name: "anndata"
+      - dependency-name: "biopython"
       - dependency-name: "formulaic"
       - dependency-name: "formulaic-contrasts"
+      - dependency-name: "h5py"
+      - dependency-name: "numcodecs"
+      - dependency-name: "numpy"
+      - dependency-name: "pandas"
+      - dependency-name: "pyarrow"
+      - dependency-name: "pydeseq2"
+      - dependency-name: "scikit-learn"
+      - dependency-name: "scipy"
+      - dependency-name: "torch"
+      - dependency-name: "transformers"
+      - dependency-name: "zarr"
 
   - package-ecosystem: "github-actions"
     directory: "/"
