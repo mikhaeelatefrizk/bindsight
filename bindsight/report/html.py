@@ -13,9 +13,12 @@ Design choices:
   matplotlib (which is already in the report extras). The output is one
   genuinely self-contained HTML file — CSS embedded, volcano plot embedded as
   a base64 PNG, and no external requests at all, so it survives being emailed
-  or opened offline. Interactive 3-D structure viewing deliberately lives in
-  the web interface (``report/web/app.py``) instead, because a structure viewer
-  needs a script from a CDN and that would break self-containment.
+  or opened offline -- including the predicted complexes, drawn in 3-D by the
+  same viewer the web interface uses. That used to be excluded on the grounds
+  that "a structure viewer needs a script from a CDN", which was never true
+  here: 3Dmol.js is vendored into the package. The real constraint is size, and
+  it is handled as a budget rather than an exclusion -- see
+  ``_STRUCTURE_BUDGET_BYTES``.
 - **Looks like a paper, not a dashboard.** Sections, tables, captions,
   citations to the upstream tools — readable as a methods + results pair.
 - **Provenance front and center.** The manifest table shows every stage's
@@ -48,6 +51,7 @@ def render_run(
     out_path: Path | str | None = None,
     *,
     include_binders: bool = False,
+    embed_structures: bool = True,
 ) -> Path:
     """Render a finished run as a single self-contained HTML file.
 
@@ -57,6 +61,9 @@ def render_run(
         include_binders: also embed each ranked binder's designed sequence.
             The sequences live in the design tarballs rather than the ranking
             table, so reading them costs a pass over those archives.
+        embed_structures: embed the predicted complexes and the 3-D viewer, up
+            to ``_STRUCTURE_BUDGET_BYTES``. Off makes a much smaller file that
+            shows the numbers without the structures behind them.
 
     Returns:
         Path to the rendered HTML.
@@ -97,7 +104,34 @@ def render_run(
         + (_TEMPLATES_DIR / "report.css").read_text(encoding="utf-8")
     )
 
+    # Best-first, so a budget that cannot hold every complex holds the ones a
+    # reader opens the report to see.
+    ranked_ids = (
+        [str(v) for v in ranking_df["binder_id"].tolist()]
+        if ranking_df is not None and "binder_id" in ranking_df.columns
+        else []
+    )
+    structures: dict[str, str] = {}
+    structures_omitted = 0
+    if embed_structures and ranked_ids:
+        structures, structures_omitted = _binder_structures(run_dir, ranked_ids)
+
+    viewer_js = ""
+    viewer_lib = ""
+    if structures:
+        _static = Path(__file__).resolve().parent / "web" / "static"
+        viewer_js = (_static / "binder_viewer.js").read_text(encoding="utf-8")
+        viewer_lib = (_static / "vendor" / "3Dmol-min.js").read_text(encoding="utf-8")
+
     html = template.render(
+        # Escaped so a structure can never close the <script> that carries
+        # it. mmCIF has no reason to contain the sequence, which is exactly
+        # when an assumption like that stops being checked.
+        structures_json=json.dumps(structures).replace("<", "\\u003c"),
+        structure_ids=list(structures),
+        structures_omitted=structures_omitted,
+        viewer_js=viewer_js,
+        viewer_lib=viewer_lib,
         run_name=manifest.get("name") if manifest else run_dir.name,
         run_id=manifest.get("run_id", "") if manifest else "",
         created_at=manifest.get("created_at", "") if manifest else "",
@@ -151,6 +185,71 @@ _BINDER_DISPLAY_COLS = [
     "score",
     "passes_thresholds",
 ]
+
+
+#: How many bytes of mmCIF a report may carry. A complex is ~150 kB and the
+#: vendored viewer another ~525 kB, against a renderer whose whole purpose is a
+#: file that survives being emailed. Structures are embedded best-first until
+#: this is reached, and the report says how many it left out -- a report that
+#: silently showed three of twenty would be the defect this project keeps
+#: removing, wearing a size limit as an excuse.
+_STRUCTURE_BUDGET_BYTES = 4 * 1024 * 1024
+
+
+def _binder_structures(
+    run_dir: Path, order: list[str], budget: int = _STRUCTURE_BUDGET_BYTES
+) -> tuple[dict[str, str], int]:
+    """Predicted complexes for ``order``, best-first, within a byte budget.
+
+    Reads the per-target design archives, the same place ``_binder_sequences``
+    reads from, because a validated complex is an output of the design stage
+    rather than of the ranking table.
+
+    Args:
+        run_dir: the finished run.
+        order: binder ids, best-ranked first.
+        budget: stop once the embedded mmCIF exceeds this many bytes.
+
+    Returns:
+        The embedded structures, and how many ranked binders were left out --
+        counted rather than inferred, so the report can say so.
+    """
+    import tarfile
+
+    found: dict[str, str] = {}
+    targets_dir = run_dir / "design" / "_targets"
+    if not targets_dir.is_dir():
+        return {}, 0
+
+    for archive in sorted(targets_dir.glob("*.tar.gz")):
+        try:
+            with tarfile.open(archive, encoding="utf-8") as tf:
+                for member in tf.getmembers():
+                    name = PurePosixPath(member.name)
+                    if name.suffix != ".cif" or not member.isfile():
+                        continue
+                    handle = tf.extractfile(member)
+                    if handle is None:
+                        continue
+                    text = handle.read().decode("utf-8", errors="replace")
+                    if text.strip():
+                        # <id>_model_0.cif, and anything else keyed by its stem.
+                        found[name.stem.removesuffix("_model_0")] = text
+        except (OSError, tarfile.TarError) as e:  # a damaged archive is not fatal
+            LOG.warning("could not read binder structures from %s (%s)", archive, e)
+
+    embedded: dict[str, str] = {}
+    spent = 0
+    for binder_id in order:
+        structure = found.get(binder_id)
+        if structure is None:
+            continue
+        cost = len(structure.encode("utf-8"))
+        if spent + cost > budget and embedded:
+            break
+        embedded[binder_id] = structure
+        spent += cost
+    return embedded, max(0, len([b for b in order if b in found]) - len(embedded))
 
 
 def _binder_sequences(run_dir: Path) -> dict[str, str]:

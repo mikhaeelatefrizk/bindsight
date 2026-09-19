@@ -253,6 +253,39 @@
     </tbody>
   </table>
   </div>
+  {% if structure_ids %}
+  <h3>The complexes themselves</h3>
+  <p class="small muted">
+    Drawn from the mmCIF carried inside this file &mdash; no server, no network
+    request, nothing to install.
+    {% if structures_omitted %}
+    The {{ structure_ids|length }} best-ranked are embedded; {{ structures_omitted }}
+    more are in <code>design/_targets/</code>, left out so this stays a file you
+    can send.
+    {% endif %}
+  </p>
+  <div class="field viewer-picker" style="max-width:32rem">
+    <label for="binder-pick">Design</label>
+    <select id="binder-pick" data-binder-picker>
+      {% for bid in structure_ids %}
+      <option value="{{ bid }}">{{ bid }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div id="viewer" class="viewer" role="img" data-binder-viewer
+       aria-label="Three-dimensional view of the predicted binder-target complex">
+    <p class="viewer__fallback small muted">
+      The structure viewer needs JavaScript. The complexes are in this file
+      either way, as mmCIF.
+    </p>
+  </div>
+  <div class="viewer-legend">
+    <span><span class="swatch" style="background:#9aa5b1"></span>
+      chain&nbsp;<strong>T</strong> &mdash; the target</span>
+    <span><span class="swatch" style="background:#0f7d73"></span>
+      chain&nbsp;<strong>B</strong> &mdash; the designed binder</span>
+  </div>
+  {% endif %}
   {% if not include_binders %}
   <div class="note"><span class="note__glyph" aria-hidden="true">&#8212;</span><div class="note__body"><p style="margin:0">
     Re-render with <code>--include-binders</code> to embed each designed sequence.
@@ -365,5 +398,12 @@
 </footer>
 
 </main>
+{% if structure_ids %}
+{# Inlined, not linked: this file has to work with no server and no siblings.
+   The viewer is the same one bindsight ui and the documentation site load. #}
+<script>{{ viewer_lib|safe }}</script>
+<script>window.BINDSIGHT_STRUCTURES = {{ structures_json|safe }};</script>
+<script>{{ viewer_js|safe }}</script>
+{% endif %}
 </body>
 </html>

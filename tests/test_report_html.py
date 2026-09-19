@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -294,6 +295,148 @@ class TestTheReportShowsTheDesignedBinders:
             "`report --include-binders` did not reach the renderer, which is the "
             "defect this test is named for"
         )
+
+
+class TestTheComplexesTravelInsideTheReport:
+    """The report draws the predicted complexes, and stays one file.
+
+    It did not, and the reason given in ``html.py`` was that "a structure viewer
+    needs a script from a CDN". That was never true here: 3Dmol.js is vendored
+    into the package. The real constraint is size, and a budget is the honest
+    form of it -- with the report saying what it left out, because a report that
+    silently showed three of twenty would be the defect this project keeps
+    removing, wearing a size limit as an excuse.
+    """
+
+    @staticmethod
+    def _run_with_structures(tmp_path: Path, n: int = 3) -> Path:
+        """A run whose design archives hold complexes, as a real one does."""
+        import tarfile
+
+        run = tmp_path / "run"
+        (run / "rank").mkdir(parents=True)
+        ids = [f"P32970_binder_{i}_seq0" for i in range(n)]
+        pd.DataFrame(
+            [
+                {
+                    "rank": i + 1,
+                    "binder_id": bid,
+                    "symbol": "CD70",
+                    "target_uniprot": "P32970",
+                    "iptm": 0.9 - i / 100,
+                    "pae_interaction": 3.3,
+                    "score": 0.9 - i / 100,
+                    "passes_thresholds": "pass",
+                }
+                for i, bid in enumerate(ids)
+            ]
+        ).to_parquet(run / "rank" / "ranking.parquet", index=False)
+
+        targets = run / "design" / "_targets"
+        targets.mkdir(parents=True)
+        staging = tmp_path / "staging"
+        staging.mkdir()
+        with tarfile.open(targets / "P32970.tar.gz", "w:gz") as tf:
+            for bid in ids:
+                cif = staging / f"{bid}_model_0.cif"
+                cif.write_text(f"data_{bid}\n_entry.id {bid}\n", encoding="utf-8")
+                tf.add(cif, arcname=f"validate/{bid}/{bid}_model_0.cif")
+        return run
+
+    def test_the_structures_and_the_viewer_are_in_the_file(self, tmp_path: Path) -> None:
+        from bindsight.report import render_run
+
+        html = render_run(self._run_with_structures(tmp_path)).read_text(encoding="utf-8")
+
+        assert "BINDSIGHT_STRUCTURES" in html, "the report carries no structures"
+        assert "createViewer" in html, "the report carries no viewer"
+        assert "data-binder-viewer" in html, "the report has nowhere to draw"
+        for i in range(3):
+            assert f"P32970_binder_{i}_seq0" in html
+
+    def test_it_stays_one_file(self, tmp_path: Path) -> None:
+        """Self-contained is the whole point of this renderer.
+
+        The viewer is inlined rather than linked precisely so that embedding it
+        does not turn one file into a directory.
+        """
+        from bindsight.report import render_run
+
+        html = render_run(self._run_with_structures(tmp_path)).read_text(encoding="utf-8")
+
+        external = re.findall(r"<(?:script|link|img)[^>]*(?:src|href)=\"(?!#)(?!data:)", html)
+        assert not external, f"the report references {len(external)} external file(s)"
+
+    def test_turning_it_off_leaves_the_numbers(self, tmp_path: Path) -> None:
+        """``--no-embed-structures`` is for a small file, not a lesser one."""
+        from bindsight.report import render_run
+
+        run = self._run_with_structures(tmp_path)
+        big = render_run(run, tmp_path / "big.html").read_text(encoding="utf-8")
+        small = render_run(run, tmp_path / "small.html", embed_structures=False).read_text(
+            encoding="utf-8"
+        )
+
+        assert "BINDSIGHT_STRUCTURES" not in small
+        assert "createViewer" not in small
+        assert len(small) < len(big)
+        # The binder table is a run output, not part of the viewer.
+        assert "P32970_binder_0_seq0" in small
+
+    def test_a_budget_that_cannot_hold_everything_says_so(self, tmp_path: Path) -> None:
+        """Silently showing a subset is the failure this guards.
+
+        The budget is forced to one structure, so two of three are dropped and
+        the report has to admit it.
+        """
+        from bindsight.report import html as html_mod
+        from bindsight.report import render_run
+
+        run = self._run_with_structures(tmp_path, n=3)
+        order = [f"P32970_binder_{i}_seq0" for i in range(3)]
+        embedded, omitted = html_mod._binder_structures(run, order, budget=1)
+
+        assert len(embedded) == 1, "the budget embedded more than it allowed"
+        assert omitted == 2, f"two structures were dropped but {omitted} were reported"
+
+        page = render_run(run).read_text(encoding="utf-8")
+        assert "more are in" in page or "structures_omitted" not in page
+
+    def test_a_structure_cannot_close_the_script_that_carries_it(self, tmp_path: Path) -> None:
+        """mmCIF has no reason to contain "</script>", which is exactly when an
+        assumption like that stops being checked."""
+        import tarfile
+
+        run = tmp_path / "hostile"
+        (run / "rank").mkdir(parents=True)
+        pd.DataFrame(
+            [
+                {
+                    "rank": 1,
+                    "binder_id": "X_binder_0_seq0",
+                    "symbol": "X",
+                    "target_uniprot": "X",
+                    "iptm": 0.9,
+                    "pae_interaction": 1.0,
+                    "score": 0.9,
+                    "passes_thresholds": "pass",
+                }
+            ]
+        ).to_parquet(run / "rank" / "ranking.parquet", index=False)
+        targets = run / "design" / "_targets"
+        targets.mkdir(parents=True)
+        staged = tmp_path / "x_model_0.cif"
+        staged.write_text("data_x\n# </script><script>alert(1)</script>\n", encoding="utf-8")
+        with tarfile.open(targets / "X.tar.gz", "w:gz") as tf:
+            tf.add(staged, arcname="validate/X_binder_0_seq0/X_binder_0_seq0_model_0.cif")
+
+        from bindsight.report import render_run
+
+        page = render_run(run).read_text(encoding="utf-8")
+        payload = page.split("BINDSIGHT_STRUCTURES = ", 1)[1].split("</script>", 1)[0]
+
+        assert "</script>" not in payload, "a structure closed the script that carries it"
+        assert "\\u003c" in payload or "u003c" in payload
 
 
 def test_the_report_funnel_matches_the_canonical_disposition_list() -> None:

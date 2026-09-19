@@ -645,23 +645,41 @@ def rank(run_dir: Path) -> None:
         "have run."
     ),
 )
-def report(run_dir: Path, fmt: str, include_binders: bool) -> None:
+@click.option(
+    "--embed-structures/--no-embed-structures",
+    default=True,
+    show_default=True,
+    help=(
+        "Draw the predicted complexes in 3-D inside the report. The viewer and "
+        "the structures travel in the file, so it still opens with no server "
+        "and no network -- at roughly half a megabyte for the viewer and 150 kB "
+        "per complex, best-ranked first, up to a budget. Turn it off for a "
+        "small file that shows the numbers without the structures behind them."
+    ),
+)
+def report(run_dir: Path, fmt: str, include_binders: bool, embed_structures: bool) -> None:
     """Render the run as a self-contained HTML report, or serve the interface.
 
-    HTML output is one self-contained file (CSS + plot + tables embedded) you
-    can email or attach to a paper. `--format web` serves the same run locally
+    HTML output is one self-contained file (CSS, plot, tables and the predicted
+    complexes in 3-D, all embedded) you can email or attach to a paper. `--format web` serves the same run locally
     for interactive browsing; nothing is fetched from a network either way.
     """
     if fmt == "html":
         from bindsight.report import render_run
 
-        out_path = render_run(run_dir, include_binders=include_binders)
+        out_path = render_run(
+            run_dir, include_binders=include_binders, embed_structures=embed_structures
+        )
         provenance.record(
             run_dir,
             name="report",
             tool="bindsight.report",
             outputs={"report_html": out_path},
-            params={"format": fmt, "include_binders": include_binders},
+            params={
+                "format": fmt,
+                "include_binders": include_binders,
+                "embed_structures": embed_structures,
+            },
         )
         console.print(
             Panel(
