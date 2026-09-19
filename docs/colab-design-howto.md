@@ -122,7 +122,8 @@ for pdb in Path("outputs").glob("*.pdb"):
     # unrepeatable draw, and with one sample it is a draw rather than a
     # measurement. The project's own calibration measured a median ipTM
     # movement of 0.172 between refolds of the same sequence.
-    !boltz predict {cfg_path} --use_msa_server --out_dir boltz_out \n        --seed 0 --diffusion_samples 5
+    !boltz predict {cfg_path} --use_msa_server --out_dir boltz_out \
+        --seed 0 --diffusion_samples 5
 ```
 
 This gives you an iPTM and a predicted affinity per design. Sort by either
