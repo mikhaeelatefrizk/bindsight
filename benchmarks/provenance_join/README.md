@@ -11,10 +11,13 @@ RO-Crate metadata (`ro-crate-metadata.json`), and the crate's checksum
 gitignored in full.
 
 So of the seven steps below, **the first three are verifiable by reading the
-files in this directory** — the binder id, its target, and the structure and
-design range it was built against are all in the committed manifest. **Steps 4
-to 7 are not.** The gene identifier, the cohort, and the patient barcodes live
-in the crate, which you have to rebuild. The walk was genuinely performed
+files in this directory, with one exception.** The binder id, its target and the
+structure it was built against are all in `ro-crate-metadata.json` — not in
+`run_manifest.jsonld`, which records the stages and their parameters rather than
+the designs. The design range beside them is in neither, so that one line of
+step 3 has to be taken on trust until the crate is rebuilt. **Steps 4 to 7 are
+not verifiable from this clone at all.** The gene identifier, the cohort, and
+the patient barcodes live in the crate, which you have to rebuild. The walk was genuinely performed
 against the full crate, and the transcript below is that walk — but a reader
 with only this clone can confirm half of it, and this file previously implied
 otherwise. See **Regenerating**.

@@ -38,7 +38,8 @@ bindsight report   runs/cohort_v01 --format html
 bindsight export   runs/cohort_v01 --format ro-crate --out cohort_v01.crate.zip
 ```
 
-**Wall time:** ~30 min CPU + ~5–10 GPU-hours on Modal A100 (~$25–40), or
+**Wall time:** ~30 min CPU + ~4.5 GPU-hours on Modal A100 (~$14 at the price
+table `bindsight/cost.py` ships; `--dry-run` recomputes it), or
 several hours of free Colab.
 
 **Output:** Ranked binder candidates against the top-5 surface antigens in your

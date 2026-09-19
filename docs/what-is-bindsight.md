@@ -68,16 +68,16 @@ that survives review.
 
 ### 1. It closes a structural gap, not a polish gap
 
-There is no other open-source tool that takes RNA-seq counts as its input
-type. [ProteinDJ](https://www.biorxiv.org/content/10.1101/2025.09.24.678028v2),
+As far as we are aware, no other open-source tool takes RNA-seq counts as its
+input type. [ProteinDJ](https://www.biorxiv.org/content/10.1101/2025.09.24.678028v2),
 [Ovo](https://www.biorxiv.org/content/10.1101/2025.11.27.691041v1),
 [BindCraft](https://github.com/martinpacesa/BindCraft),
 [dl_binder_design](https://github.com/nrbennet/dl_binder_design),
 [nf-binder-design](https://github.com/Australian-Protein-Design-Initiative/nf-binder-design),
 and [Tamarind.bio](https://www.tamarind.bio/) all start with *"give us a target
 structure."* They polish the protein-design half of the pipeline. The discovery
-half — the genomics-to-structure bridge — is where we live, and where nobody
-else has shipped.
+half — the genomics-to-structure bridge — is where we live, and where we have
+not found a shipped open-source equivalent.
 
 ### 2. The keystone (SURFACE-Bind) just dropped
 
@@ -90,10 +90,14 @@ unlocks the bridge for a one-person team — exactly the right moment to build.
 
 ### 3. CPU laptop is enough
 
-The orchestrator runs on the user's machine. GPU work runs end-to-end on free
-Colab T4s, free Kaggle T4×2s, paid Modal A100s, or a local NVIDIA GPU — the
-user picks the backend per command. The user's $0/month research budget is no longer the
-bottleneck; the same setup that works for a PhD student in Cairo works for
+The orchestrator runs on the user's machine. GPU work is dispatched to a free
+Kaggle T4×2, a paid Modal A100, a local NVIDIA GPU or a Colab notebook — the
+user picks the backend per command. Only Kaggle has been run end to end, and it
+is the backend the committed benchmark used; Modal and local Docker are
+implemented but unexercised, and Colab needs a human with a browser tab open
+because Google's API will not launch a free-tier notebook from a CLI.
+
+The user's $0/month research budget is no longer the bottleneck; the same setup that works for a PhD student in Cairo works for
 a clinician in Lagos.
 
 ### 4. Provenance is the moat
@@ -111,15 +115,16 @@ Every binder PDB the pipeline outputs is one click from:
 This is recorded as a [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifest
 and packaged as an [RO-Crate](https://www.researchobject.org/ro-crate/) — both
 W3C/FAIR-friendly standards. Reviewers can audit the chain. Clinicians can
-defend the choice in IND filings. No other protein-design tool offers this.
+defend the choice in IND filings. We have not found another protein-design
+tool that offers this.
 
 ### 5. Failure-honest by default
 
 The pipeline catalogs *why* targets fail (no AlphaFoldDB model, no
 SURFACE-Bind site, fails specificity, designer fails to converge, validator
 rejects), publishing a `failure_taxonomy.parquet` next to the successes. Every
-existing tool quietly drops failures. We surface them, because that's what
-users actually need to triage.
+open binder-design tool we compared above quietly drops failures. We surface
+them, because that's what users actually need to triage.
 
 ### 6. Commercially defensible
 
@@ -153,8 +158,8 @@ cancer cohort for surface-antigen targets without writing 600 lines of glue.
 ### Design + validation half — GPU-backed
 
 ```bash
-bindsight design runs/luad_v01 --backend colab --trajectories 50
-bindsight validate runs/luad_v01 --backend colab --validator boltz2
+bindsight design runs/luad_v01 --backend kaggle --trajectories 50
+bindsight validate runs/luad_v01 --backend kaggle --validator boltz2
 bindsight rank runs/luad_v01
 bindsight report runs/luad_v01 --format html
 ```
@@ -317,9 +322,12 @@ Anyone with a GPU can run the existing tools. The work `bindsight` does is the
    measurement, since that rule excludes them by construction. See the
    [validation report](https://github.com/mikhaeelatefrizk/bindsight/blob/main/paper/validation/manuscript.md).
 2. **Container-pinned, seed-pinned, weights-pinned reproducibility.** Two runs
-   of the same config on the same data should produce identical outputs apart
-   from the `generated_utc` timestamp in the manifest, modulo logged stochastic
-   seeds. Seed-pinning covers the executed path — RFdiffusion, ProteinMPNN,
+   of the same config on the same data should produce identical *artifacts*,
+   modulo logged stochastic seeds. The manifest itself is not byte-identical
+   between runs and is not meant to be: `run_id` is a fresh UUID4, and
+   `created_at` and every stage's timestamps record when the run happened.
+   What is comparable across runs is the content — each artifact's SHA-256,
+   and the resolved tool and container versions beside it. Seed-pinning covers the executed path — RFdiffusion, ProteinMPNN,
    Boltz-2 and Chai-1 each take the run's seed. It does not cover BindCraft or
    BoltzGen, which expose no way to set one at their pinned commits; the
    executor warns when either runs.

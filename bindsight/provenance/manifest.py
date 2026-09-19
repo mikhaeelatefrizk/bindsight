@@ -216,8 +216,10 @@ class ToolRef(BaseModel):
     )
     weights_sha256: str | None = Field(
         None,
-        description="SHA-256 of the model weights file (for ML components — required for "
-        "reproducibility of stochastic outputs).",
+        description="SHA-256 of the model weights file, when the caller knows it. "
+        "Nothing in this repository sets it yet: the design backends pass None "
+        "because the checkpoints are multi-GB and verified at download instead, so "
+        "a manifest pins the tool and container but not the weights inside them.",
     )
     citation: str | None = Field(
         None, description="DOI or BibTeX key. Aggregated into ``software.bib`` at export time."

@@ -112,10 +112,11 @@ python -m bindsight.cli report runs/join --format html
 python -m bindsight.cli export runs/join --out runs/join.crate.zip
 ```
 
-Two targets at ten trajectories is roughly **2 GPU-hours**. Each target is a
-separate kernel that rebuilds both micromamba environments, so budget about 90
-minutes of wall-clock per target and expect the build, not the science, to
-dominate.
+Two targets at ten trajectories is roughly **2 GPU-hours** of design and
+validation. Budget wall-clock, not GPU-hours: each target is a separate kernel
+that rebuilds both micromamba environments first, and the committed two-target
+run took 3h17m for CA9 and 1h29m for CD70 on a free T4 — 4h46m against about
+two hours of actual science. The build dominates.
 
 **Check the cost before launching.** Twenty targets at ten trajectories is about
 10 GPU-hours, a third of the weekly allowance. Add `--dry-run` to the design

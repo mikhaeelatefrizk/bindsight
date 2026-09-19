@@ -44,7 +44,7 @@ cost-aware GPU offload, the failure taxonomy, and the [PROV-O](https://www.w3.or
 [RO-Crate](https://www.researchobject.org/ro-crate/) provenance that makes a run citable and
 reproducible.
 
-| | Typical binder-design tool | bindsight |
+| | The binder-design tools surveyed above | bindsight |
 |---|---|---|
 | Input | Target structure | RNA-seq counts |
 | Provenance | PDB + maybe a log | PROV-O JSON-LD + RO-Crate, audit trail to cohort |
