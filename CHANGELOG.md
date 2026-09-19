@@ -6,6 +6,134 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.3] - 2026-09-20
+
+Everything here is a defect in 0.3.2, most of it introduced by the demo work
+that release shipped. That work went out without an adversarial pass; this is
+the pass, and what it found.
+
+### Fixed — a filename was markup, on a page anyone can be handed a file for
+
+`your_data_check.js` built its verdict cards by concatenating strings and
+assigned the result to `innerHTML`. Every interpolated value came from the
+reader's own files: the two filenames, the counts-matrix column headers, and
+the design-table cell values read as contrast levels. That was tolerable while
+the page only ran on `localhost`. Publishing it at `docs/try-your-data.md` in
+0.3.2 turned "a filename is whatever someone typed" into script execution in
+the documentation origin, reachable by handing a collaborator a `.tsv`.
+
+Escaping on the way in was considered and rejected. The levels were built into
+`<option value="..">`, where a value of `" onmouseover=".." escapes the
+attribute without using a single angle bracket, so a helper handling `<`, `>`
+and `&` would not have caught it — and no reader of a call site can tell which
+context an interpolation lands in. `charts.js` had the same shape in its
+tooltips, fed by gene symbols out of the user's counts matrix and served by
+`bindsight ui`.
+
+Both now compose DOM nodes and set `textContent`. The rule that replaces care
+is mechanical, because care is what produced the bug: `innerHTML` is only ever
+assigned `""`, and a test sweeps every authored script under `report/web/` and
+fails anything else. Its positive controls are the real pre-fix lines taken
+from git rather than synthetic samples. Verified in a browser with a payload in
+all three contexts — filename, TSV header, and a level crafted to break out of
+the option attribute: no element is created from any of them.
+
+### Fixed — `pip install bindsight` produced a command that could not start
+
+`cli.py` read `DEFAULT_KS` from `bindsight.benchmark.core`, which imports
+pandas at module scope. The value is needed at *import* time — it is
+interpolated into the `--k` help string, which Click evaluates when the command
+is defined — so the import ran on every invocation. pandas is declared under
+the `discover` extra, not in `dependencies`, so a bare install raised
+`ModuleNotFoundError` before `bindsight --version` could print. Every
+documented first step began with an install that produced a broken command.
+
+No CI job could see it: all of them install `.[dev,discover,report]`.
+
+The constant moved to `bindsight/benchmark/defaults.py`, which is stdlib-only,
+and `bindsight.benchmark` now resolves its scoring API through a PEP 562
+`__getattr__` the way `bindsight.report` already did — the package `__init__`
+was eagerly importing `core`, so reaching any submodule pulled pandas in
+regardless. Proved on the built wheel in a clean virtualenv with no extras:
+`--version`, `--help`, all twelve subcommand helps, and `bindsight doctor` run
+with pandas genuinely absent.
+
+### Fixed — the structure budget was a floor, and a large complex cost the small ones
+
+`if spent + cost > budget and embedded: break` carried three defects.
+
+`and embedded` made the documented ceiling a floor: the first structure was
+embedded whatever its size, so a single oversized complex produced a report
+larger than the budget that exists to keep it sendable. "Up to
+`_STRUCTURE_BUDGET_BYTES`" was false in exactly the case the budget is for.
+Measured before the fix, a 1 KiB budget embedded 51,200 bytes.
+
+`break` charged every lower-ranked complex for that one: a 5 KiB structure was
+dropped because a 50 KiB structure outranked it, with room to spare. It now
+skips and keeps going, so the embedded set is the best-ranked ones that *fit*.
+
+Honouring the budget strictly made a case reachable that the floor had hidden —
+nothing fits — and the whole section sat inside `{% if structure_ids %}`, so it
+would have vanished without a heading, an explanation, or a pointer to where
+the structures went. It now says so and names the directory.
+
+### Fixed — four documented commands exited before doing anything
+
+`docs/how-to-use.md` told a reader to run `bindsight report --format web`,
+which exits with `Error: Missing argument 'RUN_DIR'`. Also: a plugin selected
+with a top-level `--designer` that exists only on `design` and `run`; a
+teaching syllabus whose `bindsight design --backend colab` names no run
+directory; and the designer-benchmark page passing a discovery config straight
+to `design`, whose positional argument must be an existing directory. Each was
+confirmed by invoking Click, not by reading.
+
+Nothing guarded this class — the existing documentation sweep covers `python`,
+`bash` and `sh` invocations, and the console script itself, which is most of
+what the documentation tells people to type, fell outside it. Every
+`bindsight …` line in every tracked Markdown file is now validated against
+Click's own introspection: subcommand exists, every flag exists on it, required
+arguments and required options present.
+
+### Fixed — the site's own labels failed the contrast rule the app is held to
+
+`--bs-muted` was `#6c757d`: 4.08:1 on `--bs-navy-tint` and 4.45:1 on
+`--bs-canvas`, against WCAG AA's 4.5:1. `.bs-stat .k` is the label under each
+headline number and `.bs-flow .s small` the caption under each pipeline stage,
+both at well under 18.7px — so on the published site the words naming the
+numbers sat below the threshold while the numbers stayed crisp. That is the
+same defect `tests/test_contrast.py` was written for, reproduced because the
+sweep read one stylesheet and the palette had since become two. Now `#5f6873`,
+and the sweep covers `docs/stylesheets/extra.css` as well.
+
+### Fixed — a responsive rule that could never apply
+
+`.bs-viewer` was 26rem at every width. On a phone in portrait that is 520px —
+mkdocs-material sets the root font to 125% — which pushed the design picker and
+the chain legend below the fold, the two things that say what is being looked
+at. The narrow-viewport override was first written *above* the rule it
+overrides; equal specificity means source order decides, so it did nothing, and
+every static gate passed on it. Caught in a browser, then made catchable: a
+declaration inside `@media` that the same selector overrides unconditionally
+further down the file is now a test failure.
+
+### Added — the interface says what it is doing to a screen reader
+
+`#checks`, where the data checker writes its verdict, gains `aria-live`: results
+appeared without the focus moving, so a screen-reader user was told nothing had
+happened. The 3-D viewer's fallbacks gain `role="alert"` — the static ones in
+the report, the evidence page and the generated results page, and the two the
+viewer builds at runtime, which replace a fallback the reader was already given.
+
+### Changed — a privacy promise scoped to what it can keep
+
+`docs/try-your-data.md` said the page "makes no network request of any kind".
+That is true of the checker and false of the MkDocs page around it, which
+fetches a web font like every other page on the site. The promise that matters
+— no upload, no form action, your data never part of any request — is now what
+it says, and the font is named rather than glossed over.
+
+---
+
 ## [0.3.2] - 2026-09-19
 
 ### Added — the demo runs on the documentation site, with no server and no secret

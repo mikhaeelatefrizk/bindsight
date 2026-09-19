@@ -132,7 +132,7 @@ all became true in late 2025 and not before:
         meaningful scale, removing the institutional-cluster barrier.
 \end{enumerate}
 
-We present \texttt{bindsight} (v0.3.2), a Python package with a
+We present \texttt{bindsight} (v0.3.3), a Python package with a
 server-rendered web interface that exploits this newly-opened window. It
 takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
 binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
@@ -362,7 +362,7 @@ The web demo is hosted as a Hugging Face Space at
 % --------------------------------------------------------------------
 \section{Discussion and future work}
 
-\paragraph{Limitations of v0.3.2.} The CPU half of the pipeline
+\paragraph{Limitations of v0.3.3.} The CPU half of the pipeline
 (differential expression through structural pre-flight) is fully validated. Of
 the GPU half, one path is executed end to end and the rest is not.
 RFdiffusion $\to$ ProteinMPNN $\to$ Boltz-2 produced the twenty committed ERBB2
