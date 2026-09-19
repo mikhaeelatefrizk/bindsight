@@ -62,7 +62,7 @@ was rejected project-wide long ago. A false reason outlives the thing it was
 invented for.
 
 The real constraint is size, and it is a budget now rather than an exclusion:
-structures are embedded best-ranked first up to `_STRUCTURE_BUDGET_BYTES`, and
+structures are embedded best-ranked first within `_STRUCTURE_BUDGET_BYTES`, and
 the report states in its own text how many it left out and where the rest are. A
 report that silently showed three of twenty would be this project's own defect
 class wearing a size limit as an excuse. On the committed provenance-join run

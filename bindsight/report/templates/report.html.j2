@@ -259,9 +259,9 @@
     Drawn from the mmCIF carried inside this file &mdash; no server, no network
     request, nothing to install.
     {% if structures_omitted %}
-    The {{ structure_ids|length }} best-ranked are embedded; {{ structures_omitted }}
-    more are in <code>design/_targets/</code>, left out so this stays a file you
-    can send.
+    The {{ structure_ids|length }} that fit are embedded, best-ranked first;
+    {{ structures_omitted }} more {{ 'are' if structures_omitted != 1 else 'is' }}
+    in <code>design/_targets/</code>, left out so this stays a file you can send.
     {% endif %}
   </p>
   <div class="field viewer-picker" style="max-width:32rem">
@@ -285,6 +285,17 @@
     <span><span class="swatch" style="background:#0f7d73"></span>
       chain&nbsp;<strong>B</strong> &mdash; the designed binder</span>
   </div>
+  {% elif structures_omitted %}
+  <h3>The complexes themselves</h3>
+  <p class="small muted">
+    None are embedded here. {{ structures_omitted }} predicted complex{{ 'es' if structures_omitted != 1 else '' }}
+    would have pushed this file past the size it will carry, so
+    {{ 'they are' if structures_omitted != 1 else 'it is' }} in
+    <code>design/_targets/</code> instead. Open
+    {{ 'them' if structures_omitted != 1 else 'it' }} in any structure viewer,
+    or re-render with a larger budget. Saying nothing here would have left this
+    section silently missing.
+  </p>
   {% endif %}
   {% if not include_binders %}
   <div class="note"><span class="note__glyph" aria-hidden="true">&#8212;</span><div class="note__body"><p style="margin:0">

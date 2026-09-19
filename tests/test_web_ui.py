@@ -703,11 +703,7 @@ class TestNoScriptParsesDataAsMarkup:
     @staticmethod
     def _authored() -> list[Path]:
         web = REPO / "bindsight" / "report" / "web"
-        return [
-            p
-            for p in sorted(web.rglob("*.js"))
-            if p.is_file() and "vendor" not in p.parts
-        ]
+        return [p for p in sorted(web.rglob("*.js")) if p.is_file() and "vendor" not in p.parts]
 
     @classmethod
     def _offenders(cls, source: str, name: str = "?") -> list[str]:
@@ -758,12 +754,13 @@ class TestNoScriptParsesDataAsMarkup:
             assert self._offenders(line), f"the scan would have missed: {line!r}"
 
     def test_the_scan_permits_clearing_and_ignores_comments(self) -> None:
-        for line in ['  out.innerHTML = "";', "  t.innerHTML = '';", "  host.innerHTML = \"\";"]:
+        for line in ['  out.innerHTML = "";', "  t.innerHTML = '';", '  host.innerHTML = "";']:
             assert not self._offenders(line), line
         # The docstring above and the comments in those files describe the rule
         # in the words the scan looks for; they must not trip it.
         assert not self._offenders("  // t.innerHTML = html; -- what this replaced")
         assert not self._offenders("   * assigned innerHTML = markup, which was the bug")
+
 
 class TestNoConditionIsDecorative:
     """A condition that cannot change the answer is worse than no condition.

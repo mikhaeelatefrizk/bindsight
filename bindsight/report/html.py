@@ -61,9 +61,9 @@ def render_run(
         include_binders: also embed each ranked binder's designed sequence.
             The sequences live in the design tarballs rather than the ranking
             table, so reading them costs a pass over those archives.
-        embed_structures: embed the predicted complexes and the 3-D viewer, up
-            to ``_STRUCTURE_BUDGET_BYTES``. Off makes a much smaller file that
-            shows the numbers without the structures behind them.
+        embed_structures: embed the predicted complexes and the 3-D viewer,
+            within ``_STRUCTURE_BUDGET_BYTES``. Off makes a much smaller file
+            that shows the numbers without the structures behind them.
 
     Returns:
         Path to the rendered HTML.
@@ -114,7 +114,12 @@ def render_run(
     structures: dict[str, str] = {}
     structures_omitted = 0
     if embed_structures and ranked_ids:
-        structures, structures_omitted = _binder_structures(run_dir, ranked_ids)
+        # Passed rather than defaulted: a default argument binds at import
+        # time, so the end-to-end behaviour of a full budget could not be
+        # exercised without monkeypatching the function itself.
+        structures, structures_omitted = _binder_structures(
+            run_dir, ranked_ids, _STRUCTURE_BUDGET_BYTES
+        )
 
     viewer_js = ""
     viewer_lib = ""
@@ -208,11 +213,18 @@ def _binder_structures(
     Args:
         run_dir: the finished run.
         order: binder ids, best-ranked first.
-        budget: stop once the embedded mmCIF exceeds this many bytes.
+        budget: hard ceiling on the embedded mmCIF, in bytes. Never exceeded,
+            not even by the best-ranked structure -- a report too large to
+            send is the failure this budget exists to prevent. A structure
+            that does not fit is skipped, not treated as a stopping point.
 
     Returns:
-        The embedded structures, and how many ranked binders were left out --
-        counted rather than inferred, so the report can say so.
+        The embedded structures, best-ranked first among those that fit, and
+        how many ranked binders have a complex in the archives that was left
+        out. The second number counts only structures that really are in
+        ``design/_targets/``, because that is what the report says about them;
+        a ranked binder the design stage produced no complex for is not in the
+        tally, since it is not there to be found.
     """
     import tarfile
 
@@ -245,8 +257,21 @@ def _binder_structures(
         if structure is None:
             continue
         cost = len(structure.encode("utf-8"))
-        if spent + cost > budget and embedded:
-            break
+        if spent + cost > budget:
+            # Skip this one and keep going. Two defects lived in the line this
+            # replaced, ``if spent + cost > budget and embedded: break``.
+            #
+            # ``and embedded`` made the documented ceiling a floor: the first
+            # structure was embedded whatever its size, so one oversized
+            # complex produced a report larger than the budget it claims to
+            # respect -- and "up to _STRUCTURE_BUDGET_BYTES" was false in the
+            # one case the budget exists for.
+            #
+            # ``break`` charged every lower-ranked structure for that one. A
+            # 5 KiB complex was dropped because a 50 KiB complex outranked it,
+            # even with room to spare, so the report showed less than the
+            # budget allowed and the reader lost a structure for no reason.
+            continue
         embedded[binder_id] = structure
         spent += cost
     return embedded, max(0, len([b for b in order if b in found]) - len(embedded))

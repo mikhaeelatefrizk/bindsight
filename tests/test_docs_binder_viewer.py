@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
@@ -65,6 +66,25 @@ def _offered(page: str) -> set[str]:
         return set()
     block = page.split("data-binder-picker", 1)[1].split("</select>", 1)[0]
     return set(re.findall(r'<option value="([^"]+)"', block))
+
+
+def _publish_diff(pairs: Iterable[tuple[Path, Path]]) -> tuple[list[str], list[str]]:
+    """Compare ``(source, published)`` pairs byte for byte.
+
+    Returns the published names that are absent, and the ones that differ.
+    Both publishing sweeps below wrote this loop inline, which left their
+    positive controls nothing real to call: they wrote a temporary file, read
+    it back from the same path and compared it to itself. Those controls would
+    have stayed green with every sweep in this file deleted.
+    """
+    missing: list[str] = []
+    differing: list[str] = []
+    for source, published in pairs:
+        if not published.is_file():
+            missing.append(published.name)
+        elif published.read_bytes() != source.read_bytes():
+            differing.append(published.name)
+    return missing, differing
 
 
 def _tracked() -> set[str]:
@@ -116,15 +136,12 @@ class TestThePageOffersWhatItCanActuallyServe:
         assert offered, "the page offers no designs at all"
 
         by_id = {b.binder_id: b for b in d.with_structures()}
-        missing, differing = [], []
+        pairs = []
         for binder_id in sorted(offered):
             source = by_id[binder_id].complex_cif
             assert source is not None
-            published = DOCS_STRUCTURES / source.name
-            if not published.is_file():
-                missing.append(published.name)
-            elif published.read_bytes() != source.read_bytes():
-                differing.append(published.name)
+            pairs.append((source, DOCS_STRUCTURES / source.name))
+        missing, differing = _publish_diff(pairs)
 
         assert not missing, f"the page offers structures the site does not serve: {missing}"
         assert not differing, f"published copies differ from the benchmark's: {differing}"
@@ -158,13 +175,7 @@ class TestTheTwoSurfacesShareOneViewer:
         sources = sorted(p for p in SOURCE_VENDOR.iterdir() if p.is_file())
         assert sources, "nothing is vendored, so this test compared nothing"
 
-        missing, differing = [], []
-        for src in sources:
-            dst = DOCS_VENDOR / src.name
-            if not dst.is_file():
-                missing.append(src.name)
-            elif dst.read_bytes() != src.read_bytes():
-                differing.append(src.name)
+        missing, differing = _publish_diff((src, DOCS_VENDOR / src.name) for src in sources)
 
         assert not missing, f"vendored files the docs site does not serve: {missing}"
         assert not differing, f"published vendored copies have drifted: {differing}"
@@ -294,18 +305,60 @@ class TestTheScansWouldCatchTheirOwnDefect:
         assert _offered("") == set()
 
     def test_a_missing_structure_would_be_caught(self, tmp_path: Path) -> None:
-        real = tmp_path / "a.cif"
-        real.write_bytes(b"data_model\n")
-        assert real.read_bytes() == (tmp_path / "a.cif").read_bytes()
-        assert not (tmp_path / "ghost.cif").is_file()
+        """Calls the comparison the publishing sweeps call.
+
+        What this replaced wrote a file, read it back from the same path and
+        compared it to itself -- true of any filesystem, and green with every
+        sweep in this file deleted.
+        """
+        source = tmp_path / "a.cif"
+        source.write_bytes(b"data_model\n")
+        site = tmp_path / "published"
+        site.mkdir()
+
+        missing, differing = _publish_diff([(source, site / source.name)])
+        assert missing == ["a.cif"], "an unpublished file was not reported missing"
+        assert differing == []
+
+        (site / source.name).write_bytes(source.read_bytes())
+        assert _publish_diff([(source, site / source.name)]) == ([], [])
 
     def test_a_diverged_copy_would_be_caught(self, tmp_path: Path) -> None:
-        a, b, c = tmp_path / "a", tmp_path / "b", tmp_path / "c"
-        a.write_bytes(b"same")
-        b.write_bytes(b"same")
-        c.write_bytes(b"samE")
-        assert a.read_bytes() == b.read_bytes()
-        assert a.read_bytes() != c.read_bytes()
+        """One byte of drift, in the direction that matters.
+
+        A published copy that has silently stopped matching its source is what
+        the byte comparison exists for -- a viewer script edited under
+        ``docs/assets`` and not in the package, or the reverse.
+        """
+        source = tmp_path / "viewer.js"
+        source.write_bytes(b"var BINDER_CHAIN = 'B';")
+        published = tmp_path / "published.js"
+        published.write_bytes(b"var BINDER_CHAIN = 'b';")
+
+        missing, differing = _publish_diff([(source, published)])
+        assert missing == []
+        assert differing == ["published.js"], "a one-byte divergence went unreported"
+
+        published.write_bytes(source.read_bytes())
+        assert _publish_diff([(source, published)]) == ([], [])
+
+    def test_the_comparison_reports_every_offender_not_just_the_first(self, tmp_path: Path) -> None:
+        """Returning on the first mismatch would hide the rest of the drift."""
+        site = tmp_path / "published"
+        site.mkdir()
+        pairs = []
+        for i in range(3):
+            source = tmp_path / f"s{i}.cif"
+            source.write_bytes(f"data_{i}".encode())
+            pairs.append((source, site / source.name))
+        # s0 published correctly, s1 diverged, s2 never published at all.
+        (site / "s0.cif").write_bytes(b"data_0")
+        (site / "s1.cif").write_bytes(b"data_X")
+
+        missing, differing = _publish_diff(pairs)
+
+        assert missing == ["s2.cif"]
+        assert differing == ["s1.cif"]
 
     def test_the_repository_listing_is_not_empty(self) -> None:
         """Every sweep above walks a directory; an empty one passes them all."""

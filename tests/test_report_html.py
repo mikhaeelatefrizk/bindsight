@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from bindsight.provenance import (
     InputRef,
@@ -383,24 +384,125 @@ class TestTheComplexesTravelInsideTheReport:
         # The binder table is a run output, not part of the viewer.
         assert "P32970_binder_0_seq0" in small
 
+    @staticmethod
+    def _collapse(page: str) -> str:
+        """Jinja re-wraps the sentence; compare on words, not on line breaks."""
+        return " ".join(page.split())
+
     def test_a_budget_that_cannot_hold_everything_says_so(self, tmp_path: Path) -> None:
         """Silently showing a subset is the failure this guards.
 
-        The budget is forced to one structure, so two of three are dropped and
-        the report has to admit it.
+        The budget is set from the measured sizes to admit exactly two of
+        three, and the assertion is on the sentence the reader sees, with its
+        numbers. What this replaced ended in
+        ``assert "more are in" in page or "structures_omitted" not in page``.
+        ``structures_omitted`` is a Jinja variable name and never survives into
+        rendered output, so the right disjunct was always true and the
+        assertion could not fail -- it passed while the report said nothing.
         """
         from bindsight.report import html as html_mod
         from bindsight.report import render_run
 
         run = self._run_with_structures(tmp_path, n=3)
         order = [f"P32970_binder_{i}_seq0" for i in range(3)]
+
+        everything, none_left = html_mod._binder_structures(run, order, budget=10**9)
+        assert len(everything) == 3, "the fixture lost a structure"
+        assert none_left == 0, "a budget of a gigabyte still omitted something"
+
+        sizes = [len(everything[b].encode("utf-8")) for b in order]
+        budget = sizes[0] + sizes[1]
+        embedded, omitted = html_mod._binder_structures(run, order, budget=budget)
+        assert sorted(embedded) == sorted(order[:2]), "the budget did not admit exactly two"
+        assert omitted == 1
+
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(html_mod, "_STRUCTURE_BUDGET_BYTES", budget)
+            page = self._collapse(render_run(run).read_text(encoding="utf-8"))
+
+        assert "The 2 that fit are embedded, best-ranked first; 1 more is in" in page
+        assert "design/_targets/" in page
+        # The two it kept are named in the picker; the third is not.
+        assert f'value="{order[0]}"' in page
+        assert f'value="{order[1]}"' in page
+        assert f'value="{order[2]}"' not in page
+
+    def test_a_budget_that_holds_nothing_still_says_so(self, tmp_path: Path) -> None:
+        """The section used to vanish in silence when nothing fit.
+
+        ``if spent + cost > budget and embedded: break`` embedded the first
+        structure whatever its size, which hid this case: there was always at
+        least one complex, so nobody noticed that zero would render no heading,
+        no explanation and no pointer to where the structures went. With the
+        budget honoured strictly that case is reachable, so the report has to
+        speak for it.
+        """
+        from bindsight.report import html as html_mod
+        from bindsight.report import render_run
+
+        run = self._run_with_structures(tmp_path, n=3)
+        order = [f"P32970_binder_{i}_seq0" for i in range(3)]
+
         embedded, omitted = html_mod._binder_structures(run, order, budget=1)
+        assert embedded == {}, "a one-byte budget embedded a structure"
+        assert omitted == 3
 
-        assert len(embedded) == 1, "the budget embedded more than it allowed"
-        assert omitted == 2, f"two structures were dropped but {omitted} were reported"
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(html_mod, "_STRUCTURE_BUDGET_BYTES", 1)
+            page = self._collapse(render_run(run).read_text(encoding="utf-8"))
 
-        page = render_run(run).read_text(encoding="utf-8")
-        assert "more are in" in page or "structures_omitted" not in page
+        assert "The complexes themselves" in page, "the section disappeared silently"
+        assert "None are embedded here." in page
+        assert "3 predicted complexes" in page
+        assert "design/_targets/" in page
+        # No viewer, because there is nothing for it to draw.
+        assert "BINDSIGHT_STRUCTURES" not in page
+        assert "data-binder-picker" not in page
+
+    def test_an_oversized_structure_does_not_cost_the_ones_below_it(self, tmp_path: Path) -> None:
+        """``break`` charged every lower-ranked complex for one large one.
+
+        The loop stopped at the first structure that did not fit, so a small
+        complex ranked below a large one was dropped with room to spare: the
+        reader lost it for no reason and the report came out smaller than its
+        own budget allowed.
+        """
+        import tarfile
+
+        from bindsight.report import html as html_mod
+
+        run = self._run_with_structures(tmp_path, n=3)
+        order = [f"P32970_binder_{i}_seq0" for i in range(3)]
+
+        # Re-write the archive so the middle-ranked complex is the large one.
+        targets = run / "design" / "_targets"
+        archives = sorted(targets.glob("*.tar.gz"))
+        assert archives, "the fixture wrote no design archive"
+        staging = tmp_path / "restage"
+        staging.mkdir()
+        with tarfile.open(archives[0], encoding="utf-8") as tf:
+            tf.extractall(staging, filter="data")
+        cifs = sorted(staging.rglob("*.cif"))
+        assert len(cifs) == 3, [p.name for p in cifs]
+        small = cifs[0].read_text(encoding="utf-8")
+        for path in cifs:
+            stem = path.name.removesuffix("_model_0.cif")
+            path.write_text(small * (40 if stem == order[1] else 1), encoding="utf-8")
+        archives[0].unlink()
+        with tarfile.open(archives[0], "w:gz") as tf:
+            for path in sorted(staging.rglob("*.cif")):
+                tf.add(path, arcname=f"T/{path.name}")
+
+        one = len(small.encode("utf-8"))
+        embedded, omitted = html_mod._binder_structures(run, order, budget=one * 3)
+
+        assert order[1] not in embedded, "the oversized complex was embedded anyway"
+        assert order[2] in embedded, (
+            "the smallest-ranked complex fit the budget but was dropped because "
+            "an oversized one outranked it"
+        )
+        assert sorted(embedded) == sorted([order[0], order[2]])
+        assert omitted == 1
 
     def test_a_structure_cannot_close_the_script_that_carries_it(self, tmp_path: Path) -> None:
         """mmCIF has no reason to contain "</script>", which is exactly when an
