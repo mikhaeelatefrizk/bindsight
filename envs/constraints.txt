@@ -38,7 +38,7 @@ scikit-learn==1.7.2
 numpy==2.2.6
 scipy==1.16.3
 pandas==2.3.2
-pyarrow==20.0.0
+pyarrow==25.0.1
 h5py==3.14.0
 zarr==3.1.6
 numcodecs==0.16.5
