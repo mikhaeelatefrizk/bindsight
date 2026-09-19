@@ -74,7 +74,9 @@ def _default_known_antigens() -> Path:
     return candidate if candidate.is_file() else Path("benchmarks/known.tsv")
 
 
-from bindsight.benchmark.core import DEFAULT_KS  # noqa: E402
+# From `defaults`, not `core`: core imports pandas, which lives in the
+# `discover` extra, and this line runs for every `bindsight` invocation.
+from bindsight.benchmark.defaults import DEFAULT_KS  # noqa: E402
 from bindsight.provenance import append as provenance  # noqa: E402
 
 # Rich console; legacy-windows mode off so box-drawing chars work after the

@@ -33,9 +33,15 @@ from pathlib import Path
 
 import pandas as pd
 
+# Re-exported, not defined here. This module imports pandas at module scope and
+# the CLI needs the value at import time, so defining it here made a bare
+# install unable to run `bindsight --version`. Callers that already have
+# pandas may keep importing it from either place.
+from bindsight.benchmark.defaults import DEFAULT_KS
+
 LOG = logging.getLogger(__name__)
 
-DEFAULT_KS: tuple[int, ...] = (5, 10, 20)
+__all__ = ["DEFAULT_KS"]
 
 
 def portable_path(path: Path | str) -> str:
