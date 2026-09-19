@@ -14,9 +14,13 @@ The Hugging Face Space served a blank page titled "Streamlit" -- the framework
 the interface release deleted -- from a build it made before that release, and
 it had done so for the life of two releases. It could not be repaired from
 inside this repository: `sync-hf-space.yml` uploaded nothing without an
-`HF_TOKEN` secret only the owner can create, and it skipped every step and
-reported success, so no check ever went red about it. The owner has retired it
-rather than keep a deployment nobody maintains.
+`HF_TOKEN` secret only the owner can create. For most of that period it
+skipped every step and reported success; the commit before this one changed
+it to report *skipped*, which is what it was. Either way no check ever went
+red about the Space itself. The owner has retired it
+rather than keep a deployment nobody maintains. The Space itself is
+untouched and still reachable: a repository cannot delete data on an account.
+It is unmaintained and unreferenced, not gone.
 
 Deleted: `.github/workflows/keep-warm.yml`, `.github/workflows/sync-hf-space.yml`,
 and `.huggingface/` (its `Dockerfile`, `README.md` and `requirements.txt`).
@@ -28,16 +32,21 @@ the twenty predicted complexes in 3-D at `/results/` and the input checker at
 `/try-your-data/`, both running in the reader's own browser with nothing
 installed and nothing uploaded. Every sentence that pointed at the Space now
 points there: one in the JOSS paper, five in the bioRxiv manuscript, and the
-`sameAs` entry in `overrides/main.html` that had been asserting the dead Space
-as this software's canonical home on every page of the site.
+`sameAs` entry in `overrides/main.html` that had been listing the dead Space
+among this software's own URLs on every page of the site. The canonical slot
+beside it, `url`, already pointed at the documentation site and was not
+touched.
 
-Two of those manuscript sentences were promises the previous guard permitted
-because it only forbade promising the Space *worked* and read only sentences
-that named it: "The web demo is hosted as a Hugging Face Space" and "The same
-demo runs in a web browser ... with no local installation". A third,
+Three of those manuscript sentences were promises the previous guard let
+through, for two different reasons. "The web demo is hosted as a Hugging Face
+Space" and "The same demo runs in a web browser ... with no local
+installation" both named the Space, so the guard *did* read them -- they
+escaped because its promise vocabulary had no branch for either wording.
 "zero-install browser UI, with no build step and no network fetch once
-installed", contradicted itself three words later. All three are gone and all
-three are now in the guard's vocabulary.
+installed" escaped the other way: it named nothing, so the guard never read
+the sentence at all, and it contradicts itself eleven words later. All three
+are gone and all three are now branches in the vocabulary, each pinned by its
+own fixture.
 
 `tests/test_hosted_demo_claims.py` is replaced by `tests/test_no_hosted_space.py`
 rather than deleted. Its rule was "naming the Space as an address is fine;
@@ -47,13 +56,20 @@ Space-specific: the promise vocabulary, whose every branch is a sentence this
 repository actually shipped, and the home page's single-primary-call-to-action
 invariant. It runs in both directions, like `test_no_zenodo.py` before it: the
 Space stays out, and the author's own Hugging Face profile in the `author.sameAs`
-identity graph stays in. That profile is a person, two lines from where the
+identity graph stays in. Three branches were added to the promise vocabulary
+("with no local installation", "hosted as a", "hosted demo at") and one was
+narrowed: a bare "runs the discovery pipeline live" is true of the local
+interface, so that branch now requires a browser framing. That profile is a person, two lines from where the
 software's `sameAs` claimed the deployment, and a `grep -rl huggingface | xargs
 sed` would have taken both. A new test also parses the JSON-LD, because
 removing a line from it leaves a trailing comma that voids the whole block and
 changes how no page looks.
 
-Four guards watched the Space and are re-pointed rather than dropped. The
+Six guards watched the Space. Four are re-pointed, one is replaced, and one
+is genuinely gone -- `test_the_showcase_docstring_does_not_claim_a_full_deploy`
+guarded a sentence in `showcase.py` that this release deletes, so there is
+nothing left for it to watch; re-adding that sentence now trips the new
+sweep instead, because `.py` files are swept. The
 interpreter check now reads the container image this project actually publishes
 (Python 3.11.9) instead of the Space's (3.13.5) -- the invariant, that the
 interpreter a user meets is one CI tests and the classifiers claim, still has a

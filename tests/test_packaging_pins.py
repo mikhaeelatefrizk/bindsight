@@ -248,7 +248,15 @@ def test_every_dockerfile_installs_through_pinned_versions(path: Path) -> None:
     branch is a hole the next unpinned install slips through, so it went with
     it. An unpinned ``pip install`` is a build that cannot be reproduced."""
     text = path.read_text(encoding="utf-8")
-    installs = [line for line in text.splitlines() if re.search(r"\bpip3?\s+install\b", line)]
+    # Comment lines are not installs. `Dockerfile:38` is a usage comment
+    # carrying both `pip install` and `-c envs/constraints.txt`, so it satisfied
+    # `assert installs` on its own -- and the real RUN line could have been
+    # replaced by anything without this test noticing.
+    installs = [
+        line
+        for line in text.splitlines()
+        if re.search(r"\bpip3?\s+install\b", line) and not line.strip().startswith("#")
+    ]
     assert installs, f"{path.name} installs nothing"
     for line in installs:
         pinned = re.search(r"-c\s+envs/constraints\.txt", line)
@@ -523,6 +531,27 @@ class TestThePythonVersionsAgreeAcrossTheProject:
         )
 
 
+def _ignored_root(pattern: str) -> str:
+    """The top-level path a ``.dockerignore`` line excludes.
+
+    Compared as a bare directory name, this check passed on every glob that
+    actually excludes the directory: ``benchmarks`` and ``benchmarks/`` were
+    caught, while ``benchmarks/*``, ``benchmarks/**`` and ``**/benchmarks``
+    were not -- and ``benchmarks/*`` is enough, because
+    ``showcase.benchmarks_root()`` looks for ``benchmarks/study`` or
+    ``benchmarks/designer_benchmark`` as directories and returns ``None``
+    without them. The Real results page then renders nothing, which is the
+    exact failure this test was re-pointed to keep catching.
+
+    Negations (``!``) are filtered by the caller: a line that re-includes a
+    path is not a line that excludes it.
+    """
+    cleaned = pattern.strip().strip("/")
+    while cleaned.startswith("**/"):
+        cleaned = cleaned[3:]
+    return cleaned.split("/", 1)[0]
+
+
 def test_the_image_ships_what_its_pages_render() -> None:
     """The published image must carry the artifacts its pages read.
 
@@ -553,18 +582,16 @@ def test_the_image_ships_what_its_pages_render() -> None:
         return
 
     ignore = REPO_ROOT / ".dockerignore"
-    patterns = set()
-    if ignore.is_file():
-        patterns = {
-            line.strip().strip("/")
-            for line in ignore.read_text(encoding="utf-8").splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        }
+    excluded = {
+        _ignored_root(line)
+        for line in (ignore.read_text(encoding="utf-8").splitlines() if ignore.is_file() else [])
+        if line.strip() and not line.strip().startswith(("#", "!"))
+    }
 
     for needed in ("benchmarks", "examples"):
-        assert needed not in patterns, (
-            f".dockerignore excludes {needed}/ from an image that copies the tree whole, "
-            "so the pages that read it render nothing"
+        assert needed not in excluded, (
+            f".dockerignore excludes {needed}/ from an image that copies the tree "
+            "whole, so the pages that read it render nothing"
         )
 
 
