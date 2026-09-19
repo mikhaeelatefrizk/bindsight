@@ -170,8 +170,8 @@ Vendor pricing below is as of 2026-09; check current pricing before budgeting.
 | Colab Pro+ | A100 (40 GB) | 50–200 | 30 min | $50/mo |
 | Modal | A100 (40 GB) | 50–200 | 20 min | ~$3 |
 
-The `bindsight design --backend modal --dry-run` command gives you a precise
-estimate for your specific config:
+The `bindsight design <run_dir> --backend modal --dry-run` command gives you a
+precise estimate for your specific config:
 
 ```bash
 bindsight design runs/demo --backend modal --designer rfdiff_mpnn \

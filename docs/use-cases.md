@@ -111,7 +111,7 @@ semester.
 | 1–2 | RNA-seq + DEG | Run `bindsight discover` on a public TCGA cohort; interpret the volcano plot |
 | 3 | Surfaceome + Open Targets | Inspect the `candidates.parquet`; understand each filter |
 | 4 | Protein structure | Pull a candidate's AlphaFoldDB mmCIF; visualize in PyMOL |
-| 5–6 | De novo design | Run `bindsight design --backend colab` (free); read the Colab notebook step by step |
+| 5–6 | De novo design | Run `bindsight design runs/your_run --backend colab` (free); read the Colab notebook step by step |
 | 7 | Validation | Boltz-2 vs Chai-1r — which agrees on which design? |
 | 8 | Multi-objective ranking | Modify the rank weights; see which targets move |
 | 9 | Reproducibility | Re-run with a different seed; diff the manifests |
@@ -162,8 +162,8 @@ Then in `pyproject.toml` of your private package:
 internal_designer = "your_company.internal_designer:InternalDesigner"
 ```
 
-`bindsight --designer internal_designer` Just Works alongside RFdiff+MPNN /
-BindCraft / BoltzGen in the same comparison.
+`bindsight design runs/your_run --designer internal_designer` Just Works
+alongside RFdiff+MPNN / BindCraft / BoltzGen in the same comparison.
 
 ---
 

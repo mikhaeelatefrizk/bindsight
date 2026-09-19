@@ -228,7 +228,7 @@ reference resources, none of which is wired in.
 | **`bindsight report`** — paper-style HTML, embedded volcano + provenance | ✅ ready | `bindsight report runs/x` |
 | **`bindsight run`** — full orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
 | **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ runs end to end | `bindsight design runs/x --backend kaggle` |
-| **`bindsight design --dry-run`** — GPU cost estimate before spending | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
+| **`bindsight design <run_dir> --dry-run`** — GPU cost estimate before spending | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight rank`** — multi-objective composite scoring | ✅ ready | `bindsight rank runs/x` |
 | **`bindsight export`** — RO-Crate zip for deposit | ✅ ready | `bindsight export runs/x --out runs/x.crate.zip` |

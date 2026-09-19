@@ -81,7 +81,7 @@ notebook entry: never edit, always keep.
 You can drive the exact same pipeline two ways:
 
 - **CLI** (recommended): `bindsight discover|design|validate|rank|report|export`,
-  or `bindsight run <config>` for the whole chain.
+  or `bindsight run <config> --out <run_dir>` for the whole chain.
 - **Snakemake** (optional, `pip install -e ".[workflow]"`): `snakemake
   --configfile <config> --cores 4`. Each rule calls the same `bindsight.*`
   functions, so the artifacts each stage writes match — but the DAG is shorter:
@@ -237,8 +237,8 @@ bindsight export runs/my_first_run --format ro-crate --out runs/my_first_run.cra
 
 The HTML report is a single self-contained file (embedded volcano plot, ranked
 tables, and the full PROV-O manifest). The RO-Crate zip is ready to deposit in
-a research data repository. `bindsight report --format web` serves the same run as an
-interactive local web interface instead.
+a research data repository. `bindsight report runs/my_first_run --format web` serves the same run
+as an interactive local web interface instead.
 
 Run the whole chain at once with `bindsight run my_config.yaml --out runs/x`
 (CPU stages always run; GPU stages run on the configured headless backend).

@@ -77,9 +77,12 @@ This must print a per-designer table and write `/tmp/dbench/RESULTS.md`
 ## Step 1 — Estimate cost before spending money
 
 ```bash
+# `design` scores a run directory, so discover the config into one first.
+bindsight discover examples/benchmark_held_out.yaml --out runs/bench
+
 # Per designer, for the full target set:
 for d in rfdiff_mpnn bindcraft boltzgen; do
-  bindsight design --dry-run examples/benchmark_held_out.yaml --backend modal --designer "$d"
+  bindsight design runs/bench --dry-run --backend modal --designer "$d"
 done
 ```
 

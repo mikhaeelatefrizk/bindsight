@@ -15,7 +15,7 @@ sequences are byte-for-byte the deposited ones.
 
 | File | What it is |
 |---|---|
-| `known.tsv` | Known antigens (targets) — symbol, UniProt, Ensembl gene, disease, tumor type, expected DE direction. Consumed by `bindsight benchmark --known-antigens`. |
+| `known.tsv` | Known antigens (targets) — symbol, UniProt, Ensembl gene, disease, tumor type, expected DE direction. Consumed by `bindsight benchmark` via its `--known-antigens` option. |
 | `binders.tsv` | Literature-validated binders — name, target, modality, clinical status, and citations (ChEMBL / NCT / PMID / DOI / PDB). |
 | `binders.fasta` | Real VH/VL amino-acid sequences for the structurally-resolved binders, pulled from the cited PDB co-crystals. |
 | `sources.json` | Machine-readable provenance: source databases, retrieval timestamp, and SHA-256 of each output. |
