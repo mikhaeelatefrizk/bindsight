@@ -1,7 +1,8 @@
 name: Docs
 
-# Build the mkdocs-material site and publish it to GitHub Pages.
-# Enable once in repo Settings → Pages → Source: "GitHub Actions".
+# Build the mkdocs-material site and publish it to GitHub Pages. Pages is
+# served from GitHub Actions (Settings → Pages → Source: "GitHub Actions"),
+# which is what lets this deploy without a gh-pages branch.
 
 on:
   push:

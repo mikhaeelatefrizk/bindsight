@@ -115,7 +115,7 @@ catalogue has no entry for a target.
 The GPU half — design with `RFdiffusion` + `ProteinMPNN`, validation with
 `Boltz-2` — is dispatched through a single executor
 (`bindsight.runners.job_exec`) rather than one integration per backend. The
-same executor targets a free `Kaggle` T4, serverless `Modal`, a local NVIDIA
+same executor targets a free `Kaggle` T4, serverless `Modal` [@Modal], a local NVIDIA
 GPU (native or Docker) and a generated `Colab` notebook patterned on the
 canonical upstream notebooks (`ColabDesign`, `dl_binder_design`), and the same
 plugin protocol admits `BindCraft`, `BoltzGen`, `Chai-1r` and AF2-initial-guess.

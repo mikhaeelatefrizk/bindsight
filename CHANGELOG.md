@@ -20,6 +20,25 @@ keep installing from this repository, so a remote runs the caller's checkout
 rather than the last published release; their comments say that instead of
 "not on PyPI".
 
+### Fixed — what a thirteen-way visitor sweep found
+
+Thirteen readers went through the tree, the release page, PyPI, the container
+registry and the documentation site as a visiting department head would, with
+two skeptics refuting each finding. Four stood. PyPI renders a package's long
+description with no base URL, so all 65 relative links in `README.md` are
+dead on the 0.3.5 project page; `scripts/pypi_readme.py` now points them at
+the release tag on GitHub before `release-artifacts.yml` builds the wheel and
+sdist, the tree's README keeps its relative links so GitHub renders them, and
+`tests/test_pypi_readme.py` holds both halves and the step order. The 0.3.5
+page itself cannot be re-rendered: PyPI does not let a description be edited
+after upload. `docs.yml` said Pages had yet to be enabled, three months after
+it was. `paper.md` names Modal and now cites it; the 0.3.5 entry said the
+`Modal` bibliography entry stayed uncited on purpose, and this reverses that.
+And that entry omitted one change the release carried: `bindsight/io/gdc.py`'s
+docstring pointed at a TCGA publication-guidelines page that no longer
+exists, and 14d2bf1 replaced it with the current one. A PyPI badge joins the
+README's badge row.
+
 ---
 
 ## [0.3.5] - 2026-09-20

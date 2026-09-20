@@ -18,6 +18,15 @@ Run these when the thing they generate needs to change; the output is committed.
 page is read from committed files, so running it should produce no diff. A test
 fails if it does.
 
+## Build-time helper — it writes nothing that is committed
+
+`pypi_readme.py` points every relative link in `README.md` at the release tag
+on GitHub. `release-artifacts.yml` runs it with `--write` on its own checkout
+before `python -m build`, so the long description PyPI renders has working
+links while the tree's README keeps the relative ones GitHub renders.
+`--check` reports whether any link would survive. `tests/test_pypi_readme.py`
+holds the rewrite and the step order.
+
 ## Stage entry points — Snakemake calls these
 
 `run_deg.py`, `run_discover.py`, `run_design.py`, `run_validate.py`,
