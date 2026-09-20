@@ -63,6 +63,10 @@ TEXT_TOKENS = ("ink", "ink-soft", "ink-faint", "ok", "warn", "err")
 #: The two backgrounds text is drawn on: the page, and the cards on it.
 GROUNDS = ("ground", "surface")
 
+#: Every token the interface paints a tinted panel for, read off the stylesheet
+#: rather than named here -- see the guard beneath this module's parametrisation.
+TINTED = tuple(sorted(name for name in _tokens() if f"{name}-tint" in _tokens()))
+
 
 class TestTheContrastMathIsRight:
     """Checked against the two anchors WCAG defines exactly."""
@@ -105,19 +109,29 @@ class TestEveryTextTokenClearsAa:
             "18.7px, and this token is used at 12px"
         )
 
-    @pytest.mark.parametrize("token", ["ok", "warn", "err"])
+    def test_the_tinted_tokens_are_found_not_listed(self) -> None:
+        """Guards the parametrisation below, which used to be three names.
+
+        `--teal` has had a `--teal-tint` and a `.badge--teal` drawn on it for
+        as long as the others, and was never in the list, so its 4.42:1 went
+        unmeasured. Any token the stylesheet gives a `-tint` to is a token
+        something is drawn on; the pairs are read off the stylesheet now, so
+        the next one is covered before anyone thinks to add it.
+        """
+        assert set(TINTED) >= {"ok", "warn", "err", "teal"}, (
+            f"the tint scan found only {TINTED}; it used to find ok/warn/err by "
+            "hand and missed teal, so finding fewer than that is a regression"
+        )
+
+    @pytest.mark.parametrize("token", TINTED)
     def test_a_status_colour_is_readable_on_its_own_tint(self, token: str) -> None:
         """Status text sits on its tinted panel, not on the page."""
         tokens = _tokens()
-        tint = f"{token}-tint"
-        if tint not in tokens:
-            pytest.skip(f"--{tint} is not declared")
-
-        ratio = contrast(tokens[token], tokens[tint])
+        ratio = contrast(tokens[token], tokens[f"{token}-tint"])
 
         assert ratio >= AA_NORMAL, (
-            f"--{token} on --{tint} is {ratio:.2f}:1; the status panels would be "
-            "harder to read than the page they sit on"
+            f"--{token} on --{token}-tint is {ratio:.2f}:1; the status panels would "
+            "be harder to read than the page they sit on"
         )
 
 

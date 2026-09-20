@@ -82,6 +82,20 @@
     });
     // Keyboard reach: a chart whose detail is mouse-only is detail some
     // readers simply do not have.
+    //
+    // The name has to come with the tab stop. Each mark was reachable and
+    // anonymous: a screen reader announced "graphic" and moved on, so the
+    // keyboard route existed and carried none of the detail it was added for.
+    // The tooltip already holds that detail, so it is what gets announced.
+    node.setAttribute("role", "img");
+    node.setAttribute(
+      "aria-label",
+      [label]
+        .concat(lines || [])
+        .filter(Boolean)
+        .map(String)
+        .join(", "),
+    );
     node.setAttribute("tabindex", "0");
     node.addEventListener("focus", function () {
       const t = tooltip();
@@ -190,7 +204,7 @@
     });
 
     const navy = cssVar("--navy", "#0b5394");
-    const teal = cssVar("--teal", "#0f7d73");
+    const teal = cssVar("--teal", "#0e766d");
 
     spec.pairs.forEach(function (p) {
       // The connecting line is the point of this chart: it shows which member

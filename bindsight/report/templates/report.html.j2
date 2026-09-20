@@ -362,7 +362,7 @@
         <td>{{ s.tool.license }}</td>
         <td>
           {% if s.status == 'completed' %}<span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">&#10003;</span>{{ s.status }}</span>
-          {% elif s.status == 'failed' %}<span class="badge err">{{ s.status }}</span>
+          {% elif s.status == 'failed' %}<span class="badge badge--err">{{ s.status }}</span>
           {% else %}<span class="badge badge--info">{{ s.status }}</span>{% endif %}
         </td>
         <td>{{ s.notes or '' }}</td>
