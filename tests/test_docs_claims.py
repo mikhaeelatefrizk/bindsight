@@ -1996,3 +1996,30 @@ def test_the_module_sweep_sees_the_modules_it_exists_to_check() -> None:
 
     assert len(found) >= 5, f"the sweep found only {found} in ARCHITECTURE.md"
     assert "runners/mock.py" in found, "the sweep no longer sees the runner list"
+
+
+def test_the_docs_url_constant_is_where_the_docs_are_published() -> None:
+    """``theme.DOCS_URL`` is the only place in the package that names the site.
+
+    Which is why nothing caught it: there was no second copy to disagree with
+    it, and no reader to notice if it were wrong. The site's own address is in
+    mkdocs.yml, and that is the one the published pages resolve against.
+    """
+    from bindsight.report import theme
+
+    site_url = re.search(r"^site_url:\s*(\S+)", (ROOT / "mkdocs.yml").read_text("utf-8"), re.M)
+    assert site_url, "mkdocs.yml no longer declares a site_url"
+
+    assert site_url.group(1) == theme.DOCS_URL, (
+        f"theme.py points readers at {theme.DOCS_URL}; mkdocs publishes to {site_url.group(1)}"
+    )
+
+
+def test_docs_url_builds_a_page_address_under_that_site() -> None:
+    """``docs_url()`` composes the links the interface offers a reader."""
+    from bindsight.report.theme import DOCS_URL, docs_url
+
+    assert docs_url() == DOCS_URL
+    assert docs_url("glossary") == f"{DOCS_URL}glossary/"
+    # Leading and trailing slashes are the caller's habit, not a second URL.
+    assert docs_url("/glossary/") == f"{DOCS_URL}glossary/"

@@ -39,7 +39,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
-from bindsight.report.format import ABSENT, fmt_p  # noqa: F401
+from bindsight.report.format import fmt_p
 
 LOG = logging.getLogger(__name__)
 
@@ -504,7 +504,6 @@ _DEFAULT_FDR = 0.05
 #: every significant gene produced an unreadable figure on real cohorts, and
 #: an unreadable figure communicates less than an unlabelled one.
 _MAX_VOLCANO_LABELS = 20
-_DEFAULT_LOG2FC = 1.0
 
 
 def _deg_thresholds(manifest: Mapping[str, Any] | None) -> tuple[float | None, float | None]:

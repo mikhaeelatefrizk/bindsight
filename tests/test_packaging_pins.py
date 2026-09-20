@@ -740,3 +740,77 @@ class TestTheInterfaceTestsCanActuallyRun:
             f"tests/test_web_ui.py declares {body.count('def test_')} tests; the "
             "interface guards have been removed rather than fixed"
         )
+
+
+def test_the_licence_constant_matches_the_packaging_metadata() -> None:
+    """``theme.LICENSE_NAME`` had no reader and nothing to answer to.
+
+    This module exists because v0.1.0's release metadata asserted MIT over
+    AGPL code. A second copy of the licence string, sitting in the module that
+    calls itself the single source of truth for presentation, is the same
+    exposure one surface further out -- it just had not been rendered yet.
+    """
+    from bindsight.report import theme
+
+    declared = _pyproject()["project"]["license"]
+    assert declared == theme.LICENSE_NAME, (
+        f"theme.py says the licence is {theme.LICENSE_NAME}; pyproject.toml says {declared}"
+    )
+
+
+def test_the_bundled_plugin_names_are_the_entry_points() -> None:
+    """``plugins._FALLBACK`` is what the registry knows without metadata.
+
+    It is a hand-written copy of the entry-point tables in pyproject.toml, kept
+    so a source checkout that was never installed still resolves its own
+    designers. A copy that drifts is worse than no copy: the registry would
+    advertise a plugin the loader cannot import, or miss one it can.
+
+    ``BUNDLED_VALIDATORS`` and ``BUNDLED_RUNNERS`` are the registry's public
+    view of that table, and had no reader at all until this.
+    """
+    from bindsight import plugins
+
+    entry_points = _pyproject()["project"]["entry-points"]
+
+    for group in ("bindsight.designers", "bindsight.validators", "bindsight.runners"):
+        declared = set(entry_points[group])
+        fallback = set(plugins._FALLBACK[group])
+        assert fallback == declared, (
+            f"plugins._FALLBACK[{group!r}] is {sorted(fallback)}; pyproject.toml "
+            f"declares {sorted(declared)}. An uninstalled checkout would resolve "
+            "a different set of plugins from an installed one."
+        )
+
+    assert frozenset(entry_points["bindsight.validators"]) == plugins.BUNDLED_VALIDATORS
+    assert frozenset(entry_points["bindsight.runners"]) == plugins.BUNDLED_RUNNERS
+
+
+def test_every_pinned_upstream_names_a_repository_and_a_commit() -> None:
+    """The third-party tools are pinned by commit; the pins are unread text.
+
+    ``BINDCRAFT``, ``BOLTZGEN`` and ``DL_BINDER_DESIGN`` are cloned at these
+    commits, so a mistyped SHA fails at install time and is noticed. Chai-1r
+    installs from PyPI through ``CHAI_PIP``, so ``CHAI_COMMIT`` is never
+    resolved by anything -- it records which upstream the integration was
+    written against, and a wrong value there would be believed indefinitely.
+
+    Pairs are found rather than listed, so a tool added tomorrow is checked.
+    """
+    import re as _re
+
+    source = (REPO_ROOT / "bindsight" / "runners" / "tools.py").read_text(encoding="utf-8")
+    repos = dict(_re.findall(r'^([A-Z][A-Z_]*)_REPO = "([^"]+)"', source, _re.M))
+    commits = dict(_re.findall(r'^([A-Z][A-Z_]*)_COMMIT = "([^"]+)"', source, _re.M))
+
+    assert len(repos) >= 4, f"only {sorted(repos)} found; the scan has stopped working"
+    assert set(repos) == set(commits), (
+        "every pinned upstream needs both a repository and a commit; these are "
+        f"unpaired: {sorted(set(repos) ^ set(commits))}"
+    )
+
+    for name, url in sorted(repos.items()):
+        assert url.startswith("https://github.com/"), f"{name}_REPO is not a GitHub URL: {url}"
+        assert _re.fullmatch(r"[0-9a-f]{40}", commits[name]), (
+            f"{name}_COMMIT is not a full 40-character commit SHA: {commits[name]!r}"
+        )

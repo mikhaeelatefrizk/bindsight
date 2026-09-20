@@ -71,6 +71,11 @@ def build_glossary() -> str:
         "",
         f'!!! info "In plain terms"\n    {theme.PLAIN_SUMMARY}',
         "",
+        # The on-ramp, then the technical framing directly beneath it, which
+        # is what the comment above PLAIN_SUMMARY in theme.py describes. Only
+        # the first half had ever been rendered.
+        f"*{theme.TAGLINE}*",
+        "",
     ]
     for term, definition in theme.GLOSSARY:
         lines.append(f"**{term}**")

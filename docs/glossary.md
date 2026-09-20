@@ -17,6 +17,8 @@ defined here.
 !!! info "In plain terms"
     In plain terms: bindsight reads a tumour's gene-activity data and looks for proteins that stud the surface of cancer cells but not healthy ones. It then designs small custom proteins — molecular “keys” — shaped to latch onto those targets, checks each design with an AI structure model to see whether it would actually stick, ranks the best candidates, and keeps a complete record of how it reached every answer.
 
+*RNA-seq counts → ranked de novo protein binder candidates, with full provenance back to the patient cohort.*
+
 **RNA-seq**
 : A lab method that measures which genes are switched on in a tissue sample, and how strongly, by sequencing its RNA. It is the starting input to bindsight.
 
