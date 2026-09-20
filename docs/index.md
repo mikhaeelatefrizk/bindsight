@@ -132,7 +132,7 @@ locally.
 </div>
 
 ```bash
-pip install -e ".[discover,report]"
+pip install "bindsight[discover,report]"
 bindsight demo      # real TCGA-BRCA cohort, CPU only, full provenance
 bindsight ui        # the web interface, locally
 ```

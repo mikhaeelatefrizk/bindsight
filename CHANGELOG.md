@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Changed — installed from PyPI
+
+0.3.5 is the first release published to PyPI. `release-artifacts.yml`'s `pypi`
+job ran on the `release: published` event under trusted publishing, and the
+two files it uploaded are the wheel and sdist attached to the release: PyPI's
+SHA-256 digests equal the release's `SHA256SUMS`. The install instructions
+say `pip install` now, with the checkout form kept for development. The
+runners that install bindsight into a remote image or a generated notebook
+keep installing from this repository, so a remote runs the caller's checkout
+rather than the last published release; their comments say that instead of
+"not on PyPI".
+
+---
+
 ## [0.3.5] - 2026-09-20
 
 0.3.4 is the current release, and its web interface renders every page with

@@ -12,7 +12,13 @@ description: Install bindsight and run it end to end — RNA-seq counts to ranke
 
 ## Install
 
-`bindsight` is installed from source (not yet on PyPI):
+`bindsight` is on PyPI from 0.3.5:
+
+```bash
+pip install "bindsight[discover,report]"
+```
+
+From a checkout instead:
 
 ```bash
 git clone https://github.com/mikhaeelatefrizk/bindsight

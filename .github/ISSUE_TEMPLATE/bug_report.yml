@@ -59,6 +59,7 @@ body:
     attributes:
       label: How you installed it
       options:
+        - "pip install bindsight (PyPI)"
         - "git clone + pip install -e"
         - "conda/mamba from envs/discover.yaml"
         - "Docker"

@@ -102,8 +102,8 @@ its defaults and its provenance are the contribution.
 
 # Software design
 
-`bindsight` is a Python package (Python ≥ 3.11) installable via
-`pip install -e ".[discover,report]"` from source. Its first design decision is
+`bindsight` is a Python package (Python ≥ 3.11) installable from PyPI with
+`pip install "bindsight[discover,report]"`. Its first design decision is
 the split the hardware imposes. The discovery half — differential expression,
 druggability and safety annotation, the surfaceome filter, structure retrieval
 and a structural pre-flight — runs on a CPU laptop, because a reviewer with no

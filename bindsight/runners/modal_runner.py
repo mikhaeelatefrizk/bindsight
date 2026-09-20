@@ -49,9 +49,9 @@ def _ATEXIT_CLEANUP(path: Path) -> None:
 
 LOG = logging.getLogger(__name__)
 
-#: Repository bindsight itself is installed from inside the remote image.
-#: bindsight is not published to PyPI, so a bare ``pip install bindsight``
-#: silently resolves to nothing.
+#: Repository bindsight itself is installed from inside the remote image --
+#: from this repository rather than from PyPI, so the image runs the
+#: caller's checkout and not whichever release PyPI happens to serve.
 _BINDSIGHT_REPO = "https://github.com/mikhaeelatefrizk/bindsight.git"
 
 #: CUDA base image for the remote container. Devel rather than runtime because
@@ -124,8 +124,8 @@ class ModalRunner:
             # the previous image could run the Boltz-2 validator and nothing else.
             modal.Image.from_registry(_MODAL_CUDA_IMAGE, add_python="3.11")
             .apt_install("git", "wget", "build-essential")
-            # bindsight is not on PyPI. `pip_install("bindsight")` resolved to
-            # nothing, so this image never contained the executor it exists to run.
+            # Installed from the repository rather than PyPI, so the image carries
+            # the executor this checkout expects, not the last published release.
             .pip_install(
                 f"bindsight @ git+{_BINDSIGHT_REPO}",
                 tools.BOLTZ_PIP,

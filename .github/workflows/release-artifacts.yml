@@ -1,17 +1,17 @@
 name: Release artifacts
 
 # Attach a wheel, an sdist and their SHA-256 checksums to every published
-# release, and — once PyPI trusted publishing is configured — upload the same
-# artifacts to PyPI.
+# release, and upload the same two files to PyPI.
 #
 # The attach job always runs, so a release is installable without PyPI:
 #     pip install https://github.com/mikhaeelatefrizk/bindsight/releases/download/<tag>/bindsight-<version>-py3-none-any.whl
 #
-# The PyPI job is dormant until the project is registered as a trusted publisher
-# (pypi.org → project → Publishing → add GitHub as a publisher with this
-# repository, workflow `release-artifacts.yml` and environment `pypi`). It uses
-# OIDC, so no API token is ever stored in this repository. Until the
-# `pypi` environment exists the job is skipped rather than failing.
+# The PyPI job runs when the `PYPI_TRUSTED_PUBLISHING` repository variable is
+# `true` and the `pypi` environment exists -- both since 0.3.5, the first
+# release published there. The project is registered on PyPI as a trusted
+# publisher of this repository, workflow `release-artifacts.yml`, environment
+# `pypi`, so the upload is authorised by OIDC and no API token is ever stored
+# in this repository. Without the variable the job is skipped, not failed.
 
 on:
   release:
@@ -82,7 +82,7 @@ jobs:
       # a statement of intent; a branch is not.
       #
       # This SHA is what `release/v1` points at today and what the `v1.14.2`
-      # tag dereferences to, so pinning changes nothing now. The job is dormant
-      # until `vars.PYPI_TRUSTED_PUBLISHING` is set, which makes now the
-      # cheapest possible moment.
+      # tag dereferences to, so pinning changed nothing at the time. The job
+      # was dormant until `vars.PYPI_TRUSTED_PUBLISHING` was set for 0.3.5,
+      # which made that the cheapest possible moment.
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2

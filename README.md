@@ -45,12 +45,11 @@ an account, or a GPU to read.
 One command, one way. Python 3.11+, Windows / macOS / Linux, CPU only.
 
 ```bash
-git clone https://github.com/mikhaeelatefrizk/bindsight.git
-cd bindsight
-pip install -e ".[discover,report]"
+pip install "bindsight[discover,report]"
 ```
 
-Add `dev` if you intend to run the tests (`pip install -e ".[dev,discover,report]"`),
+From a checkout, `pip install -e ".[discover,report]"` instead. Add `dev` if you
+intend to run the tests (`pip install -e ".[dev,discover,report]"`),
 and `runners` if you intend to send work to a GPU backend. Conda users can build the
 same dependency set first with `mamba env create -f envs/discover.yaml`.
 

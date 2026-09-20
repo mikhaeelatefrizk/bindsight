@@ -171,7 +171,7 @@ if not mpnn.exists():
     sh('git', 'clone', '-q', '{{ mpnn_repo }}', str(mpnn))
     sh('git', '-C', str(mpnn), 'checkout', '-q', '{{ mpnn_commit }}')
 
-# Boltz-2 + bindsight (bindsight is not on PyPI yet — install from GitHub)
+# Boltz-2 + bindsight (installed from GitHub so the notebook runs this checkout, not the PyPI release)
 sh('pip', 'install', '-q', '{{ boltz_pip }}', 'git+https://github.com/mikhaeelatefrizk/bindsight.git')
 print('tools installed ✓')
 """
