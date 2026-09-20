@@ -207,7 +207,7 @@ change, and a wheel build.
 `bindsight` is an opinionated wrapper; intellectual credit belongs to the
 upstream tool authors cited throughout. The author thanks the open-source
 maintainers of `pydeseq2`, `Boltz-2`, `RFdiffusion`, `ProteinMPNN`,
-`SURFACE-Bind`, `FastAPI`, and `Snakemake` whose work made this bridge
-constructible.
+`SURFACE-Bind`, `FastAPI` [@FastAPI], and `Snakemake` [@Molder2021] whose
+work made this bridge constructible.
 
 # References
