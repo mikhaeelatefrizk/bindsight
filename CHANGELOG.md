@@ -6,6 +6,91 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Fixed — a colour below AA on the published documentation site
+
+`--bs-warn` shipped at `#b08400`: 3.42:1 on white, 3.10:1 on its own tint,
+below WCAG AA, for as long as it existed. In dark mode every note glyph failed
+— info 1.67:1, err 2.32:1, ok 2.43:1 — because the slate block overrode four
+tokens and the note colours were not tokens at all.
+
+Four separate reasons `tests/test_contrast.py` reported none of it, each now
+closed: `.note` declared no background, so the rules were dropped before a
+pair was built and no assertion was ever generated; the rule parser took a
+preceding comment as part of a rule's selector and skipped every rule that
+follows a comment, `.bs-hero` — the hero's own ground — among them; a gradient
+resolved to one colour or none, rather than to every stop text is drawn
+across; and `rgba()` was treated as unresolvable rather than composited onto
+what sits behind it. Thirteen of twenty-seven coloured rules were outside the
+sweep. It now builds 58 pairs over 27 of 28, the twenty-eighth being
+`color: inherit`, and a guard asks the sweep what it left out.
+
+Where a stylesheet cannot express that `.bs-cta` only ever appears inside the
+navy `.bs-hero`, the nesting is read from `docs/*.md` rather than listed.
+
+### Fixed — one product, three greens
+
+`theme.py` calls itself the single source of truth for three presentation
+surfaces. One was ever held to it. The success colour was `#2e7d32` here,
+`#1f7a3d` on the documentation site and `#1f6f35` in the web interface.
+Enforced constants went from 7 to 13, the guard was extended to
+`bindsight.css` as the docstring always implied, and all eleven names the two
+share now agree.
+
+### Fixed — four accessibility defects on surfaces a reader meets
+
+Chart marks were keyboard-reachable and anonymous, so the keyboard route
+carried none of the detail it was added for; they now announce their tooltip.
+`--teal` was 4.42:1 on its own tint and outside a hand-written list of three
+token names; the tinted pairs are read off the stylesheet now. `try` and
+`your_data` went `<h1>` straight to `<h3>`. `report.html.j2` gave a failed
+stage `class="badge err"`, a class no stylesheet defines, so the one badge
+reporting a failure was the one rendered unstyled.
+
+### Fixed — two count guards, each blind to the other's spelling of a floor
+
+`tests/test_docs_claims.py` sweeps every shipped document for a test count and
+required whitespace straight after the digits, so it never matched the `N+`
+form that README.md, `tests/README.md` and the bioRxiv manuscript all use. The
+manuscript's `1,800+` was not under-checked but unseen. The same pattern told
+`tests` from `test functions` and then discarded which matched, measuring both
+against `def test_` lines. Two counters existed for that metric, agreeing by
+luck; there is now one, in `tests/conftest.py`.
+
+### Fixed — the step that can publish to PyPI ran whatever a branch pointed at
+
+`pypa/gh-action-pypi-publish@release/v1` is a branch. Pinned to the commit
+`v1.14.2` dereferences to, and no workflow may run an action from a branch.
+
+### Added — one required check for `main`
+
+`main` had no protection at all. Requiring the matrix jobs by name would tie
+the ruleset to the matrix, so CI now ends in a single gate job whose name does
+not move, and whose `needs` is compared against every other job in the file.
+
+### Changed — constants bound to what they should answer to
+
+`LICENSE_NAME` to `pyproject`, `DOCS_URL` to `mkdocs.yml`'s `site_url`,
+`BUNDLED_VALIDATORS` and `BUNDLED_RUNNERS` to the entry-point tables, and each
+`*_REPO`/`*_COMMIT` to its pair and its shape. `TAGLINE` now sits where the
+comment above `PLAIN_SUMMARY` says it does. `_DEFAULT_LOG2FC` and an unused
+`ABSENT` import, which had nothing to answer to, are gone.
+
+### Security
+
+Private vulnerability reporting, Dependabot alerts and Dependabot security
+updates are enabled, so a CVE in one of the fifteen result-affecting packages
+`dependabot.yml` deliberately silences for version bumps still surfaces.
+
+### Dependencies
+
+`actions/setup-python` 5→7, `actions/deploy-pages` 4→5,
+`actions/upload-pages-artifact` 3→5, `actions/download-artifact` 4→8 (which
+closes a mismatch with `upload-artifact@v7`), and matplotlib 3.11.1→3.11.2.
+
+---
+
 ## [0.3.4] - 2026-09-20
 
 ### Removed — the hosted Space, and everything that watched it
