@@ -74,4 +74,15 @@ jobs:
       - name: Drop the checksum file
         # SHA256SUMS is a release asset, not a distribution; twine rejects it.
         run: rm -f dist/SHA256SUMS
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      # Pinned by commit, like the JOSS action in draft-pdf.yml, whose comment
+      # argues a floating ref is unacceptable for something that builds a
+      # submission. The argument is stronger here: `release/v1` is a *branch*,
+      # so this step -- the one holding the credential that publishes to PyPI
+      # -- ran whatever had most recently been pushed to it. A tag is at least
+      # a statement of intent; a branch is not.
+      #
+      # This SHA is what `release/v1` points at today and what the `v1.14.2`
+      # tag dereferences to, so pinning changes nothing now. The job is dormant
+      # until `vars.PYPI_TRUSTED_PUBLISHING` is set, which makes now the
+      # cheapest possible moment.
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2

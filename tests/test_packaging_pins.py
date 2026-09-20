@@ -814,3 +814,42 @@ def test_every_pinned_upstream_names_a_repository_and_a_commit() -> None:
         assert _re.fullmatch(r"[0-9a-f]{40}", commits[name]), (
             f"{name}_COMMIT is not a full 40-character commit SHA: {commits[name]!r}"
         )
+
+
+#: `uses: owner/repo@ref`, wherever it appears in a workflow.
+_ACTION_USE = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.M)
+
+
+def test_no_workflow_runs_an_action_from_a_branch() -> None:
+    """A branch ref is not a version; it is whoever pushed last.
+
+    `pypa/gh-action-pypi-publish@release/v1` was one, in the step that holds
+    the credential which publishes to PyPI -- while `draft-pdf.yml` pinned the
+    JOSS action to a commit with a comment explaining why a floating ref was
+    unacceptable there. Same risk, opposite treatment, and the larger blast
+    radius was the unpinned one.
+
+    A tag is allowed: `actions/checkout@v7` is the ecosystem's stability
+    contract and the whole matrix would break loudly if it moved. A branch
+    offers no such contract and fails quietly, which is the difference this
+    checks for. A commit SHA is always allowed.
+    """
+    workflows = sorted((REPO_ROOT / ".github" / "workflows").glob("*.yml"))
+    assert workflows, "no workflows found; this test would pass on an empty scan"
+
+    seen, floating = 0, []
+    for workflow in workflows:
+        for spec in _ACTION_USE.findall(workflow.read_text(encoding="utf-8")):
+            if spec.startswith("."):
+                continue  # a local action in this repository, not a fetch
+            seen += 1
+            _name, _, ref = spec.partition("@")
+            if re.fullmatch(r"[0-9a-f]{40}", ref) or re.fullmatch(r"v\d+(?:\.\d+)*", ref):
+                continue
+            floating.append(f"{workflow.name}: {spec}")
+
+    assert seen >= 8, f"the scan found only {seen} actions; the pattern has stopped matching"
+    assert not floating, (
+        "these run whatever their ref currently points at, rather than a "
+        f"version or a commit: {floating}"
+    )
