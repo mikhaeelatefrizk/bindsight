@@ -15,17 +15,32 @@ rendering of it on every fork and branch.
 
 from __future__ import annotations
 
+import importlib.util
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 REPO = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO / "scripts"))
+SCRIPT = REPO / "scripts" / "pypi_readme.py"
 
-from pypi_readme import RAW_URL, REPO_URL, relative_targets, rewrite  # noqa: E402
+
+def _load_script() -> Any:
+    """Load the script by path, as the other script tests do; it is not a package."""
+    spec = importlib.util.spec_from_file_location("bindsight_pypi_readme", SCRIPT)
+    assert spec is not None, SCRIPT
+    assert spec.loader is not None, SCRIPT
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_script = _load_script()
+REPO_URL: str = _script.REPO_URL
+RAW_URL: str = _script.RAW_URL
+relative_targets = _script.relative_targets
+rewrite = _script.rewrite
 
 README = (REPO / "README.md").read_text(encoding="utf-8")
 REF = "v0.0.0-test"

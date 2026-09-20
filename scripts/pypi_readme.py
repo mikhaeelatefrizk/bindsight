@@ -42,9 +42,8 @@ _LINK_TAIL = re.compile(r"\]\(([^)\s]+)\)")
 
 
 def package_version() -> str:
-    return tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"][
-        "version"
-    ]
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    return str(project["version"])
 
 
 def _absolute(target: str, ref: str, root: Path, *, image: bool) -> str:
