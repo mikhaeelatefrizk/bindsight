@@ -48,7 +48,13 @@ class LocalDockerRunner:
         designer: str = "rfdiff_mpnn",
         n_units_per_target: int = 50,
         gpu_type: str = "A100-40GB",
-        image: str = "ghcr.io/mikhaeelatefrizk/bindsight:dev",
+        # `:latest` because it is the only tag `docker.yml` always publishes:
+        # the others are the commit SHA and, on a tag push, the release. There
+        # has never been a `:dev`. A moving tag is safe here in a way it is not
+        # for a CI action -- the image carries its own bindsight and runs it, and
+        # `pipelines.full_run._container_ref` records the resolved *digest* in the
+        # manifest, never the tag, for exactly this reason.
+        image: str = "ghcr.io/mikhaeelatefrizk/bindsight:latest",
         native: bool | None = None,
     ) -> None:
         self.designer = designer

@@ -15,6 +15,23 @@ description be edited after upload. The rewrite that fixes it landed on `main`
 an hour after the tag, so only a release can carry it to the page a reader
 actually lands on. That is what this one is for.
 
+### Fixed — the local GPU runner pulled an image nothing publishes
+
+`LocalDockerRunner` defaulted to `ghcr.io/mikhaeelatefrizk/bindsight:dev`.
+No workflow has ever pushed a `:dev` tag: `docker.yml` publishes `latest`,
+one tag per commit SHA, and one per release. `docs/how-to-use.md` lists
+`local_docker` beside `modal` and `kaggle` as a backend a reader can pick,
+so following the documentation into Docker mode ended at a pull that could
+not succeed — and had never been able to.
+
+It defaults to `:latest` now, which is the only tag always published. A
+moving tag is safe here in a way it is not for a CI action: the image carries
+its own bindsight and runs it, and `pipelines.full_run._container_ref`
+records the resolved *digest* in the manifest rather than the tag, for exactly
+this reason — "a manifest must not claim an image identity it could not
+verify, and a tag is not one". The published tags are now read out of the
+workflow by a test rather than repeated in one, so renaming one fails loudly.
+
 ### Fixed — two headings that closed a tag they did not open
 
 `try.html.j2` and `your_data.html.j2` opened `<h2 class="card__title">` and

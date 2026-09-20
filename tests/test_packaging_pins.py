@@ -896,3 +896,42 @@ def test_the_ci_gate_depends_on_every_other_job() -> None:
         "it is skipped, a skipped check never reports, and the merge blocks on "
         "silence rather than on the failure"
     )
+
+
+def test_the_local_gpu_runner_defaults_to_an_image_that_is_published() -> None:
+    """``LocalDockerRunner`` pulls this tag; something has to publish it.
+
+    The default was ``ghcr.io/mikhaeelatefrizk/bindsight:dev`` and no workflow
+    has ever pushed a ``:dev`` tag -- the registry holds ``latest``, one tag per
+    commit SHA, and one per release. ``docs/how-to-use.md`` lists
+    ``local_docker`` beside ``modal`` and ``kaggle`` as a backend a reader can
+    choose, so following the documentation in Docker mode ended at a pull that
+    could not succeed.
+
+    The published tags are read out of the workflow rather than repeated here,
+    so renaming one fails this instead of going quiet.
+    """
+    source = (REPO_ROOT / "bindsight" / "runners" / "local_docker.py").read_text(encoding="utf-8")
+    default = re.search(r'image: str = "([^"]+)"', source)
+    assert default, "local_docker.py no longer declares a default image"
+
+    repository, _, tag = default.group(1).rpartition(":")
+    workflow = (REPO_ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
+
+    assert "IMAGE: ghcr.io/${{ github.repository }}" in workflow, (
+        "docker.yml no longer builds its image name from the repository, so the "
+        "name this runner hard-codes can no longer be checked against it"
+    )
+    assert repository == "ghcr.io/mikhaeelatefrizk/bindsight", (
+        f"the runner pulls {repository}, which is not the image docker.yml publishes"
+    )
+
+    #: Tags the workflow writes literally. The others are interpolated -- the
+    #: commit SHA and, on a tag push, the release -- and neither is a default.
+    published = set(re.findall(r"\$\{\{ env\.IMAGE \}\}:([a-z0-9._-]+)", workflow))
+    assert published, "docker.yml no longer lists any literal tag; the parse has stopped working"
+    assert tag in published, (
+        f"the local GPU runner defaults to :{tag}, which docker.yml never pushes "
+        f"(it publishes {sorted(published)} plus the commit SHA and the release tag), "
+        "so `bindsight design --backend local_docker` in Docker mode cannot pull it"
+    )
