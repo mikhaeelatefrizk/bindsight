@@ -6,7 +6,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.3.6] - 2026-09-20
+
+0.3.5 published this project to PyPI for the first time, and PyPI renders a
+package's long description with no base URL. Every relative link in
+`README.md` is therefore dead on that project page, and PyPI does not let a
+description be edited after upload. The rewrite that fixes it landed on `main`
+an hour after the tag, so only a release can carry it to the page a reader
+actually lands on. That is what this one is for.
+
+### Fixed — two headings that closed a tag they did not open
+
+`try.html.j2` and `your_data.html.j2` opened `<h2 class="card__title">` and
+closed `</h3>`. The `h2` was itself a fix: both pages had gone from `<h1>`
+straight to `<h3>`, which tells a screen reader a section was skipped, and the
+level had been chosen by what the class made it look like rather than by where
+it sat. The repair changed the opening tag and left the closing one, which
+every browser silently puts right -- so the rendered document was correct, the
+markup was not, and nothing failed either way.
+
+Several modules already parse these templates: for inline scripts, for
+colours, for chart specifications. None looked at heading structure, which is
+why the skip got in and why the mismatch that replaced it got in too. Two
+rules now do, over every `.j2` under `bindsight/report/` found by globbing
+rather than by a list: a heading closes the tag it opened, and no page jumps a
+level. Shown red three ways -- the closing tag drifted back, the title demoted
+to recreate the original skip, and the glob pointed at an empty directory to
+prove the sweep is reading anything at all.
 
 ### Changed — installed from PyPI
 

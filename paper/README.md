@@ -126,7 +126,7 @@ review happens transparently on GitHub.
 3. Fill the form:
    - **Repository address:** `https://github.com/mikhaeelatefrizk/bindsight`
    - **Branch:** `main`
-   - **Version:** `v0.3.5` — whatever tag the manuscripts cite, and a tag, not
+   - **Version:** `v0.3.6` — whatever tag the manuscripts cite, and a tag, not
      a branch. JOSS reviews what the tag points at, so a moving `main` is not a
      submission. Check it against `CITATION.cff` before typing it.
    - **Path to paper:** `paper/paper.md` — the standard path, auto-discovered;

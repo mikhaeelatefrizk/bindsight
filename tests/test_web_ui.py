@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -1144,4 +1145,87 @@ class TestTheDesignCheckSaysWhenItGuessedTheFactor:
         assert "fetch(" not in script, (
             "the design check now calls fetch(), which would contradict the "
             "page's promise that nothing is sent anywhere"
+        )
+
+
+class TestEveryHeadingIsWellFormedAndInOrder:
+    """Two rules about headings, both learned the hard way on these templates.
+
+    `try.html.j2` and `your_data.html.j2` went from ``<h1>`` straight to
+    ``<h3>``: the card title was styled by its class, so the level was chosen by
+    whatever looked right rather than by where it sat, and a screen reader was
+    told a section had been skipped. Fixing that by hand then left
+    ``<h2 class="card__title">What this runs</h3>`` -- the opening tag changed,
+    the closing tag not. Browsers repair it silently, so nothing rendered wrong
+    and nothing failed.
+
+    Neither defect was catchable here before: several modules parse these
+    templates for scripts, for colours, for chart specs, and none looked at the
+    heading structure at all. Both rules are cheap, and between them they cover
+    the whole of what went wrong.
+
+    The templates are found by globbing rather than listed. A list is how a
+    sweep in this repository stops covering its category.
+    """
+
+    #: An opening heading tag, and the closing tag that terminates it.
+    _PAIR = re.compile(r"<(h[1-6])\b[^>]*>.*?</(h[1-6])>", re.S)
+    _OPEN = re.compile(r"<h([1-6])\b")
+
+    @staticmethod
+    def _templates() -> list[Path]:
+        root = REPO / "bindsight" / "report"
+        return sorted(p for p in root.rglob("*.j2") if p.is_file())
+
+    def test_the_sweep_reaches_the_templates_that_have_headings(self) -> None:
+        """Guards the guard: a bad glob would make both checks pass on nothing."""
+        found = self._templates()
+        assert len(found) >= 6, f"only {[p.name for p in found]} were swept"
+
+        with_headings = [p for p in found if self._OPEN.search(p.read_text(encoding="utf-8"))]
+        assert len(with_headings) >= 5, (
+            f"only {[p.name for p in with_headings]} carry a heading; the "
+            "interface has more pages than that, so the scan is not reading them"
+        )
+        names = {p.name for p in with_headings}
+        assert {"try.html.j2", "your_data.html.j2"} <= names, (
+            "the two templates whose headings were wrong are not in scope"
+        )
+
+    def test_a_heading_closes_the_tag_it_opened(self) -> None:
+        """``<h2 ...></h3>`` is repaired by every browser and by no reader."""
+        mismatched = []
+        for template in self._templates():
+            source = template.read_text(encoding="utf-8")
+            for match in self._PAIR.finditer(source):
+                if match.group(1) != match.group(2):
+                    line = source[: match.start()].count("\n") + 1
+                    mismatched.append(
+                        f"{template.relative_to(REPO).as_posix()}:{line} "
+                        f"opens <{match.group(1)}> and closes </{match.group(2)}>"
+                    )
+
+        assert not mismatched, (
+            "these headings do not close the tag they opened, so the markup is "
+            f"invalid and only the browser's repair hides it: {mismatched}"
+        )
+
+    def test_no_template_skips_a_heading_level(self) -> None:
+        """A level skipped is a section a screen reader is told it missed."""
+        skips = []
+        for template in self._templates():
+            source = template.read_text(encoding="utf-8")
+            seen = [
+                (source[: m.start()].count("\n") + 1, int(m.group(1)))
+                for m in self._OPEN.finditer(source)
+            ]
+            for (_, previous), (line, level) in pairwise(seen):
+                if level > previous + 1:
+                    skips.append(
+                        f"{template.relative_to(REPO).as_posix()}:{line} h{previous} -> h{level}"
+                    )
+
+        assert not skips, (
+            "these jump more than one heading level, which announces a section "
+            f"that is not there: {skips}"
         )
