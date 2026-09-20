@@ -137,3 +137,32 @@ jobs:
         with:
           name: dist
           path: dist/
+
+  gate:
+    # One check for the branch ruleset on `main` to require.
+    #
+    # Naming the nine matrix jobs there instead would pin the ruleset to the
+    # matrix: add a Python version or drop an OS and those contexts no longer
+    # exist, so every merge would wait forever on a check that will never
+    # report, and someone would have to edit the ruleset by hand to recover.
+    # This job's name never changes.
+    #
+    # Which makes `needs` the entire guarantee, so it is held to the rest of
+    # this file by tests/test_packaging_pins.py rather than by memory.
+    name: All CI jobs passed
+    runs-on: ubuntu-latest
+    needs: [lint, test, pinned, build]
+    # Without this the gate is skipped when anything it needs fails, and a
+    # skipped required check never reports -- the merge would block on silence
+    # rather than on the failure, which reads like an outage.
+    if: always()
+    steps:
+      - name: Every job above must have succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          printf '%s\n' "$RESULTS"
+          if printf '%s' "$RESULTS" | grep -qE '"result": *"(failure|cancelled|skipped)"'; then
+            echo "::error::a job this gate depends on did not succeed"
+            exit 1
+          fi

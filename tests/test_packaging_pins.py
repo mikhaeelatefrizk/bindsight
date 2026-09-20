@@ -853,3 +853,46 @@ def test_no_workflow_runs_an_action_from_a_branch() -> None:
         "these run whatever their ref currently points at, rather than a "
         f"version or a commit: {floating}"
     )
+
+
+def test_the_ci_gate_depends_on_every_other_job() -> None:
+    """`main`'s ruleset requires one check; this is what makes it mean all of them.
+
+    Requiring the matrix jobs by name would tie the ruleset to the matrix --
+    add a Python version and those contexts stop existing, so every merge waits
+    on a check that will never report and the ruleset has to be edited by hand
+    to recover. So the ruleset requires a single job that depends on the rest.
+
+    Which makes ``needs`` the whole guarantee. A job added to ci.yml and left
+    out of it would run, be free to fail, and block nothing: the required check
+    would stay green and go on saying so. That is this repository's recurring
+    defect -- a hand-written list that quietly stops covering its category --
+    aimed at the thing that decides whether `main` moves.
+    """
+    import yaml
+
+    workflow = yaml.safe_load(
+        (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    jobs = workflow["jobs"]
+
+    assert "gate" in jobs, "ci.yml has no gate job, and main's ruleset requires one"
+
+    gated = set(jobs["gate"]["needs"])
+    others = set(jobs) - {"gate"}
+    assert gated == others, (
+        "the gate must depend on every other job in ci.yml, or the required "
+        f"check is silent about the difference. Not gated: {sorted(others - gated)}. "
+        f"Named but absent: {sorted(gated - others)}."
+    )
+
+    assert jobs["gate"]["name"] == "All CI jobs passed", (
+        "the ruleset on main requires a check with this exact name; renaming "
+        "the job renames the check, and a required check that never reports "
+        "blocks every merge until someone edits the ruleset"
+    )
+    assert str(jobs["gate"].get("if")).strip() == "always()", (
+        "the gate has to run even when a job it needs has failed. Without that "
+        "it is skipped, a skipped check never reports, and the merge blocks on "
+        "silence rather than on the failure"
+    )
