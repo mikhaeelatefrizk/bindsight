@@ -1,4 +1,4 @@
-# `tests/` — 1,600+ tests, and most of them are not about code
+# `tests/` — 2,000+ tests, and most of them are not about code
 
 80 test modules (a floor, not a census -- it is checked as one). The unusual thing about this suite is how much of it guards
 **published claims** rather than functions.

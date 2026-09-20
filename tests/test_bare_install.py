@@ -84,7 +84,7 @@ class TestTheBlockerBlocks:
 
         ``benchmark.core`` genuinely needs pandas. If this passed, the hook
         would be failing to see imports made from inside the package -- and
-        ``test_the_cli_imports`` would be green for the wrong reason.
+        ``test_the_cli_module_imports`` would be green for the wrong reason.
         """
         proc = _without_pandas("import bindsight.benchmark.core")
 

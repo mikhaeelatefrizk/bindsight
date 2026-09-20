@@ -5,11 +5,80 @@
 from __future__ import annotations
 
 import gzip
+import re
+import subprocess
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
 import pandas as pd
 import pytest
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="session")
+def collected_tests() -> int:
+    """How many tests pytest collects in this repository.
+
+    Session-scoped because it costs a subprocess: every surface that states a
+    floor shares one collection rather than paying for its own.
+
+    Deliberately NOT marked `slow`. CI runs `-m "not gpu and not slow"`, so a
+    slow-marked guard never runs where it matters -- the same shape of failure
+    the count guards exist to catch in prose.
+
+    Counted by collection rather than by counting ``def test_`` lines: the suite
+    is heavily parametrised, so the two differ by hundreds, and a claim about
+    "tests" means this one. Lives here rather than in one test module because
+    two modules now ask the question, and two answers to one question is the
+    drift these guards exist to prevent.
+    """
+    out = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:cacheprovider"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        timeout=900,
+    ).stdout
+    match = re.search(r"(\d+) tests? collected", out)
+    assert match, f"could not read a collection count from pytest:\n{out[-500:]}"
+    return int(match.group(1))
+
+
+@pytest.fixture(scope="session")
+def test_functions() -> int:
+    """How many ``def test_`` lines the suite defines.
+
+    Distinct from what pytest collects: parametrisation multiplies one function
+    into many cases, and the two differ by hundreds here. A claim about "test
+    functions" is a claim about this number, and binding it to the collected
+    count would assert something nobody wrote.
+
+    This replaced two separate counters that happened to agree. One globbed
+    ``tests/*.py`` and counted ``async def test_``; the other read tracked files
+    and did not. Either difference -- an untracked scratch file, one async test
+    -- would have made the repository hold two numbers for one metric and
+    believe both.
+    """
+    listed = subprocess.run(
+        ["git", "ls-files", "tests/*.py"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.split()
+    return sum(
+        len(
+            re.findall(
+                r"^\s*(?:async )?def test_",
+                (REPO / rel).read_text(encoding="utf-8"),
+                re.M,
+            )
+        )
+        for rel in listed
+        if (REPO / rel).is_file()
+    )
 
 
 @pytest.fixture(autouse=True, scope="session")

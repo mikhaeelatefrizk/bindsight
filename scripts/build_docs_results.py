@@ -448,7 +448,7 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
 
     # This paragraph has pointed readers at two things that were not here: a
     # page the removed app had, and then the hosted build -- a promise this
-    # repository cannot keep on its own, because the Space serves whatever it
+    # repository could not keep on its own, because the Space served whatever it
     # last received. Now it points at nothing. The complexes are drawn on this
     # page, from files in this repository, by a viewer served beside them.
     lines += [

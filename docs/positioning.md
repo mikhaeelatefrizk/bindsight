@@ -61,7 +61,7 @@ reproducible.
   measure of design quality**: shuffles of the designs' own sequences clear 0.65 more
   often (50% against 30%), see
   `benchmarks/calibration/README.md`), every one carrying
-  a target chain byte-identical to the native domain IV. Multi-page web UI live.
+  a target chain byte-identical to the native domain IV. Multi-page web UI shipped (`bindsight ui`, local).
 - **v0.4.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
   fully wired; scRNA-seq input. None of this is in v0.3.4: no shipped backend
   builds an environment BindCraft or BoltzGen can run in, which is why the

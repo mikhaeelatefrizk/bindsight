@@ -42,60 +42,47 @@ def _package_modules() -> int:
     return len(list((REPO / "bindsight").rglob("*.py")))
 
 
-@pytest.fixture(scope="session")
-def collected_tests() -> int:
-    """How many tests pytest collects in this repository.
-
-    Session-scoped because it costs a subprocess: the three surfaces that state
-    a floor share one collection rather than paying for three.
-
-    Deliberately NOT marked `slow`. CI runs `-m "not gpu and not slow"`, so a
-    slow-marked guard never runs where it matters -- the same shape of failure
-    this module exists to catch in prose, which is how the marker came to be
-    here in the first place.
-
-    Counted by collection rather than by counting `def test_` lines: the suite
-    is heavily parametrised, so the two differ by hundreds, and a claim about
-    "tests" means the first.
-    """
-    import subprocess
-    import sys
-
-    out = subprocess.run(
-        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:cacheprovider"],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        timeout=900,
-    ).stdout
-    match = re.search(r"(\d+) tests? collected", out)
-    assert match, f"could not read a collection count from pytest:\n{out[-500:]}"
-    return int(match.group(1))
-
-
 class TestTheTestSuiteCountsAreFloorsThatHold:
     """Every surface states the suite's size; none of them recomputed it."""
 
-    #: (file, regex capturing the number, what it counts).
+    #: (file, regex capturing the number, which count it is a floor on).
+    #:
+    #: Two metrics, deliberately kept apart. A claim about "tests" means what
+    #: pytest collects; a claim about "test functions" means ``def test_`` lines,
+    #: and the suite is parametrised enough that the two differ by hundreds.
+    #: Binding one claim to the other number would assert something nobody wrote.
+    #:
+    #: Two paper surfaces were outside this tuple entirely -- it named three
+    #: files while five made the claim -- so the JOSS paper understated the
+    #: suite by seven hundred and nothing noticed. That is the enumeration
+    #: defect this module exists to catch, found in this module.
     FLOORS = (
-        ("README.md", r"# (1,?\d{3})\+ tests, no network", "collected tests"),
-        ("README.md", r"\| (1,?\d{3})\+ tests\.", "collected tests"),
-        ("tests/README.md", r"^# `tests/` — (1,?\d{3})\+ tests", "collected tests"),
+        ("README.md", r"# ([\d,]{3,6})\+ tests, no network", "collected"),
+        ("README.md", r"\| ([\d,]{3,6})\+ tests\.", "collected"),
+        ("tests/README.md", r"^# `tests/` — ([\d,]{3,6})\+ tests", "collected"),
+        ("paper/paper.md", r"over ([\d,]{3,6}) unit and integration tests", "collected"),
+        ("paper/README.md", r"over ([\d,]{3,6}) test functions", "functions"),
     )
 
-    @pytest.mark.parametrize(("rel", "pattern", "what"), FLOORS)
+    @pytest.mark.parametrize(("rel", "pattern", "metric"), FLOORS)
     def test_the_stated_floor_still_holds(
-        self, collected_tests: int, rel: str, pattern: str, what: str
+        self,
+        collected_tests: int,
+        test_functions: int,
+        rel: str,
+        pattern: str,
+        metric: str,
     ) -> None:
         text = _doc(rel)
         match = re.search(pattern, text, re.M)
-        assert match, f"{rel} no longer states a {what} floor in the expected form"
+        assert match, f"{rel} no longer states a {metric} floor in the expected form"
 
         claimed = int(match.group(1).replace(",", ""))
-        actual = collected_tests
+        actual = collected_tests if metric == "collected" else test_functions
+        counted = "pytest collects" if metric == "collected" else "the suite defines"
 
         assert actual >= claimed, (
-            f"{rel} promises {claimed}+ {what}; pytest collects {actual}. "
+            f"{rel} promises {claimed}+ ({metric}); {counted} {actual}. "
             "Either the claim is stale or the suite lost tests."
         )
 
@@ -221,6 +208,77 @@ class TestNoTwoRoadmapEntriesShareAVersion:
         assert f"**v{version} (now)**" in _doc("docs/positioning.md"), (
             f"the roadmap does not mark v{version} -- the version in pyproject.toml "
             "-- as the current one"
+        )
+
+
+class TestTheNumbersCopiedOutOfArtifactsStillMatchThem:
+    """Two figures were restated in a second document and checked in neither.
+
+    The generated pages that carry these numbers are guarded -- the calibration
+    page is compared byte for byte against what its artifact renders to. What
+    was not guarded is the *restatement*: a human copied each number into
+    another document, and from that moment the two could drift with nothing
+    saying so. Both are correct today. That is the only reason this is a guard
+    rather than a correction.
+    """
+
+    def test_the_power_analysis_figure_matches_the_calibration_artifact(self) -> None:
+        """README states the paired-design count the calibration computed."""
+        import json
+
+        artifact = REPO / "benchmarks" / "calibration" / "RESULTS.json"
+        if not artifact.is_file():
+            pytest.skip("no calibration artifact in this checkout")
+
+        needed = json.loads(artifact.read_text(encoding="utf-8"))
+        pairs = {
+            round(float(row["effect"]), 3): int(row["n_pairs"])
+            for row in needed["variance_decomposition"]["pairs_needed"]
+        }
+        assert pairs, "the artifact records no power analysis; nothing to compare"
+
+        text = _doc("README.md")
+        match = re.search(
+            r"\*\*([\d,]+) paired designs\*\* at 80% power to\s+"
+            r"detect a (0\.\d+) ipTM difference",
+            text,
+        )
+        assert match, (
+            "README.md no longer states the power analysis in the expected form; "
+            "if the sentence moved, move this pattern with it rather than "
+            "deleting the check"
+        )
+
+        claimed = int(match.group(1).replace(",", ""))
+        effect = round(float(match.group(2)), 3)
+
+        assert effect in pairs, (
+            f"README quotes an effect size of {effect}, which the artifact does "
+            f"not compute; it has {sorted(pairs)}"
+        )
+        assert claimed == pairs[effect], (
+            f"README says {claimed} paired designs at effect {effect}; the "
+            f"calibration artifact says {pairs[effect]}"
+        )
+
+    def test_the_advertised_ci_job_count_is_what_the_matrix_produces(self) -> None:
+        """`paper/README.md` tells a JOSS editor how many jobs run."""
+        workflow = (REPO / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+        oses = re.search(r"os:\s*\[([^\]]+)\]", workflow)
+        pythons = re.search(r"python-version:\s*\[([^\]]+)\]", workflow)
+        assert oses, "ci.yml no longer declares an os matrix in the expected form"
+        assert pythons, "ci.yml no longer declares a python-version matrix"
+
+        produced = len(oses.group(1).split(",")) * len(pythons.group(1).split(","))
+        assert produced >= 4, f"only read {produced} matrix cells; the parse is wrong"
+
+        match = re.search(r"(\d+) platform/Python jobs", _doc("paper/README.md"))
+        assert match, "paper/README.md no longer states a platform job count"
+
+        assert int(match.group(1)) == produced, (
+            f"paper/README.md advertises {match.group(1)} platform/Python jobs; "
+            f"the ci.yml matrix produces {produced}"
         )
 
 

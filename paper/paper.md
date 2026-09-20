@@ -18,7 +18,7 @@ authors:
 affiliations:
   - name: Independent Researcher, Cairo, Egypt
     index: 1
-date: 15 June 2026
+date: 20 September 2026
 bibliography: paper.bib
 ---
 
@@ -192,7 +192,7 @@ demo it runs downloads its cohort from NIH/GDC on first run.
 
 # Quality assurance
 
-The package ships **over 1,300 unit and integration tests** that run in a few
+The package ships **over 2,000 unit and integration tests** that run in a few
 minutes and cover: the Pydantic v2 manifest schema, every API client
 (Open Targets, AlphaFoldDB), the SURFY filter, the discovery pipeline end-
 to-end with mocked GPU runners, the rank module, the RO-Crate exporter, and

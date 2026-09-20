@@ -72,7 +72,7 @@ JOSS submission criteria (already met):
 - ✅ Repository on GitHub with version-controlled history
 - ✅ Tagged release
 - ✅ Documentation (README + `docs/`)
-- ✅ Tests with CI (over 1,300 test functions; 9 platform/Python jobs — 3 OS ×
+- ✅ Tests with CI (over 1,600 test functions; 9 platform/Python jobs — 3 OS ×
   Python 3.11/3.12/3.13 — plus lint, a pinned-environment job, and a wheel build)
 - ✅ Docker image published to `ghcr.io` on every push to `main` and every
   release (`.github/workflows/docker.yml`). Not a JOSS criterion; listed

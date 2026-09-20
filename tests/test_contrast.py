@@ -458,8 +458,9 @@ class TestTheInterfaceServesItsOwnStylesheet:
 
     The deployment is retired and the probe went with it. The check it forced
     is worth more than the thing it was watching: a stylesheet the app fails to
-    serve, or a marker the stylesheet has lost, breaks the interface itself --
-    and nothing else in this suite asks the running app for it.
+    serve, or a marker the stylesheet has lost, breaks the interface itself.
+    ``tests/test_web_ui.py`` checks the stylesheet answers 200; nothing else
+    checks what is inside it.
     """
 
     #: A custom property only this interface's stylesheet declares. A check for

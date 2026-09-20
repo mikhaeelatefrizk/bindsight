@@ -267,7 +267,7 @@ Three tiers, because they cost very different things.
 
 ```bash
 python scripts/build_docs_results.py   # rewrites docs/results.md; it should not change
-python -m pytest -q                    # 1600+ tests, no network
+python -m pytest -q                    # 2000+ tests, no network
 ```
 
 **2. Re-run the rediscovery study — needs network, a few CPU-hours.**
@@ -311,7 +311,7 @@ subdirectories are documented in the table below rather than individually.
 |---|---|
 | [`bindsight/`](bindsight/) | The Python package — [`io`](bindsight/io/), [`deg`](bindsight/deg/), [`targets`](bindsight/targets/), [`surfaceome`](bindsight/surfaceome/), [`structures`](bindsight/structures/), [`epitopes`](bindsight/epitopes/), [`design`](bindsight/design/), [`runners`](bindsight/runners/), [`validate`](bindsight/validate/), [`rank`](bindsight/rank/), [`benchmark`](bindsight/benchmark/), [`pipelines`](bindsight/pipelines/), [`provenance`](bindsight/provenance/), [`export`](bindsight/export/), [`report`](bindsight/report/) |
 | [`benchmarks/`](benchmarks/) | All the evidence — the [study](benchmarks/study/), the [calibration control](benchmarks/calibration/), the [designer benchmark](benchmarks/designer_benchmark/), the [provenance join](benchmarks/provenance_join/), and the held-out antigen set |
-| [`tests/`](tests/) | 1,600+ tests. Many are guards on published claims, not on code |
+| [`tests/`](tests/) | 2,000+ tests. Many are guards on published claims, not on code |
 | [`paper/`](paper/) | JOSS and bioRxiv manuscripts, and the validation write-up |
 | [`docs/`](docs/) | Long-form documentation (mkdocs-material source) |
 | [`examples/`](examples/) | Runnable pipeline configs |

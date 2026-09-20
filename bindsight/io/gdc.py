@@ -14,7 +14,7 @@ config's ``inputs.counts`` / ``inputs.design`` point (typically a cache dir),
 so the first run downloads and subsequent runs are offline.
 
 Source: GDC Data Portal, https://portal.gdc.cancer.gov/ (NIH/NCI, open access).
-TCGA data usage: https://gdc.cancer.gov/about-data/publication-guidelines
+TCGA data usage: https://www.cancer.gov/ccg/research/genome-sequencing/tcga/using-tcga-data/citing
 """
 
 from __future__ import annotations

@@ -535,7 +535,8 @@ _TEST_COUNT_EXEMPT = {"CHANGELOG.md"}
 #: and the same promise, invisible to the sweep. That is how a claim stops being
 #: guarded without anyone editing the guard.
 _TEST_COUNT_CLAIM = re.compile(
-    r"(over\s+)?(\d[\d,]*)\s+(?:\w+\s+){0,3}?(?:tests\b|test\s+functions\b)", re.I
+    r"(over\s+)?(\d[\d,]*)(\+)?\s+(?:\w+\s+){0,3}?(tests\b|test\s+functions\b)",
+    re.I,
 )
 
 
@@ -551,40 +552,57 @@ def _shipped_documents() -> list[Path]:
     return sorted(files)
 
 
-def _test_function_count() -> int:
-    """A lower bound on collected cases: parametrised tests expand beyond this,
-    so a claim that clears this number is true of the real suite too."""
-    return sum(
-        len(re.findall(r"^\s*(?:async )?def test_", p.read_text(encoding="utf-8"), re.M))
-        for p in (ROOT / "tests").glob("*.py")
-    )
+def _documents_stating_a_test_count() -> list[tuple[str, bool, int, str]]:
+    """Every (path, is_floor, count, metric) test-size claim in a shipped document.
 
+    Two things this returns that it used to drop on the floor.
 
-def _documents_stating_a_test_count() -> list[tuple[str, bool, int]]:
-    """Every (path, is_floor, count) test-size claim in a shipped document."""
-    found: list[tuple[str, bool, int]] = []
+    *The floor marker.* A claim is a floor when it says "over N" **or** when it
+    writes "N+". The pattern only knew the first, and every surface that uses
+    the second -- README.md twice, and the bioRxiv manuscript's "1,800+ unit and
+    integration tests" -- was invisible to the sweep entirely. Not under-checked:
+    unseen. A sweep written as a pattern precisely so it would not miss a file
+    missed four claims because it did not know how they were spelled.
+
+    *The metric.* The pattern always distinguished "tests" from "test
+    functions" -- the alternation is right there -- and then discarded which one
+    matched, checking both against the ``def test_`` count. The two differ by
+    hundreds in a parametrised suite, so a true sentence ("over 2,000 tests",
+    against 2,052 collected) failed a guard measuring something else.
+    """
+    found: list[tuple[str, bool, int, str]] = []
     for path in _shipped_documents():
         rel = path.relative_to(ROOT).as_posix()
         if path.name in _TEST_COUNT_EXEMPT:
             continue
-        for floor, number in _TEST_COUNT_CLAIM.findall(path.read_text(encoding="utf-8")):
-            found.append((rel, bool(floor), int(number.replace(",", ""))))
+        for over, number, plus, noun in _TEST_COUNT_CLAIM.findall(path.read_text(encoding="utf-8")):
+            metric = "functions" if "function" in noun.lower() else "collected"
+            found.append((rel, bool(over or plus), int(number.replace(",", "")), metric))
     return found
 
 
 def test_the_sweep_for_test_counts_still_finds_the_known_claims() -> None:
     """Guards the guard. A regex that silently stops matching would turn the
     check below into a test that passes because it inspects nothing."""
-    claiming = {rel for rel, _floor, _n in _documents_stating_a_test_count()}
-    assert "paper/paper.md" in claiming, (
-        f"the test-count sweep no longer sees paper/paper.md; it found {claiming}"
-    )
-    assert "paper/README.md" in claiming, (
-        f"the test-count sweep no longer sees paper/README.md; it found {claiming}"
+    claiming = {rel for rel, _floor, _n, _metric in _documents_stating_a_test_count()}
+    for rel in (
+        "paper/paper.md",
+        "paper/README.md",
+        "README.md",
+        "paper/biorxiv/manuscript.tex",
+    ):
+        assert rel in claiming, f"the test-count sweep no longer sees {rel}; it found {claiming}"
+
+    metrics = {m for _rel, _floor, _n, m in _documents_stating_a_test_count()}
+    assert metrics == {"collected", "functions"}, (
+        "the sweep no longer tells the two metrics apart, so one of them is "
+        f"being checked against the other's number; it reports {metrics}"
     )
 
 
-def test_no_shipped_document_claims_more_tests_than_the_suite_has() -> None:
+def test_no_shipped_document_claims_more_tests_than_the_suite_has(
+    collected_tests: int, test_functions: int
+) -> None:
     """The manuscript once claimed 635 tests against a suite of 784 functions;
     paper/README.md later claimed 635 against 1097. Both directions are wrong to
     ship, so every document is swept, not the one that was wrong last time.
@@ -592,15 +610,15 @@ def test_no_shipped_document_claims_more_tests_than_the_suite_has() -> None:
     Counts must be stated as floors ("over N"). An exact number is a claim that
     goes stale the moment a test is added, which is how both figures rotted.
     """
-    functions = _test_function_count()
-    for rel, is_floor, claimed in _documents_stating_a_test_count():
+    for rel, is_floor, claimed, metric in _documents_stating_a_test_count():
         assert is_floor, (
             f"{rel} states an exact test count ({claimed}); write it as "
-            f'"over N tests" so adding tests cannot make the document wrong'
+            f'"over N tests" or "N+ tests" so adding tests cannot make the '
+            "document wrong"
         )
-        assert claimed <= functions, (
-            f"{rel} claims over {claimed} tests; only {functions} test functions exist"
-        )
+        actual = collected_tests if metric == "collected" else test_functions
+        counted = "pytest collects" if metric == "collected" else "the suite defines"
+        assert claimed <= actual, f"{rel} claims {claimed} ({metric}); {counted} {actual}"
 
 
 #: Designers and validators that no shipped backend can execute. The README's
