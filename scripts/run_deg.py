@@ -44,7 +44,7 @@ def _pydeseq2_tool() -> dict[str, Any]:
         name="pydeseq2",
         version=v,
         license="MIT",
-        repo_url="https://github.com/owkin/PyDESeq2",
+        repo_url="https://github.com/scverse/PyDESeq2",
         citation="10.1093/bioinformatics/btad547",
     )
 

@@ -250,7 +250,7 @@ would be misleading.
 | **Modal** | Prepared, not executed | The paid escape hatch for what free hardware cannot reach. Its image carries the whole design stack, but running it costs money and it has not been run end to end. |
 | **Colab** | Interactive on-ramp only | Google's API does not permit launching a free-tier notebook from a CLI, so this path needs a human with a browser tab open. That is a demo, not a reproducibility path. |
 | **RFdiffusion, ProteinMPNN, Boltz-2** | Verified on free hardware | The committed benchmark ran the whole stack on a free Kaggle T4, from a wheel built out of this tree. All 20 designs carry a target chain byte-identical to the native domain IV, so "the target was held fixed" is a check rather than a claim. |
-| **AF2 initial-guess** | Buildable free | PyRosetta is credential-free for non-commercial use since 2024. Non-commercial weights. |
+| **AF2 initial-guess** | Buildable free | PyRosetta is credential-free for non-commercial use since 2024, and is the restriction on this path; the AlphaFold2 parameters are CC BY 4.0. |
 | **BindCraft, BoltzGen** | Reduced-target only on free hardware | Both fit a 16 GB card against a small domain, not a full receptor. BoltzGen's integration was rewritten after its command was found not to exist upstream. |
 | **Chai-1r** | Needs Ampere or newer | It requires bfloat16, which no free-tier GPU has. Verifying it means renting roughly an hour of a modern card. |
 
@@ -317,7 +317,7 @@ subdirectories are documented in the table below rather than individually.
 | [`examples/`](examples/) | Runnable pipeline configs |
 | [`envs/`](envs/) | Conda environment for the discovery half, with pinned constraints |
 | [`scripts/`](scripts/) | Generators for vendored data and published pages |
-| [`.github/workflows/`](.github/workflows/) | CI, docs, docker, release artifacts |
+| [`.github/workflows/`](.github/workflows/) | CI, docs, docker, release artifacts, and the two paper PDFs |
 
 | File | What it is |
 |---|---|
@@ -364,7 +364,7 @@ tool authors. See [LICENSING.md](LICENSING.md) for the full inventory; the work 
 builds on most directly:
 
 - [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) (Balbi et al., PNAS 2026) — the targetable-sites catalog that makes the bridge tractable
-- [pydeseq2](https://github.com/owkin/PyDESeq2) (Muzellec et al., Bioinformatics 2023) — Python DESeq2 implementation
+- [pydeseq2](https://github.com/scverse/PyDESeq2) (Muzellec et al., Bioinformatics 2023) — Python DESeq2 implementation
 - [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) (Watson et al., Nature 2023) — backbone generation
 - [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) (Dauparas et al., Science 2022) — sequence design
 - [Boltz-2](https://github.com/jwohlwend/boltz) (Wohlwend et al., 2025) — structure + affinity prediction
@@ -373,8 +373,8 @@ builds on most directly:
 
 ## Citation
 
-This software is not archived and has no DOI. Cite the repository, the release
-tag you actually ran, and the author:
+This release is not archived under a DOI. Cite the repository, the tag you ran
+and the checksums attached to the release, plus the author:
 
 > Wahba, M. A. R. (2026). *bindsight: a reproducible bridge from RNA-seq to de
 > novo protein binder design* (version X.Y.Z).
@@ -384,13 +384,14 @@ Citation metadata also lives in [CITATION.cff](CITATION.cff); GitHub's "Cite thi
 repository" button generates BibTeX and APA from it. Every release attaches a
 wheel, an sdist and a `SHA256SUMS` file, and every image is digest-pinned, so
 the artifacts behind a version are checkable even though the version has no
-DOI. Please also cite the upstream tools you used — each run emits a
+DOI. From 0.3.5 a release also carries the bioRxiv manuscript and the JOSS
+paper as PDFs, typeset by CI. Please also cite the upstream tools you used — each run emits a
 `software.bib` to make that straightforward.
 
 ## About the author
 
-bindsight is built and maintained by **Mikhaeel Atef Rizk Wahba**, independent
-researcher.
+bindsight is built and maintained by **Mikhaeel Atef Rizk Wahba**, an
+independent researcher in Cairo, Egypt.
 
 - ORCID: [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
 - GitHub: [@mikhaeelatefrizk](https://github.com/mikhaeelatefrizk)

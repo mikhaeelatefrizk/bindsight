@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """pydeseq2 wrapper.
 
-Wraps `pydeseq2 <https://github.com/owkin/PyDESeq2>`_ (MIT) so the rest of
+Wraps `pydeseq2 <https://github.com/scverse/PyDESeq2>`_ (MIT) so the rest of
 the pipeline gets a clean, Pydantic-validated DEG result regardless of which
 backend ran.
 

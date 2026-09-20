@@ -398,6 +398,92 @@ def test_version_agrees_across_pyproject_and_citation() -> None:
     assert citation == pyproject, f"CITATION.cff {citation} != pyproject {pyproject}"
 
 
+def _package_version() -> str:
+    return tomllib.loads(_read("pyproject.toml"))["project"]["version"]
+
+
+#: Documents that name the current release by number, each with the pattern
+#: that finds it. None was held to pyproject: the manuscript and the
+#: bibliography entry for this software could name the previous release while
+#: CITATION.cff was held to the current one, and the JOSS submission notes,
+#: the roadmap's second mention and the bug-report form followed by hand.
+_RELEASE_NAMED_IN: tuple[tuple[str, str], ...] = (
+    ("paper/README.md", r"\*\*Version:\*\* `v(\d+\.\d+\.\d+)`"),
+    ("docs/positioning.md", r"None of this is in v(\d+\.\d+\.\d+)"),
+    (MANUSCRIPT_TEX, r"\\texttt\{bindsight\} \(v(\d+\.\d+\.\d+)\)"),
+    (MANUSCRIPT_TEX, r"\\paragraph\{Limitations of v(\d+\.\d+\.\d+)\.\}"),
+)
+
+
+@pytest.mark.parametrize(
+    ("rel", "pattern"),
+    _RELEASE_NAMED_IN,
+    ids=[f"{rel}:{pattern[:28]}" for rel, pattern in _RELEASE_NAMED_IN],
+)
+def test_a_document_naming_the_release_names_the_packages_version(rel: str, pattern: str) -> None:
+    """Every sentence that names the release by number names the one pyproject ships."""
+    found = re.findall(pattern, _read(rel))
+    assert found, (
+        f"{rel} no longer carries the sentence {pattern!r} was written for, "
+        "so this guard reads nothing; re-anchor it or delete it with the sentence"
+    )
+    assert set(found) == {_package_version()}, (
+        f"{rel} names {sorted(set(found))}; pyproject says {_package_version()}"
+    )
+
+
+def test_the_manuscript_names_no_release_but_this_one() -> None:
+    """Nothing else in manuscript.tex is written vX.Y.Z, so every such token is us."""
+    found = re.findall(r"\bv(\d+\.\d+\.\d+)\b", _read(MANUSCRIPT_TEX))
+    assert len(found) >= 2, "the manuscript stopped naming its own version"
+    assert set(found) == {_package_version()}, sorted(set(found))
+
+
+def test_the_bibliography_entry_for_this_software_names_the_packages_version() -> None:
+    """paper.bib's entry for this work said v0.2.1 two releases after 0.2.1 shipped."""
+    entry = _bib_entry(_read(BIB_FILES[0]), "wahba_bindsight_2026")
+    match = re.search(r"version\s*=\s*\{v?(\d+\.\d+\.\d+)\}", entry)
+    assert match is not None, "wahba_bindsight_2026 has no version field"
+    assert match.group(1) == _package_version(), (
+        f"paper.bib cites this software at {match.group(1)}; pyproject says {_package_version()}"
+    )
+
+
+def test_the_bug_report_form_suggests_the_packages_version() -> None:
+    """The form's placeholder is the first version number a reporter sees."""
+    form = yaml.safe_load(_read(".github/ISSUE_TEMPLATE/bug_report.yml"))
+    fields = [item for item in form["body"] if item.get("id") == "version"]
+    assert len(fields) == 1, "bug_report.yml no longer has exactly one `version` input"
+    placeholder = str(fields[0]["attributes"]["placeholder"])
+    assert placeholder == _package_version(), (
+        f"bug_report.yml suggests {placeholder}; pyproject says {_package_version()}"
+    )
+
+
+#: The one sentence every surface uses to say how to cite a release that has
+#: no DOI. The served interface's ``citation_line()`` is the source; the prose
+#: files are held to its first clause so a reader meets one wording.
+_CITATION_CLAUSE = "This release is not archived under a DOI"
+_CITATION_SURFACES = (
+    "README.md",
+    "docs/index.md",
+    "paper/README.md",
+    "CITATION.cff",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+)
+
+
+@pytest.mark.parametrize("rel", _CITATION_SURFACES, ids=_CITATION_SURFACES)
+def test_every_surface_says_how_to_cite_in_the_same_words(rel: str) -> None:
+    from bindsight.report import theme
+
+    assert theme.citation_line().startswith(_CITATION_CLAUSE)
+    assert _CITATION_CLAUSE in _read(rel), (
+        f"{rel} says something other than {_CITATION_CLAUSE!r} about citing a release"
+    )
+
+
 #: ``bindsight --version`` shown with its output, e.g. in a fenced example:
 #:     bindsight --version           # 0.3.0
 #: Release notes elsewhere name old versions on purpose, so only text presented

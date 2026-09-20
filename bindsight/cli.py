@@ -486,8 +486,9 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
     if validator == "af2_ig":
         console.print(
             Panel(
-                "[bold red]AF2-IG uses AlphaFold2 weights with a non-commercial license.[/bold red]\n"
-                "See LICENSING.md § 3 for details. Default to boltz2 for commercial work.",
+                "[bold red]AF2-IG depends on PyRosetta, which is free only for non-commercial use.[/bold red]\n"
+                "The AlphaFold2 parameters themselves are CC BY 4.0. See LICENSING.md § 3; "
+                "default to boltz2 for commercial work.",
                 title="License banner",
                 border_style="red",
             )
@@ -1062,13 +1063,15 @@ def verify_licenses(config: Path | None) -> None:
     flags any non-commercial choices.
     """
     # Single source of truth: (component, license, commercial?, role).
-    # `commercial` is True when the component is usable in commercial work.
-    components: list[tuple[str, str, bool, str]] = [
+    # `commercial` is True when the component is usable in commercial work,
+    # False when its terms forbid it, and None when the source states no
+    # terms at all -- which is not a clearance and is not printed as one.
+    components: list[tuple[str, str, bool | None, str]] = [
         ("bindsight", "AGPL-3.0-or-later", True, "this package"),
         ("pydeseq2", "MIT", True, "DEG analysis (default)"),
-        ("Open Targets", "CC0 / Apache-2", True, "target evidence"),
+        ("Open Targets", "CC0", True, "target evidence"),
         ("GTEx (v8 public)", "Open", True, "tissue baselines"),
-        ("SURFY", "CC BY", True, "surfaceome filter"),
+        ("SURFY", "Not stated by source (article CC BY-NC-ND 4.0)", None, "surfaceome filter"),
         ("SURFACE-Bind", "BSD-3", True, "targetable sites"),
         ("AlphaFoldDB", "CC BY 4.0", True, "structures"),
         ("RFdiffusion", "BSD-3", True, "default backbone designer"),
@@ -1078,14 +1081,21 @@ def verify_licenses(config: Path | None) -> None:
         ("BoltzGen", "MIT (code+weights)", True, "alt designer"),
         ("BindCraft", "MIT", True, "premium designer"),
         ("Snakemake", "MIT", True, "workflow"),
-        ("AF2-IG (opt-in)", "AF2 weights NC", False, "alt validator (banner)"),
+        (
+            "AF2-IG (opt-in)",
+            "MIT; AF2 params CC BY 4.0; PyRosetta NC",
+            False,
+            "alt validator (banner)",
+        ),
     ]
     by_name = {c[0]: c for c in components}
 
-    def _commercial_cell(ok: bool) -> str:
+    def _commercial_cell(ok: bool | None) -> str:
+        if ok is None:
+            return "[yellow]verify[/yellow]"
         return "[green]yes[/green]" if ok else "[red]no[/red]"
 
-    def _render(title: str, rows: list[tuple[str, str, bool, str]]) -> None:
+    def _render(title: str, rows: list[tuple[str, str, bool | None, str]]) -> None:
         t = Table(title=title, show_lines=False, title_style="bold")
         t.add_column("Component", style="cyan", no_wrap=True)
         t.add_column("License")
@@ -1155,7 +1165,8 @@ def verify_licenses(config: Path | None) -> None:
                 "bindsight does not know which components or licences it pulls in."
             )
 
-        nc = [r for r in selected if not r[2]]
+        nc = [r for r in selected if r[2] is False]
+        unstated = [r for r in selected if r[2] is None]
         if nc:
             names = ", ".join(r[0] for r in nc)
             console.print(
@@ -1170,6 +1181,15 @@ def verify_licenses(config: Path | None) -> None:
                 "commercial-friendly. That is not a clearance for this "
                 "configuration, because the plugin(s) above were not assessed."
                 "[/yellow]"
+            )
+        elif unstated:
+            # A source that states no terms is not a permissive source. The
+            # table says "verify"; the summary must not say "all clear".
+            names = ", ".join(r[0] for r in unstated)
+            console.print(
+                f"\n[yellow bold]⚠ Terms not stated by the source:[/yellow bold] {names}. "
+                "[yellow]Every other component is commercial-friendly; see LICENSING.md "
+                "before commercial use.[/yellow]"
             )
         else:
             console.print(

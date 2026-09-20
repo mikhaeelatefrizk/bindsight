@@ -128,10 +128,12 @@ them, because that's what users actually need to triage.
 
 ### 6. Commercially defensible
 
-The default config uses only MIT / Apache / BSD / CC-BY components. Every
-non-permissive opt-in (e.g. AlphaFold2 weights for the AF2-IG validator) is
-behind a CLI banner and documented in [LICENSING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSING.md). A
-pharma early-discovery team can run it without legal review.
+The default config uses MIT / Apache / BSD code and CC0 / CC BY data, with one
+exception the inventory marks: the SURFY surfaceome list, whose source states
+no terms. Every non-permissive opt-in (the AF2-IG validator, through PyRosetta)
+is behind a CLI banner and documented in [LICENSING.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSING.md). A
+pharma early-discovery team can read exactly what it would be running before
+legal review, rather than after.
 
 ---
 

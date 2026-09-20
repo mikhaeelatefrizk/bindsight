@@ -3,8 +3,8 @@
   "@type": "SoftwareSourceCode",
   "name": "bindsight: a reproducible bridge from RNA-seq to de novo protein binder design",
   "description": "bindsight is an open-source Python package that produces ranked de novo protein binder candidates directly from bulk RNA-seq counts, using an opinionated pipeline that joins differential expression analysis, the human surfaceome (SURFY + SURFACE-Bind), AlphaFoldDB structures, deep-learning binder design (RFdiffusion + ProteinMPNN, BindCraft, or BoltzGen), and affinity validation (Boltz-2, Chai-1r, or AF2-IG), with end-to-end PROV-O / RO-Crate provenance.",
-  "version": "0.3.4",
-  "softwareVersion": "0.3.4",
+  "version": "0.3.5",
+  "softwareVersion": "0.3.5",
   "datePublished": "2026-09-20",
   "license": "https://spdx.org/licenses/AGPL-3.0-or-later",
   "codeRepository": "https://github.com/mikhaeelatefrizk/bindsight",
@@ -45,11 +45,12 @@
     {
       "@type": "Person",
       "givenName": "Mikhaeel",
-      "familyName": "Atef Rizk Wahba",
+      "additionalName": "Atef Rizk",
+      "familyName": "Wahba",
       "email": "mikhaeelatefrizk@proton.me",
       "affiliation": {
         "@type": "Organization",
-        "name": "Independent researcher"
+        "name": "Independent Researcher, Cairo, Egypt"
       },
       "@id": "https://orcid.org/0009-0006-1069-9558"
     }

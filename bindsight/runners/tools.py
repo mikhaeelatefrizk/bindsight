@@ -128,7 +128,8 @@ CHAI_PIP = "chai_lab>=0.6"
 CHAI_REPO = "https://github.com/chaidiscovery/chai-lab"
 CHAI_COMMIT = "c544fb183e865c4950909444db860a9d50604f66"
 
-# AF2 initial-guess (Bennett/Baker dl_binder_design). NON-commercial AF2 weights.
+# AF2 initial-guess (Bennett/Baker dl_binder_design). Depends on PyRosetta, which
+# is free only for non-commercial use; the AF2 parameters themselves are CC BY 4.0.
 DL_BINDER_DESIGN_REPO = "https://github.com/nrbennet/dl_binder_design"
 DL_BINDER_DESIGN_COMMIT = "cafa3853ac94dceb1b908c8d9e6954d71749871a"
 
@@ -611,7 +612,7 @@ def label_indices_for_residues(pdb_path: Path, chain: str, residues: list[int]) 
 
 
 def build_af2ig_cmd(*, dl_binder_design_dir: Path, silent_or_pdb: Path, out_dir: Path) -> list[str]:
-    """AF2 initial-guess (dl_binder_design) argv. NON-commercial AF2 weights."""
+    """AF2 initial-guess (dl_binder_design) argv. PyRosetta: non-commercial use only."""
     return [
         "python",
         str(Path(dl_binder_design_dir) / "af2_initial_guess" / "predict.py"),
@@ -944,7 +945,7 @@ def parse_af2ig_output(
         # record anyway: it is content-addressed, so a clone either yields
         # exactly that tree or fails, and request and receipt coincide.
         validator_version=f"dl_binder_design@{DL_BINDER_DESIGN_COMMIT}",
-        notes="AF2 initial-guess (non-commercial weights)",
+        notes="AF2 initial-guess (PyRosetta: non-commercial use only)",
     )
     return note_unmeasured(result, reason=reason, log=LOG)
 

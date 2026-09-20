@@ -1,0 +1,80 @@
+name: Manuscript PDF (bioRxiv)
+
+# The bioRxiv manuscript is LaTeX and the machine it is written on has no TeX
+# distribution, so CI typesets it. Every push that touches the manuscript or
+# the shared bibliography leaves a `biorxiv-manuscript` artifact on the run,
+# and every published release carries the same PDF as an asset named for the
+# tag. `paper/README.md` sends a submitter to one of those two places.
+#
+# Overleaf is not the fallback it looks like. `manuscript.tex` reaches its
+# bibliography with \addbibresource{../paper.bib} -- one directory up, shared
+# with the JOSS paper so a citation is fixed in one place. Zipping
+# `paper/biorxiv/` alone uploads a project with no bibliography, which still
+# compiles and hands back a PDF with a question mark where every citation
+# should be. The action below runs in the full checkout, so the relative path
+# resolves, and latexmk runs biber by itself when it sees the .bcf that
+# biblatex writes. A step after the build fails the run on any citation that
+# stayed undefined, so that failure cannot render.
+
+on:
+  push:
+    paths:
+      - 'paper/biorxiv/**'
+      - 'paper/paper.bib'
+      - '.github/workflows/manuscript-pdf.yml'
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Typeset the bioRxiv manuscript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile manuscript.tex with latexmk
+        # Pinned to the commit the `v4` tag points at (release 4.1.0), like
+        # every other third-party action here; tests/test_packaging_pins.py
+        # refuses a branch or a moving ref.
+        uses: xu-cheng/latex-action@6549dc21effb2730855a1281407ecfcececc6c1b  # v4 (4.1.0)
+        with:
+          working_directory: paper/biorxiv
+          root_file: manuscript.tex
+          args: -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+      - name: Fail on undefined citations or references
+        # A missing bibliography does not stop latexmk; it leaves "[?]" where
+        # every citation should be and a warning in the log. Stop here instead.
+        run: |
+          if grep -E "Citation .* undefined|Reference .* undefined|There were undefined" paper/biorxiv/manuscript.log; then
+            echo "::error::the typeset manuscript has undefined citations or references"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: biorxiv-manuscript
+          path: paper/biorxiv/manuscript.pdf
+          if-no-files-found: error
+
+  attach:
+    name: Attach to the release
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: biorxiv-manuscript
+          path: paper/biorxiv
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        # Renamed so the asset says which document it is next to the wheel,
+        # the sdist and the JOSS paper's PDF.
+        run: |
+          cp paper/biorxiv/manuscript.pdf "bindsight-${TAG}-biorxiv-manuscript.pdf"
+          gh release upload "$TAG" "bindsight-${TAG}-biorxiv-manuscript.pdf" --clobber --repo "${{ github.repository }}"

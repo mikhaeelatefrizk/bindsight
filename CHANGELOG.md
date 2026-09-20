@@ -6,7 +6,199 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.3.5] - 2026-09-20
+
+0.3.4 is the current release, and its web interface renders every page with
+escaping off. The fix landed on `main` this afternoon and is in no release,
+which is the only reason this one follows the last on the same day. The rest
+is what landed on `main` between the two tags.
+
+### Security — the served interface rendered every page with escaping off
+
+`Jinja2Templates` leaves escaping to `jinja2.select_autoescape()`, which
+decides by filename and whose default extensions are `html`, `htm` and `xml`.
+Every template under `bindsight/report/web/templates/` is `*.html.j2`, which
+ends in `.j2`. So autoescape was off for the whole of `bindsight ui`, from the
+release that introduced the interface (0.3.0) through 0.3.4, while
+`report/theme.py` documented a design decision that assumed it was on.
+
+Not theoretical. A design table's column names reach the page: when the
+contrast factor is missing, `deg/pydeseq2_runner.py` raises a `ValueError`
+carrying the table's column names verbatim, `pipelines/discover.py` writes
+`repr(e)` into `run_manifest.jsonld`, and `runs.html.j2` renders that error. A
+`.tsv` handed to someone by a stranger — the same threat that motivated
+rewriting the browser-side checker in 0.3.3 — put a live script tag into this
+interface. Proven end to end before the fix: the payload appeared verbatim in
+the `/runs` response.
+
+One line turns it on. No template under `web/templates/` uses `|safe`, so
+nothing else changes — verified by diffing every page's output before and
+after, and by the suite. The chart specs needed a real answer rather than an
+exemption: they are emitted into `data-spec='...'`, a single-quoted attribute,
+and autoescape turned every `"` into `&#34;` — correct HTML that browsers
+decode, confirmed against a real parser, but an attribute nobody can read. So
+`tojson` now escapes for its own context — `<`, `>`, `&` and `'` become JSON
+unicode escapes, still valid JSON decoding to the same characters — and marks
+the result safe because the escaping is done. That also closes the apostrophe
+breakout the old raw `json.dumps` left open. `report/html.py` makes the same
+trade for the mmCIF it embeds.
+
+`try.html.j2` was building markup by concatenation from `state.error`, which
+is `str(exc)` out of a bare `except` — the exact defect fixed in
+`your_data_check.js`, missed here because the sweep that enforces the rule
+read `.js` files and this script lives in a template. An extension allow-list
+is how a guard comes to be unable to read the file it exists for. It composes
+nodes now, and the sweep reads every inline `<script>` in every `.j2` under
+`report/`, with an anchor asserting `try.html.j2` is in scope. Shown red
+against that template as it stood: two offenders, both real. `markupsafe` is
+declared rather than borrowed: it arrives with jinja2 either way, but a module
+this project imports is a module it declares, which
+`tests/test_requirements_mirror.py` caught first.
+
+This is the second cross-site scripting defect in this interface in three
+releases. The first, browser-side, was announced in 0.3.3's changelog, tag and
+release notes. This one is the first to carry a GitHub security advisory in
+this repository — GHSA-3p95-8fx3-2r5r, affecting 0.3.0 through 0.3.4, fixed here — and
+`SECURITY.md` now says that this is how a fixed vulnerability is announced.
+
+Private vulnerability reporting, Dependabot alerts and Dependabot security
+updates are enabled, so a CVE in one of the fifteen result-affecting packages
+`dependabot.yml` deliberately silences for version bumps still surfaces.
+
+### Fixed — a published number held by a test that never ran, and two more of the class
+
+Three defects that all look like a passing check and are not.
+
+`test_every_quoted_pae_is_the_artifact_value` skipped on every run since it
+was written, and said it was safe to because
+`test_the_designer_table_matches_the_artifact` covered it. No commit has ever
+defined a test by that name: `git log --all -S` returns nothing, and the only
+occurrence in the tree was the message citing itself. It skipped because its
+pattern required `mean PAE-interaction` spelled out and immediately followed
+by a number, and neither shipped surface writes it that way —
+`docs/results.md` puts the value before the words in a stat card, and
+`benchmarks/designer_benchmark/RESULTS.md` makes it a table column head with
+the value in a row below. So 15.6 Å, published on the documentation site, was
+pinned by nothing. It is correct, by luck. The guard reads both forms now and
+hard-asserts like its two siblings, which never degraded to a skip; shown red
+three ways — move the artifact, move the stat card, move the table cell. The
+class docstring also claimed the figure was "quoted across five surfaces",
+which its own skip message contradicted.
+
+`bindsight design` against a directory that was never discovered exited 0 on
+the default backend. It created an empty `design/`, then printed a green
+"Wrote 0 Colab notebook(s)" and told the reader to open each of them, one
+line after saying it could not even estimate the cost. Every headless backend
+handled the same situation correctly: yellow "nothing to do", exit 2. There
+was already a test asserting exit 2; it passed `--backend modal`, and the
+default is `colab`, so the one path a user reaches by typing the command with
+no backend was the one path unchecked, and it behaved the other way. It is
+parametrised over both now, asserts no empty `design/` is left behind, and
+the Colab path answers like the others.
+
+And `assert build_working_tree_wheel(...) is None or True`, which is always
+true. Deleting the `or True` alone would not have worked, which is likely why
+it was there: with `repo_root=None` the function discovers a root, and under
+pytest that is this checkout, so the test shelled out to `pip wheel`. The case
+the docstring is about — no checkout at all — is now arranged rather than
+hoped for, and asserted properly. Shown red by making the no-checkout branch
+return a path instead of None.
+
+### Fixed — two acknowledged tools whose entries were sitting uncited
+
+The JOSS paper's acknowledgements say "upstream tool authors cited throughout"
+and then thank seven projects. Five were cited in the paper; `FastAPI` and
+`Snakemake` were not cited anywhere, while `paper.bib` carried a prepared
+entry for each — so the sentence was making a claim about itself that two of
+its own names did not meet. Both are cited now. The other unused entries stay
+on purpose: `Robinson2010` (edgeR) is a comparison point the positioning
+documents name rather than a dependency, `Modal` is a service rather than an
+upstream author the acknowledgement thanks, and `wahba_bindsight_2026` is this
+work. BibTeX renders only what is cited, so none of them reaches the PDF.
+
+### Added — the manuscript is typeset by CI, and both PDFs travel with a release
+
+There is no LaTeX on the author's machine and no Overleaf in the loop.
+`manuscript-pdf.yml` compiles `paper/biorxiv/manuscript.tex` on every push
+that touches the manuscript or the bibliography, on demand, and on every
+published release, where it attaches the PDF beside the wheel; a step after
+the build fails the run on any citation left undefined, because a missing
+bibliography does not stop latexmk. `draft-pdf.yml`, which already built the
+JOSS paper as an artifact, now attaches its PDF to the release too.
+`tests/test_manuscript_pdf_workflow.py` holds both workflows to the triggers,
+the file they compile, the log check and the upload; the action pins fall under
+the rule `tests/test_packaging_pins.py` already applies to every workflow.
+
+### Changed — the paper carries the six sections JOSS now requires
+
+JOSS's author guide requires `Summary`, `Statement of need`, `State of the
+field`, `Software design`, `Research impact statement` and `AI usage
+disclosure`, within 750–1,750 words. `paper/paper.md` had two of the six and
+was 1,639 words. It is restructured under the six headings: the comparison to
+BindCraft, BinderFlow, `dl_binder_design` and the target-discovery workflows
+moves out of the summary into its own section, the design trade-offs (CPU
+discovery half, a single executor for every GPU backend, provenance written
+before results, an evidence surface that runs in the reader's browser) are
+stated as trade-offs, the fifteen-project rediscovery study and the withdrawn
+six-cohort figures are the impact statement, and the use of a generative model
+in writing the software, the documentation and the paper is disclosed. Every
+number the paper carried is still there, verbatim, because the tests that pin
+them to the artifacts still read it. `tests/test_joss_paper_sections.py` holds
+the headings and the word band.
+
+`paper/README.md` said the paper was not submittable, in three places, for
+reasons that stopped applying at v0.1.0; it describes the order now — bioRxiv
+first, JOSS on or after 2026-11-09 — and records the 2026-06-07 rejection in
+the editor's words: a public development history of at least six months, and
+one instance of the software used in published or preprint research. The first
+is a date. The second is what the bioRxiv manuscript is for.
+
+### Changed — one name, one affiliation, one sentence about the archive
+
+The author was "Independent researcher" in `CITATION.cff` and `codemeta.json`
+and "Independent Researcher, Cairo, Egypt" in the paper, and the name was
+split three ways across the files that spell it: `codemeta.json` filed the
+author under a three-word family name, `CITATION.cff` carried the middle names
+as a name-particle, which renderers glue to the surname, and `paper.bib` had it
+right. It is one name and one affiliation now, and
+`tests/test_author_metadata_agrees.py` reads every file that carries either.
+The interface's citation line said "There is no DOI: this software is not
+archived", which is more than is true: a release is identified by its tag and
+the checksums attached to it. The line, `README.md`, `docs/index.md`,
+`paper/README.md`, `CITATION.cff`, `SECURITY.md` and `CONTRIBUTING.md` now say
+that, in the same words.
+
+`LICENSING.md` had not been reviewed since 2026-06-15 and named a Python client
+this project does not use. Every row was re-checked against its source today,
+and eight changed. Human Protein Atlas data is CC BY 4.0, not CC BY-SA 3.0.
+The AlphaFold2 model parameters are CC BY 4.0 with no non-commercial clause, a
+claim to the contrary having been repeated across the code, the docs and both
+manuscripts; all of it is corrected, and the real restriction on the AF2-IG
+path, PyRosetta's non-commercial terms, is named instead. The SURFY site
+states no licence and the article it accompanies is CC BY-NC-ND 4.0, so the
+vendored list's header, the two scripts that write it and the test that read
+it no longer say CC BY. recount3 states no reuse terms of its own. The
+RFdiffusion weights row cites the `LICENSE` file, which covers code and
+weights. The ColabFold MSA server row credits the ColabFold team and its
+fair-use policy, as the project itself states it. `pydeseq2`'s repository moved
+to `scverse`, and every URL follows it.
+`bindsight verify-licenses` gained a third answer, `verify`, for a component
+whose source states no terms, so the default configuration no longer prints an
+unqualified clearance. Both manuscripts said every validator before late 2025
+inherited a non-commercial restriction from AlphaFold2's weights; they say
+instead that AlphaFold 3 restricts commercial use of its weights, which is the
+claim that is true. `tests/test_licensing_review.py` fails when the review
+date predates the last change to the tool registry.
+
+`CONTRIBUTING.md`'s release notes said three files carry the version and the
+changelog heading has a `v` in it; neither has been true since 0.3.0.
+
+### Added — the demo's progress is announced
+
+`#steps` and `#outcome` on the Try-it page were rewritten on a 700 ms poll
+with no live region, so a screen-reader user heard nothing for the minutes a
+cold-cache run takes. They carry `aria-live` now, and the outcome card carries
+`role="status"` or `role="alert"`.
 
 ### Fixed — a colour below AA on the published documentation site
 
@@ -76,12 +268,6 @@ not move, and whose `needs` is compared against every other job in the file.
 `*_REPO`/`*_COMMIT` to its pair and its shape. `TAGLINE` now sits where the
 comment above `PLAIN_SUMMARY` says it does. `_DEFAULT_LOG2FC` and an unused
 `ABSENT` import, which had nothing to answer to, are gone.
-
-### Security
-
-Private vulnerability reporting, Dependabot alerts and Dependabot security
-updates are enabled, so a CVE in one of the fifteen result-affecting packages
-`dependabot.yml` deliberately silences for version bumps still surfaces.
 
 ### Dependencies
 

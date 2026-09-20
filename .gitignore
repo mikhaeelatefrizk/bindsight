@@ -102,7 +102,8 @@ desktop.ini
 # mkdocs build output
 site/
 
-# LaTeX build intermediates (the compiled PDF is committed; intermediates are not)
+# LaTeX build intermediates. No compiled PDF is committed either: CI typesets
+# paper/biorxiv/manuscript.tex and attaches the PDF to every release.
 paper/**/*.aux
 paper/**/*.bbl
 paper/**/*.bcf

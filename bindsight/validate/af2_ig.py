@@ -1,10 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""AF2-IG validator plugin (opt-in, non-commercial weights).
+"""AF2-IG validator plugin (opt-in; PyRosetta is free only for non-commercial use).
 
 AF2 with initial guess (`Bennett/Baker dl_binder_design
 <https://github.com/nrbennet/dl_binder_design>`_) is the gold-standard binder
-filter — but inherits AF2's weights restriction (non-commercial). The CLI prints
+filter — but depends on PyRosetta, which is free only for non-commercial use; the
+AlphaFold2 parameters themselves are CC BY 4.0. The CLI prints
 a license banner before invoking this plugin. The GPU inference runs in
 :mod:`bindsight.runners.job_exec`; this plugin's :meth:`validate` parses the
 AF2 initial-guess score file the runner produced.
@@ -19,13 +20,13 @@ from bindsight.validate.protocol import ValidationResult
 
 
 class AF2IGValidator:
-    """Plugin: AlphaFold2 with initial guess (NON-COMMERCIAL weights)."""
+    """Plugin: AlphaFold2 with initial guess (PyRosetta: non-commercial use only)."""
 
     name = "af2_ig"
     version = "1.0"
     license_notice = (
-        "AF2-IG uses AlphaFold2 weights — DeepMind license restricts commercial use. "
-        "See LICENSING.md § 3."
+        "AF2-IG depends on PyRosetta, which is free only for non-commercial use; "
+        "the AlphaFold2 parameters are CC BY 4.0. See LICENSING.md § 3."
     )
 
     def validate(

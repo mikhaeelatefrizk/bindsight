@@ -7,6 +7,11 @@ on:
       - 'paper/paper.bib'
       - '.github/workflows/draft-pdf.yml'
   workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   paper:
@@ -30,3 +35,25 @@ jobs:
         with:
           name: paper
           path: paper/paper.pdf
+          if-no-files-found: error
+
+  attach:
+    name: Attach to the release
+    needs: paper
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: paper
+          path: paper
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        # Renamed so the asset says which document it is next to the wheel,
+        # the sdist and the bioRxiv manuscript's PDF.
+        run: |
+          cp paper/paper.pdf "bindsight-${TAG}-joss-paper.pdf"
+          gh release upload "$TAG" "bindsight-${TAG}-joss-paper.pdf" --clobber --repo "${{ github.repository }}"

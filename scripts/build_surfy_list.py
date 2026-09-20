@@ -23,8 +23,9 @@ Regenerate when SURFY publishes a new release:
 Requires network access to UniProt and wollscheidlab.org. The output is
 committed; ``tests/test_surfy_vendored.py`` guards its integrity.
 
-Licensing: the SURFY list is CC-BY (Bausch-Fluck et al., PNAS 2018). The
-attribution required by that licence is written into the file header.
+Licensing: the SURFY site states no licence, and the article the list accompanies
+(Bausch-Fluck et al., PNAS 2018) is CC BY-NC-ND 4.0. The file header says so and
+carries the attribution; LICENSING.md marks the row "verify before commercial use".
 """
 
 from __future__ import annotations
@@ -137,13 +138,14 @@ def build() -> tuple[list[str], int]:
 
 
 def render(accessions: list[str], looked_up: int) -> str:
-    """Render the vendored file, including the CC-BY attribution."""
+    """Render the vendored file, including the licence note and attribution."""
     today = dt.datetime.now(dt.UTC).date().isoformat()
     header = [
         "# SURFY human surfaceome — UniProt accessions, one per line.",
         "#",
         f"# {CITATION}",
-        "# Licence: CC BY 4.0. Redistributed with attribution.",
+        "# Licence: none stated by the source; the article it accompanies is CC BY-NC-ND 4.0.",
+        "# Redistributed here as a table of identifiers, with attribution.",
         "#",
         f"# {len(accessions)} accessions, resolved from {EXPECTED_COUNT} SURFY entry names.",
         f"# Sources: {SURFY_IDS_URL}",

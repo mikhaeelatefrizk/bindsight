@@ -106,19 +106,35 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 
 ## Releasing (maintainer notes)
 
-1. Bump version in `pyproject.toml`, `CITATION.cff` and `codemeta.json`.
-2. Move `## [Unreleased]` entries in `CHANGELOG.md` to a new `## [vX.Y.Z] - YYYY-MM-DD` section.
-3. Tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`. (Tags and commits in this repository are
-   **not** GPG-signed — see [SECURITY.md](SECURITY.md) for what is and is not
-   verified about a release.)
-4. Push: `git push origin vX.Y.Z`, then publish the GitHub release for that tag.
-5. On release publish, `release-artifacts.yml` builds the wheel + sdist and attaches
-   them with SHA-256 checksums. The PyPI upload job is gated on the
-   `PYPI_TRUSTED_PUBLISHING` repository variable and is currently inert. There is no
-   software archive and no DOI: the archive integration could not see this
-   repository object after the repository was recreated on 2026-09-14, and an
-   identifier that does not resolve is worse than none. A release is identified by
+1. Bump the version everywhere a test holds it to `pyproject.toml`:
+   `CITATION.cff`, `codemeta.json`, `docs/how-to-use.md`, `docs/positioning.md`,
+   `paper/README.md`, `paper/biorxiv/manuscript.tex`, `paper/paper.bib` and
+   `.github/ISSUE_TEMPLATE/bug_report.yml`. `tests/test_docs_claims.py`,
+   `tests/test_packaging_pins.py` and `tests/test_counted_self_claims.py` fail on
+   any of them left behind; `date-released` and `datePublished` move with it.
+2. Retitle `## [Unreleased]` in `CHANGELOG.md` as `## [X.Y.Z] - YYYY-MM-DD` (no
+   `v`). A fixed vulnerability gets a `### Security` subsection naming its
+   advisory, created as a draft before this commit so the identifier is real.
+3. Push once and wait for `All CI jobs passed` on that commit. A tag points at
+   a commit CI has finished on, never at one it is still running on.
+4. Tag: `git tag -a vX.Y.Z -m "vX.Y.Z — <what the release is>"`, then
+   `git push origin vX.Y.Z`; the container image is published as `:vX.Y.Z` on
+   the tag push. (Tags and commits in this repository are **not** GPG-signed —
+   see [SECURITY.md](SECURITY.md) for what is and is not verified about a
+   release.)
+5. Publish the GitHub release for that tag with `--verify-tag`, titled
+   `vX.Y.Z — <shorter clause>`, its notes a hand-condensed version of the
+   changelog entry rather than a copy. On `release: published`,
+   `release-artifacts.yml` builds the wheel and sdist, attaches them with
+   SHA-256 checksums and — with the `PYPI_TRUSTED_PUBLISHING` repository
+   variable `true` and the `pypi` environment present — publishes the same
+   files to PyPI by OIDC, so no token is stored here; `manuscript-pdf.yml` and
+   `draft-pdf.yml` attach the bioRxiv manuscript and the JOSS paper as PDFs.
+   This release is not archived under a DOI: cite the repository, the tag you
+   ran and the checksums attached to the release. A release is identified by
    its tag, its checksummed artifacts and the digest-pinned container image.
+6. Publish the advisory after the release exists, so the version it names as
+   patched is one that can be installed.
 
 ---
 

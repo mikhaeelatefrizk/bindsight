@@ -70,7 +70,8 @@ def test_accessions_look_like_uniprot() -> None:
 
 
 def test_vendored_list_carries_its_licence_attribution() -> None:
-    """SURFY is CC-BY; redistribution requires attribution in the file."""
+    """The source states no licence and the article is CC BY-NC-ND 4.0; the file
+    must say exactly that and attribute, and must not claim CC BY as it once did."""
     from importlib import resources
 
     text = (
@@ -79,7 +80,9 @@ def test_vendored_list_carries_its_licence_attribution() -> None:
         .read_text("utf-8")
     )
     header = "\n".join(ln for ln in text.splitlines() if ln.startswith("#"))
-    assert "CC BY" in header
+    assert "none stated by the source" in header
+    assert "CC BY-NC-ND 4.0" in header
+    assert "CC BY 4.0" not in header
     assert "Bausch-Fluck" in header
     assert "10.1073/pnas.1808790115" in header
     assert "build_surfy_list.py" in header

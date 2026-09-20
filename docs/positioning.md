@@ -55,7 +55,7 @@ reproducible.
 
 ## Roadmap
 
-- **v0.3.4 (now)** — discovery half end-to-end on CPU; design + validation
+- **v0.3.5 (now)** — discovery half end-to-end on CPU; design + validation
   **demonstrated on a free Kaggle T4** under the corrected ProteinMPNN protocol:
   20 de novo ERBB2 binders, best ipTM 0.88, 40% success@0.65 (8/20, 95% CI 15–70% over backbones — **withdrawn as a
   measure of design quality**: shuffles of the designs' own sequences clear 0.65 more
@@ -63,10 +63,12 @@ reproducible.
   `benchmarks/calibration/README.md`), every one carrying
   a target chain byte-identical to the native domain IV. Multi-page web UI shipped (`bindsight ui`, local).
 - **v0.4.0** — live (async, non-blocking) Modal/Colab job submission; BindCraft + BoltzGen plugins
-  fully wired; scRNA-seq input. None of this is in v0.3.4: no shipped backend
+  fully wired; scRNA-seq input. None of this is in v0.3.5: no shipped backend
   builds an environment BindCraft or BoltzGen can run in, which is why the
   three-way designer comparison is deferred rather than delivered.
-- **v1.0.0** — JOSS submission + validation paper. The rediscovery study is
+- **v1.0.0** — the JOSS resubmission, on or after 2026-11-09 and with the
+  bioRxiv preprint in hand (`paper/README.md` says why), plus the validation
+  paper. The rediscovery study is
   already run and published in `benchmarks/study/`: fifteen unstratified TCGA
   projects against a pre-registered panel, recall at rank 20 of 1 in 17 with a
   95% interval of 0.01 to 0.27. An earlier HER2-centred version is withdrawn as

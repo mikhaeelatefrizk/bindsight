@@ -1,7 +1,8 @@
 # SURFY human surfaceome — UniProt accessions, one per line.
 #
 # Bausch-Fluck et al., 'The in silico human surfaceome', PNAS 2018, doi:10.1073/pnas.1808790115
-# Licence: CC BY 4.0. Redistributed with attribution.
+# Licence: none stated by the source; the article it accompanies is CC BY-NC-ND 4.0.
+# Redistributed here as a table of identifiers, with attribution.
 #
 # 2886 accessions, resolved from 2886 SURFY entry names.
 # Sources: https://wollscheidlab.org/SURFY/surfaceome_ids.txt

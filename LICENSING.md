@@ -2,7 +2,7 @@
 
 > **Read this before any commercial use.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
 >
-> Last reviewed: 2026-06-15 — upstream code `LICENSE` files re-verified on this date for every GitHub-hosted component (designers, validators, surfaceome, viewers, workflow tooling); all match the table below. Model-weights and data-source terms (AF2/RFdiffusion weights, TCGA/GTEx/Open Targets/HPA/SURFY/AlphaFoldDB/RCSB) are unchanged from the prior review. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
+> Last reviewed: 2026-09-20 — every row re-checked on this date against the source it names: the GitHub licence API and the `LICENSE` file for each code row, the publisher's own terms page for each data row. Eight rows changed as a result. Human Protein Atlas data is CC BY 4.0, not CC BY-SA 3.0. The AlphaFold2 model parameters are CC BY 4.0 with no non-commercial clause, and the AF2-IG row now names the real basis of its restriction, PyRosetta's non-commercial terms, rather than the weights. The SURFY site states no licence and the article it accompanies is CC BY-NC-ND 4.0, so that row no longer says CC BY. recount3 states no reuse terms of its own. The RFdiffusion weights row cites the `LICENSE` file, which covers code and weights, rather than an announcement. The ColabFold MSA server row credits the ColabFold team and its fair-use policy, which is how the project states it. The pydeseq2 row follows the repository to `scverse`. A row for an Open Targets Python client was deleted: this package has no such dependency. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
 ---
 
@@ -20,23 +20,22 @@ Documentation, manuscripts, figures, and generated results (e.g. `paper/`) are l
 
 ## 2. Default pipeline (commercial-friendly)
 
-The default `bindsight` configuration uses **only** components with permissive licenses suitable for commercial use:
+The default `bindsight` configuration uses components whose stated licences permit commercial use, with one exception marked ⚠️ below — the SURFY list, whose publisher states no terms of its own — and one reference-only row (recount3) that is not integrated:
 
 | Component | License | Commercial use |
 |---|---|---|
-| [pydeseq2](https://github.com/owkin/PyDESeq2) | MIT | ✅ Yes |
+| [pydeseq2](https://github.com/scverse/PyDESeq2) | MIT | ✅ Yes |
 | [Open Targets Platform](https://platform-docs.opentargets.org/) data | CC0 | ✅ Yes |
-| Open Targets Python client | Apache-2.0 | ✅ Yes |
-| [Human Protein Atlas](https://www.proteinatlas.org/) data | CC BY-SA 3.0 | ✅ Yes (with attribution + share-alike for derivatives of the data itself) |
+| [Human Protein Atlas](https://www.proteinatlas.org/) data | CC BY 4.0 | ✅ Yes (with attribution) |
 | [GTEx](https://gtexportal.org/) data | Open (NIH dbGaP for protected) | ✅ Yes for v8 public release |
-| [SURFY](https://wollscheidlab.org/SURFY/) gene list | CC BY | ✅ Yes (with attribution) |
+| [SURFY](https://wollscheidlab.org/SURFY/) gene list | Not stated by the source; the article it accompanies (Bausch-Fluck et al., PNAS 2018) is CC BY-NC-ND 4.0 | ⚠️ Verify before commercial use — this package redistributes the list as a table of identifiers with attribution; ask the Wollscheid lab if your use needs more than that |
 | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3-Clause | ✅ Yes |
 | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) structures | CC BY 4.0 | ✅ Yes (with attribution) |
 | [RCSB PDB](https://www.rcsb.org/) | Public domain (CC0) | ✅ Yes (used only by `benchmarks/build_eval_set.py`; **no structure client in `bindsight/structures/`** — planned) |
 | [PDBe API](https://www.ebi.ac.uk/pdbe/api/doc/) | Open | ✅ Yes (**not integrated**; listed for reference only) |
-| [recount3](https://rna.recount.bio/) | Open (TCGA terms apply) | ✅ Yes for open subset |
+| [recount3](https://rna.recount.bio/) | Not stated by recount3; the data it re-hosts carry their sources' terms (TCGA, GTEx) | ⚠️ Verify per source (**not integrated**; listed for reference only) |
 | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) (code) | BSD-3-Clause | ✅ Yes |
-| [RFdiffusion weights](https://github.com/RosettaCommons/RFdiffusion#download-the-models) | Per Baker Lab announcement, open for research and commercial | ✅ Yes (verify the LICENSE in your weights mirror) |
+| [RFdiffusion weights](https://github.com/RosettaCommons/RFdiffusion#download-the-models) | BSD-3-Clause (the LICENSE file states it covers code and model weights) | ✅ Yes (verify the LICENSE in your weights mirror) |
 | [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | MIT | ✅ Yes |
 | [Boltz-2](https://github.com/jwohlwend/boltz) (code + weights) | MIT | ✅ Yes |
 | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2.0 | ✅ Yes |
@@ -57,12 +56,12 @@ These are **not** enabled by default. They require explicit opt-in via a CLI fla
 
 | Component | License | Commercial use | Mitigation |
 |---|---|---|---|
-| [AlphaFold2 weights](https://github.com/google-deepmind/alphafold) (DeepMind) | CC BY 4.0 (data); model weights restricted to non-commercial | ⚠️ Restricted | Use Boltz-2 / Chai-1r / BoltzGen instead, or obtain AF2 weights via DeepMind's commercial path |
-| AF2-IG validator (via [dl_binder_design](https://github.com/nrbennet/dl_binder_design)) | Inherits AF2 weights restriction | ⚠️ Restricted | Same as above |
+| [AlphaFold2 weights](https://github.com/google-deepmind/alphafold) (DeepMind) | CC BY 4.0 (model parameters; code Apache-2.0) | ✅ Yes (with attribution) | None needed for the weights. This row said "non-commercial" until 2026-09-20 and was wrong; the restriction on the AF2-IG path is PyRosetta's, next row |
+| AF2-IG validator (via [dl_binder_design](https://github.com/nrbennet/dl_binder_design)) | MIT code; AF2 parameters CC BY 4.0; PyRosetta non-commercial (free only for non-commercial use) | ⚠️ Restricted by PyRosetta | Use Boltz-2 / Chai-1r instead, or obtain a PyRosetta commercial licence from UW CoMotion |
 | [DESeq2](https://bioconductor.org/packages/DESeq2/) | LGPL-3 | ✅ Yes (LGPL allows commercial use of LGPL libraries from non-LGPL apps) | **Not integrated; listed for reference only.** There is no R bridge — `pydeseq2` (MIT) is the only DEG engine |
 | [edgeR](https://bioconductor.org/packages/edgeR/) | GPL-2 | ⚠️ GPL — calling from non-GPL code is a runtime dependency, generally OK, but distribution of bundled binaries triggers GPL | **Not integrated; listed for reference only.** Not selectable from any config; do not vendor edgeR |
 | [PyMOL OSS](https://github.com/schrodinger/pymol-open-source) | Custom (research-friendly, commercial restrictions) | ⚠️ Check terms | Use 3Dmol.js / NGL instead (BSD-3 / MIT) |
-| [ColabFold MSA server](https://colabfold.com/) | Free service operated by Steinegger lab | ⚠️ Not for commercial scale | Provide BYO MMseqs2 path for commercial users |
+| [ColabFold MSA server](https://colabfold.com/) | Free, rate-limited public resource operated by the ColabFold team; subject to a fair-use policy | ⚠️ Not for commercial scale | Provide BYO MMseqs2 path for commercial users |
 | [TCGA controlled-access subsets](https://gdc.cancer.gov/) | NIH dbGaP, requires DAC approval | ⚠️ Requires approval | Default examples use only the open subset |
 
 ---
@@ -89,7 +88,7 @@ Record the verification in the relevant `envs/*.yaml` or `bindsight/<module>/_LI
 Everything is fine. Use whatever you want. Cite all upstream tools (the per-run manifest emits `software.bib` to make this easy).
 
 ### Industry / commercial users
-- **Default config** is commercially safe.
+- **Default config** is commercially safe for every component that states its terms; the SURFY list's source states none (⚠️ in §2), so confirm that one for commercial work.
 - **Opt-in** components carry banners. Read them.
 - Use the `bindsight verify-licenses` command (available since v0.1) to audit a specific run config and flag any non-commercial components.
 

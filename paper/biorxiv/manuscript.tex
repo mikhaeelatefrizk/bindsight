@@ -117,7 +117,7 @@ records. In practice this work is done ad hoc, takes a competent graduate
 student several weeks, and is rarely reproducible across labs.
 
 The structural conditions for closing this gap as a single open-source tool
-all became true in late 2025 and not before:
+all became true between late 2024 and 2026, and not before:
 
 \begin{enumerate}
   \item The \textbf{SURFACE-Bind catalogue}~\cite{Balbi2026} published
@@ -126,14 +126,15 @@ all became true in late 2025 and not before:
         bottleneck.
   \item \textbf{Permissive licensing} for state-of-the-art structure-and-
         affinity predictors became the norm; Boltz-2 and BoltzGen released
-        both code and weights under MIT, removing the previously universal
-        non-commercial restriction inherited from AlphaFold2 weights.
+        both code and weights under MIT and Chai-1r under Apache-2.0, where
+        the field's most capable predictor, AlphaFold~3, restricts commercial
+        use of its weights.
   \item \textbf{Free GPU tiers} (Google Colab T4, Kaggle T4$\times$2)
         became powerful enough to run RFdiffusion and ProteinMPNN at
         meaningful scale, removing the institutional-cluster barrier.
 \end{enumerate}
 
-We present \texttt{bindsight} (v0.3.4), a Python package with a
+We present \texttt{bindsight} (v0.3.5), a Python package with a
 server-rendered web interface that exploits this newly-opened window. It
 takes RNA-seq counts as input and produces ranked \textit{de novo} protein-
 binder candidates as output, with a complete W3C PROV-O~\cite{PROVO}
@@ -353,10 +354,11 @@ studied, modified and redistributed freely, with the copyleft condition that a
 modified version which is distributed --- or run as a network service --- must
 make its corresponding source available under the same terms. The orchestrated
 upstream components keep their own licences, and every default pipeline
-component is permissive (MIT / Apache-2.0 / BSD / CC-BY); manuscripts, figures
+component states a permissive licence (MIT / Apache-2.0 / BSD / CC0 / CC-BY),
+except the SURFY surfaceome list, whose source states none; manuscripts, figures
 and generated results under \texttt{paper/} are CC BY 4.0.
 Optional opt-in components with non-commercial restrictions
-(notably AlphaFold2 weights via the \texttt{AF2-IG} validator path) are
+(notably PyRosetta, on which the \texttt{AF2-IG} validator path depends) are
 gated behind a CLI banner that warns users at invocation time.
 A per-component license inventory is shipped in \texttt{LICENSING.md} and
 checkable interactively via the \texttt{bindsight verify-licenses} command.
@@ -373,7 +375,7 @@ served as static pages at \href{https://mikhaeelatefrizk.github.io/bindsight/}{m
 % --------------------------------------------------------------------
 \section{Discussion and future work}
 
-\paragraph{Limitations of v0.3.4.} The CPU half of the pipeline
+\paragraph{Limitations of v0.3.5.} The CPU half of the pipeline
 (differential expression through structural pre-flight) is fully validated. Of
 the GPU half, one path is executed end to end and the rest is not.
 RFdiffusion $\to$ ProteinMPNN $\to$ Boltz-2 produced the twenty committed ERBB2

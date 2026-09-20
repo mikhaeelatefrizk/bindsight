@@ -161,7 +161,8 @@ how to add a designer / validator / runner plugin.
 
 ## Cite it
 
-bindsight is AGPL-3.0-or-later. It is not archived and has no DOI — if it helps
-your work, cite the repository, the release tag you ran, and the author.
+bindsight is AGPL-3.0-or-later. This release is not archived under a DOI — if it
+helps your work, cite the repository, the tag you ran and the checksums attached
+to the release.
 Ready-made entries are in
 [`CITATION.cff`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/CITATION.cff).

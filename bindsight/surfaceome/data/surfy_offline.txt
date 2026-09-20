@@ -2,7 +2,7 @@
 # This is NOT the full SURFY table — it is a tiny curated list of widely-cited
 # human surface antigens used for unit tests and `--allow-offline` smoke runs.
 # For production discovery runs, populate the cache from
-# https://wlab.ethz.ch/surfaceome (CC-BY).
+# https://wlab.ethz.ch/surfaceome (no licence stated by the source).
 #
 # One UniProt accession per line. Lines starting with '#' are ignored.
 P04626

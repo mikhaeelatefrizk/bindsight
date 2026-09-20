@@ -365,11 +365,11 @@ is what the tool requires, not what this project has run it on. The
 
 | Stage | Tool | License | GPU | Status | Notes |
 |---|---|---|---|---|---|
-| DE analysis | [pydeseq2](https://github.com/owkin/PyDESeq2) v0.5.4 | MIT | No | Run | scverse-maintained. Not bit-equivalent to R DESeq2 — documented |
-| Target evidence | [Open Targets Platform](https://platform-docs.opentargets.org/) GraphQL | CC0 / Apache | No | Run | Rate-limited but generous |
+| DE analysis | [pydeseq2](https://github.com/scverse/PyDESeq2) v0.5.4 | MIT | No | Run | scverse-maintained. Not bit-equivalent to R DESeq2 — documented |
+| Target evidence | [Open Targets Platform](https://platform-docs.opentargets.org/) GraphQL | CC0 | No | Run | Rate-limited but generous |
 | Tissue baselines | [GTEx](https://gtexportal.org/) | open | No | Run | Specificity filtering |
-| Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY-SA 3.0 | No | Planned | **No client implemented.** Listed as intended, not shipped |
-| Surfaceome list | SURFY (Bausch-Fluck et al.) | CC-BY | No | Run | 2,886 accessions. The shipped default unions this with a UniProt cell-membrane extension, 4,801 in total, because SURFY omits CA9 and STEAP1 |
+| Tissue baselines (planned) | [HPA](https://www.proteinatlas.org/) | CC BY 4.0 | No | Planned | **No client implemented.** Listed as intended, not shipped |
+| Surfaceome list | SURFY (Bausch-Fluck et al.) | Not stated by the source; article CC BY-NC-ND 4.0 | No | Run | 2,886 accessions. The shipped default unions this with a UniProt cell-membrane extension, 4,801 in total, because SURFY omits CA9 and STEAP1 |
 | Targetable sites | [SURFACE-Bind](https://github.com/hamedkhakzad/SURFACE-Bind) | BSD-3 | No | Run | 2,800+ proteins, sites + seeds |
 | Structures | [AlphaFoldDB](https://alphafold.ebi.ac.uk/) | CC-BY 4.0 | No | Run | mmCIF by UniProt. RCSB/PDBe clients are planned, **not implemented** |
 | Epitope fallback (planned) | [fpocket](https://github.com/Discngine/fpocket) | MIT | No | **Not implemented** | Intended for proteins SURFACE-Bind does not cover. No code exists |
@@ -378,7 +378,7 @@ is what the tool requires, not what this project has run it on. The
 | Designer (newest) | [BoltzGen](https://github.com/HannesStark/boltzgen) | MIT (code+weights) | Yes | Prepared, not executed | The command this project built, `boltzgen design`, does not exist upstream, so this path had never run. Rewritten to emit a design-spec YAML and call `boltzgen run` |
 | Validator (default) | [Boltz-2](https://github.com/jwohlwend/boltz) | MIT (code+weights) | Yes | Run on Kaggle T4 | Structure + affinity, has CLI |
 | Validator (alt) | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2 | **Ampere or newer** | Cannot run on any free GPU | Needs bfloat16, which Turing lacks. Commercially usable (Apache-2.0), as Boltz-2 also is; worth renting an hour for a second opinion from an independent model |
-| Validator (gold, opt-in) | AF2-IG via [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | AF2 weights non-commercial | Yes | Prepared | Behind license-banner flag |
+| Validator (gold, opt-in) | AF2-IG via [dl_binder_design](https://github.com/nrbennet/dl_binder_design) | MIT; AF2 parameters CC BY 4.0; PyRosetta non-commercial | Yes | Prepared | Behind license-banner flag |
 | MSA | [ColabFold](https://github.com/sokrypton/ColabFold) MSA server | MIT (code) | Remote | Run | BYO MMseqs2 fallback |
 | Workflow | [Snakemake](https://github.com/snakemake/snakemake) | MIT | No | Run | DAG, conda envs, --report |
 | Provenance | PROV-O JSON-LD + [RO-Crate](https://www.researchobject.org/ro-crate/) | W3C / Apache | No | Run | |

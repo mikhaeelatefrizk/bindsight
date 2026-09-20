@@ -6,7 +6,7 @@ Validators take a designed binder (sequence + maybe a structural model) plus
 the target, and predict the complex structure + binding affinity. We treat
 ``Boltz-2`` as the default; users can opt into ``Chai-1r`` for cross-model
 agreement or ``AF2-IG`` for the gold-standard Bennet/Baker filtering pipeline
-(non-commercial weights — banner shown at CLI time).
+(PyRosetta is free only for non-commercial use — banner shown at CLI time).
 """
 
 from __future__ import annotations

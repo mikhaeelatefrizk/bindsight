@@ -73,7 +73,7 @@ DOCS_URL = "https://mikhaeelatefrizk.github.io/bindsight/"
 
 
 def citation_line() -> str:
-    """How to cite: the repository and the release tag, since there is no DOI.
+    """How to cite: the repository, the tag and the checksums, since there is no DOI.
 
     This function used to hold a DOI and return it as a *Markdown* link. Its
     one consumer, ``overview.html.j2``, interpolates the result into HTML under
@@ -86,8 +86,8 @@ def citation_line() -> str:
     link, and the test of it is unconditional.
     """
     return (
-        "Cite the repository and the release tag you ran. There is no DOI: "
-        "this software is not archived."
+        "This release is not archived under a DOI. Cite the repository, the "
+        "tag you ran and the checksums attached to the release: "
     )
 
 

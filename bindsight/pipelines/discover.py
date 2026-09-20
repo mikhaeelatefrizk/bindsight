@@ -292,7 +292,7 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
             name="pydeseq2",
             version=pydeseq2_version,
             license="MIT",
-            repo_url="https://github.com/owkin/PyDESeq2",
+            repo_url="https://github.com/scverse/PyDESeq2",
             citation="10.1093/bioinformatics/btad547",
         ),
         inputs=inputs,

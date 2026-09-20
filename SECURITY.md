@@ -21,11 +21,11 @@ so on the release that introduces it, not before.
 
 - The [LICENSE](LICENSE) (AGPL-3.0-or-later) carries the copyright notice.
 - [CITATION.cff](CITATION.cff) carries the author + ORCID metadata.
-- **There is no software archive and no DOI.** The archive integration could
-  not see this repository object after the repository was recreated on
-  2026-09-14, and an identifier that does not resolve is not a citation. A
-  release is identified by its tag, the SHA-256 checksums published with its
-  wheel and sdist, and the digest-pinned container image.
+- **This release is not archived under a DOI.** Cite the repository, the tag
+  you ran and the checksums attached to the release. A release is identified by
+  its tag, the SHA-256 checksums published with its wheel and sdist, and the
+  digest-pinned container image; an identifier that does not resolve is not a
+  citation, which is why none is offered.
 - Per-run [PROV-O](https://www.w3.org/TR/prov-o/) JSON-LD manifests are
   emitted by every pipeline stage and bundled into RO-Crate exports.
 - ORCID [0009-0006-1069-9558](https://orcid.org/0009-0006-1069-9558)
@@ -40,9 +40,27 @@ Please open a private security advisory at
 email the author at `mikhaeelatefrizk@proton.me` with the subject
 `[bindsight security]`. Coordinated disclosure window: 90 days.
 
+## Disclosure
+
+A fixed vulnerability is announced in three places on the day the fix is
+released: a GitHub security advisory in this repository's Security tab, with
+the affected and patched version ranges for the `bindsight` package
+(ecosystem `pip`) and a CVE requested through GitHub's CNA where the fix is in
+a released version; a `### Security` subsection in that release's
+[CHANGELOG.md](CHANGELOG.md) entry; and the release notes. The advisory is
+published after the release that patches it exists, so the version it names
+as patched is one that can be installed.
+
+One is published: [GHSA-3p95-8fx3-2r5r](https://github.com/mikhaeelatefrizk/bindsight/security/advisories/GHSA-3p95-8fx3-2r5r)
+— every template of the web interface `bindsight ui` serves was rendered with
+Jinja autoescape off. Affects 0.3.0 through 0.3.4; fixed in 0.3.5. The
+browser-side defect of the same class that 0.3.3 fixed predates this policy
+and is recorded in that release's changelog entry, tag and release notes.
+
 ## Supply-chain notes
 
-- Default pipeline components are MIT / Apache / BSD / CC-BY only — see
+- Default pipeline code is MIT / Apache / BSD and its data sources CC0 / CC BY,
+  except the SURFY surfaceome list, whose source states no terms — see
   [LICENSING.md](LICENSING.md) for the full per-dependency inventory.
 - Python dependencies carry minimum versions, and the scientific stack
   carries deliberate upper bounds, in [pyproject.toml](pyproject.toml).

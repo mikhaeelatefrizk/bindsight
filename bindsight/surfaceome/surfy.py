@@ -7,7 +7,8 @@ Bausch-Fluck et al. (PNAS 2018). It's a high-confidence subset of the
 predicted human surfaceome based on a machine-learned classifier trained on
 mass-spec evidence.
 
-Distribution: the full CC-BY list is **vendored** in
+Distribution: the full list (its source states no licence; see LICENSING.md)
+is **vendored** in
 ``bindsight/surfaceome/data/surfy_v1.uniprot.txt`` (2,886 accessions) and is
 the authoritative source at query time. Discovery therefore needs no network
 access for the surfaceome at all.
@@ -46,7 +47,8 @@ LOG = logging.getLogger(__name__)
 # Used as a sanity check after parsing.
 SURFY_PROTEIN_COUNT = 2886
 
-# Canonical SURFY surfaceome table (CC-BY), Bausch-Fluck et al. PNAS 2018.
+# Canonical SURFY surfaceome table, Bausch-Fluck et al. PNAS 2018. The site
+# states no licence; the article is CC BY-NC-ND 4.0 (see LICENSING.md).
 #
 # Retained for `populate_surfy_cache`, which is now an explicit opt-in refresh
 # path rather than something the pipeline depends on. As of 2026-07 neither
@@ -416,7 +418,8 @@ def populate_surfy_cache(*, url: str = SURFY_XLSX_URL, force: bool = False) -> P
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
-        "# SURFY surfaceome (Bausch-Fluck et al., PNAS 2018; CC-BY).\n"
+        "# SURFY surfaceome (Bausch-Fluck et al., PNAS 2018; no licence stated by\n"
+        "# the source, article CC BY-NC-ND 4.0; see LICENSING.md).\n"
         f"# {len(accs)} UniProt accessions labelled 'surface'. Source: {url}\n"
         + "\n".join(accs)
         + "\n",

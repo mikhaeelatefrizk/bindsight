@@ -26,7 +26,7 @@ pip install -e ".[discover,report]"
 Then:
 
 ```bash
-bindsight --version           # 0.3.4
+bindsight --version           # 0.3.5
 bindsight doctor              # check the install + cache state
 bindsight verify-licenses     # see the per-component license inventory
 ```
@@ -168,7 +168,8 @@ shows the state. On first real run these populate automatically:
 
 - **SURFY surfaceome** (full ~2,886-protein list) — **vendored, not
   downloaded**: it ships inside the package and needs no network. The upstream
-  spreadsheet ([Wollscheid lab](https://wollscheidlab.org/SURFY/), CC-BY) is no
+  spreadsheet ([Wollscheid lab](https://wollscheidlab.org/SURFY/); no licence
+  stated by the source, see `LICENSING.md`) is no
   longer retrievable — the old `wlab.ethz.ch` host serves a landing page and the
   relocated one serves a Git-LFS pointer — so fetching it on first use was
   failing or silently degrading to a ten-protein list. Refresh it deliberately
@@ -222,8 +223,8 @@ The GPU work runs in `bindsight.runners.job_exec` on the backend you pick:
 | `mock` | Free, instant | CI / testing (mock results only) |
 
 Designers: `rfdiff_mpnn` (default), `bindcraft`, `boltzgen`. Validators:
-`boltz2` (default), `chai1r`, `af2_ig` (non-commercial AF2 weights — a banner is
-shown). `--dry-run` always works without a GPU.
+`boltz2` (default), `chai1r`, `af2_ig` (depends on PyRosetta, free only for
+non-commercial use — a banner is shown). `--dry-run` always works without a GPU.
 
 ---
 

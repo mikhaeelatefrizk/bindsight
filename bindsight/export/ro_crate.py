@@ -517,7 +517,7 @@ def _upstream_tools() -> dict[str, tuple[dict[str, str], ...]]:
         "bindsight.validate.af2_ig": (
             {
                 "name": "dl_binder_design (AF2 initial guess)",
-                "license": "Inherits AF2 weights restriction",
+                "license": "PyRosetta non-commercial; AF2 parameters CC BY 4.0; code MIT",
                 "url": T.DL_BINDER_DESIGN_REPO,
                 "version": T.DL_BINDER_DESIGN_COMMIT,
             },
