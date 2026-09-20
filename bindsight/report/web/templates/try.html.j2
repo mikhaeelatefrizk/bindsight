@@ -26,8 +26,14 @@
     <button class="btn btn--primary" id="start">Run the demo</button>
   </div>
 
-  <ol class="steps" id="steps" hidden></ol>
-  <div id="outcome"></div>
+  <!-- Announced, not just drawn. The run takes minutes on a cold cache and
+       every update happens without the focus moving, so without these a
+       screen-reader user hears nothing between pressing the button and giving
+       up. `polite` for progress, which is a running commentary; the outcome
+       node carries `role="status"` or `role="alert"` depending on which it
+       turns out to be. -->
+  <ol class="steps" id="steps" aria-live="polite" aria-atomic="false" hidden></ol>
+  <div id="outcome" aria-live="polite" aria-atomic="true"></div>
 </div>
 
 <div class="note note--info">
@@ -47,13 +53,53 @@
 <script>
 // Per-stage progress. A single indeterminate spinner cannot tell a reader
 // whether a run is slow or stuck, and on a cold cache this is minutes.
-const GLYPH = { pending: "○", running: "◐", done: "✓", failed: "✗" };
+//
+// Every value below comes from `/api/job/<id>`, whose `error` is `str(exc)`
+// from a bare `except` -- so it carries whatever text the pipeline raised,
+// including a design table's own column names. This built that into markup by
+// string concatenation, which is the defect fixed in `your_data_check.js` and
+// then missed here because the sweep that enforces the rule read `.js` files
+// and this script lives in a template. Nodes and textContent, same as there.
+const GLYPH = { pending: "\u25cb", running: "\u25d0", done: "\u2713", failed: "\u2717" };
+
+function el(tag, className) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  return node;
+}
+
+function note(kind, glyph, bodyNodes) {
+  const wrap = el("div", "note note--" + kind);
+  const mark = el("span", "note__glyph");
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = glyph;
+  const body = el("div", "note__body");
+  bodyNodes.forEach(function (n) { body.appendChild(n); });
+  wrap.appendChild(mark);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function stepItem(s) {
+  const li = el("li");
+  li.setAttribute("data-state", s.state);
+  const glyph = el("span", "steps__glyph");
+  glyph.setAttribute("aria-hidden", "true");
+  glyph.textContent = GLYPH[s.state] || "";
+  const spoken = el("span", "visually-hidden");
+  spoken.textContent = " (" + s.state + ")";
+  li.appendChild(glyph);
+  li.appendChild(document.createTextNode(s.name));
+  li.appendChild(spoken);
+  return li;
+}
 
 document.getElementById("start").addEventListener("click", async function () {
   const btn = this;
   btn.disabled = true;
-  btn.textContent = "Running…";
-  document.getElementById("outcome").innerHTML = "";
+  btn.textContent = "Running\u2026";
+  const outcome = document.getElementById("outcome");
+  outcome.innerHTML = "";
   const steps = document.getElementById("steps");
   steps.hidden = false;
 
@@ -64,29 +110,44 @@ document.getElementById("start").addEventListener("click", async function () {
     const res = await fetch("/api/job/" + job);
     const state = await res.json();
 
-    steps.innerHTML = state.stages
-      .map(function (s) {
-        return (
-          '<li data-state="' + s.state + '">' +
-          '<span class="steps__glyph" aria-hidden="true">' + (GLYPH[s.state] || "") + "</span>" +
-          s.name +
-          '<span class="visually-hidden"> (' + s.state + ")</span></li>"
-        );
-      })
-      .join("");
+    steps.innerHTML = "";
+    state.stages.forEach(function (s) { steps.appendChild(stepItem(s)); });
 
     if (state.state === "done" || state.state === "failed") {
       clearInterval(poll);
       btn.disabled = false;
       btn.textContent = "Run it again";
-      document.getElementById("outcome").innerHTML =
-        state.state === "done"
-          ? '<div class="note note--ok"><span class="note__glyph" aria-hidden="true">✓</span>' +
-            '<div class="note__body"><p style="margin:0">Complete. The run is in <code>' +
-            state.run_dir + '</code> — <a href="/runs">browse it</a>.</p></div></div>'
-          : '<div class="note note--err"><span class="note__glyph" aria-hidden="true">✗</span>' +
-            '<div class="note__body"><p style="margin:0"><strong>The demo did not finish.</strong></p>' +
-            '<p class="small" style="margin:.5rem 0 0">' + state.error + "</p></div></div>";
+
+      let card;
+      if (state.state === "done") {
+        const line = el("p");
+        line.style.margin = "0";
+        const where = el("code");
+        where.textContent = String(state.run_dir);
+        const link = el("a");
+        link.href = "/runs";
+        link.textContent = "browse it";
+        line.appendChild(document.createTextNode("Complete. The run is in "));
+        line.appendChild(where);
+        line.appendChild(document.createTextNode(" \u2014 "));
+        line.appendChild(link);
+        line.appendChild(document.createTextNode("."));
+        card = note("ok", "\u2713", [line]);
+        card.setAttribute("role", "status");
+      } else {
+        const headline = el("p");
+        headline.style.margin = "0";
+        const strong = el("strong");
+        strong.textContent = "The demo did not finish.";
+        headline.appendChild(strong);
+        const detail = el("p", "small");
+        detail.style.margin = ".5rem 0 0";
+        // textContent: this is the one value an attacker can reach.
+        detail.textContent = String(state.error == null ? "" : state.error);
+        card = note("err", "\u2717", [headline, detail]);
+        card.setAttribute("role", "alert");
+      }
+      outcome.appendChild(card);
     }
   }, 700);
 });

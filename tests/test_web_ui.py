@@ -663,6 +663,80 @@ class TestBothSurfacesWriteTheSameNumberTheSameWay:
         assert _df_to_records(frame, ["symbol", "padj"])[0]["padj"] == "<1e-300"
 
 
+class TestTheInterfaceEscapesWhatItRenders:
+    """Jinja autoescape was OFF for every page this app serves.
+
+    ``Jinja2Templates`` leaves escaping to ``jinja2.select_autoescape()``, whose
+    default ``enabled_extensions=("html", "htm", "xml")`` decides by filename
+    *ending*. Every template here is ``*.html.j2``, which ends in ``.j2``, so
+    all of them rendered with escaping off -- while
+    ``bindsight/report/theme.py`` documented a decision that assumed it was on.
+
+    Not theoretical. A design table's column names reach this page:
+    ``deg/pydeseq2_runner.py`` puts ``sorted(design.columns)`` verbatim into the
+    ValueError it raises when the contrast factor is missing,
+    ``pipelines/discover.py`` writes ``repr(e)`` into ``run_manifest.jsonld``,
+    and ``runs.html.j2`` renders that error. So a ``.tsv`` handed to someone by
+    a stranger -- the same threat that motivated rewriting the browser-side
+    checker -- put attacker-controlled markup into this interface.
+    """
+
+    PAYLOAD = "<script>alert(1)</script>"
+
+    @staticmethod
+    def _run_that_failed(root: Path, error: str) -> None:
+        """A run directory whose manifest records a failed stage."""
+        run = root / "cohort"
+        run.mkdir(parents=True)
+        (run / "run_manifest.jsonld").write_text(
+            json.dumps(
+                {
+                    "name": "cohort",
+                    "stages": [{"name": "deg", "status": "failed", "error": error}],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_a_failed_stage_cannot_inject_markup(self, tmp_path: Path) -> None:
+        """End to end, through the route a reader actually opens."""
+        self._run_that_failed(tmp_path, f'ValueError("bad column: {self.PAYLOAD}")')
+
+        body = TestClient(create_app(run_root=tmp_path)).get("/runs").text
+
+        assert self.PAYLOAD not in body, (
+            "a pipeline error rendered as live markup on /runs. That error text "
+            "carries the column names of a user-supplied design table."
+        )
+        assert "&lt;script&gt;" in body, (
+            "the payload is not present in escaped form either, so this test is "
+            "no longer reaching the page it means to check"
+        )
+
+    def test_the_filename_rule_would_still_leave_it_off(self) -> None:
+        """Guards the guard: why the explicit override has to stay.
+
+        If Jinja's own default ever starts escaping ``.j2``, the override in
+        ``create_app`` stops being the thing keeping this safe -- and whoever
+        notices should read this before deleting it. Until then, every template
+        here defaults to *off*, which is exactly why the override exists.
+        """
+        from fastapi.templating import Jinja2Templates
+
+        from bindsight.report.web.app import TEMPLATES
+
+        env = Jinja2Templates(directory=str(TEMPLATES)).env
+        names = sorted(p.name for p in TEMPLATES.glob("*.j2"))
+
+        assert names, "no templates found, so this test proves nothing"
+        for name in names:
+            default = env.autoescape(name) if callable(env.autoescape) else env.autoescape
+            assert default is False, (
+                f"{name} now escapes under Jinja's own filename rule. Re-read "
+                "create_app's explicit autoescape before relying on that."
+            )
+
+
 class TestNoScriptParsesDataAsMarkup:
     """Values a reader supplied are text, and are composed as nodes.
 
@@ -705,6 +779,32 @@ class TestNoScriptParsesDataAsMarkup:
         web = REPO / "bindsight" / "report" / "web"
         return [p for p in sorted(web.rglob("*.js")) if p.is_file() and "vendor" not in p.parts]
 
+    @staticmethod
+    def _inline_scripts() -> list[tuple[str, str]]:
+        """Every ``<script>`` body written inside a template, with its label.
+
+        This sweep read ``*.js`` and nothing else, so a script living inside a
+        ``.j2`` template was invisible to the rule it was written to enforce --
+        and ``try.html.j2`` was building markup from a job's error text by
+        string concatenation the whole time. The scope was a file extension,
+        which is the defect class this repository keeps finding in itself.
+
+        Templates are searched wherever they are, under both the served
+        interface and the standalone report, so a third surface is covered on
+        the day it lands.
+        """
+        found: list[tuple[str, str]] = []
+        for template in sorted((REPO / "bindsight" / "report").rglob("*.j2")):
+            if "vendor" in template.parts:
+                continue
+            text = template.read_text(encoding="utf-8")
+            for match in re.finditer(r"<script[^>]*>(.*?)</script>", text, re.S | re.I):
+                if not match.group(1).strip():
+                    continue
+                line = text[: match.start(1)].count("\n") + 1
+                found.append((f"{template.name}:<script>@{line}", match.group(1)))
+        return found
+
     @classmethod
     def _offenders(cls, source: str, name: str = "?") -> list[str]:
         out: list[str] = []
@@ -722,6 +822,14 @@ class TestNoScriptParsesDataAsMarkup:
         authored = self._authored()
 
         assert len(authored) >= 3, f"the sweep found only {[p.name for p in authored]}"
+
+        inline = self._inline_scripts()
+        assert inline, "no inline template scripts found; the scan below proves nothing"
+        labels = {label.split(":", 1)[0] for label, _ in inline}
+        assert "try.html.j2" in labels, (
+            "try.html.j2 carries the demo's progress script and is not in scope; "
+            "it is the template this sweep was widened for"
+        )
         names = {p.name for p in authored}
         assert {"your_data_check.js", "charts.js", "binder_viewer.js"} <= names
         assert not any("vendor" in p.parts for p in authored)
@@ -735,6 +843,18 @@ class TestNoScriptParsesDataAsMarkup:
             "these assign something other than an empty string to innerHTML, which "
             f"hands it to the HTML parser: {offenders}. Build nodes and set "
             "textContent instead."
+        )
+
+    def test_no_inline_template_script_assigns_a_built_up_value_to_innerhtml(self) -> None:
+        """The same rule, in the place the rule could not previously see."""
+        offenders: list[str] = []
+        for label, source in self._inline_scripts():
+            offenders += self._offenders(source, label)
+
+        assert not offenders, (
+            "these assign something other than an empty string to innerHTML "
+            f"inside a template: {offenders}. Build nodes and set textContent, "
+            "or move the script into web/static/ where the .js sweep covers it."
         )
 
     def test_the_scan_catches_what_this_repository_actually_wrote(self) -> None:

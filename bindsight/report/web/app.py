@@ -30,6 +30,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 
 LOG = logging.getLogger(__name__)
 
@@ -104,6 +105,33 @@ def _get_job(job_id: str) -> Job | None:
         return _JOBS.get(job_id)
 
 
+def _tojson(obj: Any) -> Markup:
+    """JSON for an HTML attribute, escaped for that context and marked safe.
+
+    The chart specs are emitted into ``data-spec='...'`` -- a single-quoted
+    attribute -- so an apostrophe in the data would close it, and a ``<`` would
+    matter the day one of these moves into a ``<script>`` block. Both are
+    escaped as JSON unicode escapes, which is still valid JSON and decodes
+    back to the same characters, so a reader of the attribute sees exactly
+    what was put there.
+
+    Marked ``Markup`` because the escaping is done here. Leaving it to the
+    autoescape that now covers these templates would turn every quote into
+    ``&#34;``: correct HTML, and browsers decode it, but it makes the
+    attribute unreadable and hides what is in it. ``report/html.py`` makes
+    the same trade for the mmCIF it embeds.
+    """
+    text = json.dumps(obj)
+    for raw, escaped in (
+        ("<", "\\u003c"),
+        (">", "\\u003e"),
+        ("&", "\\u0026"),
+        ("'", "\\u0027"),
+    ):
+        text = text.replace(raw, escaped)
+    return Markup(text)
+
+
 # ---------------------------------------------------------------------------
 # Application
 # ---------------------------------------------------------------------------
@@ -120,6 +148,16 @@ def create_app(*, run_root: Path | None = None) -> Any:
     app = FastAPI(title="bindsight", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
     templates = Jinja2Templates(directory=str(TEMPLATES))
+    # Explicit, because Jinja's own default would leave it off. Starlette
+    # hands escaping to `select_autoescape()`, which decides by filename and
+    # whose default extensions are html/htm/xml -- and every template here is
+    # `*.html.j2`, which ends in `.j2`. So the whole interface rendered
+    # unescaped: a design table's column names reach `runs.html.j2` through
+    # the ValueError pydeseq2_runner raises and the `repr(e)` discover writes
+    # into the manifest, which made a `.tsv` from a stranger a script tag on
+    # this page. No template here uses `|safe`, so this changes nothing but
+    # the escaping. tests/test_web_ui.py holds both halves.
+    templates.env.autoescape = True
 
     # Everything a template may call. Kept explicit so a template cannot reach
     # into arbitrary application state.
@@ -130,7 +168,7 @@ def create_app(*, run_root: Path | None = None) -> Any:
         interval=interval,
         ABSENT=ABSENT,
         version=__version__,
-        tojson=lambda obj: json.dumps(obj),
+        tojson=_tojson,
         citation=theme.citation_line,
         github=theme.GITHUB_URL,
     )

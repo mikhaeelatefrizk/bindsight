@@ -60,6 +60,10 @@ dependencies = [
     "tenacity>=8.4",       # API retry policies
     "platformdirs>=4.2",   # cache locations
     "jinja2>=3.1",         # Colab/Modal notebook templating
+    # Imported directly by report/web/app.py, which marks its own
+    # already-escaped JSON safe. It arrives with jinja2 either way, but a
+    # module this project imports is a module this project declares.
+    "markupsafe>=2.1",
 ]
 
 [project.optional-dependencies]
