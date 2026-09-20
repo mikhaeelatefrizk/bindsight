@@ -306,7 +306,7 @@
       const y0 = i * rowH + 4;
       el("text", { x: -8, y: y0 + 14, "text-anchor": "end", "font-weight": 600 }, g)
         .textContent = r.label;
-      el("rect", { x: 0, y: y0, width: iw, height: rowH - 10, fill: cssVar("--rule", "#e3e8ef"), rx: 3 }, g);
+      el("rect", { x: 0, y: y0, width: iw, height: rowH - 10, fill: cssVar("--rule", "#e3e6ea"), rx: 3 }, g);
       const bar = el("rect", {
         class: "mark", x: 0, y: y0, width: Math.max(1, x(r.value)), height: rowH - 10,
         fill: r.colour || cssVar("--navy", "#0b5394"), rx: 3,

@@ -29,6 +29,26 @@
    * holds and tests/test_contrast.py now checks that it does. */
   --bs-muted:      #5f6873;
   --bs-canvas:     #f7f9fc;
+
+  /* Status family, lifted verbatim from the web interface's own palette in
+   * bindsight/report/web/static/bindsight.css -- whose AA tests already carry
+   * these six -- rather than chosen again here. Choosing again is how the
+   * success colour reached three values on three surfaces of one product:
+   * #2e7d32 in theme.py, #1f7a3d here, #1f6f35 in the app. That is the drift
+   * theme.py's docstring says it exists to stop, and it had happened to every
+   * colour theme.py did not give a --bs- name to.
+   *
+   * The warn stand-in these replace, #b08400, was 3.42:1 on white: below AA,
+   * on the published page, for as long as it shipped. Nothing caught it
+   * because .note declared no background, and tests/test_contrast.py can only
+   * measure text whose ground it can name -- so it measured neither scheme and
+   * reported neither. */
+  --bs-ok:         #1f6f35;
+  --bs-ok-tint:    #e8f4ea;
+  --bs-warn:       #8a6100;
+  --bs-warn-tint:  #fdf3dd;
+  --bs-err:        #a32020;
+  --bs-err-tint:   #fbeaea;
 }
 
 [data-md-color-scheme="slate"] {
@@ -36,6 +56,15 @@
   --bs-rule:      #2b3038;
   --bs-canvas:    #171a1f;
   --bs-muted:     #9aa4b0;
+
+  /* The light status colours land at 2.3-2.4:1 on this ground. Each pair
+   * below clears AA on its own tint: ok 9.05:1, warn 10.31:1, err 8.43:1. */
+  --bs-ok:        #8fd6a4;
+  --bs-ok-tint:   #13291c;
+  --bs-warn:      #f2d98b;
+  --bs-warn-tint: #33290a;
+  --bs-err:       #f2a9a9;
+  --bs-err-tint:  #3a1618;
 }
 
 /* --- Hero ---------------------------------------------------------------- */
@@ -184,14 +213,14 @@
 }
 
 .bs-flow .s.gpu {
-  background: #fff8e1;
+  background: var(--bs-warn-tint);
   border-color: #f0e0a8;
-  color: #7a5c00;
+  color: var(--bs-warn);
 }
 
+/* Only the border is left to restate: the tokens above already carry their
+ * own slate values, which is what this rule used to spell out by hand. */
 [data-md-color-scheme="slate"] .bs-flow .s.gpu {
-  background: #33290a;
-  color: #f2d98b;
   border-color: #5c4a12;
 }
 
@@ -299,13 +328,20 @@
 .note__glyph { flex: 0 0 auto; font-weight: 700; }
 .note__body { flex: 1 1 auto; }
 .note__body p { margin: 0; }
-.note--ok { border-color: #1f7a3d; }
-.note--ok .note__glyph { color: #1f7a3d; }
-.note--warn { border-color: #b08400; }
-.note--warn .note__glyph { color: #b08400; }
-.note--err { border-color: #c62828; }
-.note--err .note__glyph { color: #c62828; }
-.note--info { border-color: var(--bs-navy); }
+.note--ok { background: var(--bs-ok-tint); border-color: var(--bs-ok); }
+.note--ok .note__glyph { color: var(--bs-ok); }
+.note--warn { background: var(--bs-warn-tint); border-color: var(--bs-warn); }
+.note--warn .note__glyph { color: var(--bs-warn); }
+.note--err { background: var(--bs-err-tint); border-color: var(--bs-err); }
+.note--err .note__glyph { color: var(--bs-err); }
+.note--info { background: var(--bs-navy-tint); border-color: var(--bs-navy); }
 .note--info .note__glyph { color: var(--bs-navy); }
+
+/* --bs-navy is also the hero gradient's first stop, so it has to stay dark in
+ * both schemes and cannot be overridden in the slate block the way the status
+ * colours are. The info note lifts its own text instead: navy on the slate
+ * value of --bs-navy-tint is 1.67:1. */
+[data-md-color-scheme="slate"] .note--info { border-color: #9ec5ef; }
+[data-md-color-scheme="slate"] .note--info .note__glyph { color: #9ec5ef; }
 .small { font-size: 0.85rem; }
 .muted { color: var(--bs-muted); }

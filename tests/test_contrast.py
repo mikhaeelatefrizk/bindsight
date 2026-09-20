@@ -20,6 +20,7 @@ thing: a ratio measured on one rendered page says nothing about the other four.
 from __future__ import annotations
 
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -125,7 +126,8 @@ class TestEveryTextTokenClearsAa:
 #: The published site's brand layer. It mirrors the app palette but draws it on
 #: different grounds -- lighter tinted panels -- so a token that clears AA in
 #: the app can miss here, and `--bs-muted` did.
-DOCS_CSS = REPO / "docs" / "stylesheets" / "extra.css"
+DOCS = REPO / "docs"
+DOCS_CSS = DOCS / "stylesheets" / "extra.css"
 
 #: mkdocs-material switches schemes with an attribute, not a media query.
 SLATE = '[data-md-color-scheme="slate"]'
@@ -138,8 +140,15 @@ _VAR = re.compile(r"var\(\s*--([a-z0-9-]+)")
 
 
 def _docs_rules() -> dict[str, dict[str, str]]:
-    """Selector -> its declared colour and background, comma groups split out."""
-    text = DOCS_CSS.read_text("utf-8")
+    """Selector -> its declared colour and background, comma groups split out.
+
+    Comments come out first. ``_RULE`` treats everything between one ``}`` and
+    the next ``{`` as the selector, so a banner comment ahead of a rule became
+    part of that rule's head, the head then started with ``/*``, and the rule
+    was skipped as if it were the comment. ``.bs-hero`` disappeared exactly so
+    -- and it is the ground the whole hero is drawn on.
+    """
+    text = re.sub(r"/\*.*?\*/", "", DOCS_CSS.read_text("utf-8"), flags=re.S)
     rules: dict[str, dict[str, str]] = {}
     for match in _RULE.finditer(text):
         head, body = match.group(1), match.group(2)
@@ -159,6 +168,75 @@ def _docs_rules() -> dict[str, dict[str, str]]:
             if selector:
                 rules.setdefault(selector, {}).update(declared)
     return rules
+
+
+#: Tags that never enclose anything, so they never open a level.
+_VOID = frozenset(
+    {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
+)
+
+
+class _Nesting(HTMLParser):
+    """Records, for every class it meets, the classes enclosing it."""
+
+    def __init__(self, found: dict[str, set[str]]) -> None:
+        super().__init__(convert_charrefs=True)
+        self._found = found
+        self._stack: list[list[str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        classes = (dict(attrs).get("class") or "").split()
+        enclosing: set[str] = set()
+        for level in self._stack:
+            enclosing.update(level)
+        for name in classes:
+            self._found.setdefault(name, set()).update(enclosing)
+        if tag not in _VOID:
+            self._stack.append(classes)
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        if tag not in _VOID and self._stack:
+            self._stack.pop()
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag not in _VOID and self._stack:
+            self._stack.pop()
+
+
+def _markup_ancestors() -> dict[str, frozenset[str]]:
+    """class -> every class that encloses it, read from the pages themselves.
+
+    A stylesheet cannot say that ``.bs-cta`` only ever appears inside
+    ``.bs-hero``; the markup can, and does. Deriving it from the pages means a
+    panel nested tomorrow is covered without anyone remembering to add it to a
+    list here -- and a list here is what this module would otherwise need, in a
+    repository whose recurring defect is exactly that.
+    """
+    found: dict[str, set[str]] = {}
+    for page in sorted(DOCS.glob("*.md")):
+        source = page.read_text("utf-8")
+        if "class=" in source:
+            _Nesting(found).feed(source)
+    return {name: frozenset(seen) for name, seen in found.items()}
+
+
+MARKUP_ANCESTORS = _markup_ancestors()
 
 
 def _docs_palette() -> tuple[dict[str, str], dict[str, str]]:
@@ -185,21 +263,122 @@ def _resolve(value: str | None, palette: dict[str, str]) -> str | None:
     return literal.group(1) if literal else None
 
 
-def _ground_for(selector: str, rules: dict[str, dict[str, str]]) -> str | None:
-    """The background this text is drawn on: its own, else its nearest ancestor.
+#: What text with no panel of its own is drawn on: the page itself. Material's
+#: ``--md-default-bg-color``, white under the default scheme and
+#: ``hsla(232, 15%, 21%, 1)`` under slate, which are this site's two schemes.
+PAGE = {"light": "#ffffff", "dark": "#2e303e"}
 
-    Derived from the selector rather than listed. `.bs-stat .k` has no
-    background of its own, so the ground is `.bs-stat`'s -- which is how a
-    reader sees it, and which means a panel added tomorrow is covered without
-    anyone remembering to add it here.
+#: Values that name no colour, so no ratio exists to check. A rule whose text
+#: colour is one of these takes whatever encloses it, which this stylesheet
+#: does not set and Material does.
+_NOT_A_COLOUR = frozenset({"inherit", "currentcolor", "transparent", "unset", "initial"})
+
+
+def _colours_in(value: str, palette: dict[str, str]) -> list[str]:
+    """Every colour a declaration resolves to.
+
+    A list, not a value, because ``.bs-hero`` is a gradient between two stops
+    and its text is drawn across both. Returning only the first would check the
+    easier end of the ramp and call it covered.
     """
+    found = [
+        palette[name] for name in re.findall(r"var\(--([a-z0-9-]+)\)", value) if name in palette
+    ]
+    found += re.findall(r"#[0-9a-fA-F]{3,8}", value)
+    return found
+
+
+_RGBA = re.compile(
+    r"rgba?\(" + r"\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)"
+    r"(?:[,/\s]+([\d.]+))?\s*" + r"\)"
+)
+
+
+def _channels(colour: str) -> tuple[float, float, float]:
+    """The three channels of a #rgb or #rrggbb literal."""
+    digits = colour.lstrip("#")
+    if len(digits) == 3:
+        digits = "".join(c * 2 for c in digits)
+    return tuple(int(digits[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+def _translucent(value: str) -> tuple[float, float, float, float] | None:
+    """An ``rgba()`` layer, or None if the declaration is not one."""
+    found = _RGBA.search(value)
+    if not found:
+        return None
+    red, green, blue = (float(found.group(i)) for i in (1, 2, 3))
+    alpha = float(found.group(4)) if found.group(4) is not None else 1.0
+    return red, green, blue, alpha
+
+
+def _flatten(layers: list[tuple[float, float, float, float]], base: str) -> str:
+    """What the eye receives: translucent layers composited onto a solid base.
+
+    `.bs-cta a:hover` paints white at 14%. That is not "no background" and it
+    is not white either -- over the hero's navy it comes out a pale navy, and
+    the white text on it has a real ratio that can be measured. Treating it as
+    unresolvable dropped the rule; treating it as white would have invented a
+    failure, the same way falling back to the page once did.
+    """
+    red, green, blue = (float(c) for c in _channels(base))
+    for layer_r, layer_g, layer_b, alpha in reversed(layers):
+        red = layer_r * alpha + red * (1 - alpha)
+        green = layer_g * alpha + green * (1 - alpha)
+        blue = layer_b * alpha + blue * (1 - alpha)
+    return f"#{round(red):02x}{round(green):02x}{round(blue):02x}"
+
+
+def _grounds_for(
+    selector: str, rules: dict[str, dict[str, str]], palette: dict[str, str], page: str
+):
+    """The backgrounds this text is drawn on, nearest declaring ancestor first.
+
+    Derived from the selector rather than listed, so a panel added tomorrow is
+    covered without anyone remembering to add it here.
+
+    Three outcomes, and the difference between the last two is the whole point:
+
+    ``None``  no ancestor declares a background at all, so the text is on the
+              page -- measure it against :data:`PAGE`.
+    ``[]``    an ancestor declares one that names no colour (``inherit``), so
+              there is nothing to measure and nothing to assume.
+    ``[...]`` the colours it resolves to, every stop of them.
+
+    Collapsing the middle case into the first is what an earlier version of
+    this did: it fell back to the page whenever a ground would not resolve,
+    and cheerfully reported ``.bs-hero h1`` as white on white -- a failure
+    invented by the measurement, over text that is white on navy and correct.
+    """
+    layers: list[tuple[float, float, float, float]] = []
+
+    def consider(declared: str | None) -> list[str] | None:
+        """A solid ground ends the walk; a translucent one is carried down it."""
+        if not declared:
+            return None
+        solid = _colours_in(declared, palette)
+        if solid:
+            return [_flatten(layers, base) for base in solid]
+        layer = _translucent(declared)
+        if layer and layer[3] < 1:
+            layers.append(layer)
+        return None
+
     parts = selector.split()
     for cut in range(len(parts), 0, -1):
-        prefix = " ".join(parts[:cut])
-        ground = rules.get(prefix, {}).get("background")
-        if ground:
-            return ground
-    return None
+        found = consider(rules.get(" ".join(parts[:cut]), {}).get("background"))
+        if found:
+            return found
+
+    # Nothing in the selector's own chain paints anything solid. The markup
+    # still knows what encloses it: `.bs-cta a` is white, and white is right,
+    # because every `.bs-cta` on this site sits inside the navy `.bs-hero`.
+    for name in reversed(re.findall(r"\.([a-z0-9-]+)", selector)):
+        for ancestor in sorted(MARKUP_ANCESTORS.get(name, ())):
+            found = consider(rules.get(f".{ancestor}", {}).get("background"))
+            if found:
+                return found
+    return [_flatten(layers, page)] if layers else None
 
 
 def _docs_pairs() -> list[tuple[str, str, str, str]]:
@@ -208,31 +387,35 @@ def _docs_pairs() -> list[tuple[str, str, str, str]]:
     light, dark = _docs_palette()
     pairs: list[tuple[str, str, str, str]] = []
 
+    def add(scheme: str, selector: str, fg: str | None, grounds, palette_page: str) -> None:
+        if not fg:
+            return
+        for bg in grounds if grounds is not None else [palette_page]:
+            pairs.append((scheme, selector, fg, bg))
+
     for selector, declared in rules.items():
         if "color" not in declared:
             continue
         if selector.startswith(SLATE):
             base = selector[len(SLATE) :].strip()
-            ground = _ground_for(selector, rules) or _ground_for(base, rules)
-            fg = _resolve(declared["color"], dark)
-            bg = _resolve(ground, dark)
-            if fg and bg:
-                pairs.append(("dark", selector, fg, bg))
+            grounds = _grounds_for(selector, rules, dark, PAGE["dark"])
+            if grounds is None:
+                grounds = _grounds_for(base, rules, dark, PAGE["dark"])
+            add("dark", selector, _resolve(declared["color"], dark), grounds, PAGE["dark"])
             continue
 
-        ground = _ground_for(selector, rules)
-        fg = _resolve(declared["color"], light)
-        bg = _resolve(ground, light)
-        if fg and bg:
-            pairs.append(("light", selector, fg, bg))
+        grounds = _grounds_for(selector, rules, light, PAGE["light"])
+        add("light", selector, _resolve(declared["color"], light), grounds, PAGE["light"])
 
         # The same rule still applies in dark for whatever slate does not
         # override, and the tokens underneath it change.
         override = rules.get(f"{SLATE} {selector}", {})
         fg_dark = _resolve(override.get("color", declared["color"]), dark)
-        bg_dark = _resolve(override.get("background", ground), dark)
-        if fg_dark and bg_dark and (fg_dark, bg_dark) != (fg, bg):
-            pairs.append(("dark", selector, fg_dark, bg_dark))
+        if "background" in override:
+            grounds_dark = _colours_in(override["background"], dark)
+        else:
+            grounds_dark = _grounds_for(selector, rules, dark, PAGE["dark"])
+        add("dark", selector, fg_dark, grounds_dark, PAGE["dark"])
 
     return sorted(set(pairs))
 
@@ -287,6 +470,37 @@ class TestTheDocumentationSiteIsLegibleToo:
             "in several places, so the stricter bar is the honest one."
         )
 
+    def test_every_rule_that_sets_a_colour_is_measured(self) -> None:
+        """Guards the guard: a dropped rule is a test that never existed.
+
+        :func:`_docs_pairs` builds the parametrisation above, so a rule it
+        cannot place produced no pair, was not checked, and was not reported.
+        Thirteen of twenty-seven coloured rules sat outside the sweep that way
+        -- every note glyph among them, one at 1.67:1 in dark mode, and a warn
+        colour that was 3.42:1 on white. Nothing was wrong with the assertions.
+        There simply were none for that text.
+
+        The sweep is now asked what it left out, and may only answer with rules
+        whose colour names no colour.
+        """
+        rules = _docs_rules()
+        light, dark = _docs_palette()
+        declares_colour = {s for s, d in rules.items() if "color" in d}
+        measured = {selector for _scheme, selector, _fg, _bg in DOCS_PAIRS}
+
+        assert declares_colour, "no rule in extra.css declares a colour; the parse is wrong"
+
+        unplaced = declares_colour - measured
+        for selector in sorted(unplaced):
+            value = rules[selector]["color"].strip().lower()
+            assert value in _NOT_A_COLOUR, (
+                f"{selector} sets color: {value}, which names a colour, and yet "
+                "nothing measured it -- so it is outside the contrast check "
+                "while appearing to be inside it"
+            )
+            assert not _resolve(rules[selector]["color"], light), selector
+            assert not _resolve(rules[selector]["color"], dark), selector
+
     def test_it_would_have_failed_the_value_this_site_shipped(self) -> None:
         """Guards the guard, with the real colours rather than invented ones."""
         light, _ = _docs_palette()
@@ -301,11 +515,52 @@ class TestTheDocumentationSiteIsLegibleToo:
         """`.bs-stat .k` has no background; the pair is meaningless without one."""
         rules = _docs_rules()
 
+        light, _dark = _docs_palette()
+
         assert "background" not in rules.get(".bs-stat .k", {})
-        assert _ground_for(".bs-stat .k", rules) == rules[".bs-stat"]["background"]
-        # A selector with no ancestor that paints anything yields nothing,
-        # rather than being silently measured against a guessed page colour.
-        assert _ground_for(".nothing-like-this", rules) is None
+        assert _grounds_for(".bs-stat .k", rules, light, PAGE["light"]) == _colours_in(
+            rules[".bs-stat"]["background"], light
+        )
+        # A selector with no painted ancestor -- in the stylesheet or in the
+        # markup -- yields None rather than a colour, so the caller has to say
+        # what the page is instead of being handed a guess.
+        assert _grounds_for(".nothing-like-this", rules, light, PAGE["light"]) is None
+
+    def test_a_translucent_ground_is_flattened_onto_what_is_behind_it(self) -> None:
+        """`.bs-cta a:hover` is white at 14%, over the hero's navy.
+
+        Neither "no ground" nor "white": the first drops the rule out of the
+        sweep, the second invents a 1:1 failure over text that is perfectly
+        readable. The ratio that exists is the one against the composite.
+        """
+        assert _flatten([(255.0, 255.0, 255.0, 0.14)], "#0b5394") == "#2d6ba3"
+        assert _flatten([], "#0b5394") == "#0b5394"
+        assert _flatten([(255.0, 255.0, 255.0, 1.0)], "#0b5394") == "#ffffff"
+
+    def test_a_rule_that_follows_a_comment_is_still_parsed(self) -> None:
+        """`.bs-hero` is preceded by a section banner, and vanished for it.
+
+        Every rule in this stylesheet that follows a comment was skipped, and
+        the stylesheet is written in commented sections. `.bs-hero` is the one
+        that mattered: it paints the navy gradient the entire hero is read on,
+        so its absence left the hero's white text with no ground at all.
+        """
+        rules = _docs_rules()
+
+        assert ".bs-hero" in rules, (
+            "the rule after the Hero banner is not parsed, so every rule that "
+            "follows a comment is invisible to this module"
+        )
+        assert "linear-gradient" in rules[".bs-hero"]["background"]
+
+    def test_the_markup_is_where_nesting_comes_from(self) -> None:
+        """The ancestry is read, not listed, so it cannot go stale silently."""
+        assert MARKUP_ANCESTORS, "no page declares a class; the markup parse is wrong"
+        assert "bs-hero" in MARKUP_ANCESTORS.get("bs-cta", ()), (
+            "docs/index.md no longer puts .bs-cta inside .bs-hero; if the hero "
+            "was restructured, the white call-to-action text now sits on "
+            "something else and this module needs to know what"
+        )
 
 
 class TestTheTwoPalettesAgree:
@@ -356,6 +611,48 @@ class TestTheTwoPalettesAgree:
             "extra.css says its values mirror bindsight/report/theme.py, and these "
             f"no longer do: {drifted}. One product, one palette -- change both, or "
             "change the sentence at the top of the stylesheet."
+        )
+
+    @staticmethod
+    def _app_tokens() -> dict[str, str]:
+        source = (REPO / "bindsight" / "report" / "web" / "static" / "bindsight.css").read_text(
+            "utf-8"
+        )
+        root = re.search(r":root\s*\{([^{}]*)\}", source)
+        assert root is not None, "bindsight.css has no :root block"
+        return dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;", root.group(1)))
+
+    def test_the_web_interface_uses_the_same_values(self) -> None:
+        """The third surface theme.py names, and the one it was written for.
+
+        Its docstring counts three surfaces that "drifted apart" and calls
+        itself the single source of truth. Only the documentation site was
+        ever held to it. The interface kept its own copy, and the copies
+        disagreed on nine of eleven shared names -- the success colour alone
+        existed as #2e7d32 here, #1f7a3d on the site and #1f6f35 in the app.
+        Nothing said so, because nothing compared them.
+
+        Names the two do not share are not drift: the app calls its page
+        `--ground` and its brand accent `--teal`, and has scales this module
+        has no opinion about. Only what both name is checked.
+        """
+        theme, app = self._theme_tokens(), self._app_tokens()
+
+        shared = sorted(n for n in app if n.upper().replace("-", "_") in theme)
+        assert len(shared) >= 9, (
+            f"only {len(shared)} names are shared with bindsight.css; either the "
+            "interface renamed its tokens or this parse has stopped working"
+        )
+
+        drifted = [
+            f"--{name} is {app[name]}, theme.py says {theme[name.upper().replace('-', '_')]}"
+            for name in shared
+            if app[name].lower() != theme[name.upper().replace("-", "_")].lower()
+        ]
+
+        assert not drifted, (
+            "bindsight/report/theme.py calls itself the single source of truth "
+            f"for every presentation surface, and these no longer match it: {drifted}"
         )
 
 

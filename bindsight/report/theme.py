@@ -43,12 +43,19 @@ RULE = "#e3e6ea"
 SURFACE = "#ffffff"
 CANVAS = "#f7f9fc"
 
-OK = "#2e7d32"
-OK_TINT = "#e8f5e9"
-WARN = "#b08400"
-WARN_TINT = "#fff8e1"
-ERR = "#c62828"
-ERR_TINT = "#ffebee"
+# The web interface chose these six for contrast and its own tests hold them
+# there; the values below were chosen separately and drifted, so the success
+# colour ended up as #2e7d32 here, #1f7a3d on the documentation site and
+# #1f6f35 in the app -- one product, three greens. The app's are now the
+# shared ones, and docs/stylesheets/extra.css names all six as --bs- tokens so
+# TestTheTwoPalettesAgree holds this file to them instead of parsing them and
+# comparing nothing.
+OK = "#1f6f35"
+OK_TINT = "#e8f4ea"
+WARN = "#8a6100"
+WARN_TINT = "#fdf3dd"
+ERR = "#a32020"
+ERR_TINT = "#fbeaea"
 
 # --- Canonical URLs --------------------------------------------------------
 # These were previously hardcoded (and in the About page, pointed at raw GitHub
