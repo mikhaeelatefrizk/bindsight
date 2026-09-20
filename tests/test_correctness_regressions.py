@@ -832,12 +832,34 @@ class TestTheGpuRunsTheCodeThatLaunchedIt:
         assert root is not None
         assert (root / "pyproject.toml").is_file()
 
-    def test_no_checkout_means_no_wheel_rather_than_a_crash(self, tmp_path: Path) -> None:
-        """A user who pip-installed bindsight must still be able to submit a job."""
+    def test_no_checkout_means_no_wheel_rather_than_a_crash(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A user who pip-installed bindsight must still be able to submit a job.
+
+        The second assertion here was ``... is None or True``, which is always
+        true: the function could have returned anything, or been deleted, and
+        this still passed. It tested only that the call did not raise.
+
+        Deleting the ``or True`` alone would not have worked, which is probably
+        why it was there. With ``repo_root=None`` the function *discovers* a
+        root, and ``find_repo_root`` defaults to walking up from its own
+        ``__file__`` -- so under pytest, inside this checkout, it finds the real
+        tree and shells out to ``pip wheel``. The case the docstring is about is
+        the one where there is no checkout at all, so that is the case to
+        arrange.
+        """
+        from bindsight.runners import source_wheel
         from bindsight.runners.source_wheel import build_working_tree_wheel, find_repo_root
 
         assert find_repo_root(tmp_path / "nowhere" / "deep") is None
-        assert build_working_tree_wheel(tmp_path / "out", repo_root=None) is None or True
+
+        monkeypatch.setattr(source_wheel, "find_repo_root", lambda *a, **k: None)
+
+        assert build_working_tree_wheel(tmp_path / "out", repo_root=None) is None, (
+            "with no source checkout the caller falls back to a git ref and warns; "
+            "returning anything else there breaks a pip-installed user's job"
+        )
 
 
 def _plain(text: str) -> str:

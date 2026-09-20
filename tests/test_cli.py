@@ -8,6 +8,7 @@ import io
 import tarfile
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from bindsight import __version__
@@ -95,13 +96,26 @@ def test_cli_design_without_a_target_count_prices_nothing(tmp_path) -> None:
     assert "cost estimate ─" not in flat, "a cost panel was rendered for an unknown amount of work"
 
 
-def test_cli_design_without_targets_exits_2(tmp_path) -> None:
-    """Without --dry-run on a run with no designable targets, design exits 2."""
+@pytest.mark.parametrize("backend", ["modal", "colab"])
+def test_cli_design_without_targets_exits_2(tmp_path, backend: str) -> None:
+    """Without --dry-run on a run with no designable targets, design exits 2.
+
+    Both backends, because this named only `modal` and the default is `colab` --
+    so the one path a user reaches by typing `bindsight design <dir>` was the
+    one path unchecked, and it behaved the other way: it created an empty
+    `design/`, printed a green "Wrote 0 Colab notebook(s) ... Open each in
+    Colab, Run all, download the results tarball", and exited 0. A success
+    panel for zero notebooks, immediately after saying it could not even
+    estimate the cost.
+    """
     run = tmp_path / "run"
     run.mkdir()
-    r = CliRunner().invoke(main, ["design", str(run), "--backend", "modal"])
-    assert r.exit_code == 2
+    r = CliRunner().invoke(main, ["design", str(run), "--backend", backend])
+    assert r.exit_code == 2, f"--backend {backend} exited {r.exit_code}: {r.output[-400:]}"
     assert "nothing to do" in r.output.lower()
+    assert not (run / "design").exists(), (
+        "an empty design/ was created for a run with nothing to design"
+    )
 
 
 def test_cli_validate_without_designs_reports_cost_unknown(tmp_path) -> None:

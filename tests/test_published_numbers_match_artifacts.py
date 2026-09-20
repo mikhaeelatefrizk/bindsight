@@ -444,9 +444,13 @@ class TestTheDerivedFiguresMatchTheArtifact:
     """The headline four were pinned; everything derived from them was not.
 
     mean ipTM, mean PAE-interaction and the interval bounds are quoted across
-    five surfaces as bare literals. A re-run that moves them leaves half of each
-    sentence stale, which is worse than a wholly stale sentence because the
-    correct half lends the wrong half its authority.
+    the shipped surfaces as bare literals. A re-run that moves them leaves half
+    of each sentence stale, which is worse than a wholly stale sentence because
+    the correct half lends the wrong half its authority.
+
+    The PAE check said the opposite of this docstring for as long as both
+    existed: it skipped with "no shipped document quotes a mean PAE-interaction
+    in prose". Both cannot be true, and the skip was the one that ran.
     """
 
     SURFACES = _shipped_surfaces()
@@ -475,26 +479,74 @@ class TestTheDerivedFiguresMatchTheArtifact:
                     )
         assert seen, "no surface quotes a mean ipTM; this guard is checking nothing"
 
+    #: The stat card: the number, then the words. `docs/results.md` writes
+    #: `<div class="v">15.6 Å</div><div class="k">mean PAE-int</div>`.
+    _PAE_CARD = re.compile(r">\s*(\d+\.\d)\s*[^<]*</div>\s*<div[^>]*>\s*mean PAE[- ]int", re.I)
+
+    #: The column head, for the markdown table form.
+    _PAE_COLUMN = re.compile(r"mean PAE[- ]int", re.I)
+
+    @staticmethod
+    def _table_column_values(text: str, header: re.Pattern[str]) -> list[str]:
+        """Cells under a markdown column whose head matches *header*."""
+        out: list[str] = []
+        lines = text.splitlines()
+        for i, line in enumerate(lines[:-1]):
+            if not line.lstrip().startswith("|"):
+                continue
+            if not re.match(r"^\s*\|[\s:|-]+\|\s*$", lines[i + 1]):
+                continue  # the next line is not a separator, so this is not a head
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            matches = [j for j, c in enumerate(cells) if header.search(c)]
+            if not matches:
+                continue
+            column = matches[0]
+            for row in lines[i + 2 :]:
+                if not row.lstrip().startswith("|"):
+                    break
+                values = [c.strip() for c in row.strip().strip("|").split("|")]
+                if column < len(values):
+                    out.append(values[column])
+        return out
+
+    @classmethod
+    def _quoted_pae(cls, text: str) -> list[str]:
+        """Every mean PAE-interaction a document states, in either form it ships.
+
+        Neither form puts the number beside the words, which is why the pattern
+        this replaced never matched anything. It required
+        ``mean PAE-interaction`` spelled out and immediately followed by a
+        number; every shipped surface writes the abbreviation, and writes it
+        either *after* the value (the stat card) or as a column head with the
+        value in a row below (the table).
+
+        So the guard skipped on every run since it was written -- and said it
+        was safe to, because ``test_the_designer_table_matches_the_artifact``
+        covered it. No commit has ever defined a test by that name. The number
+        it is meant to pin, 15.6, is published on the documentation site and was
+        held by nothing.
+        """
+        found = [m.group(1) for m in cls._PAE_CARD.finditer(text)]
+        found += [
+            v
+            for v in cls._table_column_values(text, cls._PAE_COLUMN)
+            if re.fullmatch(r"\d+\.\d+", v)
+        ]
+        return found
+
     def test_every_quoted_pae_is_the_artifact_value(self, bench: dict) -> None:
         expected = f"{self._arm(bench)['mean_pae_interaction']:.1f}"
-        pattern = re.compile(r"mean PAE[- ]interaction\s+(\d+\.\d)")
         seen = 0
         for rel in self.SURFACES:
             path = REPO / rel
             if not path.is_file():
                 continue
-            for match in pattern.finditer(path.read_text(encoding="utf-8")):
+            for value in self._quoted_pae(path.read_text(encoding="utf-8")):
                 seen += 1
-                assert match.group(1) == expected, (
-                    f"{rel} states mean PAE-interaction {match.group(1)}; "
-                    f"the artifact says {expected}"
+                assert value == expected, (
+                    f"{rel} states mean PAE-interaction {value}; the artifact says {expected}"
                 )
-        if not seen:
-            pytest.skip(
-                "no shipped document quotes a mean PAE-interaction in prose; the "
-                "designer benchmark reports it in a table column, which "
-                "test_the_designer_table_matches_the_artifact covers"
-            )
+        assert seen, "no surface quotes a mean PAE-interaction; this guard is checking nothing"
 
     def test_every_quoted_interval_is_the_artifact_interval(self, bench: dict) -> None:
         """The bounds were unpinned while the rate they qualify was pinned."""

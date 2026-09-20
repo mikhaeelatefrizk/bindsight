@@ -359,6 +359,22 @@ def design(
 
     if backend == "colab":
         n = _write_design_notebooks(run_dir, designer=designer, trajectories=trajectories)
+        if n == 0:
+            # The same answer the headless backends give, for the same
+            # situation. This printed a green "Wrote 0 Colab notebook(s)" and a
+            # line telling the reader to open each of them, then exited 0 --
+            # one line after saying it could not even estimate the cost. It is
+            # the default backend, so it was the path most people met.
+            console.print(
+                Panel(
+                    "[yellow]No targets with a structure to design against.[/yellow] "
+                    "Run [bold]bindsight discover[/bold] first (and ensure AlphaFold "
+                    "structures were fetched).",
+                    title="design: nothing to do",
+                    border_style="yellow",
+                )
+            )
+            sys.exit(2)
         console.print(
             Panel(
                 f"[green]Wrote {n} Colab notebook(s)[/green] to {run_dir / 'design'}.\n"
@@ -1609,6 +1625,13 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
     from bindsight.plugins import get_designer
     from bindsight.runners.notebook_content import write_design_notebook
 
+    targets = list(_top_targets(run_dir))
+    if not targets:
+        # No directory either. Creating an empty `design/` made the run look
+        # like the stage had started, and the caller has nothing to write into
+        # it.
+        return 0
+
     design_dir = run_dir / "design"
     design_dir.mkdir(parents=True, exist_ok=True)
     plugin = get_designer(designer)
@@ -1618,7 +1641,7 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
     # so a run configured with seed 42 shipped a notebook carrying seed 0.
     seed, binder_length_min, binder_length_max = _design_spec_params_from_run(run_dir)
     n = 0
-    for t in _top_targets(run_dir):
+    for t in targets:
         spec = plugin.make_spec(
             target_uniprot=t["uniprot"],
             target_structure_path=Path(t["structure_path"]),
