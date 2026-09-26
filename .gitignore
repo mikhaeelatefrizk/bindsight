@@ -123,6 +123,7 @@ _bindsight_spec_*/
 # Compiled manuscripts are built at submission time, never committed
 paper/methods/*.pdf
 paper/validation/*.pdf
+paper/validation/pandoc.log
 
 # Designer-benchmark staging. A run writes here first so a failure cannot
 # overwrite the committed result; only the promoted artifacts are tracked.

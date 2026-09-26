@@ -334,6 +334,53 @@ class TestTheStudyIsTypesetToo:
                 "let this guard pass while the study's check was deleted."
             )
 
+    def test_the_build_refuses_a_character_the_font_could_not_print(
+        self, workflow: dict[str, Any]
+    ) -> None:
+        """xelatex prints nothing where a glyph is missing, and warns.
+
+        The first green run of this job dropped U+2265 and two U+207B -- and the
+        superscript minuses were inside "5.6 x 10^-15", so the typeset study
+        stated the opposite exponent. pandoc exited 0, the PDF was 63 kB, and the
+        size floor was satisfied. Neither a byte count nor a reader catches this:
+        the number simply reads differently.
+        """
+        runs = " ".join(str(step.get("run", "")) for step in _steps(workflow))
+        assert "Missing character" in runs, (
+            "nothing fails the build when the font cannot print a character. "
+            "pandoc warns and exits 0, so this is silent by default."
+        )
+        checking = [
+            str(step.get("run", ""))
+            for step in _steps(workflow)
+            if "Missing character" in str(step.get("run", ""))
+        ]
+        for run in checking:
+            assert "exit 1" in run, "the missing-glyph check must fail the run"
+
+    def test_the_render_step_does_not_hide_pandoc_behind_a_pipe(
+        self, workflow: dict[str, Any]
+    ) -> None:
+        """A pipeline's exit status is its last element's.
+
+        The log is captured with `| tee`, so without pipefail a failed pandoc --
+        the missing lmodern.sty that broke the first run, exit 43 -- would report
+        tee's success and hand the next step a PDF that was never written.
+        """
+        rendering = [step for step in _steps(workflow) if _invokes(step, "pandoc")]
+        assert rendering, "no pandoc step to check"
+        for step in rendering:
+            run = str(step["run"])
+            if "|" not in run:
+                continue
+            assert _invokes(step, "set -o pipefail"), (
+                "the render pipes pandoc into another command without "
+                "`set -o pipefail`, so a failed render would report success. "
+                "Checked as a command, not as a word: the comment above it "
+                "explains pipefail, and an earlier version of this assertion was "
+                "satisfied by that comment after the command itself was deleted."
+            )
+
     def test_the_artifact_is_uploaded_under_its_own_name(self, workflow: dict[str, Any]) -> None:
         uploads = [
             step

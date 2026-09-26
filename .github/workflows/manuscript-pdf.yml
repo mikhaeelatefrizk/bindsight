@@ -77,19 +77,38 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             pandoc texlive-xetex texlive-fonts-recommended texlive-latex-recommended \
-            lmodern
+            lmodern fonts-dejavu-core
       - name: Render manuscript.md
         # The study is Markdown with a hand-numbered reference list and no
         # embedded images, so there is nothing to resolve outside the file.
+        #
+        # mainfont is not cosmetic. Latin Modern has no glyph for U+2265 or
+        # U+207B, and xelatex prints nothing where a glyph is missing -- the
+        # first green build of this job typeset "5.6 x 10^-15" with the minus
+        # sign absent, stating the opposite exponent. DejaVu Serif has both.
         run: |
+          # pipefail because the pipe into tee below would otherwise report
+          # tee's exit code and hide a failed render completely.
+          set -o pipefail
           cd paper/validation
           pandoc manuscript.md \
             --from=gfm \
             --output=manuscript.pdf \
             --pdf-engine=xelatex \
+            --variable=mainfont:'DejaVu Serif' \
+            --variable=monofont:'DejaVu Sans Mono' \
             --variable=geometry:margin=1in \
             --variable=fontsize:11pt \
-            --standalone
+            --standalone 2>&1 | tee pandoc.log
+      - name: Fail on any character the font could not print
+        # pandoc warns and exits 0. A size floor cannot see this and neither
+        # can a reader: the number just reads differently. Same reasoning as
+        # the undefined-citation check in the job above.
+        run: |
+          if grep -F 'Missing character' paper/validation/pandoc.log; then
+            echo "::error::the study PDF is missing glyphs; characters above were dropped silently"
+            exit 1
+          fi
       - name: Fail if the PDF came back empty
         # pandoc exits 0 on a document it rendered as one blank page. The study
         # is ~2,800 words, so anything under 40 kB is a build that silently
