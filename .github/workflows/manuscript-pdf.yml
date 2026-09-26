@@ -67,10 +67,17 @@ jobs:
       - name: Install pandoc and a PDF engine
         # apt rather than a third-party action: no new pinning question, and
         # tests/test_packaging_pins.py allows actions/* at a version tag only.
+        #
+        # lmodern is named explicitly because pandoc's default LaTeX template
+        # loads it and none of the texlive-* metapackages pull it in: the first
+        # run of this job died on a missing lmodern.sty. The study also needs
+        # xelatex rather than pdflatex -- it contains a superscript minus
+        # (U+207B), which inputenc cannot represent.
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            pandoc texlive-xetex texlive-fonts-recommended texlive-latex-recommended
+            pandoc texlive-xetex texlive-fonts-recommended texlive-latex-recommended \
+            lmodern
       - name: Render manuscript.md
         # The study is Markdown with a hand-numbered reference list and no
         # embedded images, so there is nothing to resolve outside the file.
