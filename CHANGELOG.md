@@ -6,6 +6,132 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [Unreleased]
+
+bioRxiv declined this work on 2026-09-25, and the reason is not one a revision
+answers:
+
+> Thank you for submitting your manuscript to bioRxiv. We regret to inform you
+> that your manuscript cannot be considered for bioRxiv because bioRxiv requires
+> authors to have an organizational affiliation. It is necessary for submissions
+> to be associated with an organization that provides oversight of research
+> activities so that it can adjudicate any ethical issues/disputes that arise.
+
+The author is an independent researcher with no organizational affiliation, and
+bioRxiv polices misrepresentation of affiliation explicitly. So bioRxiv and
+medRxiv are closed to this work rather than delayed, and every sentence in the
+repository that described a bioRxiv preprint as hours away, then as in hand, had
+been false for four days.
+
+### Changed — the preprint is of the study, not of the paper about the software
+
+This is the substantive change, and it is a correction of strategy rather than of
+prose. The preprint was never decoration: it was the single instrument for
+answering the 2026-06-07 JOSS rejection, which asked for "at minimum one instance
+of the software being used in published or preprint research".
+
+JOSS has since rewritten that criterion as a named pre-review gate,
+**Demonstrated research impact**: "There must be evidence that the software is
+being used for research — at minimum by the developers themselves, and ideally by
+others… JOSS will not publish papers that are meant to advertise software that is
+not yet being used in research." Two things follow. Self-use qualifies, so no
+third-party adopter is needed. And the gate wants the software *doing work* — which
+a paper describing the software is not. `openjournals/joss-reviews#10267` is the
+precedent: closed by the same Editor-in-Chief a month before ours, because its
+research-impact evidence was about a different package rather than the software
+under review.
+
+So the document that goes to a preprint server is
+`paper/validation/manuscript.md` — the fifteen-cohort TCGA rediscovery study,
+which is bindsight run on real patient data reporting a real result, including the
+headline it withdrew. Not `paper/methods/manuscript.tex`, which is a paper about
+bindsight by bindsight's author and invites exactly the reading that closed
+#10267.
+
+The venue is Preprints.org: free, screening stated at about 24 hours, DOI on
+posting, and it accepts authors with no organizational affiliation. arXiv is not
+available — its 2026-01-21 policy change requires both an institutional email and
+prior arXiv authorship for automatic endorsement, so a first-time unaffiliated
+submitter needs a personal endorser and there is no process to find one. OSF
+Preprints' generalist server stopped accepting submissions in October 2025 and
+none of its surviving disciplinary servers covers bioinformatics. SSRN requires a
+verified institutional affiliation.
+
+The JOSS resubmission date moves from 2026-11-09 to **2026-12-07**. Two dates
+disagree: first commit plus six months answers the development-history gate on
+2026-11-09, while JOSS's desk-rejection guidance says to "resubmit in six months
+or more", which from 2026-06-07 is 2026-12-07. The later date wins. The other half
+of that criterion — evidence of iterative development — is met on the merits and
+needs no waiting: 392 commits over five months and eleven tags, against the 36
+commits and one release the editorial bot saw in June.
+
+### Added — `paper/SUBMISSIONS.md`, and a guard that reads it
+
+Two dozen false claims accumulated in four days because nothing checked them.
+`paper/SUBMISSIONS.md` is now the single source of truth for submission state —
+venue, date, identifier, status, DOI, and each decision quoted verbatim — and
+`tests/test_submission_record.py` holds every other document to it.
+
+Its primary check derives legitimacy rather than listing it. Preprint-server DOIs
+are not forbidden: this project cites nine of other people's, one of which reaches
+the provenance manifest of every run. Instead, every preprint DOI in the tree must
+be either a third party's, evidenced by `paper/paper.bib`, or recorded as posted
+in `SUBMISSIONS.md`. That rule cannot be satisfied by narrowing a list, because it
+has no list — add a preprint server tomorrow and it already applies.
+
+It went red on the first run for four reasons, all real: two `10.1101/YOURDOI`
+placeholders in a block a submitter is told to paste into a form, a bioRxiv status
+badge, a bioRxiv DOI template, and the sentence "with the bioRxiv preprint in
+hand" on the documentation site. It also went red twice for reasons that were
+bugs in the guard itself, which is the argument for running it red before
+believing it.
+
+### Added — the validation study is typeset
+
+It had no PDF build at all; `manuscript-pdf.yml` typeset only the methods `.tex`.
+It is now rendered by pandoc — the study's references are a hand-numbered list
+rather than `\cite` keys, so there is no bibliography to resolve — and the job
+fails if the PDF comes back under 40 kB, because pandoc exits 0 on a document it
+rendered as one blank page. Both PDFs are attached to every release.
+
+Three of the six new guards on that job could not fail when first written, and a
+mutation run found all three. One searched the step's script for the word
+"pandoc", which `true # pandoc manuscript.md` satisfies while rendering nothing.
+One looked for `exit 1` anywhere in the workflow, which the methods job's
+citation check supplied. One looked for the study's asset name in the joined
+script, which the `gh release upload` argument list supplied after the `cp` that
+creates the file had been deleted. All three were the same mistake: asserting that
+a string appears somewhere, when the claim was that a specific command runs.
+
+### Changed — `paper/biorxiv/` is `paper/methods/`
+
+The directory held a manuscript that bioRxiv declined, so its name stated a venue
+instead of a document, in the folder a reviewer opens first. `methods` says what
+the document is and carries no venue, so it cannot go stale when the venue changes
+again. The manuscript's own text never named bioRxiv, so nothing inside it
+changed; 38 path references, the workflow's job and artifact names, and the
+release asset name did. The release asset is now
+`bindsight-<tag>-methods-manuscript.pdf`.
+
+The methods manuscript is not under submission anywhere, and `paper/README.md`
+says so plainly rather than leaving a reader to infer a submission that never
+happened.
+
+### Changed — the study reads as a standalone
+
+It opened by describing a different document — "Companion report to the bindsight
+software-methods paper", and an introduction whose first sentence was about that
+paper. Submitted on its own, a reader arriving cold had to fetch a second document
+to learn what the software under test does. It now says what bindsight is in its
+own byline and introduction. No result, interval, or withdrawal changed; the body
+is the reason it is the document going out.
+
+It also carried no affiliation at all. It has one now, and
+`tests/test_author_metadata_agrees.py` covers this fourth copy of the author block
+so it cannot drift from the other four — the defect that module was written for.
+
+---
+
 ## [0.3.6] - 2026-09-20
 
 0.3.5 published this project to PyPI for the first time, and PyPI renders a

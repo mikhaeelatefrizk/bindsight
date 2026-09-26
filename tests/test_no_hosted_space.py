@@ -242,7 +242,7 @@ class TestNothingShippedNamesIt:
             "pyproject.toml",
             "requirements.txt",
             "README.md",
-            "paper/biorxiv/manuscript.tex",
+            "paper/methods/manuscript.tex",
             "mkdocs.yml",
             "codemeta.json",
             "CITATION.cff",

@@ -66,9 +66,11 @@ reproducible.
   fully wired; scRNA-seq input. None of this is in v0.3.6: no shipped backend
   builds an environment BindCraft or BoltzGen can run in, which is why the
   three-way designer comparison is deferred rather than delivered.
-- **v1.0.0** — the JOSS resubmission, on or after 2026-11-09 and with the
-  bioRxiv preprint in hand (`paper/README.md` says why), plus the validation
-  paper. The rediscovery study is
+- **v1.0.0** — the JOSS resubmission, on or after 2026-12-07 and with the
+  rediscovery study posted as a preprint: it is the instance of the software
+  being used for research that JOSS's pre-review asks for, which is why it goes
+  first (`paper/README.md` says why; `paper/SUBMISSIONS.md` records every venue
+  tried and what came back). The study itself is
   already run and published in `benchmarks/study/`: fifteen unstratified TCGA
   projects against a pre-registered panel, recall at rank 20 of 1 in 17 with a
   95% interval of 0.01 to 0.27. An earlier HER2-centred version is withdrawn as

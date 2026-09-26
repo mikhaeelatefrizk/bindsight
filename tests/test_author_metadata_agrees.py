@@ -126,11 +126,22 @@ class TestTheStructuredNameIsOneName:
         assert given.strip() == GIVEN_NAMES
 
 
+#: The validation study's byline. Markdown offers no field to key on, so the
+#: affiliation is found by position: the line directly under the bold author
+#: line. That is why it has to stay there, and why this pattern is written to
+#: match the author line only when it is alone on its own line -- several
+#: paragraphs in that document open with bold run-in text.
+_MD_BYLINE = re.compile(r"^\*\*(?P<name>[^*\n]+)\*\*\n(?P<affil>[^\n]+)$", re.MULTILINE)
+
+STUDY = "paper/validation/manuscript.md"
+
+
 class TestTheDisplayNameIsTheSameEverywhere:
     #: Every surface that writes the name out for a human, with how to find it.
     DISPLAY_SURFACES = (
         ("paper/paper.md", lambda t: _front_matter(t)["authors"][0]["name"]),
-        ("paper/biorxiv/manuscript.tex", lambda t: _TEX_AUTHOR.search(t).group(1).strip()),
+        ("paper/methods/manuscript.tex", lambda t: _TEX_AUTHOR.search(t).group(1).strip()),
+        (STUDY, lambda t: _MD_BYLINE.search(t).group("name").strip()),
         ("pyproject.toml", lambda t: tomllib.loads(t)["project"]["authors"][0]["name"]),
     )
 
@@ -144,8 +155,9 @@ class TestTheDisplayNameIsTheSameEverywhere:
 
     def test_the_submission_instructions_name_the_same_author(self) -> None:
         assert FULL_NAME in _read("paper/README.md"), (
-            "paper/README.md tells a submitter what to type into the bioRxiv "
-            "author field; it must be the name the manuscript carries"
+            "paper/README.md tells a submitter what to type into the "
+            "submission form's author field; it must be the name the "
+            "manuscript carries"
         )
 
     def test_the_readme_and_the_copyright_notice_use_the_full_name(self) -> None:
@@ -161,8 +173,9 @@ class TestTheAffiliationIsOneAffiliation:
         ("CITATION.cff", lambda t: yaml.safe_load(t)["authors"][0]["affiliation"]),
         ("codemeta.json", lambda t: json.loads(t)["author"][0]["affiliation"]["name"]),
         ("paper/paper.md", lambda t: _front_matter(t)["affiliations"][0]["name"]),
-        ("paper/biorxiv/manuscript.tex", lambda t: _TEX_AFFIL.search(t).group(1).strip()),
+        ("paper/methods/manuscript.tex", lambda t: _TEX_AFFIL.search(t).group(1).strip()),
         ("paper/README.md", lambda t: re.search(r'affiliation\s+"([^"]+)"', t).group(1)),
+        (STUDY, lambda t: _MD_BYLINE.search(t).group("affil").strip()),
     )
 
     @pytest.mark.parametrize(
@@ -171,7 +184,7 @@ class TestTheAffiliationIsOneAffiliation:
         ids=[s[0] for s in AFFILIATION_SURFACES],
     )
     def test_it_is_the_agreed_string(self, rel, extract) -> None:
-        """Not "close enough": the bioRxiv form is filled by copying
+        """Not "close enough": the submission form is filled by copying
         paper/README.md, and the reviewer compares it to the manuscript."""
         assert extract(_read(rel)) == AFFILIATION, (
             f"{rel} states a different affiliation than {AFFILIATION!r}"
@@ -185,7 +198,7 @@ class TestTheAffiliationIsOneAffiliation:
         """Guards the guard: a regex that stopped matching would raise
         AttributeError above, but a YAML key silently renamed would not --
         ``.get`` chains are not used here for exactly that reason."""
-        assert len(self.AFFILIATION_SURFACES) >= 5
+        assert len(self.AFFILIATION_SURFACES) >= 6
 
 
 class TestTheOrcidIsOneOrcid:
@@ -193,8 +206,9 @@ class TestTheOrcidIsOneOrcid:
         "CITATION.cff",
         "codemeta.json",
         "paper/paper.md",
-        "paper/biorxiv/manuscript.tex",
+        "paper/methods/manuscript.tex",
         "paper/README.md",
+        STUDY,
         "README.md",
         "COPYRIGHT",
     )

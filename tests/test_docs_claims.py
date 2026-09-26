@@ -146,10 +146,10 @@ NAMED_PROSE = _root_documents()
 PROSE_TREES = ("docs", "paper", "benchmarks")
 
 # One bibliography serves both manuscripts; manuscript.tex reaches it via
-# \addbibresource{../paper.bib}. The former paper/biorxiv/references.bib
+# \addbibresource{../paper.bib}. The former paper/methods/references.bib
 # duplicated 15 of its 18 keys and drifted independently.
 BIB_FILES = ("paper/paper.bib",)
-MANUSCRIPT_TEX = "paper/biorxiv/manuscript.tex"
+MANUSCRIPT_TEX = "paper/methods/manuscript.tex"
 
 # Documents that state, or used to state, a priority claim in prose.
 PRIORITY_CLAIM_DOCS = (
@@ -548,7 +548,7 @@ _HEDGES = (
     "not yet",
     "prepared",
     "demonstration",
-    # Not a bare "demo": the bioRxiv abstract's own paragraph says "A public web
+    # Not a bare "demo": the methods manuscript's abstract says "A public web
     # demo", which satisfied the scan while the sentence beside it claimed four
     # backends run end to end. A hedge has to be the wording that actually
     # qualifies the claim, not any nearby occurrence of the word.
@@ -560,14 +560,14 @@ _HEDGES = (
     "implemented but",
 )
 
-#: Every manuscript that ships. The bioRxiv .tex was missing from this list
+#: Every manuscript that ships. The methods .tex was missing from this list
 #: while the same module already governed it for licence and priority claims,
 #: and that is exactly where an unhedged four-backend claim survived — in the
 #: abstract, the most-read sentence the project publishes.
 MANUSCRIPTS = (
     "paper/paper.md",
     "paper/validation/manuscript.md",
-    "paper/biorxiv/manuscript.tex",
+    "paper/methods/manuscript.tex",
 )
 
 
@@ -645,7 +645,7 @@ def _documents_stating_a_test_count() -> list[tuple[str, bool, int, str]]:
 
     *The floor marker.* A claim is a floor when it says "over N" **or** when it
     writes "N+". The pattern only knew the first, and every surface that uses
-    the second -- README.md twice, and the bioRxiv manuscript's "1,800+ unit and
+    the second -- README.md twice, and the methods manuscript's "1,800+ unit and
     integration tests" -- was invisible to the sweep entirely. Not under-checked:
     unseen. A sweep written as a pattern precisely so it would not miss a file
     missed four claims because it did not know how they were spelled.
@@ -675,7 +675,7 @@ def test_the_sweep_for_test_counts_still_finds_the_known_claims() -> None:
         "paper/paper.md",
         "paper/README.md",
         "README.md",
-        "paper/biorxiv/manuscript.tex",
+        "paper/methods/manuscript.tex",
     ):
         assert rel in claiming, f"the test-count sweep no longer sees {rel}; it found {claiming}"
 
@@ -1083,7 +1083,7 @@ _UNRUNNABLE_DESIGNERS = ("BindCraft", "BoltzGen")
 
 @pytest.mark.parametrize("rel", MANUSCRIPTS)
 def test_no_manuscript_says_the_three_way_benchmark_only_awaits_a_gpu(rel: str) -> None:
-    """The bioRxiv draft said the benchmark ships "to be populated from a GPU run".
+    """The methods draft said the benchmark ships "to be populated from a GPU run".
 
     Two things were wrong with that. One arm *is* populated — the
     RFdiffusion+ProteinMPNN figures the same paper reports come from a real

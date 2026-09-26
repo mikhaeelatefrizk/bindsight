@@ -51,8 +51,14 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 
 #: The only tracked files allowed to name Zenodo: the dated record of its
-#: removal, and this file, which has to name what it forbids.
-MAY_NAME_IT = frozenset({"CHANGELOG.md", f"tests/{Path(__file__).name}"})
+#: removal, this file, which has to name what it forbids, and
+#: ``test_submission_record.py``, which guards the same shape of defect one
+#: layer up -- an identifier claimed before it exists -- and cites this episode
+#: as the precedent for why. Both of those files name it in order to be about
+#: it, which is the same reason CHANGELOG.md does.
+MAY_NAME_IT = frozenset(
+    {"CHANGELOG.md", f"tests/{Path(__file__).name}", "tests/test_submission_record.py"}
+)
 
 #: Paths that existed only to deposit on Zenodo.
 DELETED = (

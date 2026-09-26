@@ -1,9 +1,15 @@
 # Rediscovery study of *bindsight*: expression-based discovery of cell-surface antigens across fifteen TCGA cohorts
 
 **Mikhaeel Atef Rizk Wahba**
+Independent Researcher, Cairo, Egypt
 Corresponding author: mikhaeelatefrizk@proton.me · ORCID 0009-0006-1069-9558
 
-*Companion report to the bindsight software-methods paper. Generated artifacts
+*`bindsight` is an open-source Python pipeline that turns bulk RNA-seq counts
+into a ranked shortlist of antibody-tractable cell-surface antigens, and then
+into de novo protein binder designs against them
+(<https://github.com/mikhaeelatefrizk/bindsight>). This report evaluates its
+discovery half; a companion software-methods manuscript in the same repository
+describes the implementation. Generated artifacts
 and the one-command reproduction live in
 [`benchmarks/study/`](../../benchmarks/study/); the harness is
 [`bindsight/benchmark/study.py`](../../bindsight/benchmark/study.py), the panel
@@ -55,9 +61,11 @@ rate.
 
 ## 1. Introduction
 
-The bindsight software paper describes what the tool is and does. This companion
-report supplies the empirical question that paper defers: does the discovery half
-work on real patient data?
+`bindsight`'s discovery half ranks cell-surface antigens by differential
+expression between tumour and normal tissue, intersected with a curated human
+surfaceome and filtered for antibody tractability; the software-methods manuscript
+that accompanies it describes how. This report supplies the empirical question
+that manuscript defers: does the discovery half work on real patient data?
 
 We evaluate it as a rediscovery benchmark. Run the pipeline on tumour cohorts
 whose validated surface antigens are known in advance, and measure where those

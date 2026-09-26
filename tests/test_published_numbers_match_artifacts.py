@@ -5,7 +5,7 @@
 The project's whole argument is that its claims are checkable. That only holds
 if the prose and the artifact agree, and the failure this file exists to prevent
 is not hypothetical: the previous headline said ERBB2 rank 4 and recall@5 of 33%
-across the README, the docs site, the JOSS paper, the bioRxiv draft, the
+across the README, the docs site, the JOSS paper, the methods draft, the
 validation manuscript and the social preview image. Correcting one surface at a
 time is how a repository ends up asserting two different results at once.
 
@@ -120,7 +120,7 @@ class TestTheWithdrawnHeadlineStaysWithdrawn:
     """
 
     #: Discovered, not listed. This was a six-path tuple and the module docstring
-    #: above names the bioRxiv draft as one of the six surfaces that carried the
+    #: above names the methods draft as one of the six surfaces that carried the
     #: withdrawn headline — and that draft was not in the tuple, so the one
     #: manuscript most likely to be read by a reviewer was checked by nothing.
     SURFACES = tuple(
@@ -730,7 +730,7 @@ _APPROVED_TIER_DOCUMENTS: tuple[str, ...] = (
     "ARCHITECTURE.md",
     "docs/index.md",
     "paper/paper.md",
-    "paper/biorxiv/manuscript.tex",
+    "paper/methods/manuscript.tex",
     "paper/validation/manuscript.md",
 )
 

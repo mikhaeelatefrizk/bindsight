@@ -103,7 +103,7 @@ desktop.ini
 site/
 
 # LaTeX build intermediates. No compiled PDF is committed either: CI typesets
-# paper/biorxiv/manuscript.tex and attaches the PDF to every release.
+# paper/methods/manuscript.tex and attaches the PDF to every release.
 paper/**/*.aux
 paper/**/*.bbl
 paper/**/*.bcf
@@ -121,7 +121,8 @@ benchmarks/designer_benchmark/run/
 _bindsight_spec_*/
 
 # Compiled manuscripts are built at submission time, never committed
-paper/biorxiv/*.pdf
+paper/methods/*.pdf
+paper/validation/*.pdf
 
 # Designer-benchmark staging. A run writes here first so a failure cannot
 # overwrite the committed result; only the promoted artifacts are tracked.

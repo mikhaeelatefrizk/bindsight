@@ -108,7 +108,7 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
 
 1. Bump the version everywhere a test holds it to `pyproject.toml`:
    `CITATION.cff`, `codemeta.json`, `docs/how-to-use.md`, `docs/positioning.md`,
-   `paper/README.md`, `paper/biorxiv/manuscript.tex`, `paper/paper.bib` and
+   `paper/README.md`, `paper/methods/manuscript.tex`, `paper/paper.bib` and
    `.github/ISSUE_TEMPLATE/bug_report.yml`. `tests/test_docs_claims.py`,
    `tests/test_packaging_pins.py` and `tests/test_counted_self_claims.py` fail on
    any of them left behind; `date-released` and `datePublished` move with it.
@@ -129,7 +129,7 @@ Scopes match top-level module names (`io`, `deg`, `targets`, `surfaceome`, `stru
    SHA-256 checksums and — with the `PYPI_TRUSTED_PUBLISHING` repository
    variable `true` and the `pypi` environment present — publishes the same
    files to PyPI by OIDC, so no token is stored here; `manuscript-pdf.yml` and
-   `draft-pdf.yml` attach the bioRxiv manuscript and the JOSS paper as PDFs.
+   `draft-pdf.yml` attach the methods manuscript and the JOSS paper as PDFs.
    This release is not archived under a DOI: cite the repository, the tag you
    ran and the checksums attached to the release. A release is identified by
    its tag, its checksummed artifacts and the digest-pinned container image.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 r"""The LaTeX manuscript must typeset what it means.
 
-`paper/biorxiv/manuscript.tex:328` read `commit to <TAB>exttt{main}`: a
+`paper/methods/manuscript.tex:328` read `commit to <TAB>exttt{main}`: a
 `\texttt` whose leading backslash had been resolved as a Python escape by
 whatever wrote the line, so `\t` became a tab and the macro's own first letter
 went with it. It typesets as a tab followed by the raw characters
@@ -28,7 +28,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 
-TEX_FILES = ("paper/biorxiv/manuscript.tex",)
+TEX_FILES = ("paper/methods/manuscript.tex",)
 
 #: What a resolved backslash escape leaves behind. `\n` is excluded because a
 #: newline is how the file is structured; the rest have no meaning in LaTeX.
@@ -104,7 +104,7 @@ class TestThePaperDirectoryAgreesWithItself:
 
     CLAIMS = (
         ("paper/paper.md", r"over ([\d,]+) unit and integration tests"),
-        ("paper/biorxiv/manuscript.tex", r"textbf\{([\d,]+)\+ unit and"),
+        ("paper/methods/manuscript.tex", r"textbf\{([\d,]+)\+ unit and"),
     )
 
     def _read(self) -> dict[str, int]:

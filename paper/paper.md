@@ -162,8 +162,8 @@ confirm they do not change, and a wheel build.
 # Research impact statement
 
 The software's own evidence of use is a companion rediscovery study
-(`benchmarks/study/`, `paper/validation/manuscript.md`, typeset for bioRxiv
-from `paper/biorxiv/`) that runs the discovery half on **fifteen whole,
+(`benchmarks/study/`, `paper/validation/manuscript.md`) that runs the
+discovery half on **fifteen whole,
 unstratified TCGA projects** as patient-paired tumour-versus-normal contrasts,
 scored against a pre-registered panel of 22 antigen-cohort pairs covering 13
 distinct antigens. Nothing in a cohort's definition refers to the antigen being

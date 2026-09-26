@@ -312,7 +312,7 @@ subdirectories are documented in the table below rather than individually.
 | [`bindsight/`](bindsight/) | The Python package — [`io`](bindsight/io/), [`deg`](bindsight/deg/), [`targets`](bindsight/targets/), [`surfaceome`](bindsight/surfaceome/), [`structures`](bindsight/structures/), [`epitopes`](bindsight/epitopes/), [`design`](bindsight/design/), [`runners`](bindsight/runners/), [`validate`](bindsight/validate/), [`rank`](bindsight/rank/), [`benchmark`](bindsight/benchmark/), [`pipelines`](bindsight/pipelines/), [`provenance`](bindsight/provenance/), [`export`](bindsight/export/), [`report`](bindsight/report/) |
 | [`benchmarks/`](benchmarks/) | All the evidence — the [study](benchmarks/study/), the [calibration control](benchmarks/calibration/), the [designer benchmark](benchmarks/designer_benchmark/), the [provenance join](benchmarks/provenance_join/), and the held-out antigen set |
 | [`tests/`](tests/) | 2,000+ tests. Many are guards on published claims, not on code |
-| [`paper/`](paper/) | JOSS and bioRxiv manuscripts, and the validation write-up |
+| [`paper/`](paper/) | The JOSS paper, the long-form methods manuscript, the validation study, and the record of where each has been submitted |
 | [`docs/`](docs/) | Long-form documentation (mkdocs-material source) |
 | [`examples/`](examples/) | Runnable pipeline configs |
 | [`envs/`](envs/) | Conda environment for the discovery half, with pinned constraints |
@@ -384,7 +384,7 @@ Citation metadata also lives in [CITATION.cff](CITATION.cff); GitHub's "Cite thi
 repository" button generates BibTeX and APA from it. Every release attaches a
 wheel, an sdist and a `SHA256SUMS` file, and every image is digest-pinned, so
 the artifacts behind a version are checkable even though the version has no
-DOI. From 0.3.5 a release also carries the bioRxiv manuscript and the JOSS
+DOI. From 0.3.5 a release also carries the methods manuscript and the JOSS
 paper as PDFs, typeset by CI. Please also cite the upstream tools you used — each run emits a
 `software.bib` to make that straightforward.
 
