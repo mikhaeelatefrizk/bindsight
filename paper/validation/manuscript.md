@@ -1,7 +1,7 @@
 # Rediscovery study of *bindsight*: expression-based discovery of cell-surface antigens across fifteen TCGA cohorts
 
-**Mikhaeel Atef Rizk Wahba**
-Independent Researcher, Cairo, Egypt
+**Mikhaeel Atef Rizk Wahba**\
+Independent Researcher, Cairo, Egypt\
 Corresponding author: mikhaeelatefrizk@proton.me · ORCID 0009-0006-1069-9558
 
 *`bindsight` is an open-source Python pipeline that turns bulk RNA-seq counts

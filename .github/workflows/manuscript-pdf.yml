@@ -83,9 +83,12 @@ jobs:
         # embedded images, so there is nothing to resolve outside the file.
         #
         # mainfont is not cosmetic. Latin Modern has no glyph for U+2265 or
-        # U+207B, and xelatex prints nothing where a glyph is missing -- the
-        # first green build of this job typeset "5.6 x 10^-15" with the minus
-        # sign absent, stating the opposite exponent. DejaVu Serif has both.
+        # U+207B, and xelatex prints nothing where a glyph is missing, so the
+        # first green build of this job dropped both: the Methods sentence
+        # "|log2fc| >= 1" lost its operator, and the adjusted p-value
+        # "5.6 x 10^-11" lost the minus from its exponent, in both places it
+        # appears. DejaVu Serif has both glyphs. The check below is the part
+        # that matters -- a font can change again, silence cannot be allowed to.
         run: |
           # pipefail because the pipe into tee below would otherwise report
           # tee's exit code and hide a failed render completely.

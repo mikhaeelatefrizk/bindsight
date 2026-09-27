@@ -131,7 +131,17 @@ class TestTheStructuredNameIsOneName:
 #: line. That is why it has to stay there, and why this pattern is written to
 #: match the author line only when it is alone on its own line -- several
 #: paragraphs in that document open with bold run-in text.
-_MD_BYLINE = re.compile(r"^\*\*(?P<name>[^*\n]+)\*\*\n(?P<affil>[^\n]+)$", re.MULTILINE)
+def _strip_break(line: str) -> str:
+    """Drop a Markdown hard-line-break marker from the end of a line.
+
+    The study's byline ends its first two lines with a backslash so that the
+    name, the affiliation and the contact details typeset as three lines rather
+    than one flowing paragraph. The marker is syntax, not part of the value.
+    """
+    return line.strip().rstrip("\\").strip()
+
+
+_MD_BYLINE = re.compile(r"^\*\*(?P<name>[^*\n]+)\*\*\\?\n(?P<affil>[^\n]+)$", re.MULTILINE)
 
 STUDY = "paper/validation/manuscript.md"
 
@@ -175,7 +185,7 @@ class TestTheAffiliationIsOneAffiliation:
         ("paper/paper.md", lambda t: _front_matter(t)["affiliations"][0]["name"]),
         ("paper/methods/manuscript.tex", lambda t: _TEX_AFFIL.search(t).group(1).strip()),
         ("paper/README.md", lambda t: re.search(r'affiliation\s+"([^"]+)"', t).group(1)),
-        (STUDY, lambda t: _MD_BYLINE.search(t).group("affil").strip()),
+        (STUDY, lambda t: _strip_break(_MD_BYLINE.search(t).group("affil"))),
     )
 
     @pytest.mark.parametrize(
