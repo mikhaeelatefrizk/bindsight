@@ -34,9 +34,11 @@ def main(config_path: Path) -> int:
     if not taxonomy_path.is_file():
         raise RuntimeError("The scientific run did not produce its annotation coverage table")
     coverage = annotation_coverage(pd.read_parquet(taxonomy_path))
-    (config_path.parent / "coverage.json").write_text(json.dumps(coverage), encoding="utf-8")
+    (config_path.parent / "coverage.json").write_text(
+        json.dumps(coverage), encoding="utf-8", newline="\n"
+    )
     coverage_path = config.out_dir / "annotation_coverage.json"
-    coverage_path.write_text(json.dumps(coverage, indent=2), encoding="utf-8")
+    coverage_path.write_text(json.dumps(coverage, indent=2), encoding="utf-8", newline="\n")
     provenance.record(
         config.out_dir,
         name="annotation_coverage",

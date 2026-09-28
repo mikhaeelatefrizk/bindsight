@@ -1005,29 +1005,23 @@ def test_no_document_says_the_surfaceome_is_downloaded_on_first_run() -> None:
     assert not claims, "documents claiming the surfaceome is fetched:\n" + "\n".join(claims)
 
 
-def test_the_success_card_states_its_count_and_interval() -> None:
-    """The landing page showed "40%" with a withdrawal note and no interval,
-    directly beside a card reading "1 of 17 ... 95% CI 0.01-0.27".
-
-    The interval exists in the artifact (15%-70%, clustered over backbones) and
-    ``DesignerShowcase.success_interval`` already said in its own docstring that
-    a page printing the rate without it "claims a precision twenty designs from
-    ten backbones do not carry". It simply was not read at this call site.
-    """
-    artifact = ROOT / "benchmarks" / "designer_benchmark" / "results.json"
+def test_the_calibration_card_states_both_counts_and_withdrawal() -> None:
+    """The landing card must report paired controls, not the withdrawn success claim."""
+    artifact = ROOT / "benchmarks" / "calibration" / "RESULTS.json"
     if not artifact.is_file():
-        pytest.skip("designer benchmark artifact not present")
-    designer = json.loads(artifact.read_text(encoding="utf-8"))["designers"][0]
-    low = round(designer["success_ci_low"] * 100)
-    high = round(designer["success_ci_high"] * 100)
-
+        pytest.skip("calibration artifact not present")
+    calibration = json.loads(artifact.read_text(encoding="utf-8"))
     page = " ".join(_read("docs/index.md").split())
-    start = page.index("success @ ipTM 0.65")
+    assert "success @ ipTM 0.65" not in page
+    start = page.index("designs / shuffled controls")
     card = page[start : start + 500]
-
-    assert f"{designer['n_success']} of {designer['n_designs']}" in card, card[:400]
-    assert str(low) in card, f"the card omits the lower bound {low}%: {card[:400]}"
-    assert str(high) in card, f"the card omits the upper bound {high}%: {card[:400]}"
+    threshold = calibration["threshold"]
+    pairs = calibration["pairs"]
+    for key, label in (("design", "designs"), ("scramble", "shuffles")):
+        passing = sum(pair[key] >= threshold for pair in pairs)
+        assert f"{passing}/{len(pairs)} {label}" in card, card
+    assert f"ipTM {threshold}" in card
+    assert "withdrawn as a measure of design quality" in card
 
 
 def test_no_landing_card_states_the_retracted_rate() -> None:

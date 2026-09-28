@@ -37,7 +37,7 @@ def now() -> str:
 def write_json(path: Path, data: dict[str, Any]) -> None:
     """Persist job state atomically."""
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
     for attempt in range(10):
         try:
             tmp.replace(path)
@@ -51,13 +51,16 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 def hardware(root: Path) -> dict[str, Any]:
     """Report measured hardware, separating GPU presence from tool readiness."""
     gpus = []
+    creationflags = 0
+    if sys.platform == "win32":
+        creationflags = subprocess.CREATE_NO_WINDOW
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
             capture_output=True,
             text=True,
             timeout=10,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            creationflags=creationflags,
         )
         if result.returncode == 0:
             for row in csv.reader(result.stdout.splitlines()):
@@ -353,7 +356,7 @@ class Workspace:
         try:
             with (root / "analysis.log").open("w", encoding="utf-8") as log:
                 kwargs: dict[str, Any] = {"stdout": log, "stderr": subprocess.STDOUT}
-                if os.name == "nt":
+                if sys.platform == "win32":
                     kwargs["creationflags"] = (
                         subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
                     )

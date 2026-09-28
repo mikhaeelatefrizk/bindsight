@@ -26,14 +26,14 @@ def build(destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     env = Environment(loader=FileSystemLoader(str(web / "templates")), autoescape=True)
     html = env.get_template("workbench.html.j2").render(assets="assets/", local=False)
-    (destination / "index.html").write_text(html, encoding="utf-8")
+    (destination / "index.html").write_text(html, encoding="utf-8", newline="\n")
     bundle = evidence_bundle(public=True)
     if len(bundle["binders"]) != 20 or bundle["study"] is None:
         raise RuntimeError(
             "Committed evidence is missing; refusing to publish an incomplete showcase"
         )
     (destination / "evidence.json").write_text(
-        json.dumps(bundle, ensure_ascii=False, allow_nan=False), encoding="utf-8"
+        json.dumps(bundle, ensure_ascii=False, allow_nan=False), encoding="utf-8", newline="\n"
     )
     static = destination / "assets"
     static.mkdir(exist_ok=True)
@@ -67,7 +67,9 @@ def build(destination: Path) -> None:
             info.external_attr = (0o755 if name.endswith(".command") else 0o644) << 16
             bundle_zip.writestr(info, path.read_bytes())
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    (downloads / "SHA256SUMS").write_text(f"{digest}  bindsight-local.zip\n", encoding="ascii")
+    (downloads / "SHA256SUMS").write_text(
+        f"{digest}  bindsight-local.zip\n", encoding="ascii", newline="\n"
+    )
     if archive.stat().st_size > 24 * 1024 * 1024:
         raise RuntimeError("The local download exceeds the hosting asset limit")
     print(f"Built real evidence workspace: {destination}")
