@@ -130,7 +130,7 @@ def _parquet_has_rows(path: Path) -> bool:
         # ``ParquetFile`` is untyped upstream, so the comparison's result is
         # ``Any``; bool() makes the declared return type true rather than
         # asserted. This is the one mypy error that predates this branch.
-        return bool(pq.ParquetFile(path).metadata.num_rows > 0)  # type: ignore[no-untyped-call]
+        return bool(pq.ParquetFile(path).metadata.num_rows > 0)
     except Exception:  # unreadable or not parquet: not a completed stage
         return False
 

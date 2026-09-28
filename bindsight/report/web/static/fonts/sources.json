@@ -1,0 +1,44 @@
+{
+  "retrieved": "2026-09-29",
+  "cssSource": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400..700&family=Manrope:wght@400..800&display=swap",
+  "fonts": [
+    {
+      "family": "Manrope",
+      "file": "manrope-latin-variable.woff2",
+      "source": "https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSg.woff2",
+      "licenseFile": "manrope-OFL.txt",
+      "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+      "requestedWeightRange": "400 800",
+      "axes": [
+        {
+          "tag": "wght",
+          "minimum": 200.0,
+          "default": 200.0,
+          "maximum": 800.0
+        }
+      ],
+      "bytes": 24836,
+      "sha256": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+      "asciiCoverageVerified": true
+    },
+    {
+      "family": "DM Sans",
+      "file": "dm-sans-latin-variable.woff2",
+      "source": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2",
+      "licenseFile": "dm-sans-OFL.txt",
+      "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/dmsans/OFL.txt",
+      "requestedWeightRange": "400 700",
+      "axes": [
+        {
+          "tag": "wght",
+          "minimum": 100.0,
+          "default": 400.0,
+          "maximum": 1000.0
+        }
+      ],
+      "bytes": 36932,
+      "sha256": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543",
+      "asciiCoverageVerified": true
+    }
+  ]
+}

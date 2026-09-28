@@ -171,13 +171,29 @@ def test_report_for_an_unreadable_candidates_table_says_so(tmp_path: Path) -> No
     )
 
 
-def test_report_for_a_completed_empty_run_still_advises_loosening(tmp_path: Path) -> None:
-    """A genuine zero-hit run keeps the advice: the filters really did run."""
+def test_report_for_a_completed_empty_run_requests_coverage_review(tmp_path: Path) -> None:
+    """An empty result calls for scientific review, not automatic threshold relaxation."""
     run = _make_completed_empty_run(tmp_path)
     text = report_html.render_run(run).read_text(encoding="utf-8")
 
     assert "Incomplete run" not in text
-    assert "Loosen thresholds in the config and re-run." in text
+    assert "Review the declared filters, reference coverage" in text
+    assert "Loosen thresholds in the config and re-run." not in text
+
+
+def test_report_keeps_incomplete_reference_coverage(tmp_path: Path) -> None:
+    run = _make_completed_empty_run(tmp_path)
+    (run / "taxonomy").mkdir(exist_ok=True)
+    pd.DataFrame(
+        {
+            "gene_id": ["ENSG00000141736"],
+            "disposition": ["normal_tissue_unassessed"],
+            "open_targets_status": ["ok"],
+        }
+    ).to_parquet(run / "taxonomy/failure_taxonomy.parquet")
+    text = report_html.render_run(run).read_text(encoding="utf-8")
+    assert "Incomplete reference annotation" in text
+    assert "Missing candidates do not establish a complete biological negative" in text
 
 
 # --------------------------------------------------------------------------- #

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>bindsight — Research workspace</title>
+  <meta name="description" content="Explore real RNA-seq discovery evidence and predicted protein complexes. Run reproducible analyses on your own computer with bindsight.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d2338'/%3E%3Cpath d='M9 7v18m0-9c0-8 14-8 14 0s-14 8-14 0' fill='none' stroke='%2365dfc1' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ assets }}workbench.css">
+</head>
+<body data-local="{{ 'true' if local else 'false' }}"{% if local %} data-session-token="{{ session_token }}"{% endif %}>
+<a class="skip" href="#main">Skip to workspace</a>
+<header class="masthead">
+  <a class="wordmark" href="#structures" aria-label="bindsight home"><span class="mark" aria-hidden="true">b</span>bindsight<span class="edition">RESEARCH WORKSPACE</span></a>
+  <div class="header-end"><span class="environment">{{ 'On your computer' if local else 'Open research' }}</span><a class="source-link" href="https://github.com/mikhaeelatefrizk/bindsight" target="_blank" rel="noreferrer">GitHub source</a></div>
+</header>
+<div class="app-shell">
+  <aside class="rail">
+    <p class="eyebrow">THE WORKSPACE</p>
+    <nav aria-label="Workspace"><a href="#structures" data-page="structures" class="active"><span>01</span>Protein structures</a><a href="#evidence" data-page="evidence"><span>02</span>Discovery evidence</a><a href="#methods" data-page="methods"><span>03</span>Methods & provenance</a><a href="#run" data-page="run"><span>04</span>{{ 'New analysis' if local else 'Run on your computer' }}</a>{% if local %}<a href="#runs" data-page="runs"><span>05</span>Your analyses</a>{% endif %}</nav>
+    <div class="rail-note"><div class="small-rule"></div><p>Expression.<br>Surface targets.<br>Designed candidates.</p><span>Human bulk RNA-seq<br>Two-condition contrasts</span></div>
+    <div class="rail-footer">Mikhaeel Atef Rizk Wahba<br><a href="https://orcid.org/0009-0006-1069-9558" target="_blank" rel="noreferrer">Independent researcher</a></div>
+  </aside>
+  <main id="main">
+    <div id="load-error" class="notice error" hidden role="alert"></div>
+    <section id="page-structures" class="page">
+      <div class="page-heading"><div><p class="eyebrow">COMMITTED COMPUTATIONAL RESULTS</p><h1>Look closer at the designs.</h1><p class="intro">Twenty ERBB2 candidates. Real predicted complexes.<br>Every structure connected to its source.</p></div><a class="text-link" href="#methods">How these were produced</a></div>
+      <div class="structure-workspace">
+        <div class="candidate-panel"><div class="panel-heading"><h2>Design library</h2><span id="binder-count" class="count">—</span></div><p class="fine">Ordered by model interface confidence</p><div id="binder-list" class="binder-list" role="group" aria-label="Select a predicted complex"></div></div>
+        <div class="molecule-panel"><div class="molecule-top"><div><span class="eyebrow">PREDICTED COMPLEX</span><h2 id="selected-name">Loading committed structure</h2></div><span class="target-chip">ERBB2 · P04626</span></div><div id="molecule" role="img" aria-label="Interactive predicted ERBB2 binder complex"></div><p id="viewer-status" class="viewer-status" role="status">Loading the molecular viewer…</p><div class="molecule-controls"><div class="legend"><span><i class="target-swatch"></i>Target · chain T</span><span><i class="binder-swatch"></i>Candidate · chain B</span></div><div class="control-group"><button id="spin" class="quiet">Rotate</button><button id="reset-view" class="quiet">Reset view</button></div></div><div class="molecule-help">Drag to rotate · scroll to zoom · touch to explore</div></div>
+        <div class="detail-panel"><p class="eyebrow">MODEL OUTPUT</p><div class="metric"><span>Interface confidence</span><strong id="iptm">—</strong><small>ipTM · 0–1 scale</small></div><div class="metric"><span>Interface error</span><strong id="pae">—</strong><small>Predicted aligned error · Å</small></div><div class="metric compact"><span>Candidate length</span><strong id="sequence-length">—</strong></div><a id="download-cif" class="button secondary" download>Download structure</a><a id="download-fasta" class="text-link download" download>Download sequence</a><div class="detail-source"><span>Artifact SHA-256</span><code id="structure-hash">—</code><a id="structure-source" target="_blank" rel="noreferrer">Inspect original file</a></div></div>
+      </div>
+      <div class="interpretation"><span class="interpretation-label">READING THIS RESULT</span><p>These are predictions, not experimentally confirmed binders. In the paired control, shuffled sequences crossed the ipTM threshold more often than the designs. <a href="#evidence">Read the control alongside the structures.</a></p></div>
+      <div class="metadata-strip"><span>RFdiffusion + ProteinMPNN</span><span>Boltz-2 structure prediction</span><span>10 backbones · 20 sequences</span><span>Committed GPU run · Kaggle T4</span></div>
+    </section>
+    <section id="page-evidence" class="page" hidden><div class="page-heading"><div><p class="eyebrow">EVIDENCE, WITH ITS LIMITS</p><h1>What the data actually show.</h1><p class="intro">Patient-matched contrasts. Declared denominators. Positive and negative controls.</p></div></div><div id="evidence-content"></div></section>
+    <section id="page-methods" class="page" hidden><div class="page-heading"><div><p class="eyebrow">REPRODUCIBLE BY DESIGN</p><h1>Follow the evidence.</h1><p class="intro">From input counts to computational candidates, with a record of the work.</p></div></div><div id="methods-content"></div></section>
+    <section id="page-run" class="page" hidden><div class="page-heading"><div><p class="eyebrow">YOUR DATA · YOUR COMPUTER</p><h1>{{ 'Start a real analysis.' if local else 'Bring the workspace to your computer.' }}</h1><p class="intro">{{ 'Choose your files, define the contrast, and run the scientific pipeline locally.' if local else 'Explore here. Install once to analyse your own data without a paid computing service.' }}</p></div></div><div id="run-content"></div></section>
+    {% if local %}<section id="page-runs" class="page" hidden><div class="page-heading"><div><p class="eyebrow">LOCAL RESEARCH RECORD</p><h1>Your analyses.</h1><p class="intro">Results, logs, and the provenance of each run.</p></div><button id="refresh-runs" class="button secondary">Refresh</button></div><div id="runs-content"></div></section>{% endif %}
+    <footer class="main-footer"><span>bindsight · Open-source research software</span><a href="https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSE">AGPL-3.0-or-later</a><span id="evidence-version"></span></footer>
+  </main>
+</div>
+<script src="{{ assets }}vendor/3Dmol-min.js"></script>
+<script src="{{ assets }}workbench-pages.js"></script>
+<script src="{{ assets }}workbench.js"></script>
+</body></html>

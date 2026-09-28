@@ -96,6 +96,10 @@ class DEGParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     design_formula: str = Field(..., description="Patsy formula, e.g. '~ condition'.")
+    categorical_factors: list[str] = Field(
+        default_factory=list,
+        description="Metadata columns read literally and modelled as categorical factors, including numeric patient IDs.",
+    )
     contrast: list[str] = Field(
         ...,
         min_length=3,
@@ -215,6 +219,11 @@ class TargetDiscoveryParams(BaseModel):
 
     # Open Targets enrichment
     use_open_targets: bool = True
+    allow_bundled_mapping_fallback: bool = Field(
+        True,
+        description="Allow the small historical Ensembl-to-UniProt fallback map. "
+        "The local research workbench disables this and records missing mappings instead.",
+    )
     require_tractable_modality: list[str] = Field(
         default_factory=lambda: ["AB"],
         description="Open Targets tractability modality codes a candidate must have "

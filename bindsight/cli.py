@@ -1007,11 +1007,10 @@ def benchmark(
 def ui(port: int, no_browser: bool) -> None:
     """Launch the bindsight web interface in your browser.
 
-    Five sections: what the tool is and has shown, the evidence behind that, a
-    demo, your own data, and the runs already on disk. Served locally; nothing
-    leaves the machine and nothing is fetched from a network once installed --
-    the stylesheet, the charts and the structure viewer all travel inside the
-    package.
+    Explore committed evidence, check this computer, and run two-condition
+    human bulk RNA-seq discovery. Input files and results stay in the local
+    workspace. Analysis queries public reference services; the interface,
+    fonts and structure viewer are bundled for local rendering.
     """
     try:
         from bindsight.report.web.app import serve
@@ -1029,7 +1028,7 @@ def ui(port: int, no_browser: bool) -> None:
         )
         sys.exit(2)
 
-    url = f"http://127.0.0.1:{port}"
+    url = f"http://127.0.0.1:{port}/workbench"
     console.print(
         Panel(
             f"[bold]{url}[/bold]\n[dim]Ctrl-C to stop. Runs are read from ./runs.[/dim]",

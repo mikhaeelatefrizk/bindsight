@@ -39,6 +39,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
+from bindsight.report.coverage import annotation_coverage
 from bindsight.report.format import fmt_p
 
 LOG = logging.getLogger(__name__)
@@ -159,6 +160,7 @@ def render_run(
         # "could not be read" and "read, and empty" are different findings, and
         # the template said the second for both.
         candidates_unreadable=candidates_df is None,
+        annotation_coverage=annotation_coverage(taxonomy_df),
         n_epitopes=len(epitopes_df) if epitopes_df is not None else 0,
         binders_table=_binders_table(ranking_df, run_dir, include_sequences=include_binders),
         n_binders=len(ranking_df) if ranking_df is not None else 0,

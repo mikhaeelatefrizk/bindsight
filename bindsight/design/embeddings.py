@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 LOG = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ def esm2_embed(
     *,
     model_name: str = DEFAULT_PLM,
     batch_size: int = 8,
-) -> np.ndarray:
+) -> NDArray[Any]:
     """Mean-pooled ESM-2 embeddings for ``sequences`` → array of shape (N, D).
 
     Real protein-LM inference (no placeholder). Pools over residue token states,
@@ -59,7 +61,7 @@ def esm2_embed(
     model = AutoModel.from_pretrained(model_name)
     model.eval()
 
-    vecs: list[np.ndarray] = []
+    vecs: list[NDArray[Any]] = []
     with torch.no_grad():
         for i in range(0, len(sequences), batch_size):
             batch = sequences[i : i + batch_size]
@@ -77,7 +79,7 @@ def esm2_embed(
     return np.vstack(vecs)
 
 
-def mean_pool_residues(hidden: np.ndarray, keep: np.ndarray) -> np.ndarray:
+def mean_pool_residues(hidden: NDArray[Any], keep: NDArray[Any]) -> NDArray[Any]:
     """Mean of ``hidden`` over the positions ``keep`` marks, per sequence.
 
     Split out of :func:`esm2_embed` so it can be tested. It is arithmetic --
@@ -100,11 +102,11 @@ def mean_pool_residues(hidden: np.ndarray, keep: np.ndarray) -> np.ndarray:
     weights = keep[..., None].astype(hidden.dtype)
     summed = (hidden * weights).sum(axis=1)
     counts = weights.sum(axis=1).clip(min=1.0)
-    pooled: np.ndarray = (summed / counts).astype(np.float32)
+    pooled: NDArray[Any] = (summed / counts).astype(np.float32)
     return pooled
 
 
-def pca_2d(embeddings: np.ndarray) -> np.ndarray:
+def pca_2d(embeddings: NDArray[Any]) -> NDArray[Any]:
     """Project an (N, D) embedding matrix to (N, 2) principal coordinates.
 
     Pure NumPy (centred SVD) so it needs no scikit-learn/UMAP and runs anywhere.
@@ -131,7 +133,7 @@ def pca_2d(embeddings: np.ndarray) -> np.ndarray:
 
 
 def render_embedding_png(
-    coords: np.ndarray,
+    coords: NDArray[Any],
     labels: list[str],
     out_path: str | Path,
     *,

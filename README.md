@@ -1,5 +1,16 @@
 # bindsight
 
+### [Open the Bindsight research workspace](https://bindsight-research.regal-ray-9578.chatgpt.site)
+
+Explore the committed predicted protein structures, discovery study and paired
+controls directly in your browser. To analyse your own data, choose **Run on your
+computer** on the website: download the workspace, install once, and run CPU
+RNA-seq discovery locally. [Local setup and GPU limitations](docs/local-workspace.md).
+
+The website and local application share the interface in `bindsight/report/web/`.
+The `bindsight/` Python package is the analysis engine; the other repository
+folders contain scientific evidence, references, examples, documentation and tests.
+
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
 > machine-readable provenance from every ranked binder back to the patient samples
@@ -146,9 +157,10 @@ written down before its data arrived.
 The claim the project rests on — a reviewer can start at a ranked binder and reach
 the patient samples it came from — was exhibited once, end to end, on a target the
 discovery half chose for itself: CA9 at rank 1 and CD70 at rank 2 out of TCGA-KIRC,
-carried through to 40 designs and a walkable PROV-O graph. The committed manifest
-lets you verify the first three steps of that walk from this clone; the rest needs
-the crate rebuilt, and that directory says so precisely.
+carried through to 40 designs and a PROV-O graph. The committed RO-Crate metadata
+records binder identity, target and structure paths; the manifest records stages.
+The design range is absent from both committed files, and the later path back to
+the cohort requires the complete crate, which is not included in this clone.
 
 → [`benchmarks/provenance_join/`](benchmarks/provenance_join/)
 

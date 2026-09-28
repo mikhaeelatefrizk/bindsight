@@ -133,3 +133,4 @@ benchmarks/designer_benchmark/run_t4/
 
 # Editor and agent tooling, not part of the project.
 .claude/
+.venv-bindsight/

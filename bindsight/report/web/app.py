@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -175,6 +175,10 @@ def create_app(*, run_root: Path | None = None) -> Any:
 
     runs_root = Path(run_root) if run_root else Path.cwd() / "runs"
 
+    from bindsight.report.web.workbench_routes import register
+
+    register(app, templates, runs_root)
+
     def page(request: Request, name: str, **ctx: Any) -> HTMLResponse:
         return templates.TemplateResponse(
             request=request, name=name, context={"nav": name.split(".")[0], **ctx}
@@ -215,14 +219,22 @@ def create_app(*, run_root: Path | None = None) -> Any:
 
     # -- 3. Try it ----------------------------------------------------------
     @app.get("/try", response_class=HTMLResponse)
-    def try_it(request: Request) -> HTMLResponse:
-        return page(request, "try.html.j2", cohort=_demo_description())
+    def try_it(request: Request) -> RedirectResponse:
+        return RedirectResponse("/workbench#run")
 
     @app.post("/try/run")
-    def try_run() -> JSONResponse:
-        job = _new_job("demo")
-        threading.Thread(target=_run_demo, args=(job,), daemon=True).start()
-        return JSONResponse({"job": job.id})
+    def try_run(request: Request) -> JSONResponse:
+        origin = request.headers.get("origin")
+        if origin and origin.rstrip("/") != str(request.base_url).rstrip("/"):
+            return JSONResponse(
+                {"error": "Start the demo from the local application."}, status_code=403
+            )
+        return JSONResponse(
+            {
+                "error": "The old shared demo launcher is retired. Open /workbench for an isolated local analysis."
+            },
+            status_code=410,
+        )
 
     # -- 4. Your data -------------------------------------------------------
     @app.get("/your-data", response_class=HTMLResponse)
@@ -550,6 +562,10 @@ def _run_demo(job: Job) -> None:
 
         job.step(_DEMO_STAGES[0], "running")
         manifest = discover_pipeline.run(cfg, out_dir=out_dir)
+        if any(stage.status == "failed" for stage in manifest.stages):
+            raise RuntimeError(
+                "A scientific stage failed. Inspect the run manifest for the original error."
+            )
         job.finish_previous()
         for name in _DEMO_STAGES[1:-1]:
             job.step(name, "done")
@@ -620,5 +636,5 @@ def serve(
     if open_browser:
         import webbrowser
 
-        threading.Timer(1.0, lambda: webbrowser.open(f"http://{host}:{port}")).start()
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://{host}:{port}/workbench")).start()
     uvicorn.run(create_app(run_root=run_root), host=host, port=port, log_level="warning")
