@@ -18,7 +18,7 @@ hide:
     &ldquo;given a target structure&rdquo;. bindsight is the reproducible, citable bridge between them.
   </p>
   <div class="bs-cta">
-    <a class="primary" href="https://bindsight-research.regal-ray-9578.chatgpt.site">Open research workspace</a>
+    <a class="primary" href="https://bindsight-research.mikha-50.chatgpt.site">Open research workspace</a>
     <a href="results/">See real results</a>
     <a href="what-is-bindsight/">What is bindsight?</a>
     <a href="how-to-use/">Run it yourself</a>

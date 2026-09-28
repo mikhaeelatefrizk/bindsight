@@ -1,6 +1,6 @@
 # bindsight
 
-### [Open the Bindsight research workspace](https://bindsight-research.regal-ray-9578.chatgpt.site)
+### [Open the Bindsight research workspace](https://bindsight-research.mikha-50.chatgpt.site)
 
 Explore the committed predicted protein structures, discovery study and paired
 controls directly in your browser. To analyse your own data, choose **Run on your
