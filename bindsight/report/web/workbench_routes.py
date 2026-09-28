@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
-from starlette.concurrency import run_in_threadpool
-from starlette.templating import Jinja2Templates
+from fastapi.templating import Jinja2Templates
 
 from bindsight.report.web.evidence import evidence_bundle
 from bindsight.report.web.workspace import MAX_UPLOAD, Workspace, hardware, inspect_inputs

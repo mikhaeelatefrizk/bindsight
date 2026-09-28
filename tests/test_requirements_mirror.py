@@ -135,6 +135,7 @@ _IMPORT_NAMES: dict[str, str] = {
 #: A dependency reaches the environment for a purpose; when that purpose is not
 #: an import, the purpose is written down here rather than left to be guessed.
 _INDIRECT: dict[str, str] = {
+    "psutil": "loaded with importlib by workspace.hardware for optional local memory detection",
     "openpyxl": "pandas.read_excel's engine for the SURFY .xlsx; imported by pandas",
     "pyarrow": "pandas' parquet engine; imported by pandas, not by bindsight",
 }

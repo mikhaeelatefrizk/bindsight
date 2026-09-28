@@ -19,7 +19,7 @@ hide:
   </p>
   <div class="bs-cta">
     <a class="primary" href="https://bindsight-research.regal-ray-9578.chatgpt.site">Open research workspace</a>
-    <a class="primary" href="results/">See real results</a>
+    <a href="results/">See real results</a>
     <a href="what-is-bindsight/">What is bindsight?</a>
     <a href="how-to-use/">Run it yourself</a>
     <a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a>
