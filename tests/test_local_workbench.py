@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 from bindsight.deg.diagnostics import write_fit_diagnostics
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 from bindsight.report.coverage import annotation_coverage
+from bindsight.report.web import resources
 from bindsight.report.web.app import create_app
 from bindsight.report.web.workspace import (
     Workspace,
@@ -24,6 +25,21 @@ from bindsight.report.web.workspace import (
     inspect_inputs,
     write_json,
 )
+
+
+@pytest.fixture
+def admitted_workstation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Lifecycle tests use fixed artificial admission; resource checks have dedicated tests."""
+    monkeypatch.setattr(
+        resources,
+        "assess_execution",
+        lambda *args, **kwargs: {
+            "admitted": True,
+            "n_cpus": 1,
+            "policy": "artificial-lifecycle-test-only",
+            "reasons": [],
+        },
+    )
 
 
 def inputs(tmp_path: Path) -> tuple[Path, Path]:
@@ -144,7 +160,7 @@ def test_real_http_upload_inspection_and_host_token_guards(tmp_path: Path) -> No
 
 
 def test_queued_paired_config_preserves_categories_and_disables_fallback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, admitted_workstation: None
 ) -> None:
     counts, design = inputs(tmp_path)
     workspace = Workspace(tmp_path / "runs")
@@ -294,7 +310,7 @@ def test_chunked_settings_obey_the_actual_body_limit(tmp_path: Path) -> None:
 
 
 def test_server_shutdown_cancels_and_reaps_its_worker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, admitted_workstation: None
 ) -> None:
     counts, design = inputs(tmp_path)
     original_popen = subprocess.Popen

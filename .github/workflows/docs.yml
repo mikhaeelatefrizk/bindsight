@@ -65,6 +65,28 @@ jobs:
         run: mkdocs build --strict --site-dir site
       - name: Build the research workspace from this tested commit
         run: python scripts/build_website.py --out site/workspace
+      - name: Resolve the successful matching CI run
+        id: tested
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          if [ -n "$TRIGGER_RUN" ]; then
+            echo "id=$TRIGGER_RUN" >> "$GITHUB_OUTPUT"
+          else
+            RUN=$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" --json databaseId,conclusion --jq '[.[] | select(.conclusion == "success")][0].databaseId')
+            test -n "$RUN" && test "$RUN" != null
+            echo "id=$RUN" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Fetch companion builds from the same successful CI run
+        uses: actions/download-artifact@v8
+        with:
+          pattern: companion-*
+          path: companion-builds
+          run-id: ${{ steps.tested.outputs.id }}
+          github-token: ${{ github.token }}
+      - name: Verify and publish the matching companions
+        run: python scripts/publish_companions.py --artifacts companion-builds --workspace site/workspace
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

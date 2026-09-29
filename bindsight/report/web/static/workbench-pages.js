@@ -14,6 +14,7 @@ function node(tag, attrs={}, ...children){
   return element;
 }
 const N=node;
+const replace=(host,...children)=>host.replaceChildren(...children.flat(Infinity).filter(child=>child!==null&&child!==undefined&&child!==false));
 const para=(...children)=>N('p',{},...children);
 const label=text=>N('p',{class:'eyebrow'},text);
 const source= (path,title)=>N('a',{href:evidence.repository+'/blob/'+(evidence.revision||'main')+'/'+path,target:'_blank',rel:'noreferrer'},title);
@@ -91,12 +92,40 @@ async function api(path,options={}){
 }
 function renderRun(){if(localMode)renderLocalRun();else renderInstallation();}
 function renderInstallation(){
-  const osSelect=N('select',{id:'install-os',class:'filter'},option('Windows','windows'),option('macOS','mac'),option('Linux','linux'));
-  const platform=navigator.platform.toLowerCase();osSelect.value=platform.includes('mac')?'mac':platform.includes('linux')?'linux':'windows';
-  const steps=N('div',{class:'steps'});
-  function draw(){const step=(h,p)=>N('div',{class:'step'},N('div',{},N('h3',{},h),p));steps.replaceChildren(step('Install Python 3.11–3.13',para('Use the free installer from ',link('https://www.python.org/downloads/','python.org'),'. ',osSelect.value==='windows'?'Select “Add Python to PATH” during installation.':'If a supported Python is already installed, continue to step two.')),step('Download and extract',para('Unzip the workspace into a folder you own. Keep its folders together: they contain the analysis engine and scientific evidence.')),step('Launch the workspace',para(osSelect.value==='windows'?'Double-click Start bindsight.cmd.':'Open a terminal in the extracted folder and run python3 launch.py.',' The first launch creates a separate environment and installs the scientific packages. Later launches reopen the application.')),step('Check your computer',para('The local application opens in your browser. Choose “New analysis” to inspect available hardware and supply your files.')));}
-  osSelect.addEventListener('change',draw);draw();
-  $('run-content').replaceChildren(N('div',{class:'install-hero'},N('div',{},label('THE LOCAL WORKSPACE'),title('Real analysis. On your hardware.'),para('Your input files and results stay in your local workspace. The analysis uses the Python scientific code in the bindsight repository. Public reference queries and model downloads still require internet access.'),N('a',{class:'button',href:'downloads/bindsight-local.zip',download:true},'Download bindsight workspace'),N('a',{class:'install-checksum',href:'downloads/SHA256SUMS',download:true},'Verify download checksum')),N('div',{class:'install-spec'},N('span',{},'ANALYSIS ENGINE'),N('strong',{},'Python + PyDESeq2'),N('span',{},'SUPPORTED SYSTEMS'),N('strong',{},'Windows · macOS · Linux'),N('span',{},'COMPUTING SERVICE FEES'),N('strong',{},'None · your own computer'))),N('div',{class:'grid-two section-gap'},card(heading(title('One-time setup.'),field('Your system',osSelect)),steps),card(label('CHECKED BEFORE YOU START'),title('The work your computer can do.'),N('ul',{class:'check-list'},['Explore the complete published evidence and all twenty predicted structures.','Run RNA-seq discovery on the CPU, subject to the dataset’s memory requirements.','Check your processor, available storage, and detected NVIDIA graphics hardware.','Use existing GPU tools on a separately configured compatible GPU environment. The basic setup installs the CPU discovery workspace.'].map(t=>N('li',{},t))),notice('Local GPU design is an advanced setup. The published successful run used a Kaggle T4; that does not verify every Windows, Linux, or NVIDIA configuration. A Mac GPU does not run the current CUDA design stack.'),link(evidence.repository+'/blob/main/docs/local-workspace.md','Read the complete local setup guide'))));
+  const osSelect=N('select',{id:'install-os',class:'filter'},option('Windows · Intel / AMD','windows-x64'),option('Mac · Apple silicon','macos-arm64'),option('Mac · Intel','macos-x64'),option('Linux · Intel / AMD','linux-x64'));
+  const platform=navigator.platform.toLowerCase();osSelect.value=platform.includes('mac')?'macos-arm64':platform.includes('linux')?'linux-x64':'windows-x64';
+  const download=N('a',{class:'button',id:'companion-download',hidden:true,download:true},'Download companion');
+  const status=para('Checking available installers…');status.setAttribute('role','status');
+  const details=N('div',{class:'source-caption'});
+  let manifest;
+  function choose(){
+    download.hidden=true;
+    if(!manifest)return;
+    const item=manifest.platforms?.[osSelect.value];
+    if(!item||!/^Bindsight-Companion-[a-z0-9-]+(?:\.exe|\.zip)?$/.test(item.filename)||!/^[a-f0-9]{64}$/.test(item.sha256)){
+      status.textContent='A verified companion download for this system is not available in this release.';details.replaceChildren();return;
+    }
+    download.href='downloads/'+item.filename;download.hidden=false;
+    status.textContent=(item.size_bytes/1024/1024).toFixed(1)+' MB · scientific packages download during approved setup';
+    details.replaceChildren(N('details',{},N('summary',{},'Download verification'),para('Source '+manifest.revision),N('code',{class:'download-hash'},item.sha256)));
+  }
+  osSelect.addEventListener('change',choose);
+  async function installers(){
+    status.textContent='Checking available installers…';
+    try{
+      const [response,releaseResponse]=await Promise.all([fetch('downloads/companion.json',{cache:'no-store'}),fetch('release.json',{cache:'no-store'})]);
+      if(!response.ok||!releaseResponse.ok)throw new Error('The companion download list could not be reached.');
+      const data=await response.json(),release=await releaseResponse.json();
+      if(!/^[a-f0-9]{40}$/.test(data.revision)||data.revision!==release.revision)throw new Error('The new release is being published. Please retry in a moment.');
+      manifest=data;choose();
+    }catch(e){status.replaceChildren(document.createTextNode(e.message+' '),button(null,'Retry',installers,'inline-link'));}
+  }
+  const step=(h,p)=>N('div',{class:'step'},N('div',{},N('h3',{},h),para(p)));
+  $('run-content').replaceChildren(
+    N('div',{class:'install-hero'},N('div',{},label('THE BINDSIGHT COMPANION'),title('Your research. Your computer.'),para('Install the companion once. It prepares the scientific workspace, checks this computer, and opens the analysis interface in your browser.'),field('Choose your computer',osSelect),download,status,details),N('div',{class:'install-spec'},N('span',{},'BASIC ANALYSIS'),N('strong',{},'Human bulk RNA-seq · CPU'),N('span',{},'PROTEIN DESIGN'),N('strong',{},'Compatible NVIDIA GPU required'),N('span',{},'COMPUTING SERVICE FEES'),N('strong',{},'None · runs on your hardware'))),
+    N('div',{class:'grid-two section-gap'},card(label('ONE GUIDED SETUP'),title('Open. Approve. Start.'),N('div',{class:'steps'},step('Open the downloaded companion','Choose the version for your computer and open the downloaded application.'),step('Approve the workspace setup','The companion downloads its own Python environment and the required scientific packages. Read the actual setup progress in its window.'),step('Use the browser interface','Upload your counts and sample design, run discovery, and inspect saved results. Compatible GPU workstations can prepare the protein-design tools from the local interface.')),row(link('bindsight://open','Open installed companion','button secondary')),caption('Already installed? Approve your browser’s Open app prompt. If your browser does not offer it, open the Bindsight shortcut created during setup. Your saved analyses remain on that computer.')),
+    card(label('BEFORE YOU BEGIN'),title('Clear requirements. Real results.'),para('CPU discovery works on supported Windows, Mac and Linux computers. Protein design needs the supported Linux / WSL environment and sufficient NVIDIA GPU memory. Mac GPUs do not support the current CUDA design stack.'),para('Initial setup, reference queries and GPU models need internet access and storage. Your count matrices, sample metadata and computed results stay in the local workspace; selected gene identifiers are queried against public reference services.'),notice('Hardware checks assess prerequisites. They cannot guarantee that every target fits in memory. Protein-design predictions still require laboratory validation.'),N('details',{},N('summary',{},'Source download and technical documentation'),para(link('downloads/bindsight-local.zip','Download the complete source workspace'), ' · ',link('downloads/SHA256SUMS','Source checksum')),link('https://github.com/mikhaeelatefrizk/bindsight/blob/main/docs/local-workspace.md','Read the setup and hardware guide')))));
+  installers();
 }
 function renderLocalRun(){
   $('run-content').replaceChildren(N('div',{id:'hardware-panel',class:'card'},N('p',{class:'status-line'},'Checking this computer…')),
@@ -107,7 +136,25 @@ function renderLocalRun(){
   checkHardware();
 }
 function updateContrastSummary(){if(!$('contrast-summary'))return;const a=$('numerator').value,b=$('denominator').value,paired=$('paired-by').value;$('contrast-summary').textContent='Compare '+a+' with '+b+'. Positive log₂ fold change means higher expression in '+a+'. '+(paired?'Matched by '+paired+'.':'Unpaired biological samples.');}
-async function checkHardware(){try{const h=await api('/hardware');const metric=(v,n)=>N('div',{},N('strong',{},v),N('span',{},n));$('hardware-panel').replaceChildren(heading(N('div',{},label('THIS COMPUTER'),title(h.discovery_installed?'CPU analysis packages are installed.':'Scientific dependencies are missing.')),N('span',{class:'tag'},h.platform+' · Python '+h.python)),N('div',{class:'hardware-grid'},metric(h.cpus,'Logical CPU cores'),metric(h.memory_available_bytes?(h.memory_available_bytes/2**30).toFixed(1)+' GB':'Not measured','Available memory'),metric((h.disk_free_bytes/2**30).toFixed(1)+' GB','Free workspace storage')),para(h.gpus.length?h.gpus.map(g=>g.name+' · '+(g.memory_mib/1024).toFixed(1)+' GB').join('; '):'No NVIDIA GPU was detected. CPU discovery and result exploration remain available.'),caption(h.gpu_design_note+' This check does not guarantee that an arbitrary dataset fits in memory.'));if(!h.discovery_installed)$('inspect-inputs').disabled=true;}catch(e){$('hardware-panel').textContent=e.message;}}
+async function checkHardware(){
+  const panel=$('hardware-panel');
+  try{
+    const h=await api('/hardware'),dependencies=h.dependency_status;
+    const metric=(v,n)=>N('div',{},N('strong',{},v),N('span',{},n));
+    const capacity=value=>Number.isFinite(value)?(value/2**30).toFixed(1)+' GiB':'Not measured';
+    const failures=(dependencies?.checks||[]).filter(c=>!c.usable);
+    replace(panel,heading(N('div',{},label('THIS COMPUTER'),title(h.discovery_installed?'CPU analysis libraries loaded successfully.':'CPU analysis needs attention.')),N('span',{class:'tag'},h.platform+' · Python '+h.python)),
+      N('div',{class:'hardware-grid'},metric(h.cpus,'Logical CPU cores'),metric(capacity(h.memory_available_bytes),'Available memory'),metric(capacity(h.disk_free_bytes),'Free workspace storage')),
+      para(h.gpus.length?h.gpus.map(g=>g.name+' · '+(g.memory_mib/1024).toFixed(1)+' GiB').join('; '):'No NVIDIA GPU was detected. CPU discovery and result exploration remain available.'),
+      dependencies?.error?notice(dependencies.error):null,
+      failures.length?N('details',{},N('summary',{},'Library check details'),failures.map(c=>para(c.module+' · '+(c.required?'required':'optional')+': '+c.error))):null,
+      failures.some(c=>!c.required)?notice('An optional library could not load. Some reference annotations may be unavailable; their coverage will be reported with the results.'):null,
+      caption(h.gpu_design_note+' Dataset memory and storage are checked again before launch.'),
+      dependencies?caption(dependencies.limitation):null,
+      button(null,'Check again',checkHardware,'inline-link'));
+    $('inspect-inputs').disabled=!h.discovery_installed;
+  }catch(e){panel.replaceChildren(notice(e.message),button(null,'Retry computer check',checkHardware,'inline-link'));}
+}
 async function inspectFiles(){
   const counts=$('counts-file').files[0],design=$('design-file').files[0];$('input-error').hidden=true;
   if(!counts||!design){$('input-error').textContent='Choose both files first.';$('input-error').hidden=false;return;}
@@ -127,13 +174,47 @@ async function startAnalysis(){
   $('start-analysis').disabled=true;$('start-status').textContent='Validating the comparison…';
   try{if(!uploadIdentity)throw new Error('Check both input files first.');const body={name:$('analysis-name').value,factor:$('factor').value,numerator:$('numerator').value,denominator:$('denominator').value,paired_by:$('paired-by').value,fdr:Number($('fdr').value),log2fc:Number($('log2fc').value)};const job=await api('/jobs/'+uploadIdentity,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('start-status').textContent='Analysis queued.';await watchJob(job.id);$('job-panel').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){$('start-status').textContent=e.message;$('start-analysis').disabled=false;}
 }
-function jobActions(job){if(!['completed','incomplete_annotation'].includes(job.state))return[];const base='/api/workbench/jobs/'+job.id+'/artifact/';return [N('a',{class:'button',href:base+'report',target:'_blank',rel:'noreferrer'},'Open report'),N('a',{class:'button secondary',href:base+'candidates',download:true},'Candidate table'),N('a',{class:'text-link',href:base+'manifest',download:true},'Download provenance')];}
+function jobActions(job){
+  if(!['completed','incomplete_annotation'].includes(job.state))return[];
+  const base='/api/workbench/jobs/'+job.id+'/artifact/';
+  const available=job.available_artifacts||(['gpu_setup','gpu_design'].includes(job.kind)?[]:['report','candidates','manifest','deg','config','taxonomy','coverage','fit_diagnostics']);
+  const names={report:'Open report',candidates:'Candidate table',manifest:'Provenance',deg:'Differential expression',config:'Analysis settings',taxonomy:'Annotation outcomes',coverage:'Annotation coverage',fit_diagnostics:'Numerical diagnostics',ranking:'Ranked designs',validated:'Prediction scores',design_archive:'Complete design files',gpu_environment:'GPU environment record',gpu_setup_receipt:'GPU setup record',source_manifest:'Source discovery provenance'};
+  const actions=[];
+  if(available.includes('report'))actions.push(N('a',{class:'button',href:base+'report',target:'_blank',rel:'noreferrer'},'Open report'));
+  const files=available.filter(k=>k!=='report'&&names[k]);
+  if(files.length)actions.push(N('details',{class:'artifact-menu'},N('summary',{},'Download results ('+files.length+')'),N('div',{class:'artifact-links'},files.map(k=>N('a',{href:base+k,download:true},names[k])))));
+  if(!job.kind||job.kind==='discovery')actions.push(button(null,'Design from these targets',()=>{gpuSourceIdentity=job.id;if(location.hash==='#gpu')renderGpu();else location.hash='gpu';},'button secondary'));
+  if(job.kind==='gpu_design')actions.push(button(null,'View predicted complexes',()=>showGpuResults(job.id),'button secondary'));
+  if(job.kind==='gpu_setup')actions.push(button(null,'Continue to protein design',()=>{if(location.hash==='#gpu')renderGpu();else location.hash='gpu';},'button secondary'));
+  return actions;
+}
 function jobFitDiagnostics(job){
   const fit=job.numerical_fit;if(!fit)return N('span');
   return N('div',{class:'section-gap'},N('h3',{},'Numerical fit diagnostics'),...fit.warnings.map(message=>notice(message)),N('details',{class:'log-details'},N('summary',{},fit.available?'View recorded fit details':'Fit diagnostics are unavailable'),N('ul',{},fit.details.map(message=>N('li',{},message)))),caption(fit.scope));
 }
-async function watchJob(id){
-  clearTimeout(pollTimer);$('job-panel').hidden=false;
-  try{const job=await api('/jobs/'+id);$('job-panel').replaceChildren(label('ACTUAL ANALYSIS STATUS'),heading(title(job.name),N('span',{class:'tag'},job.state.replaceAll('_',' '))),job.error?N('p',{class:'notice error'},job.error):N('span'),job.state==='incomplete_annotation'?notice('Reference annotation was incomplete. Missing or filtered candidates must not be interpreted as a complete biological negative.'):N('span'),jobFitDiagnostics(job),caption('The log below comes from the running scientific process. No estimated percentage is substituted for real progress.'),row(jobActions(job),['running','queued'].includes(job.state)?button('cancel-analysis','Cancel analysis',async()=>{try{await api('/jobs/'+id+'/cancel',{method:'POST'});watchJob(id);}catch(e){$('cancel-analysis').textContent=e.message;}},'button secondary'):null),N('details',{class:'log-details',open:['queued','running','cancelling','failed','interrupted'].includes(job.state)},N('summary',{},'View the actual process log'),N('pre',{class:'job-log'},job.log)));if(['queued','running','cancelling'].includes(job.state))pollTimer=setTimeout(()=>watchJob(id),2500);}catch(e){$('job-panel').textContent=e.message;}
+function jobResourceInfo(job){
+  const admission=job.resource_admission;if(!admission)return null;
+  return N('details',{class:'log-details'},N('summary',{},'Computer check · '+admission.n_cpus+' CPU worker'+(admission.n_cpus===1?'':'s')),
+    para('Estimated working memory: '+(admission.estimated_memory_bytes/2**30).toFixed(1)+' GiB. Estimated working storage: '+(admission.estimated_disk_bytes/2**30).toFixed(1)+' GiB.'),
+    ...(admission.warnings||[]).map(notice),caption(admission.limits));
 }
-async function refreshRuns(){try{const{jobs}=await api('/jobs');$('runs-content').replaceChildren(...(jobs.length?jobs.map(job=>sectionCard(heading(N('div',{},label(new Date(job.created_at).toLocaleString()),title(job.name)),N('span',{class:'tag'},job.state.replaceAll('_',' '))),para(job.genes.toLocaleString()+' genes · '+job.samples+' samples · '+job.contrast[1]+' versus '+job.contrast[2]),row(jobActions(job),button(null,'View actual log',()=>{location.hash='run';watchJob(job.id);},'inline-link')))):[N('div',{class:'empty'},'No analyses have been started in this workspace. Choose “New analysis” to begin.')]));}catch(e){$('runs-content').textContent=e.message;}}
+async function watchJob(id,panelId='job-panel',attempt=0){
+  clearTimeout(pollTimer);const panel=$(panelId);if(!panel)return;panel.hidden=false;
+  try{
+    const job=await api('/jobs/'+id);
+    const running=['queued','running','cancelling'].includes(job.state);
+    const cancel=button(null,'Cancel job',async()=>{cancel.disabled=true;try{await api('/jobs/'+id+'/cancel',{method:'POST'});watchJob(id,panelId);}catch(e){cancel.disabled=false;cancel.textContent='Cancel failed: '+e.message;}},'button secondary');
+    const resume=job.kind?.startsWith('gpu_')&&['failed','interrupted','cancelled'].includes(job.state)?button(null,'Retry / resume saved work',async()=>{try{const next=await api('/jobs/'+id+'/resume',{method:'POST'});watchJob(next.id,panelId);}catch(e){panel.append(notice(e.message));}},'button secondary'):null;
+    replace(panel,label('ACTUAL JOB STATUS'),heading(title(job.name),N('span',{class:'tag'},job.state.replaceAll('_',' '))),job.error?N('p',{class:'notice error'},job.error):null,job.state==='incomplete_annotation'?notice('Reference annotation was incomplete. Missing or filtered candidates must not be interpreted as a complete biological negative.'):null,jobFitDiagnostics(job),jobResourceInfo(job),caption('Progress comes from the scientific process log. Completed computation does not establish experimental binding.'),row(jobActions(job),running?cancel:null,resume),N('details',{class:'log-details',open:running||['failed','interrupted'].includes(job.state)},N('summary',{},'View the actual process log'),N('pre',{class:'job-log'},job.log||'No log has been recorded yet.')));
+    if(running)pollTimer=setTimeout(()=>watchJob(id,panelId),2500);
+  }catch(e){
+    panel.replaceChildren(notice('The connection to this computer was interrupted. The job may still be running.'),para(e.message),button(null,'Reconnect',()=>watchJob(id,panelId),'button secondary'));
+    if(attempt<3)pollTimer=setTimeout(()=>watchJob(id,panelId,attempt+1),Math.min(10000,2500*(attempt+1)));
+  }
+}
+async function refreshRuns(){
+  try{
+    const{jobs}=await api('/jobs');
+    $('runs-content').replaceChildren(...(jobs.length?jobs.map(job=>sectionCard(heading(N('div',{},label(new Date(job.created_at).toLocaleString()),title(job.name)),N('span',{class:'tag'},job.state.replaceAll('_',' '))),para(job.kind==='gpu_setup'?'Local GPU environment setup':job.kind==='gpu_design'?'Protein design and structure prediction':Number(job.genes).toLocaleString()+' genes · '+job.samples+' samples · '+job.contrast[1]+' versus '+job.contrast[2]),row(jobActions(job),button(null,'View job',()=>{location.hash='run';watchJob(job.id);},'inline-link')))):[N('div',{class:'empty'},'No analyses have been started in this workspace. Choose “New analysis” to begin.')]));
+  }catch(e){$('runs-content').replaceChildren(notice(e.message),button(null,'Retry',refreshRuns,'button secondary'));}
+}
