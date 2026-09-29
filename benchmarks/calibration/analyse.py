@@ -8,20 +8,20 @@ it into a measured quantity by giving it something to be measured against.
 
 **The comparison.** Each of the twenty committed ERBB2 designs was folded in the
 same job as a shuffle of its own sequence. A shuffle preserves length and
-amino-acid composition exactly and destroys only the residue order, which is the
-entire content of the design. Both arms went through the same validator, against
-the same target, on the same card, in the same session, so the only difference
-between a pair is the order of its residues.
+amino-acid composition exactly and disrupts the sequence-order information.
+Both arms went through the same validator, against the same target, on the same
+card, in the same session. Stochastic folding variation remains part of the
+measured paired difference.
 
-**What comes out.** For a threshold to mean anything it needs a false-positive
-rate: the fraction of scrambles that clear it. A design scoring 0.7 is only
-evidence if scrambles of the same composition do not also score 0.7.
+**What comes out.** The threshold-crossing rate of computational sequence
+shuffles. These have not been demonstrated to be experimental nonbinders, so
+their pass rate is not a measured biological false-positive rate.
 
-**The test.** Paired, and exact. With twenty pairs the sign-flip null has
-2^20 = 1,048,576 members, so it is enumerated rather than sampled — no Monte
-Carlo error on a number this small, and nothing to justify about a draw count.
-The pairing is what makes it powerful: composition, length and target are held
-fixed within a pair, so the difference isolates order.
+**The independent unit.** Sequences produced from the same RFdiffusion backbone
+are clustered together. Current inference resamples backbone means and applies
+a two-sided sign-flip test to those means, conditional on independent, symmetric
+cluster differences. Historical sequence-pair statistics remain explicitly
+labelled for audit; twenty sequences are not twenty independent designs.
 
 **What this does not measure.** Run-to-run and version-to-version drift, if a
 committed metrics file is supplied for comparison, is reported separately and
@@ -37,8 +37,10 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -72,7 +74,13 @@ def _load(path: Path) -> dict[str, float]:
         row = json.loads(line)
         iptm = row.get("iptm")
         if iptm is not None:
-            rows[row["binder_id"]] = float(iptm)
+            binder_id = row["binder_id"]
+            if binder_id in rows:
+                raise ValueError(f"duplicate scored binder id: {binder_id}")
+            value = float(iptm)
+            if not math.isfinite(value) or not 0 <= value <= 1:
+                raise ValueError(f"invalid ipTM for {binder_id}: expected a finite value in [0, 1]")
+            rows[binder_id] = value
     return rows
 
 
@@ -166,13 +174,135 @@ _BOOTSTRAP = 20_000
 _BOOTSTRAP_SEED = 20260912
 
 
+def backbone_inference(differences: dict[str, float]) -> dict[str, Any]:
+    """Infer over mean differences per RFdiffusion backbone, not its sequences.
+
+    IDs from the recorded pipeline encode ``<target>_binder_<n>_seq<n>``.
+    Unknown grouping is reported as unavailable rather than assumed independent.
+    Every backbone gets equal weight; duplicated sequences cannot create more
+    independent evidence. The exact sign-flip p-value assumes symmetric cluster
+    differences under the null, not random assignment of biological treatments.
+    """
+    clusters: dict[str, list[float]] = {}
+    for binder_id, difference in sorted(differences.items()):
+        match = re.fullmatch(r"(.+_binder_\d+)_seq\d+", binder_id)
+        if match is None:
+            return {
+                "available": False,
+                "reason": "Backbone grouping is not recorded for every sequence.",
+            }
+        if not math.isfinite(difference):
+            raise ValueError("backbone inference needs finite paired differences")
+        clusters.setdefault(match[1], []).append(float(difference))
+    if not clusters:
+        return {"available": False, "reason": "No complete scored pairs."}
+    means = [statistics.fmean(values) for values in clusters.values()]
+    record: dict[str, Any] = {
+        "available": len(means) >= 2,
+        "independent_unit": "RFdiffusion backbone",
+        "estimand": "equally weighted mean of per-backbone mean paired differences",
+        "n_clusters": len(means),
+        "n_pairs": len(differences),
+        "cluster_sizes": {key: len(values) for key, values in clusters.items()},
+        "mean": statistics.fmean(means),
+        "assumptions": "Independent backbone clusters; sign-flip inference additionally assumes symmetric cluster differences under the null.",
+    }
+    if len(means) < 2:
+        record["reason"] = "One backbone provides no between-backbone uncertainty estimate."
+        return record
+    ci = paired_interval(means)
+    p, n = exact_signflip_p(means)
+    record.update(
+        {
+            "low": ci["low"],
+            "high": ci["high"],
+            "confidence": 0.95,
+            "method": f"backbone-cluster-percentile-bootstrap(B={_BOOTSTRAP}, seed={_BOOTSTRAP_SEED})",
+            "exact_signflip_p": p,
+            "n_permutations": n,
+            "p_value_floor": 2 / n,
+        }
+    )
+    return record
+
+
+def _recorded_differences(
+    rows: list[dict[str, Any]], left: str | None = None, right: str | None = None
+) -> dict[str, float]:
+    """Read recorded pairs without silently accepting duplicates or stale differences."""
+    values: dict[str, float] = {}
+    for row in rows:
+        binder_id = str(row["binder_id"])
+        if binder_id in values:
+            raise ValueError(f"duplicate paired binder id: {binder_id}")
+        difference = float(row["difference"])
+        if not math.isfinite(difference):
+            raise ValueError(f"invalid paired difference for {binder_id}")
+        if left is not None and right is not None:
+            a, b = float(row[left]), float(row[right])
+            if not all(math.isfinite(v) and 0 <= v <= 1 for v in (a, b)):
+                raise ValueError(f"invalid recorded ipTM for {binder_id}")
+            if not math.isclose(difference, a - b, rel_tol=0, abs_tol=1e-12):
+                raise ValueError(f"recorded difference disagrees with scores for {binder_id}")
+            difference = a - b
+        values[binder_id] = difference
+    return values
+
+
+def add_backbone_analysis(report: dict[str, Any]) -> dict[str, Any]:
+    """Add current inference without overwriting the historical score summaries.
+
+    This can be applied to the committed aggregate on CPU. No new model output
+    is generated. Controlled cross-target inference requires per-sequence
+    difference-in-differences, which older summaries did not retain.
+    """
+    primary = backbone_inference(_recorded_differences(report["pairs"], "design", "scramble"))
+    report["inference_revision"] = "backbone-cluster-v1"
+    report["primary_inference"] = "backbone_analysis.design_vs_shuffle"
+    report["historical_inference_note"] = (
+        "Top-level paired_interval, exact_signflip_p, binomial threshold bounds and power estimates "
+        "are retained historical sequence-pair calculations. They assume independent sequences, "
+        "which the shared backbones do not establish. Use backbone_analysis for current inference. "
+        "Legacy false_positive_rate keys describe computational scramble passes, not measured nonbinding."
+    )
+    block: dict[str, Any] = {"design_vs_shuffle": primary}
+    xt = report.get("cross_target") or {}
+    if xt.get("per_design"):
+        block["native_vs_decoy"] = backbone_inference(
+            _recorded_differences(xt["per_design"], "native", "decoy")
+        )
+    controlled = xt.get("controlled") or {}
+    if controlled.get("per_design"):
+        block["controlled_specificity"] = backbone_inference(
+            _recorded_differences(controlled["per_design"])
+        )
+    elif controlled:
+        block["controlled_specificity"] = {
+            "available": False,
+            "reason": "The historical summary lacks per-design decoy-shuffle scores. Its controlled confidence interval cannot be recomputed over backbones without the original metrics.",
+        }
+    input_scores = {
+        "pairs": report["pairs"],
+        "cross_target": xt.get("per_design"),
+        "controlled": controlled.get("per_design"),
+    }
+    block["input_scores_sha256"] = hashlib.sha256(
+        json.dumps(input_scores, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    block["input_scores_encoding"] = (
+        "UTF-8 canonical JSON: sorted keys, compact separators; pairs, cross_target and controlled per-design rows"
+    )
+    report["backbone_analysis"] = block
+    return report
+
+
 def paired_interval(diffs: list[float], *, confidence: float = 0.95) -> dict[str, float]:
     """Percentile bootstrap interval for the mean paired difference.
 
-    A p-value says whether an effect was detected. It does not say what effects
-    the run could have detected, and a null result reported without that is
-    unreadable: "no difference found" and "no difference larger than X" are
-    different claims, and only the second is what twenty pairs can support.
+    The interval describes uncertainty under the resampling assumptions. A
+    nonsignificant test does not establish equivalence or exclude effects above
+    a post-hoc detectable-effect estimate. The auxiliary normal-approximation
+    power values are historical planning calculations for independent units.
 
     Bootstrapped over pairs rather than assuming normal differences — the
     differences here are not obviously normal, and the resample costs
@@ -346,12 +476,12 @@ def _rate_at(values: list[float], threshold: float) -> float:
 
 
 def _fpr(scrambles: list[float], threshold: float) -> dict[str, Any]:
-    """False-positive rate at ``threshold``, with an exact interval.
+    """Legacy scramble pass rate and independent-observation binomial bound.
 
-    Twenty scrambles resolve a rate to steps of 5%, so the point estimate is
-    the least interesting number here: zero of twenty is not a 0% false-positive
-    rate, it is a rate whose 95% upper bound is 16.8%. Reporting the point
-    alone would read as a much stronger claim than twenty draws can support.
+    This is a computational threshold-crossing rate, not a biological
+    false-positive rate: the shuffles are not measured nonbinders. The bound
+    assumes independent observations; shared-backbone sequences do not
+    establish that assumption. Retained only to reproduce historical output.
 
     Clopper-Pearson comes from :mod:`bindsight.benchmark.statistics` rather than
     being written again here — it is the interval the rest of the project
@@ -501,10 +631,11 @@ def cross_target(metrics: Path, decoy_metrics: Path) -> dict[str, Any]:
     """Compare each design against itself folded on an unrelated receptor.
 
     The scramble control asks whether the binder's *sequence* carries the score.
-    This asks whether the *target* does. A design that scores as well against a
-    receptor it was not designed for is not a binder for either one, and that
-    would make the metric unable to support target selection — which is the
-    premise of the discovery half of this project.
+    This asks whether the *target* does. Similar scores against two receptors
+    cannot establish binding to either receptor or the absence of binding.
+    Raw target differences are also confounded by target-specific scoring
+    baselines, so the controlled comparison subtracts each target's shuffle
+    baseline. Neither computational comparison measures biological specificity.
 
     Paired per binder, so each design is its own control and the comparison does
     not depend on the two sets of designs being comparable in any other way.
@@ -518,13 +649,13 @@ def cross_target(metrics: Path, decoy_metrics: Path) -> dict[str, Any]:
         decoy_metrics: metrics from the decoy-target job, same binder ids.
 
     Returns:
-        The paired comparison, or ``None`` when the two runs share no binder.
+        The paired comparison, or an empty dictionary when no binder is shared.
     """
     native = _load(metrics)
     decoy = _load(decoy_metrics)
     shared = sorted(set(native) & set(decoy))
-    # Designs only: a shuffle's score against a decoy answers no question the
-    # design's own does not, and pooling the two would hide which is which.
+    # Designs define the raw comparison; shuffles enter the separate controlled
+    # comparison below, so the two arms are never pooled as equivalent designs.
     designs = [b for b in shared if not b.endswith(SCRAMBLE_SUFFIX)]
     if not designs:
         return {}
@@ -564,6 +695,10 @@ def cross_target(metrics: Path, decoy_metrics: Path) -> dict[str, Any]:
             "exact_signflip_p": did_p,
             "exact_signflip_p_floor": 2 / did_n,
             "n_favouring_own_target": sum(x > 0 for x in did),
+            "per_design": [
+                {"binder_id": binder_id, "difference": difference}
+                for binder_id, difference in zip(paired, did, strict=True)
+            ],
         }
 
     return {
@@ -717,7 +852,7 @@ def analyse(
                 "abs_delta": _describe([abs(cast(float, x["delta"])) for x in drift]),
                 "per_binder": drift,
             }
-    return report
+    return add_backbone_analysis(report)
 
 
 def _fmt_p(p: float) -> str:
@@ -992,13 +1127,100 @@ def render(report: dict[str, Any]) -> str:
                 "rank would be an offset; one that does not leaves no per-design claim "
                 "standing.",
             ]
+    primary = (report.get("backbone_analysis") or {}).get("design_vs_shuffle") or {}
+    if primary.get("available"):
+        current = [
+            "# Calibration of computational interface scores",
+            "",
+            "## Current inference: shared backbones are the independent unit",
+            "",
+            f"{primary['n_pairs']} sequence pairs come from **{primary['n_clusters']} RFdiffusion "
+            "backbones**. Each backbone contributes the mean of its paired sequence differences.",
+            "",
+            f"Design − shuffle: **{primary['mean']:+.3f} ipTM**; 95% backbone-cluster "
+            f"bootstrap interval **[{primary['low']:+.3f}, {primary['high']:+.3f}]**. "
+            f"Two-sided cluster sign-flip p = **{_fmt_p(primary['exact_signflip_p'])}** "
+            f"over {primary['n_permutations']:,} assignments. This test assumes independent "
+            "backbones and symmetric backbone-level differences under the null.",
+            "",
+            f"At ipTM {t}, {report['design_pass_rate']:.0%} of designs and "
+            f"{report['scramble_pass_rate']:.0%} of shuffles pass. These are descriptive "
+            "rates for these sequences, not a measured biological false-positive rate. "
+            "The shuffles have not been experimentally established as nonbinders.",
+            "",
+            "The data do not establish a positive design advantage, equivalence, or an "
+            "absence of binding. Neither passing this threshold nor failing the control "
+            "proves whether an individual sequence binds. The threshold-crossing rate "
+            "remains withdrawn as a measure of design quality.",
+            "",
+            "This CPU reanalysis uses recorded scores. It is not a new folding run or "
+            "an experimental binding measurement. Raw scores and historical calculations "
+            "remain in RESULTS.json, labelled by inference_revision and historical_inference_note.",
+            "",
+        ]
+        block = report["backbone_analysis"]
+        for key, title in (
+            ("native_vs_decoy", "Raw native-versus-decoy comparison"),
+            ("controlled_specificity", "Controlled specificity comparison"),
+        ):
+            analysis = block.get(key)
+            if not analysis:
+                continue
+            current += [f"### {title}", ""]
+            if analysis.get("available"):
+                current += [
+                    f"Mean {analysis['mean']:+.3f}; 95% backbone-cluster interval "
+                    f"[{analysis['low']:+.3f}, {analysis['high']:+.3f}], cluster "
+                    f"sign-flip p = {_fmt_p(analysis['exact_signflip_p'])} over "
+                    f"{analysis['n_clusters']} backbones.",
+                    "",
+                ]
+            else:
+                current += [analysis["reason"], ""]
+            if key == "native_vs_decoy":
+                current += [
+                    "This raw comparison is confounded by target-dependent scoring baselines; "
+                    "it does not establish biological specificity. The percentile bootstrap "
+                    "interval and sign-flip test use different constructions and need not "
+                    "agree at a 0.05 boundary, especially with only ten clusters.",
+                    "",
+                ]
+        current += [
+            "## Historical sequence-pair analysis — superseded for inference",
+            "",
+            "The following original calculations are retained for audit. Their intervals, "
+            "p-values, independent-control binomial bounds and power estimates assume "
+            "independent sequences. That assumption is not established for this shared-backbone "
+            "sample; these values must not be read as current precision or threshold certification. "
+            "Historical ‘false-positive’ labels below refer to computational scramble passes, "
+            "not experimentally demonstrated nonbinding.",
+            "",
+        ]
+        # Keep the legacy text with explicit scope, avoiding a second document title.
+        lines = current + ["##" + line if line.startswith("#") else line for line in lines]
+    elif primary:
+        lines = [
+            "# Current calibration inference unavailable",
+            "",
+            primary["reason"],
+            "",
+            "The following legacy calculations assume independent sequence pairs. They "
+            "must not be treated as a cluster-aware assessment or biological false-positive rate.",
+            "",
+        ] + ["##" + line if line.startswith("#") else line for line in lines]
     return "\n".join(lines) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
     """Write the calibration report. Returns a process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--metrics", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--metrics", type=Path)
+    source.add_argument(
+        "--from-summary",
+        type=Path,
+        help="Recompute backbone inference on CPU from recorded per-pair scores; no folding or experimental validation.",
+    )
     parser.add_argument("--committed", type=Path, default=COMMITTED)
     parser.add_argument(
         "--decoy-metrics",
@@ -1013,11 +1235,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path(__file__).parent)
     args = parser.parse_args(argv)
 
-    if not args.metrics.is_file():
+    if args.from_summary:
+        report = add_backbone_analysis(json.loads(args.from_summary.read_text(encoding="utf-8")))
+    elif not args.metrics.is_file():
         print(f"no metrics at {args.metrics}", file=sys.stderr)
         return 1
-
-    report = analyse(args.metrics, args.committed, decoy_metrics=args.decoy_metrics)
+    else:
+        report = analyse(args.metrics, args.committed, decoy_metrics=args.decoy_metrics)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "RESULTS.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"

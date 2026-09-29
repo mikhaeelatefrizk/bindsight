@@ -35,7 +35,7 @@ async function selectBinder(binder) {
   $('download-cif').href = binder.structure;
   $('download-fasta').href = binder.fasta;
   $('download-fasta').hidden = !binder.fasta;
-  $('structure-source').href = `${evidence.repository}/blob/${evidence.revision}/benchmarks/designer_benchmark/binders/${binder.id}_complex.cif`;
+  $('structure-source').href = `${evidence.repository}/blob/${evidence.revision||'main'}/benchmarks/designer_benchmark/binders/${binder.id}_complex.cif`;
   $('viewer-status').hidden = false;
   $('viewer-status').textContent = 'Loading the committed predicted complex…';
   if (molecularViewer) molecularViewer.removeAllModels();
@@ -64,7 +64,7 @@ async function boot() {
     const response = await fetch(localMode ? '/api/workbench/evidence' : 'evidence.json');
     if (!response.ok) throw new Error('The evidence dataset is unavailable. No substitute results are shown.');
     evidence = await response.json();
-    $('evidence-version').textContent = `Evidence source · ${evidence.revision.slice(0,7)}`;
+    $('evidence-version').textContent = evidence.revision?`Evidence source · ${evidence.revision.slice(0,7)}`:'Evidence · unversioned local copy';
     $('binder-count').textContent = evidence.binders.length;
     $('binder-list').replaceChildren();
     evidence.binders.forEach(b => {

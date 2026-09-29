@@ -40,6 +40,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
 from bindsight.report.coverage import annotation_coverage
+from bindsight.report.fit_diagnostics import fit_summary
 from bindsight.report.format import fmt_p
 
 LOG = logging.getLogger(__name__)
@@ -81,7 +82,12 @@ def render_run(
 
     deg_fdr, deg_log2fc = _deg_thresholds(manifest)
     volcano_b64 = (
-        _render_volcano(deg_df, fdr_threshold=deg_fdr, log2fc_threshold=deg_log2fc)
+        _render_volcano(
+            deg_df,
+            fdr_threshold=deg_fdr,
+            log2fc_threshold=deg_log2fc,
+            contrast=_deg_contrast(manifest),
+        )
         if deg_df is not None and len(deg_df)
         else ""
     )
@@ -145,13 +151,14 @@ def render_run(
         volcano_b64=volcano_b64,
         deg_fdr=deg_fdr,
         deg_log2fc=deg_log2fc,
+        numerical_fit=fit_summary(run_dir),
         n_deg=len(deg_df) if deg_df is not None else 0,
         n_significant=(
             int(deg_df["significant"].sum())
             if deg_df is not None and "significant" in deg_df.columns
             else 0
         ),
-        candidates_table=_df_to_records(candidates_df, _CANDIDATE_DISPLAY_COLS, head=20),
+        candidates_table=_candidate_records(candidates_df),
         epitopes_table=_df_to_records(epitopes_df, _EPITOPE_DISPLAY_COLS, head=20),
         # The run's counts, not the display tables'. The KPI read
         # ``candidates_table|length``, which is capped at 20, so every run with
@@ -364,6 +371,46 @@ _CANDIDATE_DISPLAY_COLS = [
     "mean_plddt",
     "rank_in_top_n",
 ]
+
+
+def _candidate_records(candidates: pd.DataFrame | None) -> list[dict[str, Any]]:
+    """Keep expression candidates visible with their recorded design exclusions."""
+    records = _df_to_records(candidates, _CANDIDATE_DISPLAY_COLS, head=20)
+    if candidates is None:
+        return records
+    for display, actual in zip(records, candidates.head(20).to_dict(orient="records"), strict=True):
+        reasons = []
+        flags = {
+            "high_normal_tissue_expression": "Normal-tissue expression exceeds the configured threshold",
+            "normal_tissue_unassessed": "Normal-tissue expression is unassessed",
+            "no_extracellular_domain": "No annotated extracellular domain",
+            "low_confidence_structure": "Structure is below the configured confidence threshold",
+            "structure_confidence_unassessed": "Structure confidence is unassessed",
+        }
+        for flag, message in flags.items():
+            if actual.get(flag) is True:
+                reasons.append(message)
+        gtex_status = actual.get("gtex_safety_status")
+        if not isinstance(gtex_status, str):
+            gtex_status = ""
+        if gtex_status == "unsafe" and flags["high_normal_tissue_expression"] not in reasons:
+            reasons.append(flags["high_normal_tissue_expression"])
+        if gtex_status == "unassessed" and flags["normal_tissue_unassessed"] not in reasons:
+            reasons.append(flags["normal_tissue_unassessed"])
+        measured = actual.get("safety_events_measured")
+        if measured is True:
+            display["safety_status"] = "measured"
+        elif measured is False:
+            display["safety_status"] = "unassessed"
+            reasons.append("Open Targets safety annotations are unassessed")
+        else:
+            display["safety_status"] = "not recorded"
+        if actual.get("has_alphafold_structure") is not True and not reasons:
+            reasons.append("No eligible structure; see the failure taxonomy for the recorded cause")
+        display["design_reasons"] = reasons
+    return records
+
+
 _EPITOPE_DISPLAY_COLS = [
     "symbol",
     "uniprot_id",
@@ -531,6 +578,25 @@ def _deg_thresholds(manifest: Mapping[str, Any] | None) -> tuple[float | None, f
     return (None, None)
 
 
+def _deg_contrast(manifest: Mapping[str, Any] | None) -> tuple[str, str] | None:
+    """Return the recorded numerator/reference labels without assuming cancer conditions."""
+    for stage in (manifest or {}).get("stages", []) or []:
+        if not isinstance(stage, Mapping) or stage.get("name") != "deg":
+            continue
+        params = stage.get("params")
+        if not isinstance(params, Mapping):
+            continue
+        contrast = params.get("contrast")
+        if (
+            isinstance(contrast, list)
+            and len(contrast) == 3
+            and all(isinstance(value, str) and value.strip() for value in contrast)
+            and contrast[1] != contrast[2]
+        ):
+            return contrast[1], contrast[2]
+    return None
+
+
 def _significance_basis(
     columns: Iterable[str], fdr_threshold: float | None
 ) -> tuple[str, float | None]:
@@ -556,6 +622,7 @@ def _render_volcano(
     *,
     fdr_threshold: float | None = None,
     log2fc_threshold: float | None = None,
+    contrast: tuple[str, str] | None = None,
 ) -> str:
     """Render a volcano plot as a base64-encoded PNG embedded in the HTML.
 
@@ -634,7 +701,11 @@ def _render_volcano(
                 alpha=0.6,
                 label=f"|log2FC| = {abs(float(log2fc_threshold)):g}" if i == 0 else None,
             )
-    ax.set_xlabel("log2 fold-change (tumor vs. normal)")
+    xlabel = "log2 fold-change"
+    if contrast is not None:
+        xlabel += f" ({contrast[0]} vs. {contrast[1]})"
+    # Category names are literal input labels, not matplotlib math expressions.
+    ax.set_xlabel(xlabel, parse_math=False)
     ax.set_ylabel("-log10(padj)")
     ax.set_title("Differential expression — volcano")
     ax.legend(loc="best", fontsize=8)

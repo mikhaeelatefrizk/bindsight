@@ -259,6 +259,8 @@ class TestNothingIsImportedThatIsNotDeclared:
         "analyse": "benchmarks/calibration/analyse.py",
         "stage_scrambles": "benchmarks/calibration/stage_scrambles.py",
         "tests": "the test package importing its own siblings",
+        "scripts": "repository tests importing scripts/validate_real_counts.py",
+        "launch": "tests/test_website_archive.py importing the root launcher",
     }
 
     @staticmethod

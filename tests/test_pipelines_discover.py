@@ -305,6 +305,44 @@ def test_rank_ties_break_on_gene_id_not_on_structure(tmp_path: Path, fixtures_di
     assert dict(zip(second["uniprot_id"], second["rank"], strict=True)) == expected
 
 
+def test_equal_score_cutoffs_keep_the_same_genes_after_row_reversal(
+    tmp_path: Path, fixtures_dir: Path
+) -> None:
+    """Ties at both scarce-resource cutoffs must not depend on DEG row order."""
+    cfg = _build_cfg(tmp_path, fixtures_dir)
+    cfg.params.target_discovery.enrich_top_k = 2
+    cfg.params.target_discovery.top_n = 1
+    cfg.params.target_discovery.require_surfy = False
+    evidence = {f"GENE_{i}": _fake_evidence(f"GENE_{i}", f"P{i}", f"G{i}") for i in (1, 2, 3)}
+    deg = pd.DataFrame(
+        {
+            "gene_id": ["GENE_3", "GENE_1", "GENE_2"],
+            "significant": [True] * 3,
+            "log2fc": [3.0] * 3,
+            "padj": [1e-9] * 3,
+        }
+    )
+    observed = []
+    for label, ordered in (("forward", deg), ("reverse", deg.iloc[::-1])):
+        path = tmp_path / label / "deg" / "results.parquet"
+        path.parent.mkdir(parents=True)
+        ordered.to_parquet(path, index=False)
+        ot, afdb = _FakeOpenTargets(evidence), _FakeAlphaFoldDB({})
+        with patch("bindsight.pipelines.discover._STRUCTURE_FETCH_CAP", 1):
+            candidates, _, _ = discover_pipeline._do_discover(
+                config=cfg,
+                deg_table_path=path,
+                open_targets_client=ot,
+                alphafolddb_client=afdb,
+                surface_bind_client=None,
+                topology_client=None,
+                gtex_client=None,
+                surfy=frozenset(),
+            )
+        observed.append((ot.calls, afdb.calls, candidates["gene_id"].tolist()))
+    assert observed == [(["GENE_1", "GENE_2"], ["P1"], ["GENE_1", "GENE_2"])] * 2
+
+
 def test_discover_records_failure_when_inputs_missing(tmp_path: Path) -> None:
     """If counts/design don't exist, the DEG stage marks failed and pipeline stops cleanly."""
     cfg = RunConfig.model_validate(

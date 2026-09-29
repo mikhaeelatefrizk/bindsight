@@ -1,0 +1,92 @@
+{
+  "ENSG00000006071": {
+    "min_python_dispersion_mean": 2.9712774142043354,
+    "samples_below_0_5": 0,
+    "max_mean_difference_R_vs_clipped_python": 0.00023276946388506303,
+    "python_original_MAP": 0.937227130212406,
+    "python_MAP_clipping_only_same_prior": 0.937227130212406,
+    "R_MAP": 0.940643203270949,
+    "python_MAP_with_R_means_and_R_prior": 0.9404582298039258
+  },
+  "ENSG00000074803": {
+    "min_python_dispersion_mean": 41.79545757997783,
+    "samples_below_0_5": 0,
+    "max_mean_difference_R_vs_clipped_python": 172.80132731981575,
+    "python_original_MAP": 1.155397655029263,
+    "python_MAP_clipping_only_same_prior": 1.155397655029263,
+    "R_MAP": 1.15616561035316,
+    "python_MAP_with_R_means_and_R_prior": 1.1561627142273274
+  },
+  "ENSG00000114771": {
+    "min_python_dispersion_mean": 0.07944681203612346,
+    "samples_below_0_5": 7,
+    "max_mean_difference_R_vs_clipped_python": 1.1397050169392742e-05,
+    "python_original_MAP": 7.422606372800717,
+    "python_MAP_clipping_only_same_prior": 10.573575115044239,
+    "R_MAP": 10.6759330997895,
+    "python_MAP_with_R_means_and_R_prior": 10.67566722833623
+  },
+  "ENSG00000120094": {
+    "min_python_dispersion_mean": 0.12014648378320225,
+    "samples_below_0_5": 8,
+    "max_mean_difference_R_vs_clipped_python": 8.73252966115956e-06,
+    "python_original_MAP": 0.8921931698103496,
+    "python_MAP_clipping_only_same_prior": 1.2142060770294458,
+    "R_MAP": 1.23012971728699,
+    "python_MAP_with_R_means_and_R_prior": 1.230119035872395
+  },
+  "ENSG00000139800": {
+    "min_python_dispersion_mean": 0.04942775180205247,
+    "samples_below_0_5": 6,
+    "max_mean_difference_R_vs_clipped_python": 0.00023237690423982826,
+    "python_original_MAP": 5.096570170278021,
+    "python_MAP_clipping_only_same_prior": 8.95556024117782,
+    "R_MAP": 9.06865197025392,
+    "python_MAP_with_R_means_and_R_prior": 9.069180195233107
+  },
+  "ENSG00000142619": {
+    "min_python_dispersion_mean": 0.11218313201999067,
+    "samples_below_0_5": 4,
+    "max_mean_difference_R_vs_clipped_python": 0.00017591926174276296,
+    "python_original_MAP": 2.8115722025223313,
+    "python_MAP_clipping_only_same_prior": 2.2717948601664553,
+    "R_MAP": 2.28312590405684,
+    "python_MAP_with_R_means_and_R_prior": 2.283290956308274
+  },
+  "ENSG00000156096": {
+    "min_python_dispersion_mean": 0.06387527979609459,
+    "samples_below_0_5": 2,
+    "max_mean_difference_R_vs_clipped_python": 2.3692203882319518e-05,
+    "python_original_MAP": 1.3317019744566636,
+    "python_MAP_clipping_only_same_prior": 1.3267300956709733,
+    "R_MAP": 1.33586561577108,
+    "python_MAP_with_R_means_and_R_prior": 1.3349801408197846
+  },
+  "ENSG00000167580": {
+    "min_python_dispersion_mean": 4.7492058739133105,
+    "samples_below_0_5": 0,
+    "max_mean_difference_R_vs_clipped_python": 2583.1072795689106,
+    "python_original_MAP": 1.316219570025457,
+    "python_MAP_clipping_only_same_prior": 1.316219570025457,
+    "R_MAP": 1.31712361977381,
+    "python_MAP_with_R_means_and_R_prior": 1.317120718544348
+  },
+  "ENSG00000186509": {
+    "min_python_dispersion_mean": 0.1007051741188022,
+    "samples_below_0_5": 4,
+    "max_mean_difference_R_vs_clipped_python": 8.286653998013094e-05,
+    "python_original_MAP": 1.4905932315685193,
+    "python_MAP_clipping_only_same_prior": 1.7985201609779768,
+    "R_MAP": 1.80974465498913,
+    "python_MAP_with_R_means_and_R_prior": 1.8103516336012075
+  },
+  "ENSG00000214978": {
+    "min_python_dispersion_mean": 0.038354939015175095,
+    "samples_below_0_5": 6,
+    "max_mean_difference_R_vs_clipped_python": 5.3735446805092124e-05,
+    "python_original_MAP": 6.424356926407294,
+    "python_MAP_clipping_only_same_prior": 10.524530258131183,
+    "R_MAP": 10.6382584266365,
+    "python_MAP_with_R_means_and_R_prior": 10.638120783341346
+  }
+}

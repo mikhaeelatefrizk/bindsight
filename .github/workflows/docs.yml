@@ -5,21 +5,14 @@ name: Docs
 # which is what lets this deploy without a gh-pages branch.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-    paths:
-      - "docs/**"
-      - "overrides/**"
-      - "mkdocs.yml"
-      - ".github/workflows/docs.yml"
-      # docs/results.md is generated from the committed benchmark results, so a
-      # new benchmark run must republish the site.
-      - "benchmarks/**"
-      - "bindsight/report/showcase.py"
-      - "scripts/build_docs_results.py"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -30,9 +23,31 @@ concurrency:
 
 jobs:
   build-deploy:
+    # A public update follows the successful tested main commit, never PR code.
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Refuse to republish an older main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+      - name: Require a successful CI run for manual publication
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" --json conclusion --jq 'any(.[]; .conclusion == "success")')" = true
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
@@ -48,9 +63,17 @@ jobs:
       # already-live 404s the first time it was switched on.
       - name: Build site
         run: mkdocs build --strict --site-dir site
+      - name: Build the research workspace from this tested commit
+        run: python scripts/build_website.py --out site/workspace
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: site
+      - name: Confirm main has not moved during the build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v5

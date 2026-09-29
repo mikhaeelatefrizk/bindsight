@@ -8,6 +8,11 @@ results/
 *.zip
 !tests/fixtures/**/*.parquet
 !tests/fixtures/**/*.tar.gz
+!benchmarks/numerical_validation/results/
+!benchmarks/numerical_validation/results/**/
+!benchmarks/numerical_validation/results/**/*.parquet
+!benchmarks/numerical_validation/diagnostics/dds_var.parquet
+!benchmarks/numerical_validation/diagnostics/results.parquet
 
 # Vendored data dependencies and local caches (not committed)
 data/surface_bind/

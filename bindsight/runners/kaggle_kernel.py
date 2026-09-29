@@ -441,20 +441,9 @@ sh(f"{MM} run -p {BOLTZ} python -c \""
    "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
    "x=torch.zeros(4,device='cuda'); print('boltz cuda op ok', (x+1).sum().item())\"")
 
-step("patch Boltz-2 precision for non-bf16 GPUs (T4 is sm_75; bf16 needs sm_80+)")
-# Boltz-2 hardcodes precision="bf16-mixed" (main.py). bfloat16 needs compute
-# capability 8.0+, and no free-tier GPU has it — the T4 this kernel pins is 7.5 —
-# so force full fp32, which is what the boltz1 path already uses and is
-# numerically safe. This patch stays necessary for as long as the free tier is
-# pre-Ampere.
-import glob as _glob  # noqa: E402
-
-_bm = _glob.glob(f"{BOLTZ}/lib/python*/site-packages/boltz/main.py")[0]
-_txt = pathlib.Path(_bm).read_text()
-_patched = _txt.replace('precision=32 if model == "boltz1" else "bf16-mixed"', "precision=32")
-assert _patched != _txt, "could not find Boltz-2 precision line to patch"
-pathlib.Path(_bm).write_text(_patched)
-print("patched", _bm, "-> precision=32")
+# job_exec invokes bindsight.runners.boltz_compat in this Boltz environment.
+# The shared subprocess shim uses precision=32 instead of bf16-mixed on T4,
+# checks the pinned upstream source, and does not edit installed package files.
 
 step("materialise spec + target structure (embedded base64)")
 spec_dir = pathlib.Path("/tmp/spec"); spec_dir.mkdir(parents=True, exist_ok=True)

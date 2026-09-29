@@ -97,6 +97,6 @@ def test_local_docker_missing_docker_binary(tmp_path: Path, monkeypatch) -> None
         raise FileNotFoundError("docker")
 
     monkeypatch.setattr("bindsight.runners.local_docker.subprocess.Popen", boom)
-    r = LocalDockerRunner(native=False)
+    r = LocalDockerRunner(native=False, image="example.invalid/custom-cuda:tested")
     with pytest.raises(RuntimeError, match="docker not found"):
         r.submit(tmp_path / "spec.json", results_dir=tmp_path / "r")

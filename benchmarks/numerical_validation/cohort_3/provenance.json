@@ -1,0 +1,85 @@
+{
+  "schema": "bindsight-gdc-cohort/1",
+  "source": "NIH/GDC (https://portal.gdc.cancer.gov/)",
+  "project": "TCGA-KIRC",
+  "workflow": "STAR - Counts (GENCODE v36)",
+  "data_column": "unstranded",
+  "gene_types": [
+    "protein_coding"
+  ],
+  "retrieved_utc": "2026-09-28T23:02:57+00:00",
+  "selection": "by_case",
+  "requested_tumor_cases": [
+    "TCGA-A3-3387",
+    "TCGA-B0-4712",
+    "TCGA-B0-5697"
+  ],
+  "requested_normal_cases": [
+    "TCGA-A3-3387",
+    "TCGA-B0-4712",
+    "TCGA-B0-5697"
+  ],
+  "n_tumor": 3,
+  "n_normal": 3,
+  "n_genes": 19944,
+  "samples": [
+    {
+      "sample": "T01",
+      "condition": "tumor",
+      "sample_type": "Primary Tumor",
+      "case_barcode": "TCGA-B0-4712",
+      "sample_barcode": "TCGA-B0-4712-01A",
+      "gdc_file_id": "7f16d20f-07e2-4901-ae00-4da70125e8a3"
+    },
+    {
+      "sample": "T02",
+      "condition": "tumor",
+      "sample_type": "Primary Tumor",
+      "case_barcode": "TCGA-B0-5697",
+      "sample_barcode": "TCGA-B0-5697-01A",
+      "gdc_file_id": "98ca487a-a503-459a-8665-11a3caf8bce5"
+    },
+    {
+      "sample": "T03",
+      "condition": "tumor",
+      "sample_type": "Primary Tumor",
+      "case_barcode": "TCGA-A3-3387",
+      "sample_barcode": "TCGA-A3-3387-01A",
+      "gdc_file_id": "c8c7259b-9f5e-4dfc-b915-d98b02eba28b"
+    },
+    {
+      "sample": "N01",
+      "condition": "normal",
+      "sample_type": "Solid Tissue Normal",
+      "case_barcode": "TCGA-A3-3387",
+      "sample_barcode": "TCGA-A3-3387-11A",
+      "gdc_file_id": "02c1c266-473f-437d-b768-20f685349ecb"
+    },
+    {
+      "sample": "N02",
+      "condition": "normal",
+      "sample_type": "Solid Tissue Normal",
+      "case_barcode": "TCGA-B0-4712",
+      "sample_barcode": "TCGA-B0-4712-11A",
+      "gdc_file_id": "0498e4e5-f3cc-4fa5-9686-099ab9e435f4"
+    },
+    {
+      "sample": "N03",
+      "condition": "normal",
+      "sample_type": "Solid Tissue Normal",
+      "case_barcode": "TCGA-B0-5697",
+      "sample_barcode": "TCGA-B0-5697-11A",
+      "gdc_file_id": "05aedbb7-c56c-4756-b8e8-302afaedcb4c"
+    }
+  ],
+  "outputs": {
+    "counts.tsv.gz": {
+      "sha256": "ce5c5c6670707568b28a6e2ce561a05b708121f150ad1d093775a05d5503229c",
+      "bytes": 268162
+    },
+    "design.tsv": {
+      "sha256": "4f7e3fa2b16811d4e294ede695a777776846fa91caf247eeee43df93f44603a4",
+      "bytes": 636
+    }
+  }
+}

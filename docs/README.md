@@ -11,6 +11,7 @@ navigation is defined in [`../mkdocs.yml`](../mkdocs.yml).
 | `what-is-bindsight.md` | The five-minute read |
 | `how-to-use.md` | Task-oriented walkthrough |
 | `local-workspace.md` | Install the local workspace and run real RNA-seq analyses |
+| `validation-status.md` | Measured checks, scientific repairs and unresolved limitations |
 | `try-your-data.md` | Check your own counts matrix and design table, in the browser |
 | `use-cases.md` | Worked scenarios |
 | `colab-design-howto.md` | Designing on Colab |

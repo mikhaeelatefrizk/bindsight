@@ -247,6 +247,8 @@ def run(
                 validator=config.params.validate_.validator,
                 trajectories=config.params.design.n_trajectories,
                 prescreen_top_k=config.params.design.prescreen_top_k,
+                diffusion_samples=config.params.validate_.diffusion_samples,
+                max_parallel_samples=config.params.validate_.max_parallel_samples,
             )
         except Exception as e:
             LOG.exception("design stage failed")

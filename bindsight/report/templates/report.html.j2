@@ -90,6 +90,15 @@
   </p></div></div>
 </section>
 
+<section id="numerical-fit">
+  <h2>Numerical fit diagnostics</h2>
+  {% if numerical_fit.warnings %}
+  <ul>{% for warning in numerical_fit.warnings %}<li><strong>{{ warning }}</strong></li>{% endfor %}</ul>
+  {% endif %}
+  <ul>{% for detail in numerical_fit.details %}<li>{{ detail }}</li>{% endfor %}</ul>
+  <p class="small muted">{{ numerical_fit.scope }}</p>
+</section>
+
 {% if volcano_b64 %}
 <section>
   <h2>Differential expression</h2>
@@ -109,11 +118,13 @@
 {% endif %}
 
 <section>
-  <h2>Candidate targets</h2>
+  <h2>Candidate expression shortlist</h2>
   <p>
-    Genes that survived all filters: significantly differentially expressed,
-    surface-exposed (SURFY), antibody-tractable (Open Targets, when enabled),
-    and below the safety-event threshold. Top-N rows highlighted.
+    Rows retained in the target-prioritisation table under the recorded configuration.
+    This expression shortlist can include candidates excluded from later design
+    preparation or missing reference assessments. Top-N marks the ranking selection;
+    only candidates with eligible structures proceed to epitope preparation.
+    Neither expression ranking nor these computational checks establish clinical safety.
   </p>
   {% if candidates_table %}
   <div class="table-wrap">
@@ -122,8 +133,8 @@
       <tr>
         <th>rank</th><th>symbol</th><th>UniProt</th>
         <th>log2FC</th><th>padj</th>
-        <th>tractable modalities</th><th>safety events</th>
-        <th>has structure</th><th>top-N</th>
+        <th>tractable modalities</th><th>Open Targets safety annotations</th>
+        <th>structure eligible</th><th>recorded exclusions / missing assessments</th><th>top-N</th>
       </tr>
     </thead>
     <tbody>
@@ -135,11 +146,14 @@
         <td class="num">{{ r.log2fc }}</td>
         <td class="num">{{ r.padj }}</td>
         <td>{{ r.tractable_modalities or '-' }}</td>
-        <td class="num">{{ r.n_safety_events }}</td>
+        <td>{% if r.safety_status == 'measured' %}{{ r.n_safety_events }} recorded
+          {% elif r.safety_status == 'unassessed' %}Unassessed
+          {% else %}{{ r.n_safety_events }}; measurement status not recorded{% endif %}</td>
         <td>
           {% if r.has_alphafold_structure %}<span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">&#10003;</span>yes</span>
           {% else %}<span class="badge badge--warn"><span class="badge__glyph" aria-hidden="true">!</span>no</span>{% endif %}
         </td>
+        <td>{% if r.design_reasons %}{{ r.design_reasons|join('; ') }}{% else %}No exclusion recorded under this run's configured checks{% endif %}</td>
         <td>
           {% if r.rank_in_top_n %}<span class="badge badge--ok"><span class="badge__glyph" aria-hidden="true">&#10003;</span>top</span>{% endif %}
         </td>

@@ -1,0 +1,137 @@
+{
+  "schema": "bindsight-r-reference-artifacts/1",
+  "published": [
+    {
+      "source_name": "design_matrix.tsv",
+      "source_sha256": "e6a25e06e6a600d140fdd5c6cf0ccb6720fea9e571ce83b37e9ce70eb0d065ce",
+      "source_bytes": 578,
+      "file": "design_matrix.tsv.gz",
+      "sha256": "a8e4aceffb6261c56bd9299404b5f54cf3d297754fc2be2d926e66d55a49f1c3",
+      "bytes": 195,
+      "published_uncompressed_sha256": "e6a25e06e6a600d140fdd5c6cf0ccb6720fea9e571ce83b37e9ce70eb0d065ce"
+    },
+    {
+      "source_name": "gene_diagnostics.tsv",
+      "source_sha256": "cde950fee44e67e8df314fb2a492662c031c866340c82e7a5e94c5f0a237a877",
+      "source_bytes": 13396354,
+      "projection": {
+        "columns": [
+          "gene_id",
+          "baseMean",
+          "baseVar",
+          "allZero",
+          "dispGeneEst",
+          "dispGeneIter",
+          "dispFit",
+          "dispersion",
+          "dispIter",
+          "dispOutlier",
+          "dispMAP",
+          "betaConv",
+          "betaIter",
+          "deviance",
+          "maxCooks"
+        ],
+        "reason": "Publish dispersion/convergence diagnostics; redundant per-coefficient values remain in the full raw TSV and RDS under work/r-reference.",
+        "all_retained_cell_strings_preserved": true
+      },
+      "file": "gene_diagnostics.tsv.gz",
+      "sha256": "4b31ff453306594ade250dffbb6d674c3758584ee2c62a8186f9e87ee570d447",
+      "bytes": 1049689,
+      "published_uncompressed_sha256": "02b784b6b59eca2b45fde0d2f69e9f242769d929ff7e3bdd1262e4f06a932497"
+    },
+    {
+      "source_name": "metadata.json",
+      "source_sha256": "314e00d8e085e0246c0db4c3892714387ae0eb66a8871d6bcceb4933ad682b5a",
+      "source_bytes": 10141,
+      "transformation": "deterministic host-path sanitization; statistical values unchanged",
+      "file": "metadata.json",
+      "sha256": "3c3e00f0381b9af975b4e01b0985abb822d38a5718633f64465b8e39c1c76e95",
+      "bytes": 10446,
+      "published_uncompressed_sha256": "3c3e00f0381b9af975b4e01b0985abb822d38a5718633f64465b8e39c1c76e95"
+    },
+    {
+      "source_name": "results.tsv",
+      "source_sha256": "c3f6a8038ff0d92c3149d877debd9769aa0e0961a4655b0f8e0f0cf86f7b5caf",
+      "source_bytes": 2174166,
+      "file": "results.tsv.gz",
+      "sha256": "95f9839c99587a2b15813b2442b62613172c8f2d98ce525204d58514ad388603",
+      "bytes": 931794,
+      "published_uncompressed_sha256": "c3f6a8038ff0d92c3149d877debd9769aa0e0961a4655b0f8e0f0cf86f7b5caf"
+    },
+    {
+      "source_name": "session-info.txt",
+      "source_sha256": "b4d1db7934c796ea350e8641270304ac49d53ae367bbd141f032ca9a54615402",
+      "source_bytes": 1419,
+      "file": "session-info.txt",
+      "sha256": "a87bf18efe3a8bf9d06ee5c794da91ee0cf7b68462bf6e83ec4d5947da62d188",
+      "bytes": 1383,
+      "published_uncompressed_sha256": "a87bf18efe3a8bf9d06ee5c794da91ee0cf7b68462bf6e83ec4d5947da62d188"
+    },
+    {
+      "source_name": "size_factors.tsv",
+      "source_sha256": "f29dcfabe59256edd96f1d2fb8839debe4b29089e5390b27554bc4a2d01d239f",
+      "source_bytes": 379,
+      "file": "size_factors.tsv.gz",
+      "sha256": "f2b971dfd09ff74c99271f21cb45b08cb0c5a1836d3579422f616cc350855d5e",
+      "bytes": 227,
+      "published_uncompressed_sha256": "f29dcfabe59256edd96f1d2fb8839debe4b29089e5390b27554bc4a2d01d239f"
+    },
+    {
+      "file": "comparison.json",
+      "sha256": "72f7071f1509c8f8479a49cf749f2347b0b2abc6c8a7876e42b57538c75dc429",
+      "bytes": 23565,
+      "source_sha256": "560c10cb07780eb2c763cf704cbb6abb27d92605ff3ed7484c7116d10f4fc3fe",
+      "source_bytes": 24706,
+      "published_uncompressed_sha256": "72f7071f1509c8f8479a49cf749f2347b0b2abc6c8a7876e42b57538c75dc429"
+    },
+    {
+      "file": "significance_disagreements.tsv.gz",
+      "sha256": "98b74561cec88c74f546b8ef77832baae7e6aabfedc1f8186f9083e222dd1c71",
+      "bytes": 651,
+      "source_sha256": "3392e30d993a93a3f057d365ecaa00053d6d7d1e5f4c0f5bfb36e9a1d2c3b9c2",
+      "source_bytes": 1274,
+      "published_uncompressed_sha256": "3392e30d993a93a3f057d365ecaa00053d6d7d1e5f4c0f5bfb36e9a1d2c3b9c2"
+    },
+    {
+      "file": "largest_lfc_differences.tsv.gz",
+      "sha256": "808a356bf9ea08a517e4415b33ab9dbfb3013d9e4f06f948d69353f5d201bc53",
+      "bytes": 15075,
+      "source_sha256": "2b0a734456a728a65af580f1a75fcaacbff5677263dbb7e0957ee3223fc241d7",
+      "source_bytes": 34590,
+      "published_uncompressed_sha256": "2b0a734456a728a65af580f1a75fcaacbff5677263dbb7e0957ee3223fc241d7"
+    },
+    {
+      "file": "execution.log",
+      "sha256": "db10f70a2e3a3891411cc43689002d0e08a917b82f0468b83d95bae352c8dfca",
+      "bytes": 1151,
+      "source_sha256": "a3d935752d7ecd0ad2914b60cc9b3e5b9d78e99002b2e86d4e05217a80445c6d",
+      "transformation": "deterministic host-path sanitization and UTF-8 LF text"
+    }
+  ],
+  "omitted_binary_models": [
+    {
+      "source_name": "dds.rds",
+      "source_sha256": "1e5ed328cdde282692dd638290f40b140e17a0df495e9fb9f640504b135c4ec3",
+      "source_bytes": 13634924,
+      "reproduce": "scripts/reference_deseq2.R with the recorded inputs, R4.6.1 and package versions"
+    },
+    {
+      "source_name": "results.rds",
+      "source_sha256": "2824553d197a56cc439a84f5ab1445c7858e474890d335f786aa1888555f3c31",
+      "source_bytes": 803081,
+      "reproduce": "scripts/reference_deseq2.R with the recorded inputs, R4.6.1 and package versions"
+    }
+  ],
+  "omitted_redundant_artifacts": [
+    {
+      "source_name": "results_without_filtering.tsv",
+      "source_sha256": "c3f6a8038ff0d92c3149d877debd9769aa0e0961a4655b0f8e0f0cf86f7b5caf",
+      "source_bytes": 2174166,
+      "reason": "Byte-identical to primary results.tsv in this observed fit; no missing/independently filtered genes."
+    }
+  ],
+  "executed_R_script_sha256": "d848b51378603f278fd8e2de8daaa21503cf2e4b782f2125cd24de14d48b50a8",
+  "public_path_sanitization": "Absolute original checkout prefixes replaced by repository-relative input keys or ${REPOSITORY_ROOT}; isolated runtime prefix replaced by ${R_REFERENCE_ROOT}. Raw originals retained under work/r-reference; no fit rerun.",
+  "public_plain_text_newline_policy": "LF for portable Git checkout; raw source files and source hashes remain unchanged. Compressed TSV contents are unchanged."
+}

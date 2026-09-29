@@ -1,0 +1,52 @@
+{
+  "purpose": "Additional classification detail; original validation.json is unchanged",
+  "input_sha256": {
+    "forward.parquet": "7d92b95a2d420540cf88ec9b0d6e953f74a84d214347064be752a654e927b72a",
+    "relabel_samples.parquet": "efeb52e437d5ac9545d960bafbb27dd39773a1e9e2b5085eefcfe780e725d692"
+  },
+  "comparison": {
+    "log2fc": {
+      "passed": false,
+      "n_compared": 16485,
+      "max_absolute_difference": 1.780400436457441e-05,
+      "missing_mask_equal": true
+    },
+    "lfc_se": {
+      "passed": false,
+      "n_compared": 16485,
+      "max_absolute_difference": 0.0003436540670728738,
+      "missing_mask_equal": true
+    },
+    "stat": {
+      "passed": false,
+      "n_compared": 16485,
+      "max_absolute_difference": 0.015619210126086358,
+      "missing_mask_equal": true
+    },
+    "pvalue": {
+      "passed": false,
+      "n_compared": 16485,
+      "max_absolute_difference": 0.00039244139828895075,
+      "missing_mask_equal": true
+    },
+    "padj": {
+      "passed": false,
+      "n_compared": 16485,
+      "max_absolute_difference": 0.0004906804049515934,
+      "missing_mask_equal": true
+    },
+    "baseMean": {
+      "passed": true,
+      "n_compared": 16485,
+      "max_absolute_difference": 0.0,
+      "missing_mask_equal": true
+    },
+    "significance_decisions": {
+      "passed": true,
+      "changed": 0,
+      "gained": 0,
+      "lost": 0
+    }
+  },
+  "changed_genes": []
+}

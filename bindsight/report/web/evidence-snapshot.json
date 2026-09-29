@@ -1,5 +1,5 @@
 {
-  "calibration/RESULTS.json": "339561d91fb04af94c211e9110c493b647ab55cbb02999ba68220ffd7c245d36",
+  "calibration/RESULTS.json": "b45184c1831ab34a7f13707dd32b1ab3000e91f799758ba26c12751f751facba",
   "designer_benchmark/binders/P04626_binder_0_seq0.fasta": "03bf058b7e82a18a5dc373edd40aaa2ffdb64ceaab7600bf97a680ea445c5f9b",
   "designer_benchmark/binders/P04626_binder_0_seq0_complex.cif": "073c8c9b190cca6ea4bc150e13a4c020f923c077be15b958d5ec9c720ea63044",
   "designer_benchmark/binders/P04626_binder_0_seq1.fasta": "964858d13a7d36bc883ab3111ef6a7b933f3d9b982f025fe6e5e1a34c5fb30aa",
@@ -43,5 +43,13 @@
   "designer_benchmark/binders/developability.tsv": "4a66595d4948f90b0bc7a34203e03d5258525d83df65b9ac771ba35229ce1ef9",
   "designer_benchmark/binders/metrics.jsonl": "8f4b6881923b5b835ce33916bd6f0bd2580b14cf47aa3030c181efa3521a19b7",
   "designer_benchmark/results.json": "20405f3a152ccc9a96f44cb2bc35ed4d4ce31aed360dc580f312c1e11677c2b2",
-  "study/results.json": "cf234e0cd55601f23f1a35d2477f66acc55e364d02cda8af9522e3837eea03ec"
+  "study/results.json": "cf234e0cd55601f23f1a35d2477f66acc55e364d02cda8af9522e3837eea03ec",
+  "numerical_validation/results/repaired_three/validation.json": "2a138aa8f16741bff28f1b9882af28302ce16ddc46708116c1bf868c2aba96e2",
+  "numerical_validation/results/repaired_eight/validation.json": "f54e1b3751767c8028827969ae31d54e8d68829d07b71254052109ed1e79c6f8",
+  "numerical_validation/results/repaired_three/sample_identifier_sensitivity.json": "015acf5887157db18fd38d45ba77295004ef0f14811e45c6788ef5f4381660f8",
+  "numerical_validation/results/repaired_eight/sample_identifier_sensitivity.json": "afa85c6591af2a522ed84395dd5a2de5a4b6db5fbdc39f92a3733b3566cd3f8c",
+  "numerical_validation/results/mean_floor_three/validation.json": "e83ec67e4abf614a31f21633bcf23fe6d03ab97178dd8c716a57af19ff3d3273",
+  "numerical_validation/results/mean_floor_eight/validation.json": "a991aae17cbebb3caffb17d319ad16d9d132bb49b3750b604c4f8cc687f517a2",
+  "numerical_validation/results/canonical_eight/validation.json": "39843421c893eec6a8df3c11a0c4d7482d5fd8dae9eb06109845cc85ff334771",
+  "numerical_validation/results/canonical_three/validation.json": "41006c0b6f5a57132be799f5a39ab11b8f4d3b3e0612c926984886e765c94dd0"
 }

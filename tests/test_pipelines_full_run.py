@@ -66,6 +66,31 @@ def demo_cfg(tmp_path: Path) -> RunConfig:
     return cfg
 
 
+def test_full_run_forwards_validator_sampling_settings(
+    offline_real_data, demo_cfg: RunConfig, tmp_path: Path, monkeypatch
+) -> None:
+    """The GPU request must match the settings recorded in the manifest."""
+    demo_cfg.backend = "mock"
+    demo_cfg.params.validate_.diffusion_samples = 5
+    demo_cfg.params.validate_.max_parallel_samples = 2
+    received = {}
+
+    def capture(run_dir, **kwargs):
+        received.update(kwargs)
+        raise RuntimeError("stop before any GPU work")
+
+    monkeypatch.setattr("bindsight.cli._launch_design", capture)
+    with patch(
+        "bindsight.deg.pydeseq2_runner.PyDESeq2Runner._run_pydeseq2",
+        return_value=_fake_deg(),
+    ):
+        full_run_module.run(
+            demo_cfg, out_dir=tmp_path / "sampling", skip_report=True, skip_export=True
+        )
+    assert received["diffusion_samples"] == 5
+    assert received["max_parallel_samples"] == 2
+
+
 def test_full_run_with_only_discover(
     offline_real_data, demo_cfg: RunConfig, tmp_path: Path
 ) -> None:

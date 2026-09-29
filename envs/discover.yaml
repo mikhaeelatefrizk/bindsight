@@ -16,11 +16,12 @@ dependencies:
   # the exact versions this release was tested against.
   - pandas>=2.2,<3
   - openpyxl>=3.1   # parse the SURFY surfaceome .xlsx
-  - pyarrow>=16,<25
+  - pyarrow>=23.0.1,<25
   - numpy>=1.26,<3
   - scipy>=1.11,<2
   # DEG (default backend)
-  - pydeseq2>=0.5,<0.6
+  - pydeseq2==0.5.4
+  - formulaic>=1.2.2,<2
   # Bio I/O
   - biopython>=1.83,<2
   # Provenance / validation

@@ -27,6 +27,8 @@ jobs:
           pip install -e ".[dev,discover,report]"
       - name: Ruff check
         run: ruff check bindsight tests scripts benchmarks
+      - name: Test the read-only website relay
+        run: node --test hosting/site-proxy.test.mjs
       - name: Ruff format
         run: ruff format --check bindsight tests scripts benchmarks
       # Blocking. pyproject sets strict = true and CI swallowed the result with

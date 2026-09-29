@@ -16,8 +16,11 @@ the properties that make the chain a chain:
    chain is walked by.
 3. A mock result can never be mistaken for a real one, because the backend is
    part of the design cache key.
-4. The exported crate carries the cohort, so the walk reaches actual patient
-   barcodes rather than stopping at a DEG table.
+4. The exported crate carries the synthetic test cohort, so the walk reaches
+   its sample identifiers rather than stopping at a DEG table.
+
+Counts, patient-like identifiers, structures and mock model outputs in this
+module are synthetic unit-test fixtures. They are not public scientific evidence.
 """
 
 from __future__ import annotations
@@ -36,7 +39,7 @@ _STAGES = ("deg", "discover", "design", "validate", "rank", "report", "export")
 
 
 def _tiny_cohort(root: Path) -> Path:
-    """A two-patient paired cohort, small enough to run in a test."""
+    """A synthetic four-patient paired cohort, small enough to run in a test."""
     genes = [f"ENSG{i:011d}" for i in range(60)]
     # ERBB2 and CA9, so the run has something a panel would recognise.
     genes[0], genes[1] = "ENSG00000141736", "ENSG00000107159"
@@ -82,7 +85,7 @@ def _tiny_cohort(root: Path) -> Path:
 
 
 def _config(root: Path, out: Path) -> Path:
-    """A discovery config over the tiny cohort, with every network gate off."""
+    """Disable optional reference queries; the fixture supplies the structure locally."""
     import yaml
 
     cfg = {
@@ -127,10 +130,26 @@ def joined_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
     _tiny_cohort(src)
     out = base / "run"
     config = _config(src, out)
+    # AlphaFoldDB lookup is not controlled by the optional annotation gates.
+    # Supply an explicitly synthetic local structure so this mock-chain test
+    # needs neither a populated developer cache nor a live reference service.
+    structure = base / "synthetic-unit-test-target.pdb"
+    structure.write_text(
+        "REMARK 999 SYNTHETIC UNIT TEST STRUCTURE; NOT BIOLOGICAL EVIDENCE\n"
+        "ATOM      1  CA  GLY A   1      0.000   0.000   0.000  1.00  0.00           C\n"
+        "ATOM      2  CA  SER A   2      3.800   0.000   0.000  1.00  0.00           C\n"
+        "ATOM      3  CA  HIS A   3      7.600   0.000   0.000  1.00  0.00           C\n"
+        "END\n",
+        encoding="utf-8",
+    )
 
     runner = CliRunner()
     # The design cache lives under the working directory, so isolate it.
-    with runner.isolated_filesystem(temp_dir=base):
+    with pytest.MonkeyPatch.context() as patches, runner.isolated_filesystem(temp_dir=base):
+        patches.setattr(
+            "bindsight.structures.alphafolddb.AlphaFoldDBClient.fetch",
+            lambda self, uid: structure,
+        )
         result = runner.invoke(cli.main, ["discover", str(config), "--out", str(out)])
         assert result.exit_code == 0, result.output
 

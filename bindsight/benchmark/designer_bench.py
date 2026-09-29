@@ -64,18 +64,21 @@ IPTM_CALIBRATION_CAVEAT = (
     "same target, same validator, same card, same session. Under a seeded "
     "validator averaging five diffusion draws per binder, the **shuffles pass "
     "more often than the designs**: 50% of shuffles clear 0.65 against 30% of "
-    "designs. The paired difference is −0.043 (95% CI −0.142 to +0.054, exact "
-    "sign-flip p = 0.40), and 9 of 20 designs beat their own shuffle where 10 "
-    "is chance.\n"
+    "designs. The paired difference is −0.043 (95% backbone-cluster bootstrap "
+    "CI −0.137 to +0.063, cluster sign-flip p = 0.44), over 10 backbones and "
+    "20 sequence pairs. Nine of 20 designs beat their own shuffle. The shuffles "
+    "are not experimentally confirmed nonbinders, so their pass rate is not "
+    "a measured biological false-positive rate.\n"
     ">\n"
     "> Two causes were found in the pipeline and fixed — the validator and the "
     "designer were both invoked without a seed, so every number in this table "
     "is a single unseeded draw of a sequence that was itself an unseeded draw. "
     "Refolding these twenty sequences moves ipTM by a median of 0.172, against "
     "a measured per-draw spread of 0.139. But the fixes did not rescue the "
-    "result: five times the sampling effort moved it slightly further against "
-    "the designs, and 85% of the remaining spread is real pair-to-pair "
-    "variation that no amount of resampling reduces.\n"
+    "result: no positive design advantage was established. The historical "
+    "variance calculation attributed 85% of the spread to pair-to-pair "
+    "variation; this is an assumption-dependent estimate, not an exact "
+    "decomposition or a validated prospective sample-size prescription.\n"
     ">\n"
     "> The numbers in this table are real Boltz-2 outputs. What is withdrawn is "
     "the claim that the rate measures the designs. See "
@@ -522,7 +525,7 @@ def run_designer_benchmark(
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    targets = targets or DEFAULT_TARGETS
+    targets = DEFAULT_TARGETS if targets is None else targets
 
     scores: list[DesignerScore] = []
     with tempfile.TemporaryDirectory(prefix="bindsight_designerbench_") as tmp:

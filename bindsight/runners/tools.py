@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import statistics
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -52,13 +53,18 @@ def _design_python() -> str:
     return os.environ.get("BINDSIGHT_DESIGN_PYTHON") or "python"
 
 
-def _boltz_bin() -> str:
-    """Executable for the Boltz-2 validator (``boltz`` on PATH by default).
+def _boltz_command() -> list[str]:
+    """Use the shared precision shim in the validator's Python environment.
 
-    Overridable via ``BINDSIGHT_BOLTZ_BIN`` for split-env hosts where Boltz-2
-    lives in its own environment.
+    A custom BINDSIGHT_BOLTZ_BIN remains an explicit, user-managed executable;
+    its owner must handle precision compatibility. Prefer BINDSIGHT_BOLTZ_PYTHON
+    for a separate environment with bindsight and the pinned Boltz installed.
     """
-    return os.environ.get("BINDSIGHT_BOLTZ_BIN") or "boltz"
+    if executable := os.environ.get("BINDSIGHT_BOLTZ_BIN"):
+        LOG.warning("Custom BINDSIGHT_BOLTZ_BIN bypasses bindsight's precision compatibility check")
+        return [executable]
+    python = os.environ.get("BINDSIGHT_BOLTZ_PYTHON") or sys.executable
+    return [python, "-m", "bindsight.runners.boltz_compat"]
 
 
 # ---------------------------------------------------------------------------
@@ -392,7 +398,7 @@ def build_boltz_cmd(
         raise ValueError(f"diffusion_samples must be at least 1; got {diffusion_samples}")
     if max_parallel_samples < 1:
         raise ValueError(f"max_parallel_samples must be at least 1; got {max_parallel_samples}")
-    cmd = [_boltz_bin(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
+    cmd = [*_boltz_command(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
     if use_msa_server:
         cmd.append("--use_msa_server")
     if seed is not None:

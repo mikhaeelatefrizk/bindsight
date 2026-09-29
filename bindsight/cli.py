@@ -1957,11 +1957,15 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
         return 0
     design_dir = run_dir / "design"
     targets_dir = design_dir / "_targets"
+    runner_options: dict[str, Any] = {}
+    if selected_gpu := _gpu_type_from_run(run_dir):
+        runner_options["gpu_type"] = selected_gpu
     runner = get_runner(
         backend,
         designer="rfdiff_mpnn",
         n_units_per_target=1,
         bindsight_wheel=_working_tree_wheel(backend, run_dir),
+        **runner_options,
     )
 
     metrics_lines: list[str] = []
@@ -2061,11 +2065,15 @@ def _launch_design(
         return 0
     seed, binder_length_min, binder_length_max = _design_spec_params_from_run(run_dir)
     plugin = get_designer(designer)
+    runner_options: dict[str, Any] = {}
+    if selected_gpu := _gpu_type_from_run(run_dir):
+        runner_options["gpu_type"] = selected_gpu
     runner = get_runner(
         backend,
         designer=designer,
         n_units_per_target=trajectories,
         bindsight_wheel=_working_tree_wheel(backend, run_dir),
+        **runner_options,
     )
     design_dir = run_dir / "design"
     targets_dir = design_dir / "_targets"

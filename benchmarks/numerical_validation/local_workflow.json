@@ -1,0 +1,211 @@
+{
+  "schema": "bindsight-local-workflow-verification/1",
+  "scope": "Real local API and CPU workflow execution; not biological or experimental validation.",
+  "passed": true,
+  "started_at": "2026-09-29T01:38:57.876123+00:00",
+  "inputs": {
+    "counts": {
+      "bytes": 268162,
+      "sha256": "ce5c5c6670707568b28a6e2ce561a05b708121f150ad1d093775a05d5503229c"
+    },
+    "design": {
+      "bytes": 636,
+      "sha256": "4f7e3fa2b16811d4e294ede695a777776846fa91caf247eeee43df93f44603a4"
+    }
+  },
+  "comparison": {
+    "factor": "condition",
+    "numerator": "tumor",
+    "denominator": "normal",
+    "paired_by": "case_barcode",
+    "fdr": 0.05,
+    "log2fc": 1.0
+  },
+  "python": "3.13.14",
+  "platform": {
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "libraries": {
+    "anndata": "0.12.19",
+    "bindsight": "0.3.6",
+    "biopython": "1.88",
+    "fastapi": "0.141.1",
+    "formulaic": "1.2.2",
+    "formulaic-contrasts": "1.0.0",
+    "h5py": "3.14.0",
+    "httpx2": "2.13.1",
+    "numcodecs": "0.16.5",
+    "numpy": "2.2.6",
+    "pandas": "2.3.2",
+    "pyarrow": "23.0.1",
+    "pydeseq2": "0.5.4",
+    "scikit-learn": "1.7.2",
+    "scipy": "1.16.3",
+    "starlette": "1.7.0",
+    "torch": null,
+    "transformers": null,
+    "zarr": "3.1.6"
+  },
+  "numeric_thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "git_revision": "ccc88d0305f809c1957f83046efd7e0da98d3eae",
+  "git_working_tree_dirty": true,
+  "source_sha256": {
+    "scripts/verify_local_workflow.py": "7ee05a4a0cfe71ecd62cd72fef3f6ee7a31075943e2be5405c934e4c7badaca5",
+    "pyproject.toml": "bd68c3aaf0106a94c0065a80d2f44f1a8512ebf5fb6d9a26fe72db4097d1f510",
+    "bindsight/config.py": "b7affc65254a068cf167fa41517998a21d8be67a66ae813f8e697b5c3e54e3e4",
+    "bindsight/deg/pydeseq2_runner.py": "1c419ee7d2092761428ac4d04f725178a7bdda0f256c8bc72245e0c5e6163baf",
+    "bindsight/deg/inference.py": "62a98b187accc69483e58fd266ae53bc94b306561576585ef4beb94ed2d7f764",
+    "bindsight/deg/diagnostics.py": "cb39a0abd15d27433d9646eb2cfbaa86d28838b29e9e2df1e3560d8fe457a17a",
+    "bindsight/pipelines/discover.py": "ad2d667435a19027f9c396c9d5f41d4f7fd4d31602f9840c1cd2baed4debfe41",
+    "bindsight/targets/open_targets.py": "c4a65730700a94b8d2134651981ddf309869a1daa4002b40737ffad3288a9983",
+    "bindsight/targets/gtex.py": "23cca4059f6aab6a1f4026e1e872fc297254df7990a525b78cd07986c93b99d1",
+    "bindsight/structures/topology.py": "9578359192193d0d51f0f7090218026dd85e09b31bb9a659caf0d762603e663b",
+    "bindsight/structures/alphafolddb.py": "276e5bd525945ec4e9c2105d92fb85b7d86c4363ca7cf0c888d41cc54c4c6aa4",
+    "bindsight/report/coverage.py": "760d8c56ad0fd79cc64b4b8471abf0009e0fc42b4542289cd0ff5870be4c05a9",
+    "bindsight/report/fit_diagnostics.py": "c9047333c4e9775d55fc5d8ca774acb348027d2bd4d61a36c14f3bf39128dd9a",
+    "bindsight/report/html.py": "0d060961d968f951584bd9ba509214043de193476ee8278bb4a12b5b7e4de8b0",
+    "bindsight/report/templates/report.html.j2": "e0f3dbb0e19a6db5b5d3cc0595aeb64aeff0d852bce5fa00d42939d80c4a11f2",
+    "bindsight/report/web/app.py": "c5b21adc21d46e348807cec840677e9b33029fd8146fd1545d7de5f2cb05c50d",
+    "bindsight/report/web/workbench_routes.py": "2ddb3564ede77bca7e8a77a759e18a1269fe88dc92bbd725a7701732eaed6b7c",
+    "bindsight/report/web/workspace.py": "426500675992af5cb7a5ee455c79ee49715ad941f9d9ef12aa702763a3a91ebf",
+    "bindsight/report/web/worker.py": "92c9535a3d07738adf14998c4b3f5b02fb6ea06044be1b94ee550e7f40e8494f"
+  },
+  "states": [
+    {
+      "state": "running",
+      "elapsed_seconds": 1.041
+    },
+    {
+      "state": "completed",
+      "elapsed_seconds": 57.17
+    }
+  ],
+  "artifacts": {
+    "report": {
+      "http_status": 200,
+      "bytes": 118244,
+      "sha256": "585f8b94d44f3195a4f54f5a49909522a036c33aef0f59bce7cf92afbc9d5d1d"
+    },
+    "manifest": {
+      "http_status": 200,
+      "bytes": 15874,
+      "sha256": "3431ecebab61c7cd512312dd4de68e84824a237f334141c9a06d76c8ec8f8c65"
+    },
+    "candidates": {
+      "http_status": 200,
+      "bytes": 36511,
+      "sha256": "76c05b0738857438f3c7c388afaeb5807c69aef8fd96cbcb5094ab53b76c4fc0"
+    },
+    "deg": {
+      "http_status": 200,
+      "bytes": 992767,
+      "sha256": "131d778b8472e7fc28364617da94cb462af1437011236f6179f6df654b0a8308"
+    },
+    "config": {
+      "http_status": 200,
+      "bytes": 2210,
+      "sha256": "9348834e1d658ee108a19bcdb1e32ed0f7e308078c33702ab593b95ecc1e09d3"
+    },
+    "taxonomy": {
+      "http_status": 200,
+      "bytes": 386305,
+      "sha256": "0d625132defecf095d313b18629cc16959f181820a25a58b6a74ea971d9695f1"
+    },
+    "coverage": {
+      "http_status": 200,
+      "bytes": 149,
+      "sha256": "8ccd23b205c5d0f3a0ac90de70cb6a9e8a12fcbfc699b454538fea9927f0ea4b"
+    },
+    "fit_diagnostics": {
+      "http_status": 200,
+      "bytes": 722,
+      "sha256": "a9c410b9c03d4dcc803acdafd7dd13616542813e9cd5877e7031f5cab971d981"
+    }
+  },
+  "input_check": {
+    "genes": 19944,
+    "samples": 6
+  },
+  "final_state": "completed",
+  "stages": [
+    {
+      "name": "deg",
+      "status": "completed",
+      "tool": "pydeseq2",
+      "version": "0.5.4"
+    },
+    {
+      "name": "discover",
+      "status": "completed",
+      "tool": "bindsight/0.3.6",
+      "version": "0.3.6"
+    },
+    {
+      "name": "annotation_coverage",
+      "status": "completed",
+      "tool": "bindsight.report",
+      "version": "0.3.6"
+    },
+    {
+      "name": "report",
+      "status": "completed",
+      "tool": "bindsight.report",
+      "version": "0.3.6"
+    }
+  ],
+  "coverage": {
+    "available": true,
+    "unassessed_lookups": 0,
+    "dispositions": {},
+    "intentionally_beyond_enrichment_cap": 462,
+    "structure_not_queried": 81
+  },
+  "numerical_fit": {
+    "available": true,
+    "warnings": [
+      "Residual degrees of freedom: 2 (below 3). The design leaves little information for estimating residual variation; interpret the resulting uncertainty cautiously.",
+      "Gene-wise dispersion: 32 genes had a nonconverged optimizer flag. A returned estimate does not establish optimizer convergence.",
+      "MAP dispersion: 9 genes had a nonconverged optimizer flag. A returned estimate does not establish optimizer convergence.",
+      "The regularization-preserving dispersion grid fallback was used for 41 fits across 2 inference calls. Counts can include the same gene more than once; fallback estimates retain their nonconverged optimizer flags."
+    ],
+    "details": [
+      "Log fold-change: 0 recorded nonconverged optimizer flags."
+    ],
+    "scope": "These diagnostics describe numerical fitting. They do not establish biological validity or experimental validation."
+  },
+  "effective_deg_parameters": {
+    "design_formula": "~ case_barcode + condition",
+    "categorical_factors": [
+      "condition",
+      "case_barcode"
+    ],
+    "contrast": [
+      "condition",
+      "tumor",
+      "normal"
+    ],
+    "fdr_threshold": 0.05,
+    "log2fc_threshold": 1.0,
+    "min_replicates": 3,
+    "min_count": 10,
+    "n_cpus": 4
+  },
+  "checks": {
+    "required_stages_completed": true,
+    "no_failed_stages": true,
+    "all_eight_downloads_nonempty": true,
+    "download_hashes_match_manifest": true,
+    "fit_record_matches_deg_table": true,
+    "fit_summary_available": true,
+    "report_contains_recorded_fit_warnings": true,
+    "annotation_state_matches_coverage": true,
+    "source_unchanged_during_execution": true
+  },
+  "finished_at": "2026-09-29T01:39:55.556185+00:00",
+  "elapsed_seconds": 57.68
+}

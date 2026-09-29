@@ -19,6 +19,7 @@ Regenerate with:
 from __future__ import annotations
 
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -489,6 +490,24 @@ def _designer_section(d: showcase.DesignerShowcase) -> list[str]:
     return lines
 
 
+def _tracked_vendor_sources() -> list[Path]:
+    """Never copy local private files or escaping links into the docs site."""
+    root = ROOT.resolve()
+    vendor = WEB_STATIC / "vendor"
+    prefix = vendor.relative_to(root).as_posix() + "/"
+    listed = subprocess.check_output(["git", "ls-files", "--cached", "-z", "--", prefix], cwd=root)
+    sources = []
+    for name in sorted(set(listed.decode("utf-8").split("\0")) - {""}):
+        path = root / name
+        if path.is_symlink() or not path.resolve().is_relative_to(root):
+            raise ValueError(
+                f"A docs vendor source must be a regular file inside the repository: {name}"
+            )
+        if path.is_file():
+            sources.append(path)
+    return sources
+
+
 def _copy_assets(
     v: showcase.StudyShowcase | None, d: showcase.DesignerShowcase | None
 ) -> dict[str, int]:
@@ -541,14 +560,14 @@ def _copy_assets(
         shutil.copyfile(b.complex_cif, STRUCT_DIR / b.complex_cif.name)
     counts["structures"] = len(structures)
 
-    # Discovered, not listed: a second vendored library is mirrored the day it
-    # arrives, and its licence travels with it because a licence is a file in
-    # that directory rather than a name this function knows.
+    # Discover reviewed files from Git, not from a directory walk that could
+    # accidentally publish local private notes or follow an escaping link.
     VENDOR_DIR.mkdir(parents=True, exist_ok=True)
-    for src in sorted((WEB_STATIC / "vendor").iterdir()):
-        if src.is_file():
-            shutil.copyfile(src, VENDOR_DIR / src.name)
-            counts["vendor"] += 1
+    for src in _tracked_vendor_sources():
+        target = VENDOR_DIR / src.relative_to(WEB_STATIC / "vendor")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, target)
+        counts["vendor"] += 1
 
     return counts
 

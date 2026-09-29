@@ -10,8 +10,8 @@ For users with a local NVIDIA GPU. Two modes, selected by the ``native`` flag
   already-provisioned workstation; also the mode CPU tests exercise (with
   ``job_exec`` monkeypatched).
 - **docker** — ``docker run --gpus all <image> python -m bindsight.runners.job_exec``
-  against the pinned bindsight image, mounting the spec + results dirs. No local
-  Python deps beyond Docker.
+  against an explicitly configured custom GPU image, mounting spec + results.
+  The published default image is CPU-only and is refused for GPU jobs.
 
 Both call the same executor, so the design+validation pipeline is identical to
 the Modal/Kaggle paths.
@@ -31,6 +31,7 @@ from bindsight.cost import estimate
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
 
 LOG = logging.getLogger(__name__)
+DEFAULT_CPU_IMAGE = "ghcr.io/mikhaeelatefrizk/bindsight:latest"
 
 # Track launched processes by handle id (JobHandle is frozen, so we can't stash
 # the Popen on it). Maps handle id -> (Popen, tarball Path).
@@ -60,7 +61,9 @@ class LocalDockerRunner:
         self.designer = designer
         self.n_units_per_target = n_units_per_target
         self.gpu_type = gpu_type
-        self.image = image
+        self.image = (
+            os.environ.get("BINDSIGHT_LOCAL_IMAGE", image) if image == DEFAULT_CPU_IMAGE else image
+        )
         self.native = (
             native
             if native is not None
@@ -79,6 +82,8 @@ class LocalDockerRunner:
 
     def submit(self, spec_path: Path, *, results_dir: Path) -> JobHandle:
         """Launch the executor (native subprocess or docker run); return a handle."""
+        if issue := self.configuration_issue():
+            raise RuntimeError(issue)
         results_dir.mkdir(parents=True, exist_ok=True)
         handle_id = str(uuid.uuid4())
         tarball = results_dir / f"{handle_id}.tar.gz"
@@ -132,6 +137,18 @@ class LocalDockerRunner:
             results_dir=str(results_dir),
             tarball=str(tarball),
         )
+
+    def configuration_issue(self) -> str | None:
+        """Reject the known CPU image without pretending to inspect a custom one."""
+        if not self.native and self.image == DEFAULT_CPU_IMAGE:
+            return (
+                "The default bindsight Docker image is CPU-only and cannot run GPU design "
+                "or Boltz-2. Use an already provisioned CUDA environment with "
+                "BINDSIGHT_LOCAL_NATIVE=1, or set BINDSIGHT_LOCAL_IMAGE to your own "
+                "GPU image containing the pinned design and validation environments. "
+                "A custom environment still needs validation on the actual GPU."
+            )
+        return None
 
     def poll(self, handle: JobHandle) -> JobStatus:
         """Report queued/running/succeeded/failed from the tracked process."""

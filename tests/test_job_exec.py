@@ -80,7 +80,7 @@ def _fake_run(cmd, *, cwd=None):
         seqs = out_folder / "seqs"
         seqs.mkdir(parents=True, exist_ok=True)
         (seqs / "bb.fa").write_text(_MPNN_FASTA)
-    elif cmd[0] == "boltz":
+    elif "bindsight.runners.boltz_compat" in cmd or cmd[0] == "boltz":
         out_dir = Path(cmd[cmd.index("--out_dir") + 1])
         pred = out_dir / "predictions" / "run"
         pred.mkdir(parents=True, exist_ok=True)
@@ -376,7 +376,9 @@ class TestTheValidatorIsSeeded:
 
     @staticmethod
     def _boltz_calls(calls: list[list[str]]) -> list[list[str]]:
-        return [c for c in calls if c and c[0] == "boltz"]
+        return [
+            c for c in calls if c and ("bindsight.runners.boltz_compat" in c or c[0] == "boltz")
+        ]
 
     def test_every_boltz_call_carries_a_seed(self, mock_run, tmp_path: Path) -> None:
         work = tmp_path / "work"

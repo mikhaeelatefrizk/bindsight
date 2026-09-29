@@ -152,9 +152,10 @@ BACKEND_CAPABILITIES: dict[str, BackendCapability] = {
         ),
     ),
     "colab": BackendCapability(
-        provides=frozenset({"rfdiff_mpnn", "boltz2"}),
+        provides=frozenset(),
+        attempts=frozenset({"rfdiff_mpnn", "boltz2"}),
         compute_capability=(7, 5),
-        note="the generated notebook installs RFdiffusion, ProteinMPNN and Boltz-2 only",
+        note="the generated notebook is unverified and needs a compatible CUDA tool environment",
     ),
     "modal": BackendCapability(
         provides=frozenset({"boltz2"}),
@@ -165,11 +166,11 @@ BACKEND_CAPABILITIES: dict[str, BackendCapability] = {
         ),
     ),
     "local_docker": BackendCapability(
-        provides=frozenset({"boltz2"}),
-        attempts=frozenset({"rfdiff_mpnn"}),
+        provides=frozenset(),
+        attempts=frozenset({"rfdiff_mpnn", "boltz2"}),
         note=(
-            "the image ships Boltz-2; the executor would bootstrap RFdiffusion "
-            "itself, which the CPU tests do not exercise"
+            "the default image is CPU-only; native mode or a custom GPU image "
+            "needs separately provisioned and verified CUDA tools"
         ),
     ),
     # The mock backend synthesises results and runs no tool, so every name is
@@ -207,6 +208,11 @@ def plugin_support(backend: str, plugin: str) -> tuple[str, str]:
     capability = BACKEND_CAPABILITIES.get(backend)
     if capability is None:
         return UNTESTED, f"{backend!r} is not a bundled backend, so its environment is unknown"
+    if backend == "local_docker":
+        from bindsight.runners.local_docker import LocalDockerRunner
+
+        if issue := LocalDockerRunner().configuration_issue():
+            return UNSUPPORTED, issue
 
     required = PLUGIN_MIN_COMPUTE.get(plugin)
     if (

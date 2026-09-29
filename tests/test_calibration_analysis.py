@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests for the ipTM calibration analysis (CPU-only, no GPU run required).
 
-This code turns ``DEFAULT_IPTM_SUCCESS = 0.65`` from a bare constant into a
-measured false-positive rate, so its arithmetic ends up in a published claim.
+This code compares ``DEFAULT_IPTM_SUCCESS = 0.65`` with computational shuffles;
+their pass rate is not a measured biological false-positive rate.
 The exact sign-flip test is checked against a brute-force enumeration written a
 different way, against cases whose answer is known in closed form, and across
 the chunk boundary its vectorised implementation introduces.
@@ -23,6 +23,94 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks" / "calibration"))
 
 import analyse as calib
+
+
+class TestBackboneClusterInference:
+    def test_repeated_sequences_do_not_increase_independent_information(self) -> None:
+        one = {f"P04626_binder_{i}_seq0": d for i, d in enumerate([0.2, -0.1, 0.3, -0.2])}
+        repeated = {
+            f"P04626_binder_{i}_seq{j}": d
+            for i, d in enumerate([0.2, -0.1, 0.3, -0.2])
+            for j in range(5)
+        }
+        a, b = calib.backbone_inference(one), calib.backbone_inference(repeated)
+        assert a["n_clusters"] == b["n_clusters"] == 4
+        assert b["n_pairs"] == 20
+        for key in ("mean", "low", "high", "exact_signflip_p", "n_permutations"):
+            assert a[key] == pytest.approx(b[key])
+
+    def test_one_backbone_cannot_establish_between_backbone_uncertainty(self) -> None:
+        result = calib.backbone_inference(
+            {"P04626_binder_0_seq0": 0.2, "P04626_binder_0_seq1": 0.4}
+        )
+        assert result["available"] is False
+        assert "low" not in result
+        assert "exact_signflip_p" not in result
+
+    def test_unknown_grouping_is_not_assumed_independent(self) -> None:
+        assert (
+            calib.backbone_inference({"arbitrary1": 0.2, "arbitrary2": 0.3})["available"] is False
+        )
+
+    def test_summary_reanalysis_rejects_duplicate_pairs(self) -> None:
+        row = {
+            "binder_id": "P04626_binder_0_seq0",
+            "design": 0.6,
+            "scramble": 0.4,
+            "difference": 0.2,
+        }
+        with pytest.raises(ValueError, match="duplicate paired binder"):
+            calib.add_backbone_analysis({"pairs": [row, row]})
+
+    def test_summary_reanalysis_checks_the_recorded_score_arithmetic(self) -> None:
+        row = {
+            "binder_id": "P04626_binder_0_seq0",
+            "design": 0.6,
+            "scramble": 0.4,
+            "difference": 0.5,
+        }
+        with pytest.raises(ValueError, match="disagrees with scores"):
+            calib.add_backbone_analysis({"pairs": [row]})
+
+    def test_summary_reanalysis_rejects_invalid_model_scores(self) -> None:
+        row = {
+            "binder_id": "P04626_binder_0_seq0",
+            "design": 1.6,
+            "scramble": 1.4,
+            "difference": 0.2,
+        }
+        with pytest.raises(ValueError, match="invalid recorded ipTM"):
+            calib.add_backbone_analysis({"pairs": [row]})
+
+    def test_committed_scores_reproduce_the_current_analysis(self) -> None:
+        path = Path(__file__).resolve().parents[1] / "benchmarks/calibration/RESULTS.json"
+        report = json.loads(path.read_text(encoding="utf-8"))
+        result = calib.backbone_inference(
+            {p["binder_id"]: p["difference"] for p in report["pairs"]}
+        )
+        assert result == report["backbone_analysis"]["design_vs_shuffle"]
+        assert result["n_clusters"] == 10
+        assert result["n_pairs"] == 20
+        assert result["exact_signflip_p"] == pytest.approx(0.439453125)
+        assert result["low"] < 0 < result["high"]
+        # The old per-sequence analysis remains identified and numerically intact.
+        assert report["exact_signflip_p"] == pytest.approx(0.40419769287109375)
+        assert "historical" in report["historical_inference_note"].lower()
+        assert report["backbone_analysis"]["controlled_specificity"]["available"] is False
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), -0.1, 1.1])
+    def test_invalid_model_scores_cannot_enter_a_threshold_rate(self, tmp_path, value) -> None:
+        metrics = _metrics(tmp_path / "invalid.jsonl", {"b0": value, "b0_scram": 0.4})
+        with pytest.raises(ValueError, match="invalid ipTM"):
+            calib.analyse(metrics, committed=None)
+
+    def test_duplicate_ids_cannot_silently_overwrite_a_score(self, tmp_path) -> None:
+        metrics = tmp_path / "duplicate.jsonl"
+        metrics.write_text(
+            "\n".join(json.dumps({"binder_id": "b0", "iptm": v}) for v in [0.2, 0.8])
+        )
+        with pytest.raises(ValueError, match="duplicate scored"):
+            calib.analyse(metrics, committed=None)
 
 
 def _brute_force_p(diffs: list[float]) -> float:

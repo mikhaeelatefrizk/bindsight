@@ -1,0 +1,392 @@
+{
+  "recorded_at": "2026-09-29T01:45:30.533133+00:00",
+  "runtime": "Official CRAN R 4.6.1 x64 UCRT, extracted from installer without executing setup",
+  "bioconductor": "3.23",
+  "deseq2": "1.52.0",
+  "isolation": {
+    "all_files_under": "${R_REFERENCE_ROOT}",
+    "installer_executed": false,
+    "global_PATH_changed": false,
+    "registry_or_associations_changed": false,
+    "source_toolchain_installed": false
+  },
+  "verification": {
+    "R_published_checksum": "https://cran.r-project.org/bin/windows/base/md5sum.R-4.6.1.txt",
+    "extractor_published_checksum_page": "https://constexpr.org/innoextract/",
+    "R_md5_matches": true,
+    "extractor_md5_matches": true,
+    "R_package_installation": "Official CRAN/Bioconductor binary ZIPs; install.packages checked internal MD5s. See install.log.",
+    "provenance_limit": "Published HTTPS MD5 fingerprints and local SHA256 records; not a claim of independent signature verification."
+  },
+  "archives": [
+    {
+      "file": "downloads/DESeq2_1.52.0.tar.gz",
+      "source": "https://bioconductor.org/packages/3.23/bioc/src/contrib/DESeq2_1.52.0.tar.gz",
+      "sha256": "8c91699286336350e66eec132ce6fdf5bb4af78e2a4d015a5a61224f62a95984",
+      "md5": "26b00545424cfbe4102f3a6593173427",
+      "bytes": 2680841
+    },
+    {
+      "file": "downloads/innoextract-1.9-windows.zip",
+      "source": "https://constexpr.org/innoextract/files/innoextract-1.9-windows.zip",
+      "sha256": "6989342c9b026a00a72a38f23b62a8e6a22cc5de69805cf47d68ac2fec993065",
+      "md5": "72d0d0dd874b6236eaa44411f4470ee1",
+      "bytes": 520705
+    },
+    {
+      "file": "downloads/packages/abind_1.4-8.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/abind_1.4-8.zip",
+      "sha256": "36386ba050ad3851303801fd7b2c15368ae2dfe80a013a310c7e9fc083f09754",
+      "md5": "a0322051cece87b17a99dc094d9398c4",
+      "bytes": 67558
+    },
+    {
+      "file": "downloads/packages/BH_1.90.0-1.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/BH_1.90.0-1.zip",
+      "sha256": "3cf2fd28be791a89e6bed19c5750afd758bfd8acb45db50089b18f154a3eebda",
+      "md5": "6900fa114ea0f7a2e03a8f13b2dbfd7c",
+      "bytes": 21717848
+    },
+    {
+      "file": "downloads/packages/Biobase_2.72.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/Biobase_2.72.0.zip",
+      "sha256": "cc2860d489ce40b1d5542adb7dba7b5245be49a393c8c1c6d6164c3f5945d92d",
+      "md5": "02534937f6966ca0548121113e0bf824",
+      "bytes": 2060367
+    },
+    {
+      "file": "downloads/packages/BiocGenerics_0.58.1.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/BiocGenerics_0.58.1.zip",
+      "sha256": "04d8c570acf0d74b6a64fceb72f31d37b12102d5058d6f18fbb63310b77571ab",
+      "md5": "ce946e602ee2a8e309a6537280ed2beb",
+      "bytes": 665577
+    },
+    {
+      "file": "downloads/packages/BiocManager_1.30.27.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/BiocManager_1.30.27.zip",
+      "sha256": "416f79489d77bfbeeb6ae776a96f036aa8f8b8802fbb37f331d417a90bc06684",
+      "md5": "b268c3976a67ac3e99b200f710d164ca",
+      "bytes": 665455
+    },
+    {
+      "file": "downloads/packages/BiocParallel_1.46.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/BiocParallel_1.46.0.zip",
+      "sha256": "038348f37a90ccb4e8927eef2a3e59f6821995a370df5deb6a3e7c6f4668fed2",
+      "md5": "301ff19c2c6226ab01f19e75b64942c0",
+      "bytes": 1198589
+    },
+    {
+      "file": "downloads/packages/BiocVersion_3.23.1.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/BiocVersion_3.23.1.zip",
+      "sha256": "e5e5fc60309103fc40dfebf08842c357860ad09139ffcb58b54e3d0ff1e58e0f",
+      "md5": "fd3cdbab7f316b1e386d8cd0050753f0",
+      "bytes": 8602
+    },
+    {
+      "file": "downloads/packages/cli_3.6.6.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/cli_3.6.6.zip",
+      "sha256": "b268584d1142531ef4849172c3d2d27b0070a9a8f1cef5ccc7364f06ce6472c3",
+      "md5": "a3e834738da3d173a7d465931e07e550",
+      "bytes": 1409375
+    },
+    {
+      "file": "downloads/packages/cpp11_0.5.5.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/cpp11_0.5.5.zip",
+      "sha256": "a383e25b7acf815bcf7e99376623884bbaa8dcbfcfd17bcb48f875035d3b8a18",
+      "md5": "7e625f5a5d3ccaacb8bda9eb048c7800",
+      "bytes": 326886
+    },
+    {
+      "file": "downloads/packages/DelayedArray_0.38.2.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/DelayedArray_0.38.2.zip",
+      "sha256": "0fdd2819d237ea29fb0c9014430f3c9912d47032fe566feef3a36de05302a42e",
+      "md5": "dd837d27ba93da5c9f62d728ca1c4b6d",
+      "bytes": 2116245
+    },
+    {
+      "file": "downloads/packages/DESeq2_1.52.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/DESeq2_1.52.0.zip",
+      "sha256": "95757ed94f5314cc97727adf80dad2bc34fd9d8339ae8e74fda3f47b825994a5",
+      "md5": "cc2f501f66822a9969558cd8dc8cc0b1",
+      "bytes": 3649042
+    },
+    {
+      "file": "downloads/packages/farver_2.1.2.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/farver_2.1.2.zip",
+      "sha256": "06d1ebff2435a8bece0402042b91fc946dfbdda6e293110aa0b68750856aa4f1",
+      "md5": "aab1342193f76cf993bdd1ccabce24dc",
+      "bytes": 1529181
+    },
+    {
+      "file": "downloads/packages/formatR_1.14.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/formatR_1.14.zip",
+      "sha256": "636991e22999fdc29ec8cbe264694bf17901e812275cd96e352bd6061daedea8",
+      "md5": "ee25fe10ef8be14f33872a002d79f8af",
+      "bytes": 156448
+    },
+    {
+      "file": "downloads/packages/futile.logger_1.4.9.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/futile.logger_1.4.9.zip",
+      "sha256": "7b7f50eed4febe738120308d3988e55c02fe4b3816608554ff8d1e1f13ae9628",
+      "md5": "036b7e3b96750ae5eda3d54ddd5ca162",
+      "bytes": 121821
+    },
+    {
+      "file": "downloads/packages/futile.options_1.0.1.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/futile.options_1.0.1.zip",
+      "sha256": "a8af8bfcaff50a67a13159eaa49db6b5557f2a980ca45e30be0e086c2b890d45",
+      "md5": "793f1e42e429bc68a9cfa268739a07e7",
+      "bytes": 22531
+    },
+    {
+      "file": "downloads/packages/generics_0.1.4.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/generics_0.1.4.zip",
+      "sha256": "712a4c2aea08a38409aeddc3976d119fd9258b427a9f1ad82c523e6c770fcd9b",
+      "md5": "93feacd7b759534c924ba3e8985a94a4",
+      "bytes": 86409
+    },
+    {
+      "file": "downloads/packages/GenomicRanges_1.64.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/GenomicRanges_1.64.0.zip",
+      "sha256": "d8291f40d1daa4d8e2f4fcdfec7ebf5c57db7023ecd1d25f0dcce4ca464ad615",
+      "md5": "5e7bffe1c08ab54ccdbbb80656043789",
+      "bytes": 1959041
+    },
+    {
+      "file": "downloads/packages/ggplot2_4.0.3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/ggplot2_4.0.3.zip",
+      "sha256": "6f5470f40bbbf6714c746d57e6573ec2663d3142891583f4070cfc8130d386d9",
+      "md5": "e4ddd84711a5b198eab275bfe406978c",
+      "bytes": 8473318
+    },
+    {
+      "file": "downloads/packages/glue_1.8.1.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/glue_1.8.1.zip",
+      "sha256": "7bc1c6717026244a9379c7ccc91fcd3988c292f29e10b65038dafe2746eea9e7",
+      "md5": "a52fc27edbff014f74c0d77db353a9e6",
+      "bytes": 192143
+    },
+    {
+      "file": "downloads/packages/gtable_0.3.6.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/gtable_0.3.6.zip",
+      "sha256": "62e091c15ee3959d22209f44e42acf36e75653e7421f580f044ec065bdde64d1",
+      "md5": "e6011b6f1df499114f99080ba11c935c",
+      "bytes": 253257
+    },
+    {
+      "file": "downloads/packages/IRanges_2.46.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/IRanges_2.46.0.zip",
+      "sha256": "084601d1d37b90e19280104c85d0a5326b35ffb137b1aa6b0f385a489a947dbc",
+      "md5": "f9554039baf8cc1018d718525fbc833b",
+      "bytes": 2494619
+    },
+    {
+      "file": "downloads/packages/isoband_0.3.0.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/isoband_0.3.0.zip",
+      "sha256": "8e21a87af6471684b404b5c200e12c5ce6a9a38b2e5fd2ab975ded75829a2ae8",
+      "md5": "05c016c0e64bffc74bcfe7486c3e1f5e",
+      "bytes": 1976961
+    },
+    {
+      "file": "downloads/packages/jsonlite_2.0.0.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/jsonlite_2.0.0.zip",
+      "sha256": "78d910b94ef0ffe5ffe51312b14e1f1ea28c2703d417e6c77478f1bb2a934702",
+      "md5": "b2759b923e5033fc8fc873fd846149fa",
+      "bytes": 1110998
+    },
+    {
+      "file": "downloads/packages/labeling_0.4.3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/labeling_0.4.3.zip",
+      "sha256": "a5d4772de28813c6730a37e5a4b9605cf1b941344a319e56af7bacf4680ea82e",
+      "md5": "3cfbf0c2d4b299e6ced1ad1d77f5b24d",
+      "bytes": 64255
+    },
+    {
+      "file": "downloads/packages/lambda.r_1.2.4.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/lambda.r_1.2.4.zip",
+      "sha256": "c8b419235cf47b258d76e486407481dae09b79b5591428084e4d43e59c902686",
+      "md5": "e9248281343999146ebcd90e36742c77",
+      "bytes": 113079
+    },
+    {
+      "file": "downloads/packages/lifecycle_1.0.5.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/lifecycle_1.0.5.zip",
+      "sha256": "ceffe39564bf2eac34e530e003b96003e382a090cbf4b9800d73fcbe3f1e44ed",
+      "md5": "8e68d45b1e4394082485b91f64ab2adc",
+      "bytes": 150753
+    },
+    {
+      "file": "downloads/packages/locfit_1.5-9.12.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/locfit_1.5-9.12.zip",
+      "sha256": "4da87745ea2bf44be119553d4993adccb9182ba7f6aff290f9e32db28c7aa680",
+      "md5": "4fc3428eb2d8e954ebe62a6a6cd37627",
+      "bytes": 550634
+    },
+    {
+      "file": "downloads/packages/MatrixGenerics_1.24.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/MatrixGenerics_1.24.0.zip",
+      "sha256": "adfd50c258ac3c6407a23fe26ad37a44812dc3e3dbad392fdd4d98c7f28a8ba3",
+      "md5": "f269f478a8eb56e4d77da802645d80f9",
+      "bytes": 460378
+    },
+    {
+      "file": "downloads/packages/matrixStats_1.5.0.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/matrixStats_1.5.0.zip",
+      "sha256": "e3aac983bc2ca40e2f357e282fa17e37a169ee7c766a0820fac4ec060203051f",
+      "md5": "416e735264dcc8b2a8c41bdcd57c955b",
+      "bytes": 559021
+    },
+    {
+      "file": "downloads/packages/R6_2.6.1.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/R6_2.6.1.zip",
+      "sha256": "1833842ef784ac1886fce09c63aaf2470a719eefd0a440a2de701a465be17b94",
+      "md5": "7b4bcbeaae3ef4be6283680f2e3443bc",
+      "bytes": 90058
+    },
+    {
+      "file": "downloads/packages/RColorBrewer_1.1-3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/RColorBrewer_1.1-3.zip",
+      "sha256": "b8880e323f75149e90e0300684626a3de0692523a972932b27b7474dfa6beac7",
+      "md5": "6b17dbca81811056f634d64faf782cc9",
+      "bytes": 54704
+    },
+    {
+      "file": "downloads/packages/Rcpp_1.1.2.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/Rcpp_1.1.2.zip",
+      "sha256": "7dcea37d6e1ede23018f511499af12075cebe3aaaae6d34d37aa2b20e2f5aa5c",
+      "md5": "b49219f72217fe2fd9db28ea53749c10",
+      "bytes": 2969393
+    },
+    {
+      "file": "downloads/packages/RcppArmadillo_15.6.0-1.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/RcppArmadillo_15.6.0-1.zip",
+      "sha256": "f9f580b19f1a2a50a134cf07593be1646c5739410425ddea1416b3e53dc43670",
+      "md5": "b1cf4e588563d4370a386236b7c7dcd5",
+      "bytes": 2081750
+    },
+    {
+      "file": "downloads/packages/rlang_1.3.0.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/rlang_1.3.0.zip",
+      "sha256": "f68e7a4042c082d514504c8507e03787ce0bb6d12141f8a5c390633ecba24fa0",
+      "md5": "90f5db784b91bad3775a3866ed3de38a",
+      "bytes": 1650629
+    },
+    {
+      "file": "downloads/packages/S4Arrays_1.12.1.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/S4Arrays_1.12.1.zip",
+      "sha256": "7ed9608a41f212edeef8b0d78d9b0ee4263b0b4c4436dd5add635ff4d523090a",
+      "md5": "1564e793ca1f267f3f874dbafaf3c819",
+      "bytes": 1032427
+    },
+    {
+      "file": "downloads/packages/S4Vectors_0.50.3.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/S4Vectors_0.50.3.zip",
+      "sha256": "e67e1ab1463a803ef0b63220ff04a8c5ca188e39f8a4ffae6dcbb0720dbddeb7",
+      "md5": "737a381919bd684ccef7e50a11c076df",
+      "bytes": 1900644
+    },
+    {
+      "file": "downloads/packages/S7_0.2.2.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/S7_0.2.2.zip",
+      "sha256": "fd1703059262913fac34903b90b3cb0dfe43397e7b76a0d65f3d3072a63e834d",
+      "md5": "2b9a30e7077be3bc9bd0b708999c6ede",
+      "bytes": 352124
+    },
+    {
+      "file": "downloads/packages/scales_1.4.0.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/scales_1.4.0.zip",
+      "sha256": "1b3bbec1d9e9184b932c0175387d615c3918455a9c2f784f5fa384bddab692fe",
+      "md5": "ea44bd728c5592318648141a8c0b2f4c",
+      "bytes": 881982
+    },
+    {
+      "file": "downloads/packages/Seqinfo_1.2.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/Seqinfo_1.2.0.zip",
+      "sha256": "5d5a5b8913c899614ee840f2e203639c839b12403b089e749af2bcceb3960aae",
+      "md5": "f910dc85da6c471e7f2b19ea8caf1f21",
+      "bytes": 434620
+    },
+    {
+      "file": "downloads/packages/snow_0.4-4.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/snow_0.4-4.zip",
+      "sha256": "ff58d22ff93732041da4403d335bce7d6992ae585a77815841ca1b7dee3215ba",
+      "md5": "6eba7a9822a2729a79de56867e2302d8",
+      "bytes": 100761
+    },
+    {
+      "file": "downloads/packages/SparseArray_1.12.3.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/SparseArray_1.12.3.zip",
+      "sha256": "86158ea0791d45479a6dadf442d47839c7ed6e90f41dfe1a03f3344d25e1e29b",
+      "md5": "337f2b808ffe2cbc95f7523f49652ae1",
+      "bytes": 1793221
+    },
+    {
+      "file": "downloads/packages/SummarizedExperiment_1.42.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/SummarizedExperiment_1.42.0.zip",
+      "sha256": "1b9aec417df690a8d3db41c1ba761de6f7ba6fe9604310ccfb6c7f60013fe2aa",
+      "md5": "bf6bf10a90cee7d876b4a9e3c965d13d",
+      "bytes": 1507920
+    },
+    {
+      "file": "downloads/packages/vctrs_0.7.3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/vctrs_0.7.3.zip",
+      "sha256": "fa83c1553f653272ef4b7af5cf6ef98fdb0b432d91eecc8f6e9c586bf57f8115",
+      "md5": "0986e8b62f69d702ae63471437d67b7d",
+      "bytes": 1921560
+    },
+    {
+      "file": "downloads/packages/viridisLite_0.4.3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/viridisLite_0.4.3.zip",
+      "sha256": "717f35c7898e6c8207465ef28a8d9a97465011bd3f064f6552343c05b5cb2c77",
+      "md5": "09f52927ad440dc60d5bebea88abd8ab",
+      "bytes": 1300976
+    },
+    {
+      "file": "downloads/packages/withr_3.0.3.zip",
+      "source": "https://cloud.r-project.org/bin/windows/contrib/4.6/withr_3.0.3.zip",
+      "sha256": "55ca8b9d94ba2d5cba6daaf96099ea0e795f79b548936eaad7d01458874eddb0",
+      "md5": "a4b9fdcd4c3c4e804e48aa4fb8923ac9",
+      "bytes": 235363
+    },
+    {
+      "file": "downloads/packages/XVector_0.52.0.zip",
+      "source": "https://bioconductor.org/packages/3.23/bioc/bin/windows/contrib/4.6/XVector_0.52.0.zip",
+      "sha256": "a4b5fc301ba6c796de1cdf0f1001538836a370e234f87fa234e23c0d63c58da9",
+      "md5": "e67ed73d49b528e01939639a1a93b029",
+      "bytes": 695793
+    },
+    {
+      "file": "downloads/R-4.6.1-win.exe",
+      "source": "https://cran.r-project.org/bin/windows/base/R-4.6.1-win.exe",
+      "sha256": "c5424c40cd70ef85765a55d2ff96bb602b5f30ed536938ff004f14db5db3c2df",
+      "md5": "7907f3a20ec8ec88cd0da279024b8e27",
+      "bytes": 91749976
+    }
+  ],
+  "inputs": {
+    "cohort_3": {
+      "counts.tsv.gz": {
+        "sha256": "ce5c5c6670707568b28a6e2ce561a05b708121f150ad1d093775a05d5503229c",
+        "md5": "5c22a4658e0b7f7e2d29623b48b3fd82",
+        "bytes": 268162
+      },
+      "design.tsv": {
+        "sha256": "4f7e3fa2b16811d4e294ede695a777776846fa91caf247eeee43df93f44603a4",
+        "md5": "b3d471a1f80e645ac20a66c4e70d14a7",
+        "bytes": 636
+      }
+    },
+    "cohort_8": {
+      "counts.tsv.gz": {
+        "sha256": "79c6acddb1f46be9c670fdfd134bef375269a69749b699b75d841d161d2664a5",
+        "md5": "03a8b8937b927b02df1cec7c7e887a1c",
+        "bytes": 594693
+      },
+      "design.tsv": {
+        "sha256": "8dd47cccafb50e83805d07343f849f0c841402d293a0b83bd2b14af1cdc75df3",
+        "md5": "359dfe1637aa4d6418d68b88638bc127",
+        "bytes": 1581
+      }
+    }
+  }
+}

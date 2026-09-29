@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
@@ -13,8 +12,37 @@ import threading
 import urllib.request
 import venv
 import webbrowser
+from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+
+
+@contextmanager
+def launcher_lock(environment: Path) -> Iterator[None]:
+    """Prevent overlapping first installs and duplicate launches from this folder."""
+    environment.mkdir(parents=True, exist_ok=True)
+    with (environment / ".launcher.lock").open("a+b") as lock:
+        try:
+            if sys.platform == "win32":
+                import msvcrt
+
+                if lock.seek(0, 2) == 0:
+                    lock.write(b"\0")
+                    lock.flush()
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            raise OSError(
+                "Bindsight is already starting or running from this folder. "
+                "Use its existing window, or wait for that setup to finish."
+            ) from exc
+        yield
 
 
 def main() -> int:
@@ -25,6 +53,12 @@ def main() -> int:
         return 1
     os.chdir(ROOT)
     environment = ROOT / ".venv-bindsight"
+    with launcher_lock(environment):
+        return launch(environment)
+
+
+def launch(environment: Path) -> int:
+    """Install if needed, then keep the launcher lock until the server stops."""
     python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     marker = environment / ".bindsight-ready"
     fingerprint = hashlib.sha256(
@@ -58,7 +92,7 @@ def main() -> int:
     url = f"http://127.0.0.1:{port}/workbench"
     print(f"\nOpen Bindsight: {url}\nKeep this window open. Press Ctrl+C to stop.\n", flush=True)
 
-    def open_when_ready():
+    def open_when_ready() -> None:
         import time
 
         for _ in range(60):

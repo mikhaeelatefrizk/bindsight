@@ -13,12 +13,10 @@ synchronous from the caller's point of view (``submit`` runs the job and caches
 the tarball; ``fetch`` returns it), matching the Designer ``submit→fetch``
 contract.
 
-**Verification status.** Modal is the paid escape hatch for the components free
-hardware cannot reach: Chai-1r needs bfloat16 (compute capability 8.0+, which no
-free-tier GPU has), and full-receptor BindCraft and BoltzGen need more VRAM than
-a 16 GB free card. The image below is built to contain the whole design stack
-rather than only the validator, but it has not been executed end-to-end — running
-it costs money. Treat it as prepared, not proven, until a run is recorded.
+**Verification status.** The image installs Boltz-2; RFdiffusion bootstrapping
+is unverified and still needs a compatible legacy CUDA environment. The other
+designer/validator plugins are unsupported by this backend. No end-to-end
+Modal GPU run is established by the CPU tests.
 """
 
 from __future__ import annotations
@@ -49,9 +47,8 @@ def _ATEXIT_CLEANUP(path: Path) -> None:
 
 LOG = logging.getLogger(__name__)
 
-#: Repository bindsight itself is installed from inside the remote image --
-#: from this repository rather than from PyPI, so the image runs the
-#: caller's checkout and not whichever release PyPI happens to serve.
+#: The remote image installs the repository's default branch, not the caller's
+#: working tree. GPU results cannot be attributed to unpushed local changes.
 _BINDSIGHT_REPO = "https://github.com/mikhaeelatefrizk/bindsight.git"
 
 #: CUDA base image for the remote container. Devel rather than runtime because
@@ -98,6 +95,10 @@ class ModalRunner:
         app_name: str = "bindsight",
         timeout_s: int = 3600,
     ) -> None:
+        if gpu_type not in _MODAL_GPU:
+            raise ValueError(
+                f"Unsupported Modal GPU {gpu_type!r}; choose one of {sorted(_MODAL_GPU)}"
+            )
         self.designer = designer
         self.n_units_per_target = n_units_per_target
         self.gpu_type = gpu_type
@@ -124,8 +125,8 @@ class ModalRunner:
             # the previous image could run the Boltz-2 validator and nothing else.
             modal.Image.from_registry(_MODAL_CUDA_IMAGE, add_python="3.11")
             .apt_install("git", "wget", "build-essential")
-            # Installed from the repository rather than PyPI, so the image carries
-            # the executor this checkout expects, not the last published release.
+            # This follows the repository's default branch. Unlike Kaggle's
+            # embedded wheel, it does not capture the caller's working tree.
             .pip_install(
                 f"bindsight @ git+{_BINDSIGHT_REPO}",
                 tools.BOLTZ_PIP,
@@ -135,7 +136,7 @@ class ModalRunner:
             )
         )
         app = modal.App(self.app_name)
-        gpu = _MODAL_GPU.get(self.gpu_type, "A100")
+        gpu = _MODAL_GPU[self.gpu_type]
 
         @app.function(gpu=gpu, image=image, timeout=self.timeout_s)  # type: ignore[untyped-decorator]
         def _run_remote(spec_json: str, files: dict[str, bytes]) -> bytes:
@@ -151,9 +152,14 @@ class ModalRunner:
             spec_dir.mkdir(parents=True, exist_ok=True)
             (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
             for name, data in files.items():
-                (spec_dir / name).write_bytes(data)
+                destination = spec_dir / name
+                if not destination.resolve().is_relative_to(spec_dir.resolve()):
+                    raise ValueError(f"payload entry escapes the spec directory: {name}")
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(data)
             spec = _json.loads(spec_json)
             job_exec.materialise_target(spec, spec_dir, work / "run")
+            job_exec.materialise_designs(spec_dir, work / "run")
             tarball = job_exec.run_job(spec, work / "run", tarball=work / "results.tar.gz")
             return tarball.read_bytes()
 
@@ -167,9 +173,9 @@ class ModalRunner:
 
         spec_json = spec_path.read_text(encoding="utf-8")
         files = {
-            f.name: f.read_bytes()
-            for f in spec_path.parent.iterdir()
-            if f.is_file() and f.name != spec_path.name
+            f.relative_to(spec_path.parent).as_posix(): f.read_bytes()
+            for f in spec_path.parent.rglob("*")
+            if f.is_file() and f != spec_path
         }
         app, run_remote = self._build_app()
         LOG.info("modal submit: running job on %s (gpu=%s)", self.app_name, self.gpu_type)
