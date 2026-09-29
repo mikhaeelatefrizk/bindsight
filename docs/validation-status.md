@@ -195,7 +195,7 @@ on a CPU runner; it cannot verify CUDA or scientific inference.
 The later local software suite passed over 2,400 tests, with 15 skipped and two
 deselected. Its one failure was a declaration check that did not yet recognize
 the new local `companion` package. After adding that namespace to the check,
-all 18 tests in the dependency-declaration and companion-publication groups
+the dependency-declaration and companion-publication test groups
 passed. Coverage was 83.62%. Final release checks are reported separately by
 [GitHub Actions](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml).
 
