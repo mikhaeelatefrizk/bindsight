@@ -224,8 +224,8 @@ class TestTheWebInterfaceEntrypoints:
         assert len(seen) == 1
         assert seen[0]["port"] == 8899
 
-    def test_the_interface_fetches_nothing_from_a_network(self) -> None:
-        """The command promises nothing leaves the machine; that is a claim.
+    def test_the_interface_assets_load_without_external_requests(self) -> None:
+        """Fonts, scripts, and images are local; ordinary source links are navigation.
 
         It used to be a Streamlit telemetry flag, which covered one vendor and
         nothing else. The promise is really about what the pages reference, so
@@ -241,10 +241,13 @@ class TestTheWebInterfaceEntrypoints:
             if path.suffix not in {".j2", ".css", ".html"}:
                 continue
             text = path.read_text(encoding="utf-8")
-            for attr in re.finditer(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", text):
-                url = attr.group(1)
-                if url.startswith(("http://", "https://", "//")):
-                    offenders.append(f"{path.name}: {url}")
+            for tag in re.finditer(r"<([A-Za-z][\w:-]*)\b[^>]*>", text):
+                for attr in re.finditer(r"""(src|href)\s*=\s*["']([^"']+)["']""", tag.group(0)):
+                    if tag.group(1).lower() == "a" and attr.group(1) == "href":
+                        continue  # An attribution link does not load a remote asset.
+                    url = attr.group(2)
+                    if url.startswith(("http://", "https://", "//")):
+                        offenders.append(f"{path.name}: {url}")
             for imported in re.finditer(r"""@import\s+(?:url\()?["']([^"']+)""", text):
                 if imported.group(1).startswith(("http://", "https://", "//")):
                     offenders.append(f"{path.name}: {imported.group(1)}")

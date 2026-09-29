@@ -99,12 +99,12 @@ LICENSE_NAME = "AGPL-3.0-or-later"
 # here so the web app and the docs site tell the same story. This is the
 # on-ramp; the technical framing (TAGLINE) sits directly beneath it.
 PLAIN_SUMMARY = (
-    "In plain terms: bindsight reads a tumour's gene-activity data and looks for "
-    "proteins that stud the surface of cancer cells but not healthy ones. It then "
-    "designs small custom proteins — molecular “keys” — shaped to latch onto those "
-    "targets, checks each design with an AI structure model to see whether it would "
-    "actually stick, ranks the best candidates, and keeps a complete record of how "
-    "it reached every answer."
+    "In plain terms: bindsight compares RNA-seq counts between conditions to "
+    "prioritise candidate cell-surface targets. It can then design protein "
+    "sequences and assess their predicted complexes with structure models, "
+    "while recording the inputs, settings and outputs. RNA abundance is not "
+    "surface protein abundance, and model confidence is not proof of binding "
+    "or clinical safety; those require appropriate experimental validation."
 )
 
 #: Plain-English glossary of the core terms this project uses.

@@ -1,5 +1,27 @@
 # bindsight
 
+### [Open the Bindsight research workspace](https://bindsight-research.mikha-50.chatgpt.site)
+
+**Start here:** open the website above. You do not need to understand the code or
+download the repository to explore the existing results.
+
+| What you want to do | Where to go |
+| --- | --- |
+| Inspect the 20 real predicted protein complexes | [Structure explorer](https://bindsight-research.mikha-50.chatgpt.site/#structures) — select a design, rotate it, or download its original file. |
+| Understand the findings and their limitations | [The evidence](https://bindsight-research.mikha-50.chatgpt.site/#evidence) — inspect the study and paired controls. |
+| Analyse your own human bulk RNA-seq data | [Run locally](https://bindsight-research.mikha-50.chatgpt.site/#run) — choose your operating system and follow the one-time setup. |
+
+For a new analysis, download and extract the workspace, then use its launcher.
+The local app checks your computer and input files before running CPU discovery.
+Your count matrices and results stay on your computer; public reference queries
+require internet access. [Complete setup instructions and GPU requirements](docs/local-workspace.md).
+
+The website and local application share the interface in `bindsight/report/web/`.
+The `bindsight/` Python package is the analysis engine; the other repository
+folders contain scientific evidence, references, examples, documentation and tests.
+Keep the downloaded folders together. The site displays real computational
+outputs; those predictions are not experimentally confirmed binding results.
+
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
 > machine-readable provenance from every ranked binder back to the patient samples
@@ -146,9 +168,10 @@ written down before its data arrived.
 The claim the project rests on — a reviewer can start at a ranked binder and reach
 the patient samples it came from — was exhibited once, end to end, on a target the
 discovery half chose for itself: CA9 at rank 1 and CD70 at rank 2 out of TCGA-KIRC,
-carried through to 40 designs and a walkable PROV-O graph. The committed manifest
-lets you verify the first three steps of that walk from this clone; the rest needs
-the crate rebuilt, and that directory says so precisely.
+carried through to 40 designs and a PROV-O graph. The committed RO-Crate metadata
+records binder identity, target and structure paths; the manifest records stages.
+The design range is absent from both committed files, and the later path back to
+the cohort requires the complete crate, which is not included in this clone.
 
 → [`benchmarks/provenance_join/`](benchmarks/provenance_join/)
 

@@ -339,9 +339,9 @@ class TestTheTrueSentencesSurvive:
 class TestTheHomePageStillLeadsSomewhere:
     """A button is clicked before it is read.
 
-    The primary call to action used to send first-time visitors to the Space.
-    What it must never be again is a link out to something this repository does
-    not serve -- so the invariant kept here is not about Hugging Face at all.
+    The replacement research workspace is built from this repository. Keep its
+    documentation entry point aligned with the package homepage and README,
+    without reintroducing the retired Space or remote-compute promises.
     """
 
     @staticmethod
@@ -366,17 +366,18 @@ class TestTheHomePageStillLeadsSomewhere:
             "delete it"
         )
 
-    def test_the_primary_button_points_at_a_page_this_repository_serves(self) -> None:
-        """Any external host, not only the retired one."""
+    def test_the_primary_button_points_at_the_published_research_workspace(self) -> None:
+        """The docs, package metadata, and GitHub must agree on the entry point."""
+        import tomllib
+
         primary = re.findall(r'<a class="primary"[^>]*href="([^"]+)"', self._index())
         assert primary, "no primary call to action"
         href = primary[0]
-
-        assert not href.startswith(("http://", "https://")), (
-            f"the primary button leaves the site, to {href!r}. A first-time "
-            "visitor clicks it before reading anything, so it must land on a "
-            "page this repository publishes."
-        )
+        project = tomllib.loads((REPO / "pyproject.toml").read_text("utf-8"))["project"]
+        assert href == project["urls"]["Homepage"]
+        assert href.startswith("https://")
+        assert href in (REPO / "README.md").read_text("utf-8")
+        assert (REPO / "scripts/build_website.py").is_file()
 
 
 class TestTheScanWouldCatchWhatItLooksFor:

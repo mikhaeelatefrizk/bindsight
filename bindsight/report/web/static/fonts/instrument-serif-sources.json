@@ -1,0 +1,33 @@
+{
+  "retrieved": "2026-09-29",
+  "family": "Instrument Serif",
+  "cssSource": "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap",
+  "license": {
+    "spdx": "OFL-1.1",
+    "file": "instrument-serif-OFL.txt",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/instrumentserif/OFL.txt",
+    "sha256": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521"
+  },
+  "fonts": [
+    {
+      "style": "normal",
+      "file": "instrument-serif-latin-regular.woff2",
+      "source": "https://fonts.gstatic.com/s/instrumentserif/v5/jizBRFtNs2ka5fXjeivQ4LroWlx-6zUTjg.woff2",
+      "weight": 400,
+      "bytes": 21032,
+      "sha256": "5eb09b5ac0e28b67c2f041c8ba6d244604ca0c0980d65912ab2d47fed84ddc31",
+      "asciiCoverageVerified": true,
+      "italicAngle": 0.0
+    },
+    {
+      "style": "italic",
+      "file": "instrument-serif-latin-italic.woff2",
+      "source": "https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zAjjH7M.woff2",
+      "weight": 400,
+      "bytes": 22128,
+      "sha256": "5a51946dfffa82972bc98745359c46761515641fda557c25116459a9f83da4a7",
+      "asciiCoverageVerified": true,
+      "italicAngle": -13.0
+    }
+  ]
+}

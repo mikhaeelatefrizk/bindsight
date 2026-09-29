@@ -94,6 +94,7 @@ report = [
     "fastapi>=0.110,<1",
     "uvicorn>=0.27,<1",
     "matplotlib>=3.8,<4",  # renders the volcano plot embedded in every report
+    "psutil>=5.9,<8",       # measured available memory in the local workbench
 ]
 runners = [
     "modal>=0.64",
@@ -167,7 +168,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://mikhaeelatefrizk.github.io/bindsight/"
+Homepage = "https://bindsight-research.mikha-50.chatgpt.site"
 Documentation = "https://mikhaeelatefrizk.github.io/bindsight/"
 Repository = "https://github.com/mikhaeelatefrizk/bindsight"
 Issues = "https://github.com/mikhaeelatefrizk/bindsight/issues"
@@ -284,6 +285,7 @@ module = [
     # invalidate. Strict checking of bindsight's own code is the goal, and
     # this keeps it without that churn.
     "pandas.*",
+    "pyarrow.*",
 ]
 ignore_missing_imports = true
 # These third-party libs ship no type info; don't follow into them so calls

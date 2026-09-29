@@ -18,7 +18,8 @@ hide:
     &ldquo;given a target structure&rdquo;. bindsight is the reproducible, citable bridge between them.
   </p>
   <div class="bs-cta">
-    <a class="primary" href="results/">See real results</a>
+    <a class="primary" href="https://bindsight-research.mikha-50.chatgpt.site">Open research workspace</a>
+    <a href="results/">See real results</a>
     <a href="what-is-bindsight/">What is bindsight?</a>
     <a href="how-to-use/">Run it yourself</a>
     <a href="https://github.com/mikhaeelatefrizk/bindsight">GitHub</a>
@@ -28,11 +29,11 @@ hide:
 <div class="admonition info" markdown="0">
   <p class="admonition-title">In plain terms</p>
   <p>
-    bindsight reads a tumour's gene-activity data and looks for proteins that stud the
-    surface of cancer cells but not healthy ones. It then designs small custom proteins —
-    molecular &ldquo;keys&rdquo; — shaped to latch onto those targets, checks each design with
-    an AI structure model to see whether it would actually stick, ranks the best candidates,
-    and keeps a complete record of how it reached every answer.
+    bindsight compares RNA-seq counts between conditions to prioritise candidate
+    cell-surface targets. It can design protein sequences and assess their predicted
+    complexes while recording inputs, settings and outputs. RNA abundance is not
+    surface protein abundance, and model confidence does not establish binding,
+    specificity or clinical safety.
     New to the terms? See the <a href="glossary/">Glossary</a>.
   </p>
 </div>
@@ -41,7 +42,7 @@ hide:
   <div class="bs-stat">
     <div class="v">1 of 291</div>
     <div class="k">CA9 surfaced</div>
-    <div class="d">clear-cell kidney, whole unstratified TCGA-KIRC cohort</div>
+    <div class="d">clear-cell kidney, patient-matched TCGA-KIRC contrast without biomarker stratification</div>
   </div>
   <div class="bs-stat">
     <div class="v">0.88</div>
@@ -49,12 +50,11 @@ hide:
     <div class="d">20 de novo ERBB2 binders on a free Kaggle T4</div>
   </div>
   <div class="bs-stat">
-    <div class="v">40%</div>
-    <div class="k">success @ ipTM 0.65</div>
-    <div class="d">8 of 20, 15&ndash;70% at 95% (clustered over backbones)
-    &mdash; withdrawn as a measure of design quality; shuffles of these
-    designs&rsquo; own sequences clear 0.65 more often (50% against
-    30%)</div>
+    <div class="v">30% / 50%</div>
+    <div class="k">designs / shuffled controls</div>
+    <div class="d">6/20 designs and 10/20 shuffles exceed ipTM 0.65 under the seeded
+    five-draw calibration. The threshold-crossing rate is withdrawn as a measure
+    of design quality.</div>
   </div>
   <div class="bs-stat">
     <div class="v">1 of 17</div>
@@ -63,9 +63,10 @@ hide:
   </div>
 </div>
 
-Those numbers are not illustrative — they come from runs whose inputs, outputs
-and provenance are committed in the repository. **[See exactly how they were
-produced](results.md).**
+Those numbers come from recorded computations. Committed summaries, predicted
+structures and provenance metadata can be inspected here; the raw calibration
+inputs, cohort caches and complete provenance crate are not all included.
+**[See the evidence and its reproducibility limits](results.md).**
 
 !!! success "These figures come from the corrected protocol"
     An earlier run invoked ProteinMPNN without `--pdb_path_chains`, so it
@@ -78,11 +79,13 @@ produced](results.md).**
 
 !!! note "What 1 of 17 does and does not show"
     That is the recall of clinically approved antigens across a pre-registered
-    panel of 22 antigen-cohort pairs over fifteen whole, unstratified TCGA
-    projects. The interval, not the point estimate, is the finding at this panel
-    size. Twelve of the seventeen are not over-expressed
-    in an unstratified bulk contrast; their agents are licensed, so the antigens
-    are real, and that is a limit of the signal rather than of the ranking. An
+    panel of 22 antigen-cohort pairs across fifteen TCGA projects, using patient-matched
+    tumour/normal samples without biomarker stratification. The interval matters at
+    this panel size, and repeated antigens make the pairs correlated. Eleven of the
+    seventeen fail the composite significance rule, one is downregulated, and three
+    fall beyond the enrichment cutoff. These are different outcomes, not a blanket
+    claim of absent overexpression. Approved-agent tier does not mean approval in
+    every listed cancer. An
     earlier six-cohort version reported ERBB2 at rank 4 and recall@5 of 33%; it
     is withdrawn, because its breast cohort was stratified by a PAM50 subtype
     call and ERBB2 is one of the fifty genes that classifier is built from.
@@ -102,10 +105,10 @@ produced](results.md).**
 </div>
 
 Amber stages need a GPU. A free Kaggle T4 is the verified route, and the one the
-committed benchmark used; Modal is the paid escape hatch, Colab needs you present
-with a browser tab open, and local Docker works if you have your own card.
-Everything else runs on a CPU laptop; `bindsight ui` serves the same interface
-locally.
+committed benchmark used. Local protein design requires a separately configured
+NVIDIA/CUDA environment; the default Docker image is CPU-only. CPU discovery is
+subject to dataset memory requirements. See the [local workspace guide](local-workspace.md)
+for the downloadable setup and platform limitations.
 
 ## Try it, three ways
 

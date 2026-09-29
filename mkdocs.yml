@@ -70,6 +70,7 @@ nav:
   - What is bindsight?: what-is-bindsight.md
   - Glossary: glossary.md
   - How to use: how-to-use.md
+  - Local workspace: local-workspace.md
   - Try your data: try-your-data.md
   - Use cases: use-cases.md
   - Designing on Colab: colab-design-howto.md

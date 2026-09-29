@@ -565,15 +565,17 @@ def _do_discover(
                 ot_status = f"error:{type(e).__name__}"
 
         uniprot_ids = ev.uniprot_ids if ev else []
+        mapping_source = "open_targets" if uniprot_ids else "unresolved"
         modalities = ev.tractability_modalities if ev else []
         symbol = ev.symbol if ev else None
 
         # Offline / fallback path: consult the bundled ENSG → UniProt map for
         # well-known genes so the demo (and other offline runs) still produce
         # candidates.
-        if not uniprot_ids:
+        if not uniprot_ids and p.allow_bundled_mapping_fallback:
             fb_symbol, fb_uniprot = ensembl_uniprot.lookup(gene_id)
             if fb_uniprot:
+                mapping_source = "bundled_fallback"
                 uniprot_ids = [fb_uniprot]
                 if symbol is None:
                     symbol = fb_symbol
@@ -594,6 +596,7 @@ def _do_discover(
                     "padj": float(row["padj"]) if pd.notna(row["padj"]) else None,
                     "tractable_modalities": ";".join(modalities),
                     "open_targets_status": ot_status,
+                    "mapping_source": mapping_source,
                     "n_safety_events": ev.safety_event_count if ev else 0,
                     # Whether that count is a measurement or a default. Without
                     # this, a gene whose Open Targets lookup errored carries 0

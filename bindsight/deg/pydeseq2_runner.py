@@ -65,9 +65,16 @@ class PyDESeq2Runner:
         )
 
     @staticmethod
-    def load_design(path: Path) -> pd.DataFrame:
+    def load_design(path: Path, categorical_factors: list[str] | None = None) -> pd.DataFrame:
         """Read a sample design TSV. The first column must be the sample ID."""
-        return pd.read_csv(path, sep="\t", index_col=0)
+        columns = pd.read_csv(path, sep="\t", nrows=0).columns.tolist()
+        literal = {name: str for name in [columns[0], *(categorical_factors or [])]}
+        design = pd.read_csv(path, sep="\t", index_col=0, dtype=literal, keep_default_na=False)
+        for name in categorical_factors or []:
+            if name not in design:
+                raise ValueError(f"Categorical factor {name!r} is absent from the design table")
+            design[name] = pd.Categorical(design[name])
+        return design
 
     # ------------------------------------------------------------------ #
     # Validation                                                         #
@@ -168,7 +175,7 @@ class PyDESeq2Runner:
         ``params``/``notes`` field.
         """
         counts = self.load_counts(counts_path)
-        design = self.load_design(design_path)
+        design = self.load_design(design_path, self.params.categorical_factors)
 
         # Sanity-check sample alignment.
         common = counts.columns.intersection(design.index)

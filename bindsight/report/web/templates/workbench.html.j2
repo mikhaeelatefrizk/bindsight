@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>bindsight — Research workspace</title>
+  <meta name="description" content="Explore real RNA-seq discovery evidence and predicted protein complexes. Run reproducible analyses on your own computer with bindsight.">
+  <meta name="theme-color" content="#f4f4ec">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23152f29'/%3E%3Cpath d='M9 7v18m0-9c0-8 14-8 14 0s-14 8-14 0' fill='none' stroke='%23d4ef9b' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ assets }}workbench.css">
+</head>
+<body data-local="{{ 'true' if local else 'false' }}"{% if local %} data-session-token="{{ session_token }}"{% endif %}>
+<a class="skip" href="#main">Skip to workspace</a>
+<header class="masthead">
+  <a class="wordmark" href="#structures" aria-label="bindsight home"><span class="mark" aria-hidden="true"><svg viewBox="0 0 34 34"><path d="M10 6v22m0-11c0-10 15-10 15 0s-15 10-15 0"/></svg></span>bindsight<span class="edition">RESEARCH<br>WORKSPACE</span></a>
+  <div class="header-end"><span class="environment"><i></i>{{ 'Running locally' if local else 'Open research' }}</span><a class="source-link" href="https://github.com/mikhaeelatefrizk/bindsight" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
+</header>
+<div class="app-shell">
+  <aside class="rail">
+    <nav aria-label="Workspace"><a href="#structures" data-page="structures" class="active"><span>01</span>Structure explorer</a><a href="#evidence" data-page="evidence"><span>02</span>The evidence</a><a href="#methods" data-page="methods"><span>03</span>Methods & sources</a><a href="#run" data-page="run"><span>04</span>{{ 'New analysis' if local else 'Run locally' }} <b aria-hidden="true">↗</b></a>{% if local %}<a href="#runs" data-page="runs"><span>05</span>Your analyses</a>{% endif %}</nav>
+    <span class="nav-caption">EXPRESSION → INTERACTION</span>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div id="load-error" class="notice error" hidden role="alert"></div>
+    <section id="page-structures" class="page">
+      <div class="page-heading"><div><p class="eyebrow"><span class="section-index">01 /</span> THE STRUCTURE EXPLORER</p><h1>See the science.<br class="mobile-break"> <em>Explore the designs.</em></h1></div><div class="heading-aside"><p class="intro">Twenty ERBB2 candidates.<br>Real predictions, open to inspection.</p><a class="text-link arrow-link" href="#methods">Follow the methodology <span aria-hidden="true">↗</span></a></div></div>
+      <div class="structure-workspace">
+        <div class="candidate-panel">
+          <div class="panel-heading"><h2>The collection</h2><span id="binder-count" class="count">—</span></div>
+          <p class="fine">Predicted ERBB2 complexes</p><div class="library-sort"><span>DESIGN</span><span>ipTM ↓</span></div>
+          <div id="binder-list" class="binder-list" role="group" aria-label="Select a predicted complex"></div>
+          <div class="library-foot"><span class="tiny-dot"></span>Original committed run</div>
+        </div>
+        <div class="molecule-panel">
+          <div class="molecule-top"><div><span class="eyebrow">PREDICTED COMPLEX</span><h2 id="selected-name">Loading committed structure</h2></div><span class="target-chip">ERBB2 <span>·</span> P04626</span></div>
+          <div id="molecule" role="img" aria-label="Interactive predicted ERBB2 binder complex"></div>
+          <p id="viewer-status" class="viewer-status" role="status">Loading the molecular viewer…</p>
+          <div class="molecule-controls"><div class="legend"><span><i class="target-swatch"></i>Target <small>T</small></span><span><i class="binder-swatch"></i>Candidate <small>B</small></span></div><div class="control-group"><button id="spin" class="quiet" aria-pressed="false">Rotate</button><button id="reset-view" class="quiet">Reset view</button></div></div>
+          <div class="molecule-help"><span aria-hidden="true">⌘</span> Drag to rotate <i>·</i> Scroll to zoom</div>
+          <span class="viewport-label" aria-hidden="true">MOLECULAR VIEW / 3D</span>
+        </div>
+        <div class="detail-panel">
+          <p class="eyebrow">THE MODEL READOUT</p>
+          <div class="metric confidence"><span>Interface confidence</span><strong id="iptm">—</strong><small>ipTM · 0–1 scale</small><div class="confidence-track" aria-hidden="true"><i id="confidence-fill"></i></div><div class="scale-labels" aria-hidden="true"><span>0</span><span>1</span></div></div>
+          <div class="metric"><span>Interface error</span><div class="metric-value"><strong id="pae">—</strong><span>Å</span></div><small>Predicted aligned error</small></div>
+          <div class="metric compact"><span>Candidate length</span><strong id="sequence-length">—</strong></div>
+          <div class="artifact-actions"><a id="download-cif" class="button" download>Structure <span aria-hidden="true">↓</span></a><a id="download-fasta" class="download" download>Sequence <span aria-hidden="true">↓</span></a></div>
+          <details class="detail-source"><summary>Source record <span aria-hidden="true">+</span></summary><span>Artifact SHA-256</span><code id="structure-hash">—</code><a id="structure-source" target="_blank" rel="noreferrer">Inspect original file ↗</a></details>
+        </div>
+      </div>
+      <div class="interpretation"><div class="interpretation-label"><span class="note-symbol" aria-hidden="true">i</span>CONTEXT MATTERS</div><p>Model confidence is not experimental proof of binding. Shuffled controls crossed the ipTM threshold more often than the designs.</p><a href="#evidence/calibration" class="text-link arrow-link">Read the paired control <span aria-hidden="true">↗</span></a></div>
+      <div class="metadata-strip"><span>RFdiffusion + ProteinMPNN</span><span>Boltz-2 prediction</span><span>10 backbones · 20 sequences</span><span>Kaggle T4 · committed run</span></div>
+    </section>
+    <section id="page-evidence" class="page" hidden><div class="page-heading"><div><p class="eyebrow"><span class="section-index">02 /</span> THE EVIDENCE</p><h1>Every result.<br class="mobile-break"> <em>In context.</em></h1></div><div class="heading-aside"><p class="intro">Patient-matched contrasts.<br>Declared denominators. Paired controls.</p></div></div><div id="evidence-content"></div></section>
+    <section id="page-methods" class="page" hidden><div class="page-heading"><div><p class="eyebrow"><span class="section-index">03 /</span> METHODS & SOURCES</p><h1>From expression<br class="mobile-break"> <em>to interaction.</em></h1></div><div class="heading-aside"><p class="intro">A connected scientific workflow.<br>A record you can inspect.</p></div></div><div id="methods-content"></div></section>
+    <section id="page-run" class="page" hidden><div class="page-heading"><div><p class="eyebrow"><span class="section-index">04 /</span> YOUR DATA · YOUR COMPUTER</p><h1>{{ 'Your next experiment.' if local else 'Your own workspace.' }}<br><em>{{ 'Start with the data.' if local else 'Powered by you.' }}</em></h1></div><div class="heading-aside"><p class="intro">{{ 'Define the contrast. Inspect every step.' if local else 'One setup. Real local analysis.' }}<br>{{ 'Keep the research on your computer.' if local else 'No paid computing service.' }}</p></div></div><div id="run-content"></div></section>
+    {% if local %}<section id="page-runs" class="page" hidden><div class="page-heading"><div><p class="eyebrow"><span class="section-index">05 /</span> LOCAL RESEARCH RECORD</p><h1>Your work.<br class="mobile-break"> <em>On the record.</em></h1></div><button id="refresh-runs" class="button secondary">Refresh analyses ↻</button></div><div id="runs-content"></div></section>{% endif %}
+    <footer class="main-footer"><div class="footer-brand">bindsight<span>Open-source science.<br>Open to scrutiny.</span></div><div class="footer-author">Mikhaeel Atef Rizk Wahba<br><a href="https://orcid.org/0009-0006-1069-9558" target="_blank" rel="noreferrer">Independent researcher ↗</a></div><div class="footer-record"><span id="evidence-version"></span><a href="https://github.com/mikhaeelatefrizk/bindsight/blob/main/LICENSE">AGPL-3.0-or-later ↗</a></div></footer>
+  </main>
+</div>
+<script src="{{ assets }}vendor/3Dmol-min.js"></script>
+<script src="{{ assets }}workbench-pages.js"></script>
+<script src="{{ assets }}workbench.js"></script>
+</body></html>

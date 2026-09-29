@@ -160,12 +160,15 @@
     unknown. This is not the same as none surviving: nothing was measured.
   </p></div></div>
   {% else %}
-  <div class="note"><span class="note__glyph" aria-hidden="true">&#8212;</span><div class="note__body"><p style="margin:0">No candidates survived the filters. Loosen thresholds in the config and re-run.</p></div></div>
+  <div class="note"><span class="note__glyph" aria-hidden="true">&#8212;</span><div class="note__body"><p style="margin:0">No candidates are recorded. Review the declared filters, reference coverage, and failure taxonomy before interpreting this as a biological result.</p></div></div>
   {% endif %}
 </section>
 
 <section>
   <h2>Epitopes (top-N targets)</h2>
+  {% if annotation_coverage.unassessed_lookups %}
+  <div class="note note--err"><div class="note__body"><p><strong>Incomplete reference annotation.</strong> {{ annotation_coverage.unassessed_lookups }} genes have an unassessed annotation or failed reference lookup. Missing candidates do not establish a complete biological negative. See the failure taxonomy for the affected steps.</p></div></div>
+  {% endif %}
   <p>
     For each top-N target, the AlphaFoldDB structure path and SURFACE-Bind
     epitope status. <code>surface_bind_site</code> = a vendored targetable site
