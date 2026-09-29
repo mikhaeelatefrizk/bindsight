@@ -4,7 +4,8 @@ const localMode = document.body.dataset.local === 'true';
 const $ = (id) => document.getElementById(id);
 const number = (n, digits=3) => n === null || n === undefined ? '—' : Number(n).toFixed(digits);
 let evidence, molecularViewer, activeBinder, selectionGeneration = 0, rotating = false;
-function switchPage(page) {
+function switchPage(route) {
+  let [page,anchor] = route.split('/');
   if (!$('page-' + page)) page = 'structures';
   document.querySelectorAll('.page').forEach(el => { el.hidden = el.id !== 'page-' + page; });
   document.querySelectorAll('[data-page]').forEach(el => {
@@ -14,6 +15,10 @@ function switchPage(page) {
   });
   if (page === 'structures' && molecularViewer) { molecularViewer.resize(); molecularViewer.render(); }
   if (page === 'runs' && localMode && typeof refreshRuns === 'function') refreshRuns();
+  const names={structures:'Structure explorer',evidence:'The evidence',methods:'Methods & sources',run:localMode?'New analysis':'Run locally',runs:'Your analyses'};
+  document.title=names[page]+' · bindsight';
+  if(anchor==='calibration'&&page==='evidence')requestAnimationFrame(()=>$('evidence-calibration')?.scrollIntoView({block:'start'}));
+  else window.scrollTo({top:0,behavior:'instant'});
 }
 window.addEventListener('hashchange', () => switchPage(location.hash.slice(1)));
 function binderLabel(id) { const m = /binder_(\d+)_seq(\d+)/.exec(id); return m ? `Design ${String(+m[1]+1).padStart(2,'0')} · ${+m[2]+1}` : id; }
@@ -23,6 +28,7 @@ async function selectBinder(binder) {
   document.querySelectorAll('.binder-item').forEach(el => { const chosen = el.dataset.id === binder.id; el.classList.toggle('selected', chosen); el.setAttribute('aria-pressed',String(chosen)); });
   $('selected-name').textContent = binderLabel(binder.id);
   $('iptm').textContent = number(binder.iptm);
+  $('confidence-fill').style.width = (Number.isFinite(binder.iptm)?Math.max(0,Math.min(1,binder.iptm))*100:0)+'%';
   $('pae').textContent = number(binder.pae, 1);
   $('sequence-length').textContent = binder.length ? `${binder.length} aa` : '—';
   $('structure-hash').textContent = binder.sha256;
@@ -39,18 +45,18 @@ async function selectBinder(binder) {
     if (!response.ok) throw new Error('This structure could not be loaded. Try again or inspect the original file.');
     const cif = await response.text();
     if (generation !== selectionGeneration) return;
-    if (!molecularViewer) molecularViewer = $3Dmol.createViewer($('molecule'), {backgroundColor:'#10293b', antialias:true});
+    if (!molecularViewer) molecularViewer = $3Dmol.createViewer($('molecule'), {backgroundColor:'#17362e',backgroundAlpha:0,antialias:true});
     molecularViewer.addModel(cif, 'cif');
-    molecularViewer.setStyle({chain:'T'}, {cartoon:{color:'#a7bfd6',opacity:.9}});
-    molecularViewer.setStyle({chain:'B'}, {cartoon:{color:'#68dfb9'}});
-    molecularViewer.zoomTo(); molecularViewer.zoom(1.55); molecularViewer.resize(); molecularViewer.render();
-    molecularViewer.spin(false); rotating = false; $('spin').textContent = 'Rotate';
+    molecularViewer.setStyle({chain:'T'}, {cartoon:{color:'#b0cbc0',opacity:1}});
+    molecularViewer.setStyle({chain:'B'}, {cartoon:{color:'#ddf3a9'}});
+    molecularViewer.zoomTo(); molecularViewer.zoom(1.75); molecularViewer.resize(); molecularViewer.render();
+    molecularViewer.spin(false); rotating = false; $('spin').textContent = 'Rotate'; $('spin').setAttribute('aria-pressed','false');
     $('viewer-status').hidden = true;
     return {id:binder.id,loaded:true,iptm:binder.iptm};
   } catch (error) { if (generation === selectionGeneration) $('viewer-status').textContent = error.message; }
 }
-$('spin').addEventListener('click', () => { if (!molecularViewer) return; rotating = !rotating; molecularViewer.spin(rotating ? 'y' : false, .35); $('spin').textContent = rotating ? 'Pause' : 'Rotate'; });
-$('reset-view').addEventListener('click', () => { if (molecularViewer) { molecularViewer.zoomTo(); molecularViewer.zoom(1.55); molecularViewer.render(); } });
+$('spin').addEventListener('click', () => { if (!molecularViewer) return; rotating = !rotating; molecularViewer.spin(rotating ? 'y' : false, .35); $('spin').textContent = rotating ? 'Pause' : 'Rotate'; $('spin').setAttribute('aria-pressed',String(rotating)); });
+$('reset-view').addEventListener('click', () => { if (molecularViewer) { molecularViewer.zoomTo(); molecularViewer.zoom(1.75); molecularViewer.render(); } });
 window.addEventListener('resize', () => { if (molecularViewer) { molecularViewer.resize(); molecularViewer.render(); } });
 async function boot() {
   if(localMode)renderRun();

@@ -2,14 +2,25 @@
 
 ### [Open the Bindsight research workspace](https://bindsight-research.mikha-50.chatgpt.site)
 
-Explore the committed predicted protein structures, discovery study and paired
-controls directly in your browser. To analyse your own data, choose **Run on your
-computer** on the website: download the workspace, install once, and run CPU
-RNA-seq discovery locally. [Local setup and GPU limitations](docs/local-workspace.md).
+**Start here:** open the website above. You do not need to understand the code or
+download the repository to explore the existing results.
+
+| What you want to do | Where to go |
+| --- | --- |
+| Inspect the 20 real predicted protein complexes | [Structure explorer](https://bindsight-research.mikha-50.chatgpt.site/#structures) — select a design, rotate it, or download its original file. |
+| Understand the findings and their limitations | [The evidence](https://bindsight-research.mikha-50.chatgpt.site/#evidence) — inspect the study and paired controls. |
+| Analyse your own human bulk RNA-seq data | [Run locally](https://bindsight-research.mikha-50.chatgpt.site/#run) — choose your operating system and follow the one-time setup. |
+
+For a new analysis, download and extract the workspace, then use its launcher.
+The local app checks your computer and input files before running CPU discovery.
+Your count matrices and results stay on your computer; public reference queries
+require internet access. [Complete setup instructions and GPU requirements](docs/local-workspace.md).
 
 The website and local application share the interface in `bindsight/report/web/`.
 The `bindsight/` Python package is the analysis engine; the other repository
 folders contain scientific evidence, references, examples, documentation and tests.
+Keep the downloaded folders together. The site displays real computational
+outputs; those predictions are not experimentally confirmed binding results.
 
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
