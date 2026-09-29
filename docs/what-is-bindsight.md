@@ -216,7 +216,7 @@ A paired control folded each design beside a shuffle of its own sequence —
 same length, same amino-acid composition, only the order destroyed. Under a
 seeded validator averaging five diffusion draws, the shuffles cleared the 0.65
 confidence bar **more** often than the designs: 50% against 30%, a paired
-difference of −0.043 (95% CI −0.142 to +0.054), with 9 of 20 designs beating
+difference of −0.043 (95% backbone-cluster CI −0.137 to +0.063), with 9 of 20 designs beating
 their own shuffle where 10 is chance. `success@0.65` is therefore withdrawn as a
 measure of design quality, and this page will not quote it as one. The full
 control, including the predictions written down before the data arrived, is in

@@ -4,7 +4,7 @@
 
 Combines four orthogonal signals into a composite ``score``:
 
-1. **Upstream evidence** — DE log2FC × specificity penalty (vital-tissue baseline).
+1. **Upstream evidence** — DE log2FC × an Open Targets safety-liability penalty.
 2. **Structure quality** — iPTM, pTM, binder pLDDT, pAE_interaction, RMSD-to-designed.
 3. **Affinity** — ``affinity_pred_value`` and ``affinity_probability_binary``.
 4. **Sequence quality** — ProteinMPNN sequence recovery vs. backbone (when available).
@@ -84,7 +84,18 @@ def rank_validated(
     if candidates is not None and not candidates.empty:
         keep_cols = [
             c
-            for c in ("symbol", "uniprot_id", "log2fc", "padj", "n_safety_events")
+            for c in (
+                "symbol",
+                "uniprot_id",
+                "log2fc",
+                "padj",
+                "n_safety_events",
+                "safety_events_measured",
+                "open_targets_status",
+                "gtex_safety_status",
+                "normal_tissue_unassessed",
+                "max_vital_tissue_tpm",
+            )
             if c in candidates.columns
         ]
         if "uniprot_id" in keep_cols:
@@ -256,24 +267,31 @@ def _one_row_per_accession(cand: pd.DataFrame) -> pd.DataFrame:
 
 
 def _evidence_score(df: pd.DataFrame) -> pd.Series:
-    """log2FC on an absolute scale, cut by a vital-tissue specificity penalty.
+    """Scale log2FC and, when supplied, penalise Open Targets safety liabilities.
 
-    ``n_safety_events`` counts the normal tissues where the target is expressed
-    above the configured safety ceiling (see ``bindsight.targets.gtex``). Each
-    event divides the evidence score down, so a strongly over-expressed target
-    that is also present in vital tissue cannot outrank a comparably
-    over-expressed one that is tumour-restricted. A target with no recorded
-    events is unpenalised.
+    ``n_safety_events`` comes from Open Targets' safety-liability records; it is
+    not a count of GTEx tissues or a validated estimate of clinical toxicity.
+    GTEx expression is assessed separately by the discovery gate.
 
-    Returns NaN where ``log2fc`` is absent, matching the other components: a
-    missing metric is excluded from the composite rather than scored as zero.
+    A missing count, or an explicitly unmeasured count, makes this combined
+    component unavailable. In particular, discovery's fallback zero is not a
+    measured zero. Legacy inputs without the measurement flag can still supply
+    a finite count; inputs without any safety columns get an expression-only
+    component and make no safety claim. Missing components remain NaN rather
+    than contributing an invented measurement to the composite.
     """
     if "log2fc" not in df.columns:
         return pd.Series([float("nan")] * len(df), index=df.index)
     score = _fold_change_score(df["log2fc"])
     if "n_safety_events" in df.columns:
-        events = pd.to_numeric(df["n_safety_events"], errors="coerce").fillna(0.0).clip(lower=0.0)
-        score = score * (1.0 / (1.0 + events))
+        events = pd.to_numeric(df["n_safety_events"], errors="coerce")
+        measured = events.notna() & events.ge(0) & events.lt(float("inf"))
+        if "safety_events_measured" in df.columns:
+            measured &= df["safety_events_measured"].eq(True).fillna(False)
+        score = (score * (1.0 / (1.0 + events))).where(measured)
+    elif "safety_events_measured" in df.columns:
+        # A flag without the measurement it describes supplies no penalty.
+        score = pd.Series(float("nan"), index=df.index)
     return score
 
 

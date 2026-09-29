@@ -67,6 +67,7 @@ extra:
 nav:
   - Home: index.md
   - Real results: results.md
+  - Validation status: validation-status.md
   - What is bindsight?: what-is-bindsight.md
   - Glossary: glossary.md
   - How to use: how-to-use.md

@@ -121,10 +121,20 @@ def test_cache_root_honours_the_env_override(tmp_path, monkeypatch) -> None:
     assert cache_root().is_dir()
 
 
-def test_cache_root_default_without_override(monkeypatch) -> None:
-    """Without the override the platform cache location is used."""
+def test_cache_root_default_without_override(tmp_path, monkeypatch) -> None:
+    """Delegate to the platform default without writing into the user's real cache."""
     monkeypatch.delenv(ENV_CACHE_DIR, raising=False)
-    assert "bindsight" in str(cache_root())
+    expected = tmp_path / "platform-cache"
+    calls = []
+
+    def platform_cache(appname, *, appauthor, ensure_exists):
+        calls.append((appname, appauthor, ensure_exists))
+        expected.mkdir()
+        return expected
+
+    monkeypatch.setattr("bindsight.io.paths.user_cache_path", platform_cache)
+    assert cache_root() == expected
+    assert calls == [("bindsight", False, True)]
 
 
 # ---------------------------------------------------------------------------

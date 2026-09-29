@@ -655,6 +655,26 @@ class TestVolcanoThresholds:
     through the red points, telling the reader a cutoff that was never applied.
     """
 
+    @pytest.mark.parametrize(
+        ("contrast", "expected"),
+        [
+            (["treatment", "drug", "vehicle"], "log2 fold-change (drug vs. vehicle)"),
+            (["treatment", "vehicle", "drug"], "log2 fold-change (vehicle vs. drug)"),
+            (None, "log2 fold-change"),
+            (["drug", "vehicle"], "log2 fold-change"),
+            (["treatment", r"$\unknown$", "control"], r"log2 fold-change ($\unknown$ vs. control)"),
+        ],
+    )
+    def test_actual_plot_labels_the_recorded_comparison(
+        self, tmp_path: Path, monkeypatch, contrast, expected: str
+    ) -> None:
+        run = _make_run(tmp_path)
+        _set_deg_params(run, contrast=contrast)
+        axes = _capture_axes(monkeypatch)
+        render_run(run)
+        assert axes
+        assert axes[0].get_xlabel() == expected
+
     def test_the_guide_lines_sit_at_the_cutoffs_the_run_recorded(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -863,7 +883,7 @@ class TestTheReportDescribesTheRankingItActuallyUses:
             Path(__file__).resolve().parents[1] / "bindsight" / "pipelines" / "discover.py"
         ).read_text(encoding="utf-8")
 
-        assert 'sort_values(by="pi_score", ascending=False)' in source, (
+        assert 'sort_values(["pi_score", "gene_id"], ascending=[False, True]' in source, (
             "the pipeline no longer ranks candidates by the combined score; the "
             "report's reading guide describes it as doing so"
         )
@@ -1003,3 +1023,63 @@ class TestTheReportIsWellFormedHtml:
             offenders
         )
         assert depth == 0, f"the template leaves {depth} <div> unclosed"
+
+
+def test_expression_shortlist_reports_design_exclusions_and_unassessed_values(
+    tmp_path: Path,
+) -> None:
+    run = _make_run(tmp_path)
+    path = run / "targets/candidates.parquet"
+    candidates = pd.read_parquet(path)
+    candidates["high_normal_tissue_expression"] = [True, False]
+    candidates["normal_tissue_unassessed"] = [False, True]
+    candidates["no_extracellular_domain"] = [True, False]
+    candidates["safety_events_measured"] = [True, False]
+    candidates.to_parquet(path, index=False)
+    text = render_run(run).read_text(encoding="utf-8")
+    assert "survived all filters" not in text
+    assert "Candidate expression shortlist" in text
+    assert "Normal-tissue expression exceeds the configured threshold" in text
+    assert "Normal-tissue expression is unassessed" in text
+    assert "No annotated extracellular domain" in text
+    assert "Open Targets safety annotations are unassessed" in text
+    assert "ERBB2" in text
+    assert "EGFR" in text
+    # Rendering must not drop adverse candidates from the canonical result.
+    pd.testing.assert_frame_equal(pd.read_parquet(path), candidates)
+
+
+def test_older_candidate_records_do_not_acquire_invented_safety_measurements(
+    tmp_path: Path,
+) -> None:
+    run = _make_run(tmp_path)
+    text = render_run(run).read_text(encoding="utf-8")
+    assert "measurement status not recorded" in text
+
+
+def test_report_surfaces_numerical_fit_warnings_without_validation_claims(tmp_path: Path) -> None:
+    from bindsight.deg.diagnostics import write_fit_diagnostics
+
+    run = _make_run(tmp_path)
+    write_fit_diagnostics(
+        run / "deg/results.parquet",
+        {
+            "residual_degrees_of_freedom": 2,
+            "convergence": {"_MAP_converged": {"not_converged": 3, "unreported": 0}},
+            "dispersion_fallback_repairs": [{"n_failed": 3}],
+        },
+    )
+    text = render_run(run).read_text(encoding="utf-8")
+    assert "Numerical fit diagnostics" in text
+    assert "Residual degrees of freedom: 2 (below 3)" in text
+    assert "MAP dispersion: 3 genes had a nonconverged optimizer flag" in text
+    assert "fallback was used for 3 fits" in text
+    assert "do not establish biological validity" in text
+
+
+def test_historical_report_does_not_present_missing_fit_diagnostics_as_healthy(
+    tmp_path: Path,
+) -> None:
+    text = render_run(_make_run(tmp_path)).read_text(encoding="utf-8")
+    assert "Numerical fit diagnostics are unavailable" in text
+    assert "0 recorded nonconverged" not in text

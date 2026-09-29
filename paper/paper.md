@@ -48,7 +48,7 @@ carries a Boltz-2 interface confidence, and a paired control shipped with the
 tool folds every design beside a shuffle of its own sequence — same length, same
 composition, order destroyed. On the committed ERBB2 run the shuffles cleared
 the customary ipTM 0.65 bar more often than the designs (50% against 30%; paired
-difference −0.043, 95% CI −0.142 to +0.054). The confidence numbers are
+difference −0.043, 95% backbone-cluster CI −0.137 to +0.063). The confidence numbers are
 therefore a triage order for wet-lab work, not evidence of binding, and
 `bindsight` reports them as such. The contribution claimed here is the
 reproducible bridge and its provenance, not a demonstration of binder efficacy.

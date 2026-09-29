@@ -8,6 +8,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Validation and reliability audit — 2026-09-29
+
+- Repair PyDESeq2 0.5.4's failed dispersion-fit fallback to retain the requested
+  regularization, restore the mean floor at dispersion and Wald boundaries,
+  and order modeled observations independently of sample names. Pin the inspected
+  version and record fit diagnostics. Public TCGA-KIRC fits, exact source snapshots,
+  historical numerical failures and independent R comparisons are preserved in
+  `benchmarks/numerical_validation/`; these do not establish biological validity.
+- Bind reusable expression results to their source code, numerical environment
+  and output checksum. Show fit diagnostics in the local app and downloaded report,
+  and label volcano plots with the actual recorded comparison.
+- Account for the calibration's shared backbones with cluster inference. Keep
+  missing safety measurements distinct from measured zero liabilities.
+- Add process ownership, bounded input parsing and cancellation safeguards to
+  local analysis. Restrict public downloads to tracked, contained source files.
+- Repair GPU tool setup and option forwarding; these repairs do not establish
+  a successful GPU run on the development laptop.
+- Update the Arrow dependency baseline and connect the hosted workspace to
+  tested GitHub releases with source revision metadata.
+- See [validation status](docs/validation-status.md) for the evidence and limits.
+
 bioRxiv declined this work on 2026-09-25, and the reason is not one a revision
 answers:
 

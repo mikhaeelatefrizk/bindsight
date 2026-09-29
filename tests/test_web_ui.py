@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterator
 from itertools import pairwise
 from pathlib import Path
 
@@ -48,8 +49,9 @@ PAGES = ("/", "/evidence", "/try", "/your-data", "/runs")
 
 
 @pytest.fixture(scope="module")
-def client() -> TestClient:
-    return TestClient(create_app())
+def client(tmp_path_factory: pytest.TempPathFactory) -> Iterator[TestClient]:
+    with TestClient(create_app(run_root=tmp_path_factory.mktemp("web-runs"))) as client:
+        yield client
 
 
 # ---------------------------------------------------------------------------

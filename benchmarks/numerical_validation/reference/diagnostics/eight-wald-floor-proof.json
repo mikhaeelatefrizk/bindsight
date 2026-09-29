@@ -1,0 +1,35 @@
+{
+  "ENSG00000156096": {
+    "LFC_converged": true,
+    "mu_min": 0.06614117552983413,
+    "n_below_floor": 2,
+    "Python_original_SE": 1.0306987865784998,
+    "Python_same_fit_floored_covariance_SE": 0.9937073449028986,
+    "R_SE": 0.994859545188575,
+    "Python_original_p": 0.027954171141405876,
+    "Python_same_fit_floored_covariance_p": 0.022622618032995753,
+    "R_p": 0.0228049088904653
+  },
+  "ENSG00000186509": {
+    "LFC_converged": true,
+    "mu_min": 0.10072686951498103,
+    "n_below_floor": 4,
+    "Python_original_SE": 1.113457646928269,
+    "Python_same_fit_floored_covariance_SE": 1.0643002487159494,
+    "R_SE": 1.14381410526972,
+    "Python_original_p": 0.02569480803793923,
+    "Python_same_fit_floored_covariance_p": 0.019604710084839553,
+    "R_p": 0.0294576000733577
+  },
+  "ENSG00000139800": {
+    "LFC_converged": true,
+    "mu_min": 0.06318015627454848,
+    "n_below_floor": 7,
+    "Python_original_SE": 2.025794664053285,
+    "Python_same_fit_floored_covariance_SE": 1.7966278184397093,
+    "R_SE": 2.30606505859963,
+    "Python_original_p": 0.11416352758824716,
+    "Python_same_fit_floored_covariance_p": 0.07487060557201257,
+    "R_p": 0.185422039660423
+  }
+}

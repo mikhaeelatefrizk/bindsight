@@ -39,6 +39,8 @@ import pandas as pd
 
 from bindsight import __version__
 from bindsight.config import RunConfig, TargetDiscoveryParams
+from bindsight.deg.cache import execution_identity, verified_cached_digest, write_cache_record
+from bindsight.deg.diagnostics import diagnostics_path, read_fit_diagnostics, write_fit_diagnostics
 from bindsight.deg.pydeseq2_runner import PyDESeq2Runner
 from bindsight.epitopes.surface_bind import SURFACE_BIND_DATA_ENV, SurfaceBindClient
 from bindsight.io.paths import adopt_structure, resolve_run_path, run_dir
@@ -236,8 +238,13 @@ def _resolve_surfy(p: object, surfy: frozenset[str] | None) -> frozenset[str]:
 # ---------------------------------------------------------------------------
 # Stage: DEG
 # ---------------------------------------------------------------------------
-def _deg_cache_key(inputs: list[InputRef], params: dict[str, Any]) -> str:
-    """Identify a differential-expression computation by its inputs and parameters.
+def _deg_cache_key(
+    inputs: list[InputRef],
+    params: dict[str, Any],
+    *,
+    identity: dict[str, Any] | None = None,
+) -> str:
+    """Identify DEG work by input content, parameters, numerical code, and libraries.
 
     Covers the *content* of the counts and design tables, not their paths, so a
     moved or re-downloaded but identical cohort still hits. Any parameter change
@@ -246,19 +253,11 @@ def _deg_cache_key(inputs: list[InputRef], params: dict[str, Any]) -> str:
     """
     import hashlib
 
-    # The tool that produced the table is part of the work, not context around
-    # it. Without it an upgraded pydeseq2 hits the old cache and the manifest
-    # records the reused bytes under the NEW version -- a completed stage
-    # attributing one tool's output to another. The design cache already folds
-    # its code identity in for exactly this reason; this one did not.
-    from bindsight.validate.protocol import UNRECORDED_VERSION, installed_version
-
-    tool_identity = f"pydeseq2:{installed_version('pydeseq2') or UNRECORDED_VERSION}"
     material = "|".join(
         [
             *(f"{i.role}:{i.sha256}" for i in sorted(inputs, key=lambda x: x.role)),
             json.dumps(params, sort_keys=True, default=str),
-            tool_identity,
+            json.dumps(identity if identity is not None else execution_identity(), sort_keys=True),
         ]
     )
     return hashlib.sha256(material.encode()).hexdigest()
@@ -286,6 +285,7 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
     except ImportError:
         pydeseq2_version = "uninstalled"
 
+    identity = execution_identity()
     stage = StageRecord(
         name="deg",
         tool=ToolRef(
@@ -296,7 +296,7 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
             citation="10.1093/bioinformatics/btad547",
         ),
         inputs=inputs,
-        params=config.params.deg.model_dump(),
+        params={**config.params.deg.model_dump(), "execution_identity": identity},
     )
 
     if not counts_p.exists() or not design_p.exists():
@@ -310,37 +310,55 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
     # parameters. Re-running it because something downstream changed wastes that
     # time for an identical answer. The key covers the content of both inputs and
     # every parameter, so a cache hit is only ever the same computation.
-    cache_key = _deg_cache_key(inputs, config.params.deg.model_dump())
+    cache_key = _deg_cache_key(inputs, config.params.deg.model_dump(), identity=identity)
     key_path = out_path.with_suffix(".cache_key")
-    if (
-        out_path.exists()
-        and out_path.stat().st_size > 0
-        and key_path.exists()
-        and key_path.read_text(encoding="utf-8").strip() == cache_key
-    ):
+    cached_digest = verified_cached_digest(out_path, cache_key)
+    if cached_digest is not None:
         LOG.info("DEG cache hit (%s); reusing %s", cache_key[:8], out_path)
         stage.cache_key = cache_key
         stage.cache_status = "hit"
-        stage.notes = "reused an existing DEG table with identical inputs and parameters"
+        stage.notes = (
+            "reused a checksum-verified DEG table with identical inputs, parameters, "
+            "numerical source code, and recorded library versions"
+        )
         stage.mark_completed(
             outputs=[
                 OutputRef(
                     role="deg_table",
                     path=str(out_path),
-                    sha256=sha256_file(out_path),
+                    sha256=cached_digest,
                     bytes=out_path.stat().st_size,
                     media_type="application/x-parquet",
                 )
             ]
         )
+        if read_fit_diagnostics(out_path) is not None:
+            fit_path = diagnostics_path(out_path)
+            stage.outputs.append(
+                OutputRef(
+                    role="deg_fit_diagnostics",
+                    path=str(fit_path),
+                    sha256=sha256_file(fit_path),
+                    bytes=fit_path.stat().st_size,
+                    media_type="application/json",
+                )
+            )
         return stage
 
     stage.cache_key = cache_key
     stage.cache_status = "miss"
     try:
+        # Remove an obsolete attestation before attempting replacement work.
+        key_path.unlink(missing_ok=True)
         runner = PyDESeq2Runner(config.params.deg)
         metrics = runner.run(counts_p, design_p, out_path)
-        key_path.write_text(cache_key, encoding="utf-8", newline="\n")
+        diagnostics = metrics.get("fit_diagnostics")
+        if isinstance(diagnostics, dict) and diagnostics:
+            write_fit_diagnostics(out_path, diagnostics)
+        else:
+            # Never attach an older fit record to a newly computed table.
+            diagnostics_path(out_path).unlink(missing_ok=True)
+        write_cache_record(out_path, cache_key)
         stage.notes = (
             f"n_samples={metrics['n_samples']}, "
             f"n_genes_tested={metrics['n_genes_tested']}, "
@@ -357,6 +375,17 @@ def _stage_deg(config: RunConfig, out_path: Path) -> StageRecord:
                 )
             ]
         )
+        if read_fit_diagnostics(out_path) is not None:
+            fit_path = diagnostics_path(out_path)
+            stage.outputs.append(
+                OutputRef(
+                    role="deg_fit_diagnostics",
+                    path=str(fit_path),
+                    sha256=sha256_file(fit_path),
+                    bytes=fit_path.stat().st_size,
+                    media_type="application/json",
+                )
+            )
     except Exception as e:
         LOG.exception("DEG stage failed")
         stage.mark_failed(repr(e))
@@ -533,7 +562,11 @@ def _do_discover(
     # fold-change — so a highly-significant, abundant antigen with a moderate
     # ratio (e.g. PSMA) is not crowded out by noisy high-fold-change genes.
     sig["pi_score"] = _pi_score(sig)
-    sig = sig.sort_values("pi_score", ascending=False).head(p.enrich_top_k)
+    # Resolve ties before the cut: a later rank tie-break cannot recover a gene
+    # excluded here merely because its input row appeared later.
+    sig = sig.sort_values(["pi_score", "gene_id"], ascending=[False, True], kind="mergesort").head(
+        p.enrich_top_k
+    )
     enriched_gene_ids = {str(g) for g in sig["gene_id"]}
     LOG.info(
         "DEGs: %d total, %d significant; enriching top %d by combined score (π)",
@@ -690,7 +723,11 @@ def _do_discover(
     structure_queried: set[str] = set()
     if not candidates.empty:
         candidates["pi_score"] = _pi_score(candidates)
-        candidates = candidates.sort_values(by="pi_score", ascending=False).reset_index(drop=True)
+        candidates = candidates.sort_values(
+            ["pi_score", "gene_id", "uniprot_id"],
+            ascending=[False, True, True],
+            kind="mergesort",
+        ).reset_index(drop=True)
         n_fetch = max(p.top_n, _STRUCTURE_FETCH_CAP)
         fetch_uniprots = sorted(
             {u for u in candidates.head(n_fetch)["uniprot_id"].dropna().unique() if u}

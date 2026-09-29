@@ -1,0 +1,33 @@
+{
+  "schema": "bindsight-r-reference-provenance-transformations/1",
+  "published": [
+    {
+      "file": "setup-provenance.json",
+      "source_sha256": "7a85845636867ba7e5c8a349043b7c6836b7806b0902e7866f9f354e579d9e20",
+      "published_sha256": "c649fdb8c6736c020d809fdfb00b33c11e8ff152e64de84493626b35dd02c8dd",
+      "transformation": "Deterministic host-prefix replacement and UTF-8 LF text serialization; raw source retained unchanged."
+    },
+    {
+      "file": "installed-packages.csv",
+      "source_sha256": "ba19e7609391958b4c8f869721c5c8a57a2cb8e043f3f37297cddf020bd5d170",
+      "published_sha256": "7212adacede298864c7e794daa1854ae3d00310a18371b83ed3a64b0c69bfd57",
+      "transformation": "Deterministic host-prefix replacement and UTF-8 LF text serialization; raw source retained unchanged."
+    },
+    {
+      "file": "setup-session-info.txt",
+      "source_sha256": "460098b20af85b2fed0c86f90c609d7a0b02c2f8ca2fb270f50e4e349ae38284",
+      "published_sha256": "ee6f00fb873de699faff6d4b09b21775601c5c1b6c88e69211968b327e18e529",
+      "transformation": "Deterministic host-prefix replacement and UTF-8 LF text serialization; raw source retained unchanged."
+    }
+  ],
+  "reproduction_helper": {
+    "file": "setup_reference.ps1",
+    "sha256": "90a0bffe33fc10ea6241126277b340a89cd9a23e31dbf444a40929e7178cc76c",
+    "validation": "PowerShell syntax checked; assembled from executed extraction/installation workflow, no second cold installation."
+  },
+  "reference_R_script": {
+    "current_repository_sha256": "9ea171b2531a546f7dc38a80d12c6cf92e86fdd6e0048224b312a21710da89b2",
+    "executed_original_sha256": "d848b51378603f278fd8e2de8daaa21503cf2e4b782f2125cd24de14d48b50a8",
+    "difference": "Future input MD5 metadata keys changed from original absolute paths to basenames; existing fit output not rerun or statistically changed."
+  }
+}

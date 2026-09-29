@@ -1,0 +1,244 @@
+{
+  "original_forward_exact": true,
+  "n_map_failed": 10,
+  "n_gene_wise_failed": 41,
+  "n_map_failed_final_used": 10,
+  "prior_disp_var": 0.5029420438693788,
+  "sources": [
+    "https://raw.githubusercontent.com/scverse/PyDESeq2/v0.5.4/pydeseq2/utils.py",
+    "https://raw.githubusercontent.com/scverse/PyDESeq2/v0.5.4/pydeseq2/grid_search.py",
+    "https://github.com/scverse/PyDESeq2/releases/tag/v0.5.4"
+  ],
+  "genes": {
+    "ENSG00000255302": {
+      "original_p": 7.0001590870042186e-15,
+      "reordered_p": 0.6921274455367474,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.0001967195700665399,
+      "saved_map_dispersion": 0.0001967195700665399,
+      "unregularized_grid": 0.0001967195700665399,
+      "regularized_grid": 0.10542821198428566,
+      "independent_map_optimum": 0.10528345343073095,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 102.52673608964542,
+      "map_loss_at_regularized_grid": 61.682512274288804,
+      "map_loss_at_independent_optimum": 61.682510337951335,
+      "single_gene_original": {
+        "dispersion": 0.0001967195700665399,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.0001967195700665399,
+        "converged": false
+      }
+    },
+    "ENSG00000129083": {
+      "original_p": 0.47983226647554,
+      "reordered_p": 0.7842883496772008,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.017109664986077276,
+      "saved_map_dispersion": 0.017109664986077276,
+      "unregularized_grid": 0.017109664986077276,
+      "regularized_grid": 0.11352628300499021,
+      "independent_map_optimum": 0.1137164291383324,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 63.54702330637409,
+      "map_loss_at_regularized_grid": 59.34974346934962,
+      "map_loss_at_independent_optimum": 59.349740390745104,
+      "single_gene_original": {
+        "dispersion": 0.017109664986077276,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.11371611779707919,
+        "converged": true
+      }
+    },
+    "ENSG00000152558": {
+      "original_p": 0.007391414740797488,
+      "reordered_p": 0.3050864573215156,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.01657552914079736,
+      "saved_map_dispersion": 0.01657552914079736,
+      "unregularized_grid": 0.01657552914079736,
+      "regularized_grid": 0.1130472159859054,
+      "independent_map_optimum": 0.11291415517561525,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 67.25438012279722,
+      "map_loss_at_regularized_grid": 62.955876031022626,
+      "map_loss_at_independent_optimum": 62.955874510009004,
+      "single_gene_original": {
+        "dispersion": 0.01657552914079736,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.11291350153405415,
+        "converged": true
+      }
+    },
+    "ENSG00000077235": {
+      "original_p": 0.7314421046566784,
+      "reordered_p": 0.8986323902474057,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.015425743205897,
+      "saved_map_dispersion": 0.015425743205897,
+      "unregularized_grid": 0.015425743205897,
+      "regularized_grid": 0.11352628300499021,
+      "independent_map_optimum": 0.11366076645371591,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 61.30196307189703,
+      "map_loss_at_regularized_grid": 56.67159370413389,
+      "map_loss_at_independent_optimum": 56.671592164864585,
+      "single_gene_original": {
+        "dispersion": 0.015425743205897,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.11366096093577766,
+        "converged": true
+      }
+    },
+    "ENSG00000081479": {
+      "original_p": 0.5181856288618449,
+      "reordered_p": 0.6447857275767617,
+      "map_converged": true,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.37348002217455106,
+      "saved_map_dispersion": 0.37348002217455106,
+      "unregularized_grid": 0.7343989508202373,
+      "regularized_grid": 0.37332277138051323,
+      "independent_map_optimum": 0.3734789407117279,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 65.59961256808096,
+      "map_loss_at_regularized_grid": 65.59961298786835,
+      "map_loss_at_independent_optimum": 65.59961256801465,
+      "single_gene_original": {
+        "dispersion": 0.37348002217455106,
+        "converged": true
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.3734800221749223,
+        "converged": true
+      }
+    },
+    "ENSG00000125398": {
+      "original_p": 0.5799131746866956,
+      "reordered_p": 0.6905953167830801,
+      "map_converged": true,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.3719637426950565,
+      "saved_map_dispersion": 0.3719637426950565,
+      "unregularized_grid": 0.720555744630464,
+      "regularized_grid": 0.371747394978611,
+      "independent_map_optimum": 0.371963704731817,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 56.842997382657046,
+      "map_loss_at_regularized_grid": 56.84299818952359,
+      "map_loss_at_independent_optimum": 56.84299738267573,
+      "single_gene_original": {
+        "dispersion": 0.3719637426950565,
+        "converged": true
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.37196374269505594,
+        "converged": true
+      }
+    },
+    "ENSG00000240583": {
+      "original_p": 0.1244984377034295,
+      "reordered_p": 0.03180873192220403,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.7144872617330694,
+      "saved_map_dispersion": 0.7144872617330694,
+      "unregularized_grid": 0.7144872617330694,
+      "regularized_grid": 0.36706104105163756,
+      "independent_map_optimum": 0.3664577841879365,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 72.6789337754866,
+      "map_loss_at_regularized_grid": 71.71352353163775,
+      "map_loss_at_independent_optimum": 71.71351705984145,
+      "single_gene_original": {
+        "dispersion": 0.7144872617330694,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.7144872617330694,
+        "converged": false
+      }
+    },
+    "ENSG00000104853": {
+      "original_p": 0.17775732099604036,
+      "reordered_p": 0.21194058688187756,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.14174741629268076,
+      "saved_map_dispersion": 0.14174741629268076,
+      "unregularized_grid": 0.14174741629268076,
+      "regularized_grid": 0.16505582436606542,
+      "independent_map_optimum": 0.16497411851625704,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 60.99270359931193,
+      "map_loss_at_regularized_grid": 60.957761259022064,
+      "map_loss_at_independent_optimum": 60.95776089423385,
+      "single_gene_original": {
+        "dispersion": 0.14174741629268076,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.14174741629268076,
+        "converged": false
+      }
+    },
+    "ENSG00000099341": {
+      "original_p": 0.7288102443884509,
+      "reordered_p": 0.7501701435998769,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.1381961256733829,
+      "saved_map_dispersion": 0.1381961256733829,
+      "unregularized_grid": 0.1381961256733829,
+      "regularized_grid": 0.16366573282249647,
+      "independent_map_optimum": 0.163569713601624,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 60.55396467574779,
+      "map_loss_at_regularized_grid": 60.51107843916395,
+      "map_loss_at_independent_optimum": 60.51107791772167,
+      "single_gene_original": {
+        "dispersion": 0.1381961256733829,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.16356773332214206,
+        "converged": true
+      }
+    },
+    "ENSG00000063177": {
+      "original_p": 0.1297925916973867,
+      "reordered_p": 0.11818329850652237,
+      "map_converged": false,
+      "outlier_uses_genewise": false,
+      "saved_final_dispersion": 0.1967195700665404,
+      "saved_map_dispersion": 0.1967195700665404,
+      "unregularized_grid": 0.1967195700665404,
+      "regularized_grid": 0.18462876183152388,
+      "independent_map_optimum": 0.18476409494949964,
+      "independent_map_optimum_converged": true,
+      "map_loss_at_saved": 67.16496232032463,
+      "map_loss_at_regularized_grid": 67.15861978256835,
+      "map_loss_at_independent_optimum": 67.1586189137596,
+      "single_gene_original": {
+        "dispersion": 0.1967195700665404,
+        "converged": false
+      },
+      "single_gene_reversed": {
+        "dispersion": 0.1967195700665404,
+        "converged": false
+      }
+    }
+  }
+}

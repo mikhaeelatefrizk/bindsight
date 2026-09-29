@@ -25,7 +25,7 @@
 #         --python-version 3.11 --implementation cp --abi cp311 \
 #         --platform manylinux2014_x86_64 --only-binary=:all: \
 #         "pydeseq2>=0.5,<0.6" "numpy>=1.26,<3" "scipy>=1.11,<2" \
-#         "pandas>=2.2,<3" "pyarrow>=16,<25" "biopython>=1.83,<2"
+#         "pandas>=2.2,<3" "pyarrow>=23.0.1,<25" "biopython>=1.83,<2"
 
 # ---- differential expression ----
 pydeseq2==0.5.4
@@ -38,7 +38,7 @@ scikit-learn==1.7.2
 numpy==2.2.6
 scipy==1.16.3
 pandas==2.3.2
-pyarrow==20.0.0
+pyarrow==23.0.1
 h5py==3.14.0
 zarr==3.1.6
 numcodecs==0.16.5

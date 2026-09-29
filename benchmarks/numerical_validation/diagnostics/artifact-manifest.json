@@ -1,0 +1,31 @@
+{
+  "schema": "bindsight-objective-proof-export/1",
+  "policy": "Only threadpool library path prefixes in fit.json were changed to site-packages-relative paths. Numerical values and all saved arrays are unchanged. Raw original fit.json remains in the private audit workspace.",
+  "original_fit_sha256": "b6f2eb19dab2c7bfb282ecdec1df2f8ce92f87bef46e80b64123187188dfe0fb",
+  "files": {
+    "dds_arrays.npz": {
+      "sha256": "6d72a7a74ccd13e68dbb0026fe4533dd17908fe6a6b512222c92f41bca612565",
+      "bytes": 989929
+    },
+    "dds_var.parquet": {
+      "sha256": "415fae24aa0310b24084757cb2d4caa004441011e089788549320c87644cc364",
+      "bytes": 1027254
+    },
+    "fit.json": {
+      "sha256": "25aa90f7be3e35a442d30670b49e4e9da073ea0e6b0b4fe5d1fc33f4699eb71b",
+      "bytes": 1942
+    },
+    "objective-proof.json": {
+      "sha256": "cb9ff0cb830f570e6c53365223d9d60195346a91bac27f84c3fce5ddc2be67db",
+      "bytes": 9333
+    },
+    "reproduce_objective.py": {
+      "sha256": "376943342a659fe2c6c5236ec74d5071b9e0bdba992d0d750b2da449fecec73f",
+      "bytes": 6845
+    },
+    "results.parquet": {
+      "sha256": "ec095087c34a559880165bb52b32197f4c64829f87cd2a317257e795465ec873",
+      "bytes": 989223
+    }
+  }
+}

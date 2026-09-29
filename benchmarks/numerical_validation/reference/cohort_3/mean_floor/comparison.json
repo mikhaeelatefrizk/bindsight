@@ -1,0 +1,830 @@
+{
+  "schema": "bindsight-r-reference-comparison/2",
+  "purpose": "Independent implementation comparison, without declaring either implementation biological ground truth or changing tolerances after results",
+  "comparison_script_sha256": "b870fb03e1fcc5d1f5c44b2352513dff9013928963e08d8ae9b446430f6ef93a",
+  "reference_results_sha256": "b0d181d12701bc7c9dc65f3718757ee22715790e4e15bffb1bef37ba42ca8728",
+  "reference_file_sha256": "b0d181d12701bc7c9dc65f3718757ee22715790e4e15bffb1bef37ba42ca8728",
+  "python_results_sha256": "38eadad4cbd6bd7ce8380b5cbdc1cae333caa15492aba46e5ae55a5084685656",
+  "reference_metadata": {
+    "schema": "bindsight-r-deseq2-reference/1",
+    "purpose": "Independent implementation comparison; not biological ground truth",
+    "started_at": "2026-09-29 01:25:22 UTC",
+    "elapsed_seconds": 13.95689702034,
+    "R": "R version 4.6.1 (2026-06-24 ucrt)",
+    "DESeq2": "1.52.0",
+    "Bioconductor": "3.23.1",
+    "inputs_md5": {
+      "${REPOSITORY_ROOT}/benchmarks/numerical_validation/cohort_3/counts.tsv.gz": "5c22a4658e0b7f7e2d29623b48b3fd82",
+      "${REPOSITORY_ROOT}/benchmarks/numerical_validation/cohort_3/design.tsv": "b3d471a1f80e645ac20a66c4e70d14a7"
+    },
+    "settings": {
+      "design": "~ case_barcode + condition",
+      "contrast": [
+        "condition",
+        "tumor",
+        "normal"
+      ],
+      "low_count_filter": "count >= 10 in >= 3 samples",
+      "test": "Wald",
+      "fit_type_requested": "parametric",
+      "size_factor_type": "ratio",
+      "beta_prior": false,
+      "min_replicates_for_replace": 7,
+      "use_t": false,
+      "min_mu": 0.5,
+      "alpha": 0.05,
+      "independent_filtering": true,
+      "cooks_cutoff": "DESeq2 default",
+      "parallel": false,
+      "workers": 1,
+      "significance": "padj < .05 AND abs(log2FoldChange) >= 1"
+    },
+    "n_input_genes": 19944,
+    "n_tested_genes": 15697,
+    "n_samples": 6,
+    "design_rank": 4,
+    "residual_df": 2,
+    "sample_order": [
+      "N01",
+      "N02",
+      "N03",
+      "T01",
+      "T02",
+      "T03"
+    ],
+    "result_names": [
+      "Intercept",
+      "case_barcode_TCGA.B0.4712_vs_TCGA.A3.3387",
+      "case_barcode_TCGA.B0.5697_vs_TCGA.A3.3387",
+      "condition_tumor_vs_normal"
+    ],
+    "n_significant": 3938,
+    "n_missing_p": 0,
+    "n_missing_padj": 0,
+    "beta_not_converged": 0,
+    "dispersion_function": {
+      "coefficients": [
+        0.178469907374413,
+        18.4157759193045
+      ],
+      "fitType": "parametric",
+      "varLogDispEsts": 2.13616202872436,
+      "dispPriorVar": 0.768768768768769
+    },
+    "independent_filter_metadata": {
+      "filterThreshold": 6.11798670202176,
+      "filterTheta": 0,
+      "filterNumRej": [
+        {
+          "theta": 0,
+          "numRej": 4025,
+          "_row": "0%"
+        },
+        {
+          "theta": 0.0193877551020408,
+          "numRej": 4010,
+          "_row": "1.938776%"
+        },
+        {
+          "theta": 0.0387755102040816,
+          "numRej": 3979,
+          "_row": "3.877551%"
+        },
+        {
+          "theta": 0.0581632653061225,
+          "numRej": 3929,
+          "_row": "5.816327%"
+        },
+        {
+          "theta": 0.0775510204081633,
+          "numRej": 3843,
+          "_row": "7.755102%"
+        },
+        {
+          "theta": 0.0969387755102041,
+          "numRej": 3740,
+          "_row": "9.693878%"
+        },
+        {
+          "theta": 0.116326530612245,
+          "numRej": 3636,
+          "_row": "11.63265%"
+        },
+        {
+          "theta": 0.135714285714286,
+          "numRej": 3507,
+          "_row": "13.57143%"
+        },
+        {
+          "theta": 0.155102040816327,
+          "numRej": 3383,
+          "_row": "15.5102%"
+        },
+        {
+          "theta": 0.174489795918367,
+          "numRej": 3239,
+          "_row": "17.44898%"
+        },
+        {
+          "theta": 0.193877551020408,
+          "numRej": 3130,
+          "_row": "19.38776%"
+        },
+        {
+          "theta": 0.213265306122449,
+          "numRej": 3004,
+          "_row": "21.32653%"
+        },
+        {
+          "theta": 0.23265306122449,
+          "numRej": 2897,
+          "_row": "23.26531%"
+        },
+        {
+          "theta": 0.252040816326531,
+          "numRej": 2775,
+          "_row": "25.20408%"
+        },
+        {
+          "theta": 0.271428571428571,
+          "numRej": 2659,
+          "_row": "27.14286%"
+        },
+        {
+          "theta": 0.290816326530612,
+          "numRej": 2562,
+          "_row": "29.08163%"
+        },
+        {
+          "theta": 0.310204081632653,
+          "numRej": 2466,
+          "_row": "31.02041%"
+        },
+        {
+          "theta": 0.329591836734694,
+          "numRej": 2378,
+          "_row": "32.95918%"
+        },
+        {
+          "theta": 0.348979591836735,
+          "numRej": 2297,
+          "_row": "34.89796%"
+        },
+        {
+          "theta": 0.368367346938775,
+          "numRej": 2186,
+          "_row": "36.83673%"
+        },
+        {
+          "theta": 0.387755102040816,
+          "numRej": 2107,
+          "_row": "38.77551%"
+        },
+        {
+          "theta": 0.407142857142857,
+          "numRej": 2036,
+          "_row": "40.71429%"
+        },
+        {
+          "theta": 0.426530612244898,
+          "numRej": 1969,
+          "_row": "42.65306%"
+        },
+        {
+          "theta": 0.445918367346939,
+          "numRej": 1902,
+          "_row": "44.59184%"
+        },
+        {
+          "theta": 0.46530612244898,
+          "numRej": 1848,
+          "_row": "46.53061%"
+        },
+        {
+          "theta": 0.48469387755102,
+          "numRej": 1773,
+          "_row": "48.46939%"
+        },
+        {
+          "theta": 0.504081632653061,
+          "numRej": 1713,
+          "_row": "50.40816%"
+        },
+        {
+          "theta": 0.523469387755102,
+          "numRej": 1652,
+          "_row": "52.34694%"
+        },
+        {
+          "theta": 0.542857142857143,
+          "numRej": 1578,
+          "_row": "54.28571%"
+        },
+        {
+          "theta": 0.562244897959184,
+          "numRej": 1520,
+          "_row": "56.22449%"
+        },
+        {
+          "theta": 0.581632653061224,
+          "numRej": 1459,
+          "_row": "58.16327%"
+        },
+        {
+          "theta": 0.601020408163265,
+          "numRej": 1410,
+          "_row": "60.10204%"
+        },
+        {
+          "theta": 0.620408163265306,
+          "numRej": 1358,
+          "_row": "62.04082%"
+        },
+        {
+          "theta": 0.639795918367347,
+          "numRej": 1303,
+          "_row": "63.97959%"
+        },
+        {
+          "theta": 0.659183673469388,
+          "numRej": 1239,
+          "_row": "65.91837%"
+        },
+        {
+          "theta": 0.678571428571429,
+          "numRej": 1186,
+          "_row": "67.85714%"
+        },
+        {
+          "theta": 0.697959183673469,
+          "numRej": 1130,
+          "_row": "69.79592%"
+        },
+        {
+          "theta": 0.71734693877551,
+          "numRej": 1075,
+          "_row": "71.73469%"
+        },
+        {
+          "theta": 0.736734693877551,
+          "numRej": 1019,
+          "_row": "73.67347%"
+        },
+        {
+          "theta": 0.756122448979592,
+          "numRej": 955,
+          "_row": "75.61224%"
+        },
+        {
+          "theta": 0.775510204081633,
+          "numRej": 876,
+          "_row": "77.55102%"
+        },
+        {
+          "theta": 0.794897959183673,
+          "numRej": 802,
+          "_row": "79.4898%"
+        },
+        {
+          "theta": 0.814285714285714,
+          "numRej": 749,
+          "_row": "81.42857%"
+        },
+        {
+          "theta": 0.833673469387755,
+          "numRej": 689,
+          "_row": "83.36735%"
+        },
+        {
+          "theta": 0.853061224489796,
+          "numRej": 627,
+          "_row": "85.30612%"
+        },
+        {
+          "theta": 0.872448979591837,
+          "numRej": 564,
+          "_row": "87.2449%"
+        },
+        {
+          "theta": 0.891836734693878,
+          "numRej": 484,
+          "_row": "89.18367%"
+        },
+        {
+          "theta": 0.911224489795918,
+          "numRej": 409,
+          "_row": "91.12245%"
+        },
+        {
+          "theta": 0.930612244897959,
+          "numRej": 345,
+          "_row": "93.06122%"
+        },
+        {
+          "theta": 0.95,
+          "numRej": 253,
+          "_row": "95%"
+        }
+      ],
+      "lo.fit": {
+        "x": [
+          0,
+          0.0193877551020408,
+          0.0387755102040816,
+          0.0581632653061225,
+          0.0775510204081633,
+          0.0969387755102041,
+          0.116326530612245,
+          0.135714285714286,
+          0.155102040816327,
+          0.174489795918367,
+          0.193877551020408,
+          0.213265306122449,
+          0.23265306122449,
+          0.252040816326531,
+          0.271428571428571,
+          0.290816326530612,
+          0.310204081632653,
+          0.329591836734694,
+          0.348979591836735,
+          0.368367346938775,
+          0.387755102040816,
+          0.407142857142857,
+          0.426530612244898,
+          0.445918367346939,
+          0.46530612244898,
+          0.48469387755102,
+          0.504081632653061,
+          0.523469387755102,
+          0.542857142857143,
+          0.562244897959184,
+          0.581632653061224,
+          0.601020408163265,
+          0.620408163265306,
+          0.639795918367347,
+          0.659183673469388,
+          0.678571428571429,
+          0.697959183673469,
+          0.71734693877551,
+          0.736734693877551,
+          0.756122448979592,
+          0.775510204081633,
+          0.794897959183673,
+          0.814285714285714,
+          0.833673469387755,
+          0.853061224489796,
+          0.872448979591837,
+          0.891836734693878,
+          0.911224489795918,
+          0.930612244897959,
+          0.95
+        ],
+        "y": [
+          4094.26775042996,
+          4015.73401418404,
+          3936.5889032502,
+          3856.92667768087,
+          3778.47994722309,
+          3706.78938111471,
+          3631.83546831063,
+          3506.19609645566,
+          3380.02371835045,
+          3255.90637387191,
+          3133.20333487777,
+          3012.50266877347,
+          2895.79993351579,
+          2784.34443489791,
+          2677.55478662674,
+          2574.6681210006,
+          2475.1960190128,
+          2380.47564461753,
+          2291.25275602186,
+          2206.74489653353,
+          2125.90571969106,
+          2048.32745403925,
+          1974.67497158865,
+          1906.6116094545,
+          1841.49545621524,
+          1776.94734712533,
+          1712.55891481279,
+          1648.71392703063,
+          1586.37128874782,
+          1526.12763750072,
+          1467.49122047219,
+          1410.09892650145,
+          1353.99298130372,
+          1298.45835530219,
+          1242.85176468404,
+          1186.6008567006,
+          1129.13450879222,
+          1069.57871784064,
+          1007.75993360552,
+          944.411788475706,
+          880.313143686074,
+          815.571536956502,
+          750.526771966078,
+          685.262545474739,
+          619.540673899411,
+          552.421057502744,
+          481.300381285238,
+          409.679095768737,
+          337.651155236983,
+          265.222320271068
+        ]
+      },
+      "alpha": 0.05,
+      "lfcThreshold": 0
+    },
+    "warnings": [],
+    "library_paths": [
+      "${R_REFERENCE_ROOT}/library",
+      "${R_REFERENCE_ROOT}/runtime/app/library"
+    ],
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "same_tested_gene_set": true,
+  "n_shared_genes": 15697,
+  "row_policy": {
+    "alignment": "Unique, nonblank string gene IDs and exactly equal full gene sets required; sorted by gene ID; no intersection or gene filtering",
+    "numeric": "Each metric uses jointly finite values only, with its full and excluded denominators reported",
+    "correlation": "Null when fewer than two jointly finite values, either input is constant, or correlation is nonfinite; high correlation does not establish equivalence",
+    "significance": "All input genes, using each table's supplied boolean significant column, including genes with missing p or adjusted p; thresholds are not recomputed",
+    "largest_differences": "Top 10 p and top 100 LFC rows with finite absolute differences only; ties retain gene-ID order; JSON nonfinite cells are null"
+  },
+  "numeric": {
+    "baseMean": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 6.821210263296962e-13,
+      "absolute_difference_p90": 4.547473508864641e-12,
+      "absolute_difference_p95": 1.4551915228366852e-11,
+      "absolute_difference_p99": 4.3655745685100555e-11,
+      "absolute_difference_max": 3.026798367500305e-09,
+      "pearson_correlation": 1.0
+    },
+    "log2fc": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 3.0322881474198482e-05,
+      "absolute_difference_p90": 0.0015748641651006417,
+      "absolute_difference_p95": 0.004314181751223598,
+      "absolute_difference_p99": 0.021906481188617093,
+      "absolute_difference_max": 0.20367407108868996,
+      "pearson_correlation": 0.9999952700666995
+    },
+    "lfc_se": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.0291600406079931,
+      "absolute_difference_p90": 0.053513588529626156,
+      "absolute_difference_p95": 0.07396714903523433,
+      "absolute_difference_p99": 0.1117012305353985,
+      "absolute_difference_max": 0.922915041519897,
+      "pearson_correlation": 0.989819630395993
+    },
+    "stat": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.056011491980792916,
+      "absolute_difference_p90": 0.23600158621405745,
+      "absolute_difference_p95": 0.3242953006935771,
+      "absolute_difference_p99": 0.5704638282236187,
+      "absolute_difference_max": 3.209357554945261,
+      "pearson_correlation": 0.9984343645579535
+    },
+    "pvalue": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.009036978752700542,
+      "absolute_difference_p90": 0.03972189276617862,
+      "absolute_difference_p95": 0.04735995023634409,
+      "absolute_difference_p99": 0.05730728799679584,
+      "absolute_difference_max": 0.06328050422762188,
+      "pearson_correlation": 0.9983620377214197
+    },
+    "padj": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.014965731285786155,
+      "absolute_difference_p90": 0.05759454998676579,
+      "absolute_difference_p95": 0.06924577897497344,
+      "absolute_difference_p99": 0.08470916455197888,
+      "absolute_difference_max": 0.09476758164951093,
+      "pearson_correlation": 0.9975304571927722
+    },
+    "minus_log10_pvalue": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.041981525396268204,
+      "absolute_difference_p90": 0.3901652582330513,
+      "absolute_difference_p95": 0.690917940410469,
+      "absolute_difference_p99": 1.8402714439682017,
+      "absolute_difference_max": 12.23261661610335,
+      "pearson_correlation": 0.9951756513897655,
+      "filter": "Transform only finite positive values; zeros and other excluded values become missing in this transformed summary. See raw probability summary for original missingness.",
+      "R_zero_values": 0,
+      "R_negative_values": 0,
+      "R_original_missing": 0,
+      "R_original_infinite": 0,
+      "Python_zero_values": 0,
+      "Python_negative_values": 0,
+      "Python_original_missing": 0,
+      "Python_original_infinite": 0
+    },
+    "minus_log10_padj": {
+      "n_total": 15697,
+      "n_shared_finite": 15697,
+      "n_excluded_nonfinite": 0,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "missing_in_both": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.034698639978880924,
+      "absolute_difference_p90": 0.34646348538826993,
+      "absolute_difference_p95": 0.6331075990964091,
+      "absolute_difference_p99": 1.706987318638109,
+      "absolute_difference_max": 12.056525357047676,
+      "pearson_correlation": 0.9949451527591195,
+      "filter": "Transform only finite positive values; zeros and other excluded values become missing in this transformed summary. See raw probability summary for original missingness.",
+      "R_zero_values": 0,
+      "R_negative_values": 0,
+      "R_original_missing": 0,
+      "R_original_infinite": 0,
+      "Python_zero_values": 0,
+      "Python_negative_values": 0,
+      "Python_original_missing": 0,
+      "Python_original_infinite": 0
+    }
+  },
+  "significance": {
+    "n_compared": 15697,
+    "R": 3938,
+    "Python": 3851,
+    "both": 3789,
+    "R_only": 149,
+    "Python_only": 62,
+    "neither": 11697,
+    "disagree": 211,
+    "agree": 15486,
+    "agreement_fraction": 0.9865579410078359
+  },
+  "largest_p_differences": [
+    {
+      "gene_id": "ENSG00000055917",
+      "baseMean_R": 8148.13785971289,
+      "log2fc_R": -0.383946865661679,
+      "lfc_se_R": 0.336693281175097,
+      "stat_R": -1.14034608686476,
+      "pvalue_R": 0.254142144388148,
+      "padj_R": 0.467497608688996,
+      "significant_R": false,
+      "log2fc_Python": -0.38394739280069007,
+      "lfc_se_Python": 0.3840363728611802,
+      "stat_Python": -0.9997683030390399,
+      "pvalue_Python": 0.31742264861576985,
+      "padj_Python": 0.5548533758710177,
+      "baseMean_Python": 8148.137859712894,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 5.271390110528351e-07,
+      "abs_se_difference": 0.047343091686083194,
+      "abs_p_difference": 0.06328050422762188
+    },
+    {
+      "gene_id": "ENSG00000105401",
+      "baseMean_R": 7073.6506658374,
+      "log2fc_R": 0.349812997305316,
+      "lfc_se_R": 0.337661211951382,
+      "stat_R": 1.03598809968047,
+      "pvalue_R": 0.300207694371315,
+      "padj_R": 0.520817880033879,
+      "significant_R": false,
+      "log2fc_Python": 0.3498114959875187,
+      "lfc_se_Python": 0.3847869497439754,
+      "stat_Python": 0.9091043659881702,
+      "pvalue_Python": 0.36329503821403897,
+      "padj_Python": 0.5986397454173598,
+      "baseMean_Python": 7073.650665837397,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 1.5013177973033365e-06,
+      "abs_se_difference": 0.047125737792593436,
+      "abs_p_difference": 0.06308734384272396
+    },
+    {
+      "gene_id": "ENSG00000076924",
+      "baseMean_R": 3076.80057062224,
+      "log2fc_R": -0.328380513335212,
+      "lfc_se_R": 0.340253663952832,
+      "stat_R": -0.965105002897881,
+      "pvalue_R": 0.334492221391357,
+      "padj_R": 0.556435396267499,
+      "significant_R": false,
+      "log2fc_Python": -0.32838030299726273,
+      "lfc_se_Python": 0.38814148173007684,
+      "stat_Python": -0.8460324867457133,
+      "pvalue_Python": 0.39753462150302377,
+      "padj_Python": 0.6323572105525906,
+      "baseMean_Python": 3076.8005706222407,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 2.1033794928015936e-07,
+      "abs_se_difference": 0.04788781777724482,
+      "abs_p_difference": 0.06304240011166679
+    },
+    {
+      "gene_id": "ENSG00000105402",
+      "baseMean_R": 3071.87611908568,
+      "log2fc_R": -0.344809061171388,
+      "lfc_se_R": 0.341016997530474,
+      "stat_R": -1.01111986695201,
+      "pvalue_R": 0.311959062750587,
+      "padj_R": 0.531800761076886,
+      "significant_R": false,
+      "log2fc_Python": -0.3448073647856929,
+      "lfc_se_Python": 0.3885884178451623,
+      "stat_Python": -0.8873330983402742,
+      "pvalue_Python": 0.37489959083924185,
+      "padj_Python": 0.6098237178656559,
+      "baseMean_Python": 3071.8761190856835,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 1.6963856950824585e-06,
+      "abs_se_difference": 0.047571420314688306,
+      "abs_p_difference": 0.06294052808865486
+    },
+    {
+      "gene_id": "ENSG00000227057",
+      "baseMean_R": 1939.06768301875,
+      "log2fc_R": 0.375832321749713,
+      "lfc_se_R": 0.344965933957477,
+      "stat_R": 1.08947662581674,
+      "pvalue_R": 0.275943756957313,
+      "padj_R": 0.494462232072939,
+      "significant_R": false,
+      "log2fc_Python": 0.3758269312473322,
+      "lfc_se_Python": 0.3927814411280172,
+      "stat_Python": 0.9568347480166224,
+      "pvalue_Python": 0.33865067055267006,
+      "padj_Python": 0.5758471787443242,
+      "baseMean_Python": 1939.067683018752,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 5.390502380797635e-06,
+      "abs_se_difference": 0.04781550717054023,
+      "abs_p_difference": 0.06270691359535707
+    },
+    {
+      "gene_id": "ENSG00000205937",
+      "baseMean_R": 5609.92441311914,
+      "log2fc_R": 0.388164947062963,
+      "lfc_se_R": 0.338627014202653,
+      "stat_R": 1.14629055209004,
+      "pvalue_R": 0.251674950857591,
+      "padj_R": 0.464496379025468,
+      "significant_R": false,
+      "log2fc_Python": 0.38816849743251075,
+      "lfc_se_Python": 0.3857216984046157,
+      "stat_Python": 1.0063434311266783,
+      "pvalue_Python": 0.31425039523502607,
+      "padj_Python": 0.551395981891818,
+      "baseMean_Python": 5609.924413119142,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 3.5503695477445696e-06,
+      "abs_se_difference": 0.04709468420196267,
+      "abs_p_difference": 0.06257544437743506
+    },
+    {
+      "gene_id": "ENSG00000105552",
+      "baseMean_R": 2335.92299645948,
+      "log2fc_R": -0.386332546897119,
+      "lfc_se_R": 0.343437662253129,
+      "stat_R": -1.12489860419669,
+      "pvalue_R": 0.260632003529658,
+      "padj_R": 0.474610273712882,
+      "significant_R": false,
+      "log2fc_Python": -0.38634021530948887,
+      "lfc_se_Python": 0.3910207486494803,
+      "stat_Python": -0.9880299616934468,
+      "pvalue_Python": 0.3231379747212153,
+      "padj_Python": 0.560055702678601,
+      "baseMean_Python": 2335.922996459483,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 7.668412369876698e-06,
+      "abs_se_difference": 0.04758308639635128,
+      "abs_p_difference": 0.06250597119155732
+    },
+    {
+      "gene_id": "ENSG00000123575",
+      "baseMean_R": 5154.6337853313,
+      "log2fc_R": -0.414421199374074,
+      "lfc_se_R": 0.337649963362359,
+      "stat_R": -1.22736930058341,
+      "pvalue_R": 0.219683819449925,
+      "padj_R": 0.424467862371427,
+      "significant_R": false,
+      "log2fc_Python": -0.4144216209762125,
+      "lfc_se_Python": 0.38528458833773266,
+      "stat_Python": -1.0756247031945616,
+      "pvalue_Python": 0.2820951347718803,
+      "padj_Python": 0.5142314865305081,
+      "baseMean_Python": 5154.6337853313,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 4.216021384784163e-07,
+      "abs_se_difference": 0.047634624975373685,
+      "abs_p_difference": 0.06241131532195532
+    },
+    {
+      "gene_id": "ENSG00000158019",
+      "baseMean_R": 3830.65678621364,
+      "log2fc_R": -0.388458519784496,
+      "lfc_se_R": 0.34047576902434,
+      "stat_R": -1.14092853332163,
+      "pvalue_R": 0.253899664401738,
+      "padj_R": 0.467275098074227,
+      "significant_R": false,
+      "log2fc_Python": -0.3884561150489602,
+      "lfc_se_Python": 0.3876296735136046,
+      "stat_Python": -1.0021320388809878,
+      "pvalue_Python": 0.3162798257762649,
+      "padj_Python": 0.553828107820732,
+      "baseMean_Python": 3830.6567862136367,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 2.4047355358103317e-06,
+      "abs_se_difference": 0.0471539044892646,
+      "abs_p_difference": 0.0623801613745269
+    },
+    {
+      "gene_id": "ENSG00000015676",
+      "baseMean_R": 6761.48278496691,
+      "log2fc_R": 0.407536157482465,
+      "lfc_se_R": 0.337543174091979,
+      "stat_R": 1.2073600912795,
+      "pvalue_R": 0.227293497909903,
+      "padj_R": 0.434306273486518,
+      "significant_R": false,
+      "log2fc_Python": 0.40753426039445606,
+      "lfc_se_Python": 0.38478712526693165,
+      "stat_Python": 1.0591161544496699,
+      "pvalue_Python": 0.2895468837363563,
+      "padj_Python": 0.5231975865096794,
+      "baseMean_Python": 6761.482784966912,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 1.8970880089619335e-06,
+      "abs_se_difference": 0.04724395117495267,
+      "abs_p_difference": 0.06225338582645329
+    }
+  ]
+}

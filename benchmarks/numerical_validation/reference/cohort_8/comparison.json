@@ -1,0 +1,785 @@
+{
+  "purpose": "Independent implementation comparison, without declaring either implementation biological ground truth or changing tolerances after results",
+  "reference_results_sha256": "c3f6a8038ff0d92c3149d877debd9769aa0e0961a4655b0f8e0f0cf86f7b5caf",
+  "python_results_sha256": "7d92b95a2d420540cf88ec9b0d6e953f74a84d214347064be752a654e927b72a",
+  "reference_metadata": {
+    "schema": "bindsight-r-deseq2-reference/1",
+    "purpose": "Independent implementation comparison; not biological ground truth",
+    "started_at": "2026-09-29 01:26:04 UTC",
+    "elapsed_seconds": 16.6871719360352,
+    "R": "R version 4.6.1 (2026-06-24 ucrt)",
+    "DESeq2": "1.52.0",
+    "Bioconductor": "3.23.1",
+    "inputs_md5": {
+      "benchmarks/numerical_validation/cohort_8/counts.tsv.gz": "03a8b8937b927b02df1cec7c7e887a1c",
+      "benchmarks/numerical_validation/cohort_8/design.tsv": "359dfe1637aa4d6418d68b88638bc127"
+    },
+    "settings": {
+      "design": "~ case_barcode + condition",
+      "contrast": [
+        "condition",
+        "tumor",
+        "normal"
+      ],
+      "low_count_filter": "count >= 10 in >= 3 samples",
+      "test": "Wald",
+      "fit_type_requested": "parametric",
+      "size_factor_type": "ratio",
+      "beta_prior": false,
+      "min_replicates_for_replace": 7,
+      "use_t": false,
+      "min_mu": 0.5,
+      "alpha": 0.05,
+      "independent_filtering": true,
+      "cooks_cutoff": "DESeq2 default",
+      "parallel": false,
+      "workers": 1,
+      "significance": "padj < .05 AND abs(log2FoldChange) >= 1"
+    },
+    "n_input_genes": 19944,
+    "n_tested_genes": 16485,
+    "n_samples": 16,
+    "design_rank": 9,
+    "residual_df": 7,
+    "sample_order": [
+      "N01",
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06",
+      "N07",
+      "N08",
+      "T01",
+      "T02",
+      "T03",
+      "T04",
+      "T05",
+      "T06",
+      "T07",
+      "T08"
+    ],
+    "result_names": [
+      "Intercept",
+      "case_barcode_TCGA.A3.3387_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.4700_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.4712_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.5402_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.5690_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.5691_vs_TCGA.A3.3358",
+      "case_barcode_TCGA.B0.5694_vs_TCGA.A3.3358",
+      "condition_tumor_vs_normal"
+    ],
+    "n_significant": 4923,
+    "n_missing_p": 0,
+    "n_missing_padj": 0,
+    "beta_not_converged": 0,
+    "dispersion_function": {
+      "coefficients": [
+        0.153825597425356,
+        14.5834339526137
+      ],
+      "fitType": "parametric",
+      "varLogDispEsts": 1.57977607094645,
+      "dispPriorVar": 1.24941831484621
+    },
+    "independent_filter_metadata": {
+      "filterThreshold": 2.81394562375466,
+      "filterTheta": 0,
+      "filterNumRej": [
+        {
+          "theta": 0,
+          "numRej": 8653,
+          "_row": "0%"
+        },
+        {
+          "theta": 0.0193877551020408,
+          "numRej": 8523,
+          "_row": "1.938776%"
+        },
+        {
+          "theta": 0.0387755102040816,
+          "numRej": 8407,
+          "_row": "3.877551%"
+        },
+        {
+          "theta": 0.0581632653061225,
+          "numRej": 8270,
+          "_row": "5.816327%"
+        },
+        {
+          "theta": 0.0775510204081633,
+          "numRej": 8118,
+          "_row": "7.755102%"
+        },
+        {
+          "theta": 0.0969387755102041,
+          "numRej": 7959,
+          "_row": "9.693878%"
+        },
+        {
+          "theta": 0.116326530612245,
+          "numRej": 7793,
+          "_row": "11.63265%"
+        },
+        {
+          "theta": 0.135714285714286,
+          "numRej": 7586,
+          "_row": "13.57143%"
+        },
+        {
+          "theta": 0.155102040816327,
+          "numRej": 7381,
+          "_row": "15.5102%"
+        },
+        {
+          "theta": 0.174489795918367,
+          "numRej": 7189,
+          "_row": "17.44898%"
+        },
+        {
+          "theta": 0.193877551020408,
+          "numRej": 6987,
+          "_row": "19.38776%"
+        },
+        {
+          "theta": 0.213265306122449,
+          "numRej": 6782,
+          "_row": "21.32653%"
+        },
+        {
+          "theta": 0.23265306122449,
+          "numRej": 6595,
+          "_row": "23.26531%"
+        },
+        {
+          "theta": 0.252040816326531,
+          "numRej": 6420,
+          "_row": "25.20408%"
+        },
+        {
+          "theta": 0.271428571428571,
+          "numRej": 6231,
+          "_row": "27.14286%"
+        },
+        {
+          "theta": 0.290816326530612,
+          "numRej": 6056,
+          "_row": "29.08163%"
+        },
+        {
+          "theta": 0.310204081632653,
+          "numRej": 5889,
+          "_row": "31.02041%"
+        },
+        {
+          "theta": 0.329591836734694,
+          "numRej": 5704,
+          "_row": "32.95918%"
+        },
+        {
+          "theta": 0.348979591836735,
+          "numRej": 5520,
+          "_row": "34.89796%"
+        },
+        {
+          "theta": 0.368367346938775,
+          "numRej": 5358,
+          "_row": "36.83673%"
+        },
+        {
+          "theta": 0.387755102040816,
+          "numRej": 5195,
+          "_row": "38.77551%"
+        },
+        {
+          "theta": 0.407142857142857,
+          "numRej": 5032,
+          "_row": "40.71429%"
+        },
+        {
+          "theta": 0.426530612244898,
+          "numRej": 4873,
+          "_row": "42.65306%"
+        },
+        {
+          "theta": 0.445918367346939,
+          "numRej": 4719,
+          "_row": "44.59184%"
+        },
+        {
+          "theta": 0.46530612244898,
+          "numRej": 4550,
+          "_row": "46.53061%"
+        },
+        {
+          "theta": 0.48469387755102,
+          "numRej": 4392,
+          "_row": "48.46939%"
+        },
+        {
+          "theta": 0.504081632653061,
+          "numRej": 4228,
+          "_row": "50.40816%"
+        },
+        {
+          "theta": 0.523469387755102,
+          "numRej": 4090,
+          "_row": "52.34694%"
+        },
+        {
+          "theta": 0.542857142857143,
+          "numRej": 3919,
+          "_row": "54.28571%"
+        },
+        {
+          "theta": 0.562244897959184,
+          "numRej": 3749,
+          "_row": "56.22449%"
+        },
+        {
+          "theta": 0.581632653061224,
+          "numRej": 3584,
+          "_row": "58.16327%"
+        },
+        {
+          "theta": 0.601020408163265,
+          "numRej": 3430,
+          "_row": "60.10204%"
+        },
+        {
+          "theta": 0.620408163265306,
+          "numRej": 3301,
+          "_row": "62.04082%"
+        },
+        {
+          "theta": 0.639795918367347,
+          "numRej": 3158,
+          "_row": "63.97959%"
+        },
+        {
+          "theta": 0.659183673469388,
+          "numRej": 3000,
+          "_row": "65.91837%"
+        },
+        {
+          "theta": 0.678571428571429,
+          "numRej": 2840,
+          "_row": "67.85714%"
+        },
+        {
+          "theta": 0.697959183673469,
+          "numRej": 2684,
+          "_row": "69.79592%"
+        },
+        {
+          "theta": 0.71734693877551,
+          "numRej": 2531,
+          "_row": "71.73469%"
+        },
+        {
+          "theta": 0.736734693877551,
+          "numRej": 2365,
+          "_row": "73.67347%"
+        },
+        {
+          "theta": 0.756122448979592,
+          "numRej": 2222,
+          "_row": "75.61224%"
+        },
+        {
+          "theta": 0.775510204081633,
+          "numRej": 2076,
+          "_row": "77.55102%"
+        },
+        {
+          "theta": 0.794897959183673,
+          "numRej": 1918,
+          "_row": "79.4898%"
+        },
+        {
+          "theta": 0.814285714285714,
+          "numRej": 1755,
+          "_row": "81.42857%"
+        },
+        {
+          "theta": 0.833673469387755,
+          "numRej": 1584,
+          "_row": "83.36735%"
+        },
+        {
+          "theta": 0.853061224489796,
+          "numRej": 1397,
+          "_row": "85.30612%"
+        },
+        {
+          "theta": 0.872448979591837,
+          "numRej": 1242,
+          "_row": "87.2449%"
+        },
+        {
+          "theta": 0.891836734693878,
+          "numRej": 1060,
+          "_row": "89.18367%"
+        },
+        {
+          "theta": 0.911224489795918,
+          "numRej": 887,
+          "_row": "91.12245%"
+        },
+        {
+          "theta": 0.930612244897959,
+          "numRej": 698,
+          "_row": "93.06122%"
+        },
+        {
+          "theta": 0.95,
+          "numRej": 521,
+          "_row": "95%"
+        }
+      ],
+      "lo.fit": {
+        "x": [
+          0,
+          0.0193877551020408,
+          0.0387755102040816,
+          0.0581632653061225,
+          0.0775510204081633,
+          0.0969387755102041,
+          0.116326530612245,
+          0.135714285714286,
+          0.155102040816327,
+          0.174489795918367,
+          0.193877551020408,
+          0.213265306122449,
+          0.23265306122449,
+          0.252040816326531,
+          0.271428571428571,
+          0.290816326530612,
+          0.310204081632653,
+          0.329591836734694,
+          0.348979591836735,
+          0.368367346938775,
+          0.387755102040816,
+          0.407142857142857,
+          0.426530612244898,
+          0.445918367346939,
+          0.46530612244898,
+          0.48469387755102,
+          0.504081632653061,
+          0.523469387755102,
+          0.542857142857143,
+          0.562244897959184,
+          0.581632653061224,
+          0.601020408163265,
+          0.620408163265306,
+          0.639795918367347,
+          0.659183673469388,
+          0.678571428571429,
+          0.697959183673469,
+          0.71734693877551,
+          0.736734693877551,
+          0.756122448979592,
+          0.775510204081633,
+          0.794897959183673,
+          0.814285714285714,
+          0.833673469387755,
+          0.853061224489796,
+          0.872448979591837,
+          0.891836734693878,
+          0.911224489795918,
+          0.930612244897959,
+          0.95
+        ],
+        "y": [
+          8678.36773762254,
+          8531.30800237897,
+          8381.4044574926,
+          8228.94530637537,
+          8075.51524264332,
+          7911.51349745559,
+          7748.03429991953,
+          7573.71793299092,
+          7383.51350065797,
+          7186.14565337427,
+          6990.42658076518,
+          6797.66923928508,
+          6607.95059211283,
+          6421.85144375724,
+          6239.43506908125,
+          6059.93712892739,
+          5882.62612172652,
+          5707.84218721412,
+          5535.78986423625,
+          5366.19990440904,
+          5199.38492989524,
+          5035.64475474128,
+          4874.03972534473,
+          4713.35356142015,
+          4553.86761507268,
+          4394.78119938712,
+          4234.87035412814,
+          4074.193565965,
+          3914.38381254403,
+          3757.12360942931,
+          3602.08824342709,
+          3448.32451161909,
+          3295.77031369913,
+          3144.67246204848,
+          2993.60341285809,
+          2840.32750353886,
+          2685.28414707322,
+          2530.28489693167,
+          2376.02691178749,
+          2221.40393755515,
+          2064.73526258218,
+          1905.10550288384,
+          1742.4933784752,
+          1576.13425309492,
+          1405.85670649373,
+          1232.09684038782,
+          1055.66980291928,
+          879.222166479267,
+          702.588032881725,
+          525.622108869733
+        ]
+      },
+      "alpha": 0.05,
+      "lfcThreshold": 0
+    },
+    "warnings": [],
+    "library_paths": [
+      "${R_REFERENCE_ROOT}/library",
+      "${R_REFERENCE_ROOT}/runtime/app/library"
+    ],
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "same_tested_gene_set": true,
+  "n_shared_genes": 16485,
+  "numeric": {
+    "baseMean": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 5.684341886080801e-13,
+      "absolute_difference_p95": 7.275957614183426e-12,
+      "absolute_difference_p99": 4.3655745685100555e-11,
+      "absolute_difference_max": 3.026798367500305e-09,
+      "pearson_correlation": 1.0
+    },
+    "log2fc": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 3.353533874483894e-07,
+      "absolute_difference_p95": 0.00026926312323329846,
+      "absolute_difference_p99": 0.004247640052527432,
+      "absolute_difference_max": 0.14646175291549524,
+      "pearson_correlation": 0.9999986553825521
+    },
+    "lfc_se": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 6.362160803308203e-05,
+      "absolute_difference_p95": 0.0009154178042557683,
+      "absolute_difference_p99": 0.021112294185395872,
+      "absolute_difference_max": 0.3658880919320576,
+      "pearson_correlation": 0.9990467562026205
+    },
+    "stat": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.0005258908493637193,
+      "absolute_difference_p95": 0.005195607803648982,
+      "absolute_difference_p99": 0.08920322042338558,
+      "absolute_difference_max": 3.88546360944342,
+      "pearson_correlation": 0.9998810178671751
+    },
+    "pvalue": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 1.3079463071788422e-05,
+      "absolute_difference_p95": 0.00040367703647153355,
+      "absolute_difference_p99": 0.0008578758065615399,
+      "absolute_difference_max": 0.07125851207217584,
+      "pearson_correlation": 0.9999930542126282
+    },
+    "padj": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 2.3584579661856814e-05,
+      "absolute_difference_p95": 0.0005010457915471215,
+      "absolute_difference_p99": 0.0010244321671284311,
+      "absolute_difference_max": 0.08733354157684639,
+      "pearson_correlation": 0.9999917870615495
+    },
+    "minus_log10_pvalue": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.000630288567192494,
+      "absolute_difference_p95": 0.013488861162222312,
+      "absolute_difference_p99": 0.17562066518661038,
+      "absolute_difference_max": 17.383072938979254,
+      "pearson_correlation": 0.9989193976043994,
+      "R_zero_underflow": 0,
+      "Python_zero_underflow": 0
+    },
+    "minus_log10_padj": {
+      "n_shared_finite": 16485,
+      "missing_in_R_only": 0,
+      "missing_in_Python_only": 0,
+      "infinite_in_R": 0,
+      "infinite_in_Python": 0,
+      "absolute_difference_median": 0.0005251635565497459,
+      "absolute_difference_p95": 0.01140894040430814,
+      "absolute_difference_p99": 0.1572943885158831,
+      "absolute_difference_max": 16.65703209129806,
+      "pearson_correlation": 0.9988563264193999,
+      "R_zero_underflow": 0,
+      "Python_zero_underflow": 0
+    }
+  },
+  "significance": {
+    "R": 4923,
+    "Python": 4924,
+    "both": 4922,
+    "R_only": 1,
+    "Python_only": 2,
+    "neither": 11560
+  },
+  "largest_p_differences": [
+    {
+      "gene_id": "ENSG00000139800",
+      "baseMean_R": 9.71036499884106,
+      "log2fc_R": 3.05379269602591,
+      "lfc_se_R": 2.30606505859963,
+      "stat_R": 1.32424394734134,
+      "pvalue_R": 0.185422039660423,
+      "padj_R": 0.263121487802538,
+      "significant_R": false,
+      "log2fc_Python": 3.200254448941405,
+      "lfc_se_Python": 2.025794664053285,
+      "stat_Python": 1.579752630278045,
+      "pvalue_Python": 0.11416352758824716,
+      "padj_Python": 0.17578794622569163,
+      "baseMean_Python": 9.710364998841056,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.14646175291549524,
+      "abs_se_difference": 0.2802703945463447,
+      "abs_p_difference": 0.07125851207217584
+    },
+    {
+      "gene_id": "ENSG00000214978",
+      "baseMean_R": 10.3241335050157,
+      "log2fc_R": 3.11559753277247,
+      "lfc_se_R": 2.47698317529329,
+      "stat_R": 1.25781941671992,
+      "pvalue_R": 0.20845707193868,
+      "padj_R": 0.289782888099514,
+      "significant_R": false,
+      "log2fc_Python": 3.21542594654857,
+      "lfc_se_Python": 2.2281570581014765,
+      "stat_Python": 1.4430876561674273,
+      "pvalue_Python": 0.14899578012981848,
+      "padj_Python": 0.22006947723681192,
+      "baseMean_Python": 10.324133505015698,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.09982841377610008,
+      "abs_se_difference": 0.24882611719181336,
+      "abs_p_difference": 0.059461291808861505
+    },
+    {
+      "gene_id": "ENSG00000114771",
+      "baseMean_R": 3.01250603624083,
+      "log2fc_R": 2.53594710287722,
+      "lfc_se_R": 2.47398198497884,
+      "stat_R": 1.02504671346623,
+      "pvalue_R": 0.305341146658941,
+      "padj_R": 0.395657035267461,
+      "significant_R": false,
+      "log2fc_Python": 2.551657870061195,
+      "lfc_se_Python": 2.235714335840945,
+      "stat_Python": 1.1413165936073897,
+      "pvalue_Python": 0.2537381993049992,
+      "padj_Python": 0.34008453015046874,
+      "baseMean_Python": 3.01250603624083,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.01571076718397535,
+      "abs_se_difference": 0.238267649137895,
+      "abs_p_difference": 0.05160294735394183
+    },
+    {
+      "gene_id": "ENSG00000099715",
+      "baseMean_R": 12.4905947675923,
+      "log2fc_R": -1.42947389957287,
+      "lfc_se_R": 1.04318408628722,
+      "stat_R": -1.37029879803908,
+      "pvalue_R": 0.170593648119498,
+      "padj_R": 0.245738927756896,
+      "significant_R": false,
+      "log2fc_Python": -1.4750283109271511,
+      "lfc_se_Python": 0.9937529141788033,
+      "stat_Python": -1.484300865820408,
+      "pvalue_Python": 0.1377291207283206,
+      "padj_Python": 0.2060959656679614,
+      "baseMean_Python": 12.490594767592285,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.04555441135428118,
+      "abs_se_difference": 0.04943117210841663,
+      "abs_p_difference": 0.0328645273911774
+    },
+    {
+      "gene_id": "ENSG00000198033",
+      "baseMean_R": 10.9560774906764,
+      "log2fc_R": 1.99236022871067,
+      "lfc_se_R": 2.99584136451291,
+      "stat_R": 0.665041965275958,
+      "pvalue_R": 0.506023652232422,
+      "padj_R": 0.597207897125679,
+      "significant_R": false,
+      "log2fc_Python": 1.9923202285369552,
+      "lfc_se_Python": 3.2071568032992124,
+      "stat_Python": 0.6212107329730336,
+      "pvalue_Python": 0.5344609784829939,
+      "padj_Python": 0.6223925706620623,
+      "baseMean_Python": 10.956077490676407,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 4.000017371486031e-05,
+      "abs_se_difference": 0.21131543878630232,
+      "abs_p_difference": 0.028437326250571937
+    },
+    {
+      "gene_id": "ENSG00000165794",
+      "baseMean_R": 4.47144773478546,
+      "log2fc_R": 0.318267113041874,
+      "lfc_se_R": 0.959581444198701,
+      "stat_R": 0.331672850664222,
+      "pvalue_R": 0.740136303310445,
+      "padj_R": 0.801704905714744,
+      "significant_R": false,
+      "log2fc_Python": 0.34567496314639146,
+      "lfc_se_Python": 0.9472546173860567,
+      "stat_Python": 0.36492296453542705,
+      "pvalue_Python": 0.7151689114875521,
+      "padj_Python": 0.780713827287749,
+      "baseMean_Python": 4.471447734785462,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.02740785010451746,
+      "abs_se_difference": 0.012326826812644298,
+      "abs_p_difference": 0.02496739182289287
+    },
+    {
+      "gene_id": "ENSG00000154620",
+      "baseMean_R": 48.072278724299,
+      "log2fc_R": -0.604504930963867,
+      "lfc_se_R": 0.621980554126223,
+      "stat_R": -0.971903264424552,
+      "pvalue_R": 0.331098675633115,
+      "padj_R": 0.423803219800597,
+      "significant_R": false,
+      "log2fc_Python": -0.6217177216444003,
+      "lfc_se_Python": 0.6114463240789693,
+      "stat_Python": -1.0167985269694817,
+      "pvalue_Python": 0.30924928302081567,
+      "padj_Python": 0.39990386182916116,
+      "baseMean_Python": 48.07227872429894,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.017212790680533274,
+      "abs_se_difference": 0.010534230047253734,
+      "abs_p_difference": 0.021849392612299345
+    },
+    {
+      "gene_id": "ENSG00000205420",
+      "baseMean_R": 38.4537784251154,
+      "log2fc_R": 4.30817318450626,
+      "lfc_se_R": 2.98124408480157,
+      "stat_R": 1.44509240503634,
+      "pvalue_R": 0.148431932023406,
+      "padj_R": 0.219374251336368,
+      "significant_R": false,
+      "log2fc_Python": 4.308159486814724,
+      "lfc_se_Python": 3.1251363551161684,
+      "stat_Python": 1.378550884591588,
+      "pvalue_Python": 0.16803326876848956,
+      "padj_Python": 0.24251693535707847,
+      "baseMean_Python": 38.453778425115416,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 1.3697691535696777e-05,
+      "abs_se_difference": 0.1438922703145984,
+      "abs_p_difference": 0.019601336745083575
+    },
+    {
+      "gene_id": "ENSG00000114638",
+      "baseMean_R": 821.920517624051,
+      "log2fc_R": -2.32590765602225,
+      "lfc_se_R": 0.930191684891008,
+      "stat_R": -2.5004605973174,
+      "pvalue_R": 0.012403192968751,
+      "padj_R": 0.0261299215450301,
+      "significant_R": true,
+      "log2fc_Python": -2.334131735074663,
+      "lfc_se_Python": 1.0489776236085686,
+      "stat_Python": -2.225149214379864,
+      "pvalue_Python": 0.02607122284421071,
+      "padj_Python": 0.04968028072902711,
+      "baseMean_Python": 821.9205176240504,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": true,
+      "abs_lfc_difference": 0.008224079052413291,
+      "abs_se_difference": 0.1187859387175606,
+      "abs_p_difference": 0.01366802987545971
+    },
+    {
+      "gene_id": "ENSG00000087128",
+      "baseMean_R": 3.97717370031301,
+      "log2fc_R": -1.05811880489427,
+      "lfc_se_R": 1.23593750135586,
+      "stat_R": -0.856126465726208,
+      "pvalue_R": 0.391927831043777,
+      "padj_R": 0.486040043237543,
+      "significant_R": false,
+      "log2fc_Python": -1.0730171745790114,
+      "lfc_se_Python": 1.2182506110558158,
+      "stat_Python": -0.8807852545619201,
+      "pvalue_Python": 0.3784340622030933,
+      "padj_Python": 0.47239781276828663,
+      "baseMean_Python": 3.9771737003130045,
+      "contrast_Python": "condition__tumor_vs_normal",
+      "significant_Python": false,
+      "abs_lfc_difference": 0.014898369684741342,
+      "abs_se_difference": 0.017686890300044222,
+      "abs_p_difference": 0.013493768840683706
+    }
+  ]
+}

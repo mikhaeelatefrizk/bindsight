@@ -1,0 +1,159 @@
+"Package","LibPath","Version","Priority","Depends","Imports","LinkingTo","Suggests","Enhances","License","License_is_FOSS","License_restricts_use","OS_type","MD5sum","NeedsCompilation","Built","Published"
+"BH","${R_REFERENCE_ROOT}/library","1.90.0-1",NA,NA,NA,NA,NA,NA,"BSL-1.0",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:46:54 UTC; windows",NA
+"Biobase","${R_REFERENCE_ROOT}/library","2.72.0",NA,"R (>= 2.10), BiocGenerics (>= 0.27.1), utils","methods",NA,"tools, tkWidgets, ALL, RUnit, golubEsets, BiocStyle, knitr,
+limma",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.0; x86_64-w64-mingw32; 2026-04-29 10:50:27 UTC; windows",NA
+"BiocGenerics","${R_REFERENCE_ROOT}/library","0.58.1",NA,"R (>= 4.0.0), methods, utils, graphics, stats, generics","methods, utils, graphics, stats",NA,"Biobase, S4Vectors, IRanges, S4Arrays, SparseArray,
+DelayedArray, HDF5Array, GenomicRanges, pwalign, Rsamtools,
+AnnotationDbi, affy, affyPLM, DESeq2, flowClust, MSnbase,
+annotate, MultiAssayExperiment, RUnit",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-05-14 10:20:17 UTC; windows",NA
+"BiocManager","${R_REFERENCE_ROOT}/library","1.30.27",NA,NA,"utils",NA,"BiocVersion, BiocStyle, remotes, rmarkdown, testthat, withr,
+curl, knitr",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:59:29 UTC; windows",NA
+"BiocParallel","${R_REFERENCE_ROOT}/library","1.46.0",NA,"methods, R (>= 4.1.0)","stats, utils, futile.logger, parallel, snow, codetools","BH (>= 1.87.0), cpp11","BiocGenerics, tools, foreach, BBmisc, doParallel,
+GenomicRanges, RNAseqData.HNRNPC.bam.chr14,
+TxDb.Hsapiens.UCSC.hg19.knownGene, VariantAnnotation,
+Rsamtools, GenomicAlignments, ShortRead, RUnit, BiocStyle,
+knitr, batchtools, data.table","Rmpi","GPL-2 | GPL-3 | BSL-1.0",NA,NA,NA,NA,"yes","R 4.6.0; x86_64-w64-mingw32; 2026-04-29 15:02:21 UTC; windows",NA
+"BiocVersion","${R_REFERENCE_ROOT}/library","3.23.1",NA,"R (>= 4.4.0)",NA,NA,NA,NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-03-01 08:32:11 UTC; windows",NA
+"DESeq2","${R_REFERENCE_ROOT}/library","1.52.0",NA,"S4Vectors (>= 0.23.18), IRanges, GenomicRanges,
+SummarizedExperiment (>= 1.1.6)","BiocGenerics (>= 0.7.5), Biobase, BiocParallel, matrixStats,
+methods, stats4, locfit, ggplot2 (>= 3.4.0), Rcpp (>= 0.11.0),
+MatrixGenerics","Rcpp, RcppArmadillo","testthat, knitr, rmarkdown, vsn, pheatmap, RColorBrewer,
+apeglm, ashr, tximport, tximeta, tximportData, readr, pbapply,
+airway, glmGamPoi, BiocManager",NA,"LGPL (>= 3)",NA,NA,NA,NA,"yes","R 4.6.0; x86_64-w64-mingw32; 2026-04-29 13:06:15 UTC; windows",NA
+"DelayedArray","${R_REFERENCE_ROOT}/library","0.38.2",NA,"R (>= 4.0.0), methods, stats4, Matrix, BiocGenerics (>=
+0.53.3), MatrixGenerics (>= 1.1.3), S4Vectors (>= 0.47.6),
+IRanges (>= 2.17.3), S4Arrays (>= 1.9.3), SparseArray (>=
+1.7.5)","stats",NA,"BiocParallel, HDF5Array (>= 1.17.12), ZarrArray, genefilter,
+SummarizedExperiment, airway, lobstr, DelayedMatrixStats,
+knitr, rmarkdown, BiocStyle, RUnit",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-05-26 21:59:34 UTC; windows",NA
+"GenomicRanges","${R_REFERENCE_ROOT}/library","1.64.0",NA,"R (>= 4.0.0), methods, stats4, BiocGenerics (>= 0.53.2),
+S4Vectors (>= 0.45.2), IRanges (>= 2.43.6), Seqinfo (>= 0.99.3)","utils, stats",NA,"GenomeInfoDb, Biobase, AnnotationDbi, annotate, Biostrings
+(>= 2.77.2), SummarizedExperiment (>= 1.39.1), Rsamtools,
+GenomicAlignments, BSgenome, GenomicFeatures, UCSC.utils,
+txdbmaker, Gviz, VariantAnnotation, AnnotationHub, DESeq2,
+DEXSeq, edgeR, KEGGgraph, RNAseqData.HNRNPC.bam.chr14,
+pasillaBamSubset, KEGGREST, hgu95av2.db, hgu95av2probe,
+BSgenome.Scerevisiae.UCSC.sacCer2, BSgenome.Hsapiens.UCSC.hg38,
+BSgenome.Mmusculus.UCSC.mm10,
+TxDb.Athaliana.BioMart.plantsmart51,
+TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+TxDb.Hsapiens.UCSC.hg38.knownGene,
+TxDb.Mmusculus.UCSC.mm10.knownGene, RUnit, digest, knitr,
+rmarkdown, BiocStyle",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-04-29 15:12:33 UTC; windows",NA
+"IRanges","${R_REFERENCE_ROOT}/library","2.46.0",NA,"R (>= 4.0.0), methods, utils, stats, BiocGenerics (>= 0.53.2),
+S4Vectors (>= 0.47.6)","stats4","S4Vectors","XVector, GenomicRanges, Rsamtools, GenomicAlignments,
+GenomicFeatures, BSgenome.Celegans.UCSC.ce2, pasillaBamSubset,
+RUnit, BiocStyle",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.0; x86_64-w64-mingw32; 2026-04-29 11:31:00 UTC; windows",NA
+"MatrixGenerics","${R_REFERENCE_ROOT}/library","1.24.0",NA,"matrixStats (>= 1.4.1)","methods",NA,"Matrix, sparseMatrixStats, SparseArray, DelayedArray,
+DelayedMatrixStats, SummarizedExperiment, testthat (>= 2.1.0)",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-04-29 11:26:40 UTC; windows",NA
+"R6","${R_REFERENCE_ROOT}/library","2.6.1",NA,"R (>= 3.6)",NA,NA,"lobstr, testthat (>= 3.0.0)",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:55:57 UTC; windows",NA
+"RColorBrewer","${R_REFERENCE_ROOT}/library","1.1-3",NA,"R (>= 2.0.0)",NA,NA,NA,NA,"Apache License 2.0",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:46:07 UTC; windows",NA
+"Rcpp","${R_REFERENCE_ROOT}/library","1.1.2",NA,"R (>= 3.5.0)","methods, utils",NA,"tinytest, inline, rbenchmark, pkgKitten (>= 0.1.2)",NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:59 UTC; windows",NA
+"RcppArmadillo","${R_REFERENCE_ROOT}/library","15.6.0-1",NA,"R (>= 3.3.0)","Rcpp (>= 1.1.1), stats, utils, methods","Rcpp","tinytest, Matrix (>= 1.3.0), pkgKitten, reticulate, slam",NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 23:57:38 UTC; windows",NA
+"S4Arrays","${R_REFERENCE_ROOT}/library","1.12.1",NA,"R (>= 4.3.0), methods, Matrix, abind, BiocGenerics (>=
+0.45.2), S4Vectors (>= 0.47.6), IRanges","stats","S4Vectors","BiocParallel, SparseArray (>= 0.0.4), DelayedArray,
+HDF5Array, testthat, knitr, rmarkdown, BiocStyle",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-22 15:16:14 UTC; windows",NA
+"S4Vectors","${R_REFERENCE_ROOT}/library","0.50.3",NA,"R (>= 4.1.0), methods, utils, stats, stats4, BiocGenerics (>=
+0.53.2)",NA,NA,"IRanges, GenomicRanges, SummarizedExperiment, Matrix,
+DelayedArray, ShortRead, graph, data.table, RUnit, BiocStyle,
+knitr",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-16 00:41:50 UTC; windows",NA
+"S7","${R_REFERENCE_ROOT}/library","0.2.2",NA,"R (>= 3.5.0)","utils",NA,"bench, callr, covr, knitr, methods, rmarkdown, testthat (>=
+3.2.0), tibble",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:59 UTC; windows",NA
+"Seqinfo","${R_REFERENCE_ROOT}/library","1.2.0",NA,"methods, BiocGenerics","stats, S4Vectors (>= 0.47.6), IRanges",NA,"GenomeInfoDb, GenomicRanges, BSgenome, GenomicFeatures,
+TxDb.Hsapiens.UCSC.hg38.knownGene,
+TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+BSgenome.Hsapiens.UCSC.hg38, BSgenome.Celegans.UCSC.ce2, RUnit,
+knitr, rmarkdown, BiocStyle",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-05-04 08:56:19 UTC; windows",NA
+"SparseArray","${R_REFERENCE_ROOT}/library","1.12.3",NA,"R (>= 4.3.0), methods, Matrix, BiocGenerics (>= 0.43.1),
+MatrixGenerics (>= 1.11.1), S4Vectors (>= 0.43.2), S4Arrays (>=
+1.12.1)","utils, stats, matrixStats, IRanges, XVector","S4Vectors, IRanges, XVector","HDF5Array, ExperimentHub, testthat, knitr, rmarkdown,
+BiocStyle",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-23 06:22:52 UTC; windows",NA
+"SummarizedExperiment","${R_REFERENCE_ROOT}/library","1.42.0",NA,"R (>= 4.0.0), methods, MatrixGenerics (>= 1.1.3),
+GenomicRanges (>= 1.61.4), Biobase","utils, stats, tools, Matrix, BiocGenerics (>= 0.51.3),
+S4Vectors (>= 0.33.7), IRanges (>= 2.23.9), Seqinfo, S4Arrays
+(>= 1.1.1), DelayedArray (>= 0.31.12)",NA,"GenomeInfoDb (>= 1.45.5), rhdf5, HDF5Array (>= 1.7.5),
+annotate, AnnotationDbi, GenomicFeatures, SparseArray,
+SingleCellExperiment, TxDb.Hsapiens.UCSC.hg19.knownGene,
+hgu95av2.db, airway (>= 1.15.1), BiocStyle, knitr, rmarkdown,
+RUnit, testthat, digest",NA,"Artistic-2.0",NA,NA,NA,NA,"no","R 4.6.0; ; 2026-04-29 11:30:24 UTC; windows",NA
+"XVector","${R_REFERENCE_ROOT}/library","0.52.0",NA,"R (>= 4.0.0), methods, BiocGenerics (>= 0.37.0), S4Vectors (>=
+0.27.12), IRanges (>= 2.43.8)","methods, utils, stats, tools, BiocGenerics, S4Vectors, IRanges","S4Vectors, IRanges","Biostrings, drosophila2probe, RUnit",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.0; x86_64-w64-mingw32; 2026-04-29 10:56:17 UTC; windows",NA
+"abind","${R_REFERENCE_ROOT}/library","1.4-8",NA,"R (>= 1.5.0)","methods, utils",NA,NA,NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:46:37 UTC; windows",NA
+"cli","${R_REFERENCE_ROOT}/library","3.6.6",NA,"R (>= 3.4)","utils",NA,"callr, covr, crayon, digest, glue (>= 1.6.0), grDevices,
+htmltools, htmlwidgets, knitr, methods, processx, ps (>=
+1.3.4.9000), rlang (>= 1.0.2.9003), rmarkdown, rprojroot,
+rstudioapi, testthat (>= 3.2.0), tibble, whoami, withr",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:55 UTC; windows",NA
+"cpp11","${R_REFERENCE_ROOT}/library","0.5.5",NA,"R (>= 4.0.0)",NA,NA,"bench, brio, callr, cli, covr, decor, desc, ggplot2, glue,
+knitr, lobstr, mockery, progress, rmarkdown, scales, Rcpp,
+testthat (>= 3.2.0), tibble, utils, vctrs, withr",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:55:55 UTC; windows",NA
+"farver","${R_REFERENCE_ROOT}/library","2.1.2",NA,NA,NA,NA,"covr, testthat (>= 3.0.0)",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:56 UTC; windows",NA
+"formatR","${R_REFERENCE_ROOT}/library","1.14",NA,"R (>= 3.2.3)",NA,NA,"rstudioapi, shiny, testit, rmarkdown, knitr",NA,"GPL",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:59:29 UTC; windows",NA
+"futile.logger","${R_REFERENCE_ROOT}/library","1.4.9",NA,"R (>= 3.0.0)","utils, lambda.r (>= 1.1.0), futile.options",NA,"testit, jsonlite, httr, crayon, rsyslog, glue",NA,"LGPL-3",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-16 00:21:27 UTC; windows",NA
+"futile.options","${R_REFERENCE_ROOT}/library","1.0.1",NA,"R (>= 2.8.0)",NA,NA,NA,NA,"LGPL-3",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:54:24 UTC; windows",NA
+"generics","${R_REFERENCE_ROOT}/library","0.1.4",NA,"R (>= 3.6)","methods",NA,"covr, pkgload, testthat (>= 3.0.0), tibble, withr",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:55:54 UTC; windows",NA
+"ggplot2","${R_REFERENCE_ROOT}/library","4.0.3",NA,"R (>= 4.1)","cli, grDevices, grid, gtable (>= 0.3.6), isoband, lifecycle (>
+1.0.1), rlang (>= 1.1.0), S7, scales (>= 1.4.0), stats, vctrs
+(>= 0.6.0), withr (>= 2.5.0)",NA,"broom, covr, dplyr, ggplot2movies, hexbin, Hmisc, hms, knitr,
+mapproj, maps, MASS, mgcv, multcomp, munsell, nlme, profvis,
+quantreg, quarto, ragg (>= 1.2.6), RColorBrewer, roxygen2,
+rpart, sf (>= 0.7-3), svglite (>= 2.1.2), testthat (>= 3.1.5),
+tibble, vdiffr (>= 1.0.6), xml2","sp","MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-16 00:43:21 UTC; windows",NA
+"glue","${R_REFERENCE_ROOT}/library","1.8.1",NA,"R (>= 4.1)","methods",NA,"crayon, DBI (>= 1.2.0), dplyr, knitr, rlang, rmarkdown,
+RSQLite, testthat (>= 3.2.0), vctrs (>= 0.3.0), waldo (>=
+0.5.3), withr",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:54 UTC; windows",NA
+"gtable","${R_REFERENCE_ROOT}/library","0.3.6",NA,"R (>= 4.0)","cli, glue, grid, lifecycle, rlang (>= 1.1.0), stats",NA,"covr, ggplot2, knitr, profvis, rmarkdown, testthat (>= 3.0.0)",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-16 00:19:04 UTC; windows",NA
+"isoband","${R_REFERENCE_ROOT}/library","0.3.0",NA,NA,"cli, grid, rlang, utils","cpp11","covr, ggplot2, knitr, magick, bench, rmarkdown, sf, testthat
+(>= 3.0.0), xml2",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 23:57:35 UTC; windows",NA
+"jsonlite","${R_REFERENCE_ROOT}/library","2.0.0",NA,"methods",NA,NA,"httr, vctrs, testthat, knitr, rmarkdown, R.rsp, sf",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:56:06 UTC; windows",NA
+"labeling","${R_REFERENCE_ROOT}/library","0.4.3",NA,NA,"stats, graphics",NA,NA,NA,"MIT + file LICENSE | Unlimited",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:46:07 UTC; windows",NA
+"lambda.r","${R_REFERENCE_ROOT}/library","1.2.4",NA,"R (>= 3.0.0)","formatR",NA,"testit",NA,"LGPL-3",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 23:58:24 UTC; windows",NA
+"lifecycle","${R_REFERENCE_ROOT}/library","1.0.5",NA,"R (>= 3.6)","cli (>= 3.4.0), rlang (>= 1.1.0)",NA,"covr, knitr, lintr (>= 3.1.0), rmarkdown, testthat (>=
+3.0.1), tibble, tidyverse, tools, vctrs, withr, xml2",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 23:57:35 UTC; windows",NA
+"locfit","${R_REFERENCE_ROOT}/library","1.5-9.12",NA,"R (>= 4.1.0)","lattice",NA,"interp, gam",NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:56:48 UTC; windows",NA
+"matrixStats","${R_REFERENCE_ROOT}/library","1.5.0",NA,"R (>= 3.4.0)",NA,NA,"utils, base64enc, ggplot2, knitr, markdown, microbenchmark,
+R.devices, R.rsp",NA,"Artistic-2.0",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:56:01 UTC; windows",NA
+"rlang","${R_REFERENCE_ROOT}/library","1.3.0",NA,"R (>= 4.0.0)","utils",NA,"cli (>= 3.1.0), covr, crayon, desc, fs, glue, knitr,
+magrittr, methods, pillar, pkgload, rmarkdown, stats, testthat
+(>= 3.3.2), tibble, usethis, vctrs (>= 0.2.3), withr","winch","MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-15 22:55:55 UTC; windows",NA
+"scales","${R_REFERENCE_ROOT}/library","1.4.0",NA,"R (>= 4.1)","cli, farver (>= 2.0.3), glue, labeling, lifecycle, R6,
+RColorBrewer, rlang (>= 1.1.0), viridisLite",NA,"bit64, covr, dichromat, ggplot2, hms (>= 0.5.0), stringi,
+testthat (>= 3.0.0)",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-16 00:19:04 UTC; windows",NA
+"snow","${R_REFERENCE_ROOT}/library","0.4-4",NA,"R (>= 2.13.1), utils",NA,NA,"rlecuyer","Rmpi","GPL",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-08-19 11:46:37 UTC; windows",NA
+"vctrs","${R_REFERENCE_ROOT}/library","0.7.3",NA,"R (>= 4.0.0)","cli (>= 3.4.0), glue, lifecycle (>= 1.0.3), rlang (>= 1.1.7)",NA,"bit64, covr, crayon, dplyr (>= 0.8.5), generics, knitr,
+pillar (>= 1.4.4), pkgdown (>= 2.0.1), rmarkdown, testthat (>=
+3.0.0), tibble (>= 3.1.3), waldo (>= 0.2.0), withr, xml2,
+zeallot",NA,"MIT + file LICENSE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-09-16 00:18:59 UTC; windows",NA
+"viridisLite","${R_REFERENCE_ROOT}/library","0.4.3",NA,"R (>= 2.10)",NA,NA,"hexbin (>= 1.27.0), ggplot2 (>= 1.0.1), testthat, covr",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:55:58 UTC; windows",NA
+"withr","${R_REFERENCE_ROOT}/library","3.0.3",NA,"R (>= 3.6.0)","graphics, grDevices",NA,"callr, DBI, knitr, methods, rlang, rmarkdown (>= 2.12),
+RSQLite, testthat (>= 3.0.0)",NA,"MIT + file LICENSE",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-09-15 22:55:55 UTC; windows",NA
+"KernSmooth","${R_REFERENCE_ROOT}/runtime/app/library","2.23-26","recommended","R (>= 2.5.0), stats",NA,NA,"MASS, carData",NA,"Unlimited",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:32:40 UTC; windows",NA
+"MASS","${R_REFERENCE_ROOT}/runtime/app/library","7.3-65","recommended","R (>= 4.4.0), grDevices, graphics, stats, utils","methods",NA,"lattice, nlme, nnet, survival",NA,"GPL-2 | GPL-3",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:23:25 UTC; windows",NA
+"Matrix","${R_REFERENCE_ROOT}/runtime/app/library","1.7-5","recommended","R (>= 4.4), methods","grDevices, graphics, grid, lattice, stats, utils",NA,"MASS, datasets, sfsmisc, tools","SparseM, graph","GPL (>= 2) | file LICENCE",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:23:58 UTC; windows",NA
+"base","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,"methods","chron, date, round","Part of R 4.6.1",NA,NA,NA,NA,NA,"R 4.6.1; ; 2026-06-24 08:20:51 UTC; windows",NA
+"boot","${R_REFERENCE_ROOT}/runtime/app/library","1.3-32","recommended","R (>= 3.0.0), graphics, stats",NA,NA,"MASS, survival",NA,"Unlimited",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-06-24 08:32:04 UTC; windows",NA
+"class","${R_REFERENCE_ROOT}/runtime/app/library","7.3-23","recommended","R (>= 3.0.0), stats, utils","MASS",NA,NA,NA,"GPL-2 | GPL-3",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:33:04 UTC; windows",NA
+"cluster","${R_REFERENCE_ROOT}/runtime/app/library","2.1.8.2","recommended","R (>= 3.5.0)","graphics, grDevices, stats, utils",NA,"MASS, Matrix","mvoutlier, fpc, ellipse, sfsmisc","GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:32:11 UTC; windows",NA
+"codetools","${R_REFERENCE_ROOT}/runtime/app/library","0.2-20","recommended","R (>= 2.1)",NA,NA,NA,NA,"GPL",NA,NA,NA,NA,"no","R 4.6.1; ; 2026-06-24 08:32:25 UTC; windows",NA
+"compiler","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,NA,"R 4.6.1; ; 2026-06-24 08:14:21 UTC; windows",NA
+"datasets","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,NA,"R 4.6.1; ; 2026-06-24 08:19:02 UTC; windows",NA
+"foreign","${R_REFERENCE_ROOT}/runtime/app/library","0.8-91","recommended","R (>= 4.0.0)","methods, utils, stats",NA,NA,NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:32:28 UTC; windows",NA
+"grDevices","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,"KernSmooth",NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:16:14 UTC; windows",NA
+"graphics","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"grDevices",NA,NA,"vcd","Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:16:56 UTC; windows",NA
+"grid","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"grDevices, utils",NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:19:46 UTC; windows",NA
+"lattice","${R_REFERENCE_ROOT}/runtime/app/library","0.22-9","recommended","R (>= 4.0.0)","grid, grDevices, graphics, stats, utils",NA,"KernSmooth, MASS, latticeExtra, colorspace","chron, zoo","GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:23:40 UTC; windows",NA
+"methods","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"utils, stats",NA,"codetools",NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:19:12 UTC; windows",NA
+"mgcv","${R_REFERENCE_ROOT}/runtime/app/library","1.9-4","recommended","R (>= 4.4.0), nlme (>= 3.1-64)","methods, stats, graphics, Matrix, splines, utils",NA,"parallel, survival, MASS",NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:33:21 UTC; windows",NA
+"nlme","${R_REFERENCE_ROOT}/runtime/app/library","3.1-169","recommended","R (>= 3.6.0)","graphics, stats, utils, lattice",NA,"MASS, SASmixed",NA,"GPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:30:23 UTC; windows",NA
+"nnet","${R_REFERENCE_ROOT}/runtime/app/library","7.3-20","recommended","R (>= 3.0.0), stats, utils",NA,NA,"MASS",NA,"GPL-2 | GPL-3",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:33:09 UTC; windows",NA
+"parallel","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"tools, compiler",NA,"methods","snow, Rmpi, mirai, parallelly","Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:20:30 UTC; windows",NA
+"rpart","${R_REFERENCE_ROOT}/runtime/app/library","4.1.27","recommended","R (>= 2.15.0), graphics, stats, grDevices",NA,NA,"survival",NA,"GPL-2 | GPL-3",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:32:48 UTC; windows",NA
+"spatial","${R_REFERENCE_ROOT}/runtime/app/library","7.3-18","recommended","R (>= 3.0.0), graphics, stats, utils",NA,NA,"MASS",NA,"GPL-2 | GPL-3",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:33:14 UTC; windows",NA
+"splines","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"graphics, stats",NA,"Matrix, methods",NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:20:12 UTC; windows",NA
+"stats","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"utils, grDevices, graphics",NA,"MASS, Matrix, SuppDists, methods, stats4","Kendall, coin, multcomp, pcaPP, pspearman, robustbase","Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:17:23 UTC; windows",NA
+"stats4","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"graphics, methods, stats",NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,NA,"R 4.6.1; ; 2026-06-24 08:20:17 UTC; windows",NA
+"survival","${R_REFERENCE_ROOT}/runtime/app/library","3.8-6","recommended","R (>= 3.5.0)","graphics, Matrix, methods, splines, stats, utils",NA,NA,NA,"LGPL (>= 2)",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:30:55 UTC; windows",NA
+"tcltk","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,"utils",NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:20:20 UTC; windows",NA
+"tools","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,"codetools, methods, xml2, curl, commonmark, knitr, xfun,
+mathjaxr, V8, bibtex",NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:14:19 UTC; windows",NA
+"translations","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1",NA,NA,NA,NA,NA,NA,"Part of R 4.6.1",NA,NA,NA,NA,NA,"R 4.6.1; ; 2026-06-24 08:20:37 UTC; windows",NA
+"utils","${R_REFERENCE_ROOT}/runtime/app/library","4.6.1","base",NA,NA,NA,"methods, xml2, commonmark, knitr, jsonlite",NA,"Part of R 4.6.1",NA,NA,NA,NA,"yes","R 4.6.1; x86_64-w64-mingw32; 2026-06-24 08:15:23 UTC; windows",NA

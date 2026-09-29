@@ -1,4 +1,32 @@
-# What ipTM 0.65 is worth
+# Calibration of computational interface scores
+
+## Current inference: shared backbones are the independent unit
+
+20 sequence pairs come from **10 RFdiffusion backbones**. Each backbone contributes the mean of its paired sequence differences.
+
+Design − shuffle: **-0.043 ipTM**; 95% backbone-cluster bootstrap interval **[-0.137, +0.063]**. Two-sided cluster sign-flip p = **0.43945** over 1,024 assignments. This test assumes independent backbones and symmetric backbone-level differences under the null.
+
+At ipTM 0.65, 30% of designs and 50% of shuffles pass. These are descriptive rates for these sequences, not a measured biological false-positive rate. The shuffles have not been experimentally established as nonbinders.
+
+The data do not establish a positive design advantage, equivalence, or an absence of binding. Neither passing this threshold nor failing the control proves whether an individual sequence binds. The threshold-crossing rate remains withdrawn as a measure of design quality.
+
+This CPU reanalysis uses recorded scores. It is not a new folding run or an experimental binding measurement. Raw scores and historical calculations remain in RESULTS.json, labelled by inference_revision and historical_inference_note.
+
+### Raw native-versus-decoy comparison
+
+Mean -0.125; 95% backbone-cluster interval [-0.221, -0.012], cluster sign-flip p = 0.05469 over 10 backbones.
+
+This raw comparison is confounded by target-dependent scoring baselines; it does not establish biological specificity. The percentile bootstrap interval and sign-flip test use different constructions and need not agree at a 0.05 boundary, especially with only ten clusters.
+
+### Controlled specificity comparison
+
+The historical summary lacks per-design decoy-shuffle scores. Its controlled confidence interval cannot be recomputed over backbones without the original metrics.
+
+## Historical sequence-pair analysis — superseded for inference
+
+The following original calculations are retained for audit. Their intervals, p-values, independent-control binomial bounds and power estimates assume independent sequences. That assumption is not established for this shared-backbone sample; these values must not be read as current precision or threshold certification. Historical ‘false-positive’ labels below refer to computational scramble passes, not experimentally demonstrated nonbinding.
+
+### What ipTM 0.65 is worth
 
 20 committed ERBB2 designs, each folded in the same job as a shuffle of its own sequence: same length, same amino-acid composition, same target, same validator, same card, same session. Only the residue order differs.
 
@@ -13,7 +41,7 @@ Paired difference (design − scramble): median -0.015, mean -0.043. 9 of 20 des
 
 Exact paired sign-flip test over all 1,048,576 assignments: **p = 0.40420** (floor for 20 pairs: 1.91e-06).
 
-## At the threshold the project ships (0.65)
+#### At the threshold the project ships (0.65)
 
 - designs clearing 0.65: **30%**
 - scrambles clearing 0.65: **50%** — the false-positive rate this threshold carries
@@ -31,14 +59,14 @@ Exact paired sign-flip test over all 1,048,576 assignments: **p = 0.40420** (flo
 
 10 of 20 scrambles clear 0.65. With 20 controls that is an exact 95% upper bound of **72.8%** — not 50%, which is what the count alone would suggest.
 
-## Operating point
+#### Operating point
 
 The lowest threshold whose false-positive **upper bound** clears each target. Judged on the bound rather than the count, so a threshold is never accepted on the strength of a rate this many controls cannot establish.
 
 - **≤25% false positives → threshold 0.73**, keeping 3/20 = 15% of designs (3%–38%); control bound 24.9% over 20 controls. Threshold chosen from 101 candidates, so the design rate is in-sample.
 - **≤5% false positives: not established by this run.** 20 controls cannot certify a rate below 16.8% however cleanly the arms separate; 72 would be needed. This is a limit of the control set's size, not a statement about the designs.
 
-## The metric's own noise
+#### The metric's own noise
 
 Each binder was folded 5 time(s), so every ipTM above is a mean of that many diffusion draws and each carries the spread of its own draws. Pooled across 40 binders, one draw has a standard deviation of **0.139** (range 0.022–0.282 within a single binder), which puts the standard error of each reported mean at **0.062**.
 
@@ -46,7 +74,7 @@ Measured inside one job on one input under one installed version, so unlike the 
 
 The design-versus-scramble effect is 0.043. That is smaller than the spread of a single design's own draws, so the comparison is being made underneath the metric's noise floor.
 
-### Where the spread actually is
+##### Where the spread actually is
 
 Of the 0.230 spread between pairs, **15%** is the validator resampling the same input and **85%** is real variation from one design/scramble pair to the next.
 
@@ -55,7 +83,7 @@ That decides the next experiment, and the two answers look nothing alike. Drawin
 - detecting a 0.10 difference at 80% power needs **36 pairs**, however many draws each gets
 - detecting a 0.05 difference at 80% power needs **142 pairs**, however many draws each gets
 
-## Does the target matter?
+#### Does the target matter?
 
 The same 20 designs folded against an unrelated receptor — NECTIN4's Ig-like V-type domain, 113 residues against the native target's 142, no shared fold or family. Paired per design, so each is its own control.
 
@@ -79,7 +107,7 @@ So the controlled estimate points the expected way and does not clear its own no
 
 The two arms are two jobs, because a spec carries one target. Same sequences, same pinned validator, same seeded derivation, five draws each — so read the difference against the refold drift below, which bounds what moves between runs on its own.
 
-## Refold drift
+#### Refold drift
 
 The same 20 sequences also carry committed ipTM values from an earlier job. Refolding them here gives a bound on how far a number moves between runs — but the earlier job's Boltz-2 version was never recorded (see `PRECISION.md`), so this is run drift and version drift together, not a determinism measurement.
 

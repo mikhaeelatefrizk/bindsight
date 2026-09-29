@@ -14,6 +14,63 @@ from bindsight.rank import rank_run, rank_validated
 from bindsight.rank.scoring import _one_row_per_accession
 
 
+@pytest.mark.parametrize(
+    ("count", "measured"),
+    [(0, False), (None, True), (float("nan"), True), (float("inf"), True), (-1, True)],
+)
+def test_unknown_safety_does_not_become_measured_zero(count, measured) -> None:
+    validated = pd.DataFrame(
+        [
+            {"binder_id": "known", "target_uniprot": "P1", "iptm": 0.8},
+            {"binder_id": "unknown", "target_uniprot": "P2", "iptm": 0.8},
+        ]
+    )
+    candidates = pd.DataFrame(
+        [
+            {
+                "uniprot_id": "P1",
+                "log2fc": 4.0,
+                "n_safety_events": 0,
+                "safety_events_measured": True,
+            },
+            {
+                "uniprot_id": "P2",
+                "log2fc": 4.0,
+                "n_safety_events": count,
+                "safety_events_measured": measured,
+            },
+        ]
+    )
+    ranked = rank_validated(validated, candidates).set_index("binder_id")
+    assert ranked.loc["known", "score_evidence"] == 1.0
+    assert pd.isna(ranked.loc["unknown", "score_evidence"])
+    assert "safety_events_measured" in ranked
+    # Missing evidence is excluded, not replaced with a favourable safety value.
+    assert ranked.loc["unknown", "score"] == ranked.loc["unknown", "score_structure"]
+
+
+def test_safety_provenance_and_gtex_measurement_remain_distinct() -> None:
+    validated = pd.DataFrame([{"binder_id": "candidate", "target_uniprot": "P1", "iptm": 0.8}])
+    candidates = pd.DataFrame(
+        [
+            {
+                "uniprot_id": "P1",
+                "log2fc": 4.0,
+                "n_safety_events": 3,
+                "safety_events_measured": True,
+                "open_targets_status": "ok",
+                "gtex_safety_status": "unsafe",
+                "max_vital_tissue_tpm": 200.0,
+                "normal_tissue_unassessed": False,
+            }
+        ]
+    )
+    row = rank_validated(validated, candidates).iloc[0]
+    assert row["score_evidence"] == 0.25
+    assert row["gtex_safety_status"] == "unsafe"
+    assert row["max_vital_tissue_tpm"] == 200.0
+
+
 def _make_validated() -> pd.DataFrame:
     """Six binders across two targets, with realistic-ish metric values."""
     return pd.DataFrame(

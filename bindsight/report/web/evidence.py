@@ -5,13 +5,43 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
 from bindsight.report.showcase import benchmarks_root, load_designer_benchmark, load_study
 
-EVIDENCE_COMMIT = "b23f1a29fa855089087e854ac2235be9bce12d4b"
 REPOSITORY = "https://github.com/mikhaeelatefrizk/bindsight"
+
+
+def source_revision(root: Path | None) -> str | None:
+    """Identify committed evidence, or mark an unversioned local copy honestly."""
+    if root is None:
+        return None
+    checkout = root.parent
+    if (checkout / ".git").exists():
+        try:
+            changes = subprocess.check_output(
+                ["git", "diff", "HEAD", "--", "benchmarks"], cwd=checkout, timeout=10
+            )
+            if changes:
+                return None
+            revision = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=checkout, text=True, timeout=10
+            ).strip()
+        except (OSError, subprocess.SubprocessError):
+            return None
+    else:
+        try:
+            revision = json.loads((checkout / "SOURCE_REVISION.json").read_text(encoding="utf-8"))[
+                "revision"
+            ]
+        except (OSError, ValueError, KeyError, TypeError):
+            return None
+    return (
+        revision if isinstance(revision, str) and re.fullmatch(r"[0-9a-f]{40}", revision) else None
+    )
 
 
 def evidence_bundle(*, public: bool = False) -> dict[str, Any]:
@@ -68,10 +98,57 @@ def evidence_bundle(*, public: bool = False) -> dict[str, Any]:
     calibration: dict[str, Any] | None = None
     if root and (root / "calibration/RESULTS.json").is_file():
         calibration = json.loads((root / "calibration/RESULTS.json").read_text(encoding="utf-8"))
+    revision = source_revision(root)
+    numerical = []
+    if root:
+        for cohort, label, stage in [
+            ("canonical_three", "3 matched patients · current input ordering", "current"),
+            ("canonical_eight", "8 matched patients · current input ordering", "current"),
+            ("mean_floor_three", "3 matched patients · earlier label-based ordering", "historical"),
+            ("mean_floor_eight", "8 matched patients · earlier label-based ordering", "historical"),
+        ]:
+            relative = f"numerical_validation/results/{cohort}/validation.json"
+            path = root / relative
+            if not path.is_file():
+                continue
+            audit = json.loads(path.read_text(encoding="utf-8"))
+            decision_changes = audit["checks"]["relabel_samples"]["significance_decisions"].get(
+                "changed"
+            )
+            detail = path.with_name("sample_identifier_sensitivity.json")
+            if decision_changes is None and detail.is_file():
+                sensitivity = json.loads(detail.read_text(encoding="utf-8"))
+                for fit in ["forward", "relabel_samples"]:
+                    if (
+                        sensitivity["input_sha256"][fit + ".parquet"]
+                        != audit["fits"][fit]["sha256"]
+                    ):
+                        raise ValueError(
+                            "The sample-identifier detail does not match its recorded fit"
+                        )
+                decision_changes = sensitivity["comparison"]["significance_decisions"]["changed"]
+            numerical.append(
+                {
+                    "label": label,
+                    "stage": stage,
+                    "samples": audit["n_samples"],
+                    "genes_tested": audit["fits"]["forward"]["n_genes_tested"],
+                    "passed": audit["passed"],
+                    "classification_changes": decision_changes,
+                    "failed_checks": [
+                        f"{group}: {name}"
+                        for group, checks in audit["checks"].items()
+                        for name, check in checks.items()
+                        if not check["passed"]
+                    ],
+                    "source": "benchmarks/" + relative,
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                }
+            )
     return {
-        "revision": EVIDENCE_COMMIT,
+        "revision": revision,
         "repository": REPOSITORY,
-        "source": f"{REPOSITORY}/tree/{EVIDENCE_COMMIT}/benchmarks",
+        "source": f"{REPOSITORY}/tree/{revision or 'main'}/benchmarks",
         "study": None
         if study is None
         else {
@@ -89,4 +166,5 @@ def evidence_bundle(*, public: bool = False) -> dict[str, Any]:
             binders, key=lambda b: b["iptm"] if b["iptm"] is not None else -1, reverse=True
         ),
         "calibration": calibration,
+        "numerical_validation": numerical,
     }

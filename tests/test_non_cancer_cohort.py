@@ -90,6 +90,8 @@ def _config(root: Path, out: Path) -> Path:
                 "require_surfy": False,
                 "surfaceome_prefilter": False,
                 "use_open_targets": False,
+                "use_gtex_safety": False,
+                "use_uniprot_topology": False,
                 "require_tractable_modality": [],
                 "require_surface_bind_site": False,
                 "top_n": 3,
@@ -107,15 +109,37 @@ def _config(root: Path, out: Path) -> Path:
 
 @pytest.fixture(scope="module")
 def treatment_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Exercise the mock design chain with local, explicitly artificial reference data."""
     pytest.importorskip("pydeseq2")
     base = tmp_path_factory.mktemp("treatment")
     src = base / "cohort"
     _treatment_cohort(src)
     out = base / "run"
     config = _config(src, out)
+    # This is a CLI vocabulary/workflow test, not a structural benchmark. A live
+    # AlphaFold lookup made it depend on network access and a developer cache.
+    structure = base / "synthetic-unit-test-target.pdb"
+    structure.write_text(
+        "REMARK 999 SYNTHETIC UNIT TEST STRUCTURE; NOT BIOLOGICAL EVIDENCE\n"
+        "ATOM      1  CA  GLY A   1       0.000   0.000   0.000  1.00 80.00           C\n"
+        "ATOM      2  CA  SER A   2       3.800   0.000   0.000  1.00 80.00           C\n"
+        "ATOM      3  CA  HIS A   3       7.600   0.000   0.000  1.00 80.00           C\n"
+        "END\n",
+        encoding="utf-8",
+    )
+    network_attempts = []
+
+    def forbid_network(self, method, url, **kwargs):
+        network_attempts.append(url)
+        raise AssertionError("The artificial non-cancer workflow fixture must remain offline")
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=base):
+    with pytest.MonkeyPatch.context() as patches, runner.isolated_filesystem(temp_dir=base):
+        patches.setattr(
+            "bindsight.structures.alphafolddb.AlphaFoldDBClient.fetch",
+            lambda self, uid: structure,
+        )
+        patches.setattr("requests.sessions.Session.request", forbid_network)
         result = runner.invoke(cli.main, ["discover", str(config), "--out", str(out)])
         assert result.exit_code == 0, result.output
         for name in ("counts.tsv", "design.tsv"):
@@ -129,6 +153,8 @@ def treatment_run(tmp_path_factory: pytest.TempPathFactory) -> Path:
         ):
             result = runner.invoke(cli.main, args)
             assert result.exit_code == 0, f"{args[0]} failed: {result.output}"
+        # A swallowed reference failure would otherwise conceal a network call.
+        assert not network_attempts, network_attempts
     return out
 
 

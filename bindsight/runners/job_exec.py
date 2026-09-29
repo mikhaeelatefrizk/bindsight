@@ -172,15 +172,22 @@ def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
         if not dst.exists():
             _run(["wget", "-q", url, "-O", str(dst)])
         _verify_checkpoint(dst, tools.RFDIFF_WEIGHT_SHA256.get(name))
-    if fresh:
-        # Install RFdiffusion's SE3-Transformer deps so the executor is
-        # self-sufficient on a *bare* GPU (headless Kaggle / a fresh box), not
-        # only inside the prebuilt Docker image. Mirrors the proven Colab
-        # install cell; no-ops when the image already ships an installed tree.
+    python = tools._design_python()
+    needs_install = fresh
+    if not fresh:
+        try:
+            _run([python, "-c", "import rfdiffusion, se3_transformer"])
+        except RuntimeError:
+            needs_install = True
+    if needs_install:
+        # Install the Python packages into the same interpreter that runs
+        # design. CUDA-enabled torch/DGL and the compatible legacy environment
+        # must already exist; this is not a complete GPU environment installer.
         req = rfdiff / "env" / "SE3Transformer" / "requirements.txt"
         if req.exists():
-            _run([sys.executable, "-m", "pip", "install", "-q", "-r", str(req)])
-        _run([sys.executable, "-m", "pip", "install", "-q", "-e", str(rfdiff)])
+            _run([python, "-m", "pip", "install", "-q", "-r", str(req)])
+        _run([python, "-m", "pip", "install", "-q", "--no-deps", str(req.parent)])
+        _run([python, "-m", "pip", "install", "-q", "--no-deps", "-e", str(rfdiff)])
     mpnn = _git_clone(tools.PROTEINMPNN_REPO, tools.PROTEINMPNN_COMMIT, tools_root / "ProteinMPNN")
     return rfdiff, mpnn
 

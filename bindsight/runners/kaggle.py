@@ -148,6 +148,11 @@ class KaggleRunner:
         bindsight_ref: str | None = None,
         bindsight_wheel: Path | str | None = None,
     ) -> None:
+        if gpu_type != kaggle_kernel.KAGGLE_COST_GPU:
+            raise ValueError(
+                f"The bundled Kaggle runner requests a {kaggle_kernel.KAGGLE_COST_GPU}; "
+                f"gpu_type={gpu_type!r} cannot select a different card."
+            )
         self.designer = designer
         self.gpu_type = gpu_type
         self.username = username

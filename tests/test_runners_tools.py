@@ -65,7 +65,7 @@ def test_build_mpnn_cmd() -> None:
 
 def test_build_boltz_cmd_msa_flag() -> None:
     cmd = tools.build_boltz_cmd(yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"))
-    assert cmd[:2] == ["boltz", "predict"]
+    assert cmd[1:4] == ["-m", "bindsight.runners.boltz_compat", "predict"]
     assert "--use_msa_server" in cmd
     no_msa = tools.build_boltz_cmd(
         yaml_path=Path("/w/x.yaml"), out_dir=Path("/w/o"), use_msa_server=False
@@ -76,7 +76,7 @@ def test_build_boltz_cmd_msa_flag() -> None:
 def test_interpreter_overrides_for_split_env_hosts(monkeypatch) -> None:
     """BINDSIGHT_DESIGN_PYTHON / BINDSIGHT_BOLTZ_BIN swap argv[0] (Kaggle split env).
 
-    Defaults stay ``python`` / ``boltz`` so every other backend is unaffected.
+    A custom Boltz executable remains user-managed, including its precision.
     """
     monkeypatch.setenv("BINDSIGHT_DESIGN_PYTHON", "/opt/se3_python.sh")
     monkeypatch.setenv("BINDSIGHT_BOLTZ_BIN", "/opt/mamba/envs/boltz/bin/boltz")

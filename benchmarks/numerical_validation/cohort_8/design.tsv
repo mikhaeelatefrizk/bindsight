@@ -1,0 +1,17 @@
+sample	condition	sample_type	case_barcode	sample_barcode	gdc_file_id
+T01	tumor	Primary Tumor	TCGA-B0-5694	TCGA-B0-5694-01A	24f33eec-e332-4d33-a628-a366f2a18d52
+T02	tumor	Primary Tumor	TCGA-A3-3358	TCGA-A3-3358-01A	7af3ee8b-cb9e-47b9-9ddb-16006b20cb17
+T03	tumor	Primary Tumor	TCGA-B0-5402	TCGA-B0-5402-01A	7b3da303-63a6-4bd7-ab94-cf6e38dfe1e0
+T04	tumor	Primary Tumor	TCGA-B0-4712	TCGA-B0-4712-01A	7f16d20f-07e2-4901-ae00-4da70125e8a3
+T05	tumor	Primary Tumor	TCGA-B0-5691	TCGA-B0-5691-01A	b43e8a88-6ed9-4a7a-ade7-91f340ad5465
+T06	tumor	Primary Tumor	TCGA-A3-3387	TCGA-A3-3387-01A	c8c7259b-9f5e-4dfc-b915-d98b02eba28b
+T07	tumor	Primary Tumor	TCGA-B0-5690	TCGA-B0-5690-01A	e44dbaa1-6ef0-48ba-bf0f-3cfa502cbd14
+T08	tumor	Primary Tumor	TCGA-B0-4700	TCGA-B0-4700-01A	f34985d8-172b-4fae-8d06-989e7dc4dc06
+N01	normal	Solid Tissue Normal	TCGA-A3-3387	TCGA-A3-3387-11A	02c1c266-473f-437d-b768-20f685349ecb
+N02	normal	Solid Tissue Normal	TCGA-B0-4712	TCGA-B0-4712-11A	0498e4e5-f3cc-4fa5-9686-099ab9e435f4
+N03	normal	Solid Tissue Normal	TCGA-B0-5690	TCGA-B0-5690-11A	58eee6a5-aaae-486e-b4ec-ba191af5fcb5
+N04	normal	Solid Tissue Normal	TCGA-B0-4700	TCGA-B0-4700-11A	6ec7b719-0f95-4108-8e26-a7049e29d495
+N05	normal	Solid Tissue Normal	TCGA-B0-5694	TCGA-B0-5694-11A	986759bd-7232-46a9-84f3-0e71026a01fd
+N06	normal	Solid Tissue Normal	TCGA-B0-5691	TCGA-B0-5691-11A	bdcb4d2f-7d86-4a59-8dbd-8b7300b45b72
+N07	normal	Solid Tissue Normal	TCGA-B0-5402	TCGA-B0-5402-11A	bf080139-5562-4d85-8a56-19bc15e80357
+N08	normal	Solid Tissue Normal	TCGA-A3-3358	TCGA-A3-3358-11A	ca47a7ca-d9aa-4140-a74b-4a1c75fe9ad9

@@ -22,6 +22,19 @@ folders contain scientific evidence, references, examples, documentation and tes
 Keep the downloaded folders together. The site displays real computational
 outputs; those predictions are not experimentally confirmed binding results.
 
+**Before interpreting a result:** read the [validation status](docs/validation-status.md).
+The audit repaired dispersion fitting and mean-floor handling and made input
+ordering independent of sample names. Earlier numerical failures remain recorded,
+and independent R results still differ. A significant gene is a statistical result
+under the fitted model, not proof of a suitable target or binder.
+
+The public workspace follows successful CI runs on the latest `main` commit.
+GitHub Actions builds its interface, evidence and local download together on
+GitHub Pages; the hosted address serves that release through a read-only relay.
+The source revision shown in the site identifies the published commit. A failed
+test or deployment leaves the preceding release live. Existing local downloads
+must be replaced to receive an update.
+
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
 > machine-readable provenance from every ranked binder back to the patient samples
@@ -153,8 +166,8 @@ those designs bind.
 A paired control folds every design beside a shuffle of its own sequence — same
 length, same composition, order destroyed. Under a seeded validator averaging five
 diffusion draws, **the shuffles cleared the customary ipTM 0.65 bar more often than
-the designs did** (50% against 30%; paired difference −0.043, 95% CI −0.142 to
-+0.054; 9 of 20 designs beat their own shuffle, where 10 is chance).
+the designs did** (50% against 30%; paired difference −0.043, 95% backbone-cluster CI −0.137 to
++0.063; 9 of 20 designs beat their own shuffle, where 10 is chance).
 
 `success@0.65` is therefore **withdrawn as a measure of design quality**, and this
 page does not quote it as one. The ipTM values are real Boltz-2 outputs; what does
@@ -181,8 +194,8 @@ the cohort requires the complete crate, which is not included in this clone.
   BoltzGen) is **not run**. Both alternatives need 24–32 GB against anything larger
   than a small domain, so those arms require paid backends; on free hardware no
   shipped backend can run them.
-- The calibration's own power analysis puts **142 paired designs** at 80% power to
-  detect a 0.05 ipTM difference. The committed control has 20.
+- The historical independent-sequence power calculation estimated **142 paired designs** at 80% power to
+  detect a 0.05 ipTM difference. The committed control has 20 sequences from 10 backbones. That independence-based count is not a validated sample-size prescription for clustered designs.
 
 ---
 

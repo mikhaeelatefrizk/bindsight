@@ -1,0 +1,11 @@
+# Numerical consistency audit on public GDC counts, not a biological benchmark.
+params:
+  deg:
+    design_formula: "~ case_barcode + condition"
+    categorical_factors: [condition, case_barcode]
+    contrast: [condition, tumor, normal]
+    fdr_threshold: 0.05
+    log2fc_threshold: 1.0
+    min_replicates: 3
+    min_count: 10
+    n_cpus: 1

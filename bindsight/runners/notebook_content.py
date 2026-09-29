@@ -163,7 +163,8 @@ if not rfdiff.exists():
         if not (models / name).exists():
             sh('wget', '-q', url, '-O', str(models / name))
     sh('pip', 'install', '-q', '-r', str(rfdiff / 'env/SE3Transformer/requirements.txt'))
-    sh('pip', 'install', '-q', '-e', str(rfdiff))
+    sh('pip', 'install', '-q', '--no-deps', str(rfdiff / 'env/SE3Transformer'))
+    sh('pip', 'install', '-q', '--no-deps', '-e', str(rfdiff))
 
 # ProteinMPNN (https://github.com/dauparas/ProteinMPNN)
 mpnn = ROOT / 'ProteinMPNN'

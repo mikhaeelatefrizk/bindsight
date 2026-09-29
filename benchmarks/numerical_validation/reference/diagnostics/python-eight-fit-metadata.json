@@ -1,0 +1,28 @@
+{
+  "matched_saved_forward_exactly": true,
+  "elapsed_seconds": 124.73800689999916,
+  "uns": {
+    "trend_coeffs": [
+      0.15349849955350062,
+      14.298611488976489
+    ],
+    "disp_function_type": "parametric",
+    "_squared_logres": 1.5767918157145213,
+    "prior_disp_var": 1.2464340596142864
+  },
+  "fallback_repairs": [
+    {
+      "n_failed": 25,
+      "cr_reg": true,
+      "prior_reg": false
+    },
+    {
+      "n_failed": 29,
+      "cr_reg": true,
+      "prior_reg": true
+    }
+  ],
+  "inference_sha256": "62a98b187accc69483e58fd266ae53bc94b306561576585ef4beb94ed2d7f764",
+  "script_sha256": "b988ea7845176e24699ed7373bc7023c42f8709166344425b6e50c00b8f9dcd0",
+  "n_cpus": 1
+}

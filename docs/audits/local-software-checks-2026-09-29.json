@@ -1,0 +1,35 @@
+{
+  "schema": "bindsight-local-software-checks/1",
+  "date": "2026-09-29",
+  "source_revision": "3b08a00c273ba9e4b22deb633242cf29e8f8a4ce",
+  "scope": "Local CPU software checks on Windows 11 and Python 3.13.14; not scientific validation, a GPU campaign, or universal platform certification.",
+  "pytest": {
+    "passed": 2387,
+    "failed": 1,
+    "skipped": 15,
+    "deselected": 2,
+    "warnings": 14,
+    "elapsed_seconds": 93.86,
+    "raw_log_sha256": "08daecc191c24d1a48f0979b06d237cab65ff8637dd4e34d2c5d5050b47df5aa",
+    "raw_log_policy": "The original log is retained in the local audit workspace; it includes host paths and is not published.",
+    "remaining_failure": {
+      "test": "tests/test_calibration_staging.py::TestTheStagedSetDescribesItself::test_each_pdb_carries_the_sequence_of_its_fasta",
+      "component": "Bio.Align._codonaligner",
+      "message": "An Application Control policy has blocked this file.",
+      "confirmed_outside_tool_sandbox": true,
+      "test_suppressed": false,
+      "operating_system_security_changed": false
+    }
+  },
+  "other_checks": {
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy_strict": "passed; 114 source files",
+    "mkdocs_strict": "passed",
+    "published_docs_regeneration": "unchanged",
+    "relay_tests": "7 passed",
+    "dependency_declaration_and_packaging_tests": "70 passed"
+  },
+  "real_local_workflow": "../../benchmarks/numerical_validation/local_workflow_canonical.json",
+  "cross_platform_ci": "https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml"
+}

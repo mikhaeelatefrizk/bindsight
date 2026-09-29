@@ -1,4 +1,68 @@
 {
+  "backbone_analysis": {
+    "controlled_specificity": {
+      "available": false,
+      "reason": "The historical summary lacks per-design decoy-shuffle scores. Its controlled confidence interval cannot be recomputed over backbones without the original metrics."
+    },
+    "design_vs_shuffle": {
+      "assumptions": "Independent backbone clusters; sign-flip inference additionally assumes symmetric cluster differences under the null.",
+      "available": true,
+      "cluster_sizes": {
+        "P04626_binder_0": 2,
+        "P04626_binder_1": 2,
+        "P04626_binder_2": 2,
+        "P04626_binder_3": 2,
+        "P04626_binder_4": 2,
+        "P04626_binder_5": 2,
+        "P04626_binder_6": 2,
+        "P04626_binder_7": 2,
+        "P04626_binder_8": 2,
+        "P04626_binder_9": 2
+      },
+      "confidence": 0.95,
+      "estimand": "equally weighted mean of per-backbone mean paired differences",
+      "exact_signflip_p": 0.439453125,
+      "high": 0.06308659242745485,
+      "independent_unit": "RFdiffusion backbone",
+      "low": -0.13673115931730717,
+      "mean": -0.04347781833261252,
+      "method": "backbone-cluster-percentile-bootstrap(B=20000, seed=20260912)",
+      "n_clusters": 10,
+      "n_pairs": 20,
+      "n_permutations": 1024,
+      "p_value_floor": 0.001953125
+    },
+    "input_scores_encoding": "UTF-8 canonical JSON: sorted keys, compact separators; pairs, cross_target and controlled per-design rows",
+    "input_scores_sha256": "2f6ab2bed8d22d1d28334ebeb52eb57d7bdf3d6611f3a4b9ca60c7b7c1eb08fb",
+    "native_vs_decoy": {
+      "assumptions": "Independent backbone clusters; sign-flip inference additionally assumes symmetric cluster differences under the null.",
+      "available": true,
+      "cluster_sizes": {
+        "P04626_binder_0": 2,
+        "P04626_binder_1": 2,
+        "P04626_binder_2": 2,
+        "P04626_binder_3": 2,
+        "P04626_binder_4": 2,
+        "P04626_binder_5": 2,
+        "P04626_binder_6": 2,
+        "P04626_binder_7": 2,
+        "P04626_binder_8": 2,
+        "P04626_binder_9": 2
+      },
+      "confidence": 0.95,
+      "estimand": "equally weighted mean of per-backbone mean paired differences",
+      "exact_signflip_p": 0.0546875,
+      "high": -0.011982527978718394,
+      "independent_unit": "RFdiffusion backbone",
+      "low": -0.2214134066551924,
+      "mean": -0.12518829792737962,
+      "method": "backbone-cluster-percentile-bootstrap(B=20000, seed=20260912)",
+      "n_clusters": 10,
+      "n_pairs": 20,
+      "n_permutations": 1024,
+      "p_value_floor": 0.001953125
+    }
+  },
   "cross_target": {
     "controlled": {
       "advantage_on_decoy": -0.11725234106183051,
@@ -203,6 +267,8 @@
     "threshold": 0.65,
     "upper95": 0.7280421504392082
   },
+  "historical_inference_note": "Top-level paired_interval, exact_signflip_p, binomial threshold bounds and power estimates are retained historical sequence-pair calculations. They assume independent sequences, which the shared backbones do not establish. Use backbone_analysis for current inference. Legacy false_positive_rate keys describe computational scramble passes, not measured nonbinding.",
+  "inference_revision": "backbone-cluster-v1",
   "inputs": {
     "committed_metrics": {
       "bytes": "7297",
@@ -398,6 +464,7 @@
       "scramble": 0.7268597960472107
     }
   ],
+  "primary_inference": "backbone_analysis.design_vs_shuffle",
   "refold_drift": {
     "abs_delta": {
       "max": 0.5732430830597878,

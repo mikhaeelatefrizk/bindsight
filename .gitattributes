@@ -15,3 +15,11 @@ Snakefile text
 *.zip binary
 *.cif binary
 *.pdb binary
+
+# Recorded evidence is checksum-addressed: retain its exact archived bytes.
+benchmarks/numerical_validation/** -text whitespace=cr-at-eol
+docs/audits/** -text whitespace=cr-at-eol
+# R's captured session/log output intentionally pads its printed columns.
+benchmarks/numerical_validation/reference/**/session-info.txt whitespace=-blank-at-eol
+benchmarks/numerical_validation/reference/setup-session-info.txt whitespace=-blank-at-eol
+benchmarks/numerical_validation/reference/**/execution.log whitespace=-blank-at-eol

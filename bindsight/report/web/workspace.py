@@ -18,15 +18,24 @@ import sys
 import threading
 import time
 import uuid
+import zlib
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 IDENTIFIER = re.compile(r"^[a-f0-9]{32}$")
 COLUMN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,63}$")
+NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 MAX_UPLOAD = 512 * 1024 * 1024
+MAX_INPUT_LINE = 1024 * 1024
+
+
+class WorkspaceInUseError(RuntimeError):
+    """Another application or surviving analysis already owns this workspace."""
 
 
 def now() -> str:
@@ -92,19 +101,31 @@ def hardware(root: Path) -> dict[str, Any]:
 
 def _read_rows(path: Path) -> Iterator[list[str]]:
     opener = gzip.open if path.suffix == ".gz" else open
-    with opener(path, "rt", encoding="utf-8-sig", newline="") as stream:
+    try:
+        with opener(path, "rt", encoding="utf-8-sig", newline="") as stream:
 
-        def bounded_lines() -> Iterator[str]:
-            expanded = 0
-            for line in stream:
-                expanded += len(line.encode("utf-8"))
-                if expanded > 1024 * 1024 * 1024:
-                    raise ValueError(
-                        "An expanded input must be at most 1 GB for this local workflow."
-                    )
-                yield line
+            def bounded_lines() -> Iterator[str]:
+                expanded = 0
+                # Bound each read before allocating an entire decompressed line.
+                # A gzip file with one enormous line otherwise bypasses the
+                # expanded-size check until that line is already in memory.
+                while line := stream.readline(MAX_INPUT_LINE + 1):
+                    if len(line) > MAX_INPUT_LINE:
+                        raise ValueError(
+                            "An input line exceeds the 1 MB limit; check its TSV format."
+                        )
+                    expanded += len(line.encode("utf-8"))
+                    if expanded > 1024 * 1024 * 1024:
+                        raise ValueError(
+                            "An expanded input must be at most 1 GB for this local workflow."
+                        )
+                    yield line
 
-        yield from csv.reader(bounded_lines(), delimiter="\t")
+            yield from csv.reader(bounded_lines(), delimiter="\t", strict=True)
+    except (csv.Error, EOFError, UnicodeError, zlib.error) as exc:
+        raise ValueError(
+            f"The input is not a complete, valid UTF-8 TSV or gzip file: {exc}"
+        ) from exc
 
 
 def inspect_inputs(counts: Path, design: Path) -> dict[str, Any]:
@@ -162,10 +183,17 @@ def inspect_inputs(counts: Path, design: Path) -> dict[str, Any]:
         genes.add(row[0])
         for index, raw in enumerate(row[1:]):
             try:
-                value = float(raw)
-            except ValueError as exc:
+                if not NUMBER.fullmatch(raw.strip()):
+                    raise ValueError("Invalid numeric representation")
+                value = Decimal(raw.strip())
+            except (ValueError, InvalidOperation) as exc:
                 raise ValueError(f"Counts row {line} contains a non-numeric value.") from exc
-            if not math.isfinite(value) or value < 0 or value != math.trunc(value) or value > 2**53:
+            if (
+                not value.is_finite()
+                or value < 0
+                or value > 2**53
+                or value != value.to_integral_value()
+            ):
                 raise ValueError(
                     f"Counts row {line} must contain finite, nonnegative raw integer counts, not TPM/FPKM or normalized values."
                 )
@@ -205,23 +233,109 @@ class Workspace:
         self.root = root.resolve()
         self.storage = self.root / "_workbench"
         self.storage.mkdir(parents=True, exist_ok=True)
+        self._owner: BinaryIO | None = None
+        self._closed = False
+        self._acquire_ownership()
         self.token = secrets.token_urlsafe(32)
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="bindsight-local")
         self.lock = threading.RLock()
         self.processes: dict[str, subprocess.Popen[bytes]] = {}
         self.futures: dict[str, Any] = {}
-        for state in self.storage.glob("*/job.json"):
-            try:
-                data = json.loads(state.read_text(encoding="utf-8"))
-            except (ValueError, OSError):
-                continue
-            if data.get("state") in {"queued", "running", "cancelling"}:
+        try:
+            abandoned = []
+            for state in self.storage.glob("*/job.json"):
+                try:
+                    data = json.loads(state.read_text(encoding="utf-8"))
+                except (ValueError, OSError):
+                    continue
+                if not isinstance(data, dict):
+                    continue
+                if data.get("state") in {"queued", "running", "cancelling"}:
+                    if self._worker_is_alive(data, state.parent / "config.json"):
+                        raise WorkspaceInUseError(
+                            "An analysis from the previous application is still running. "
+                            "Wait for it to finish before reopening this workspace."
+                        )
+                    abandoned.append((state, data))
+            # Check every worker before changing any persisted status.
+            for state, data in abandoned:
                 data.update(
                     state="interrupted",
                     error="The local application stopped before this run completed.",
                     finished_at=now(),
                 )
                 write_json(state, data)
+        except Exception:
+            self.executor.shutdown(wait=False, cancel_futures=True)
+            self._release_ownership()
+            raise
+
+    def _acquire_ownership(self) -> None:
+        owner = (self.storage / ".owner.lock").open("a+b")
+        try:
+            if sys.platform == "win32":
+                import msvcrt
+
+                if owner.seek(0, 2) == 0:
+                    owner.write(b"\0")
+                    owner.flush()
+                owner.seek(0)
+                msvcrt.locking(owner.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(owner.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            owner.close()
+            raise WorkspaceInUseError(
+                "This workspace is already open in another application. "
+                "Use its existing browser tab, or close it before launching again."
+            ) from exc
+        self._owner = owner
+
+    def _release_ownership(self) -> None:
+        if self._owner is not None:
+            self._owner.close()
+            self._owner = None
+
+    @staticmethod
+    def _worker_is_alive(state: dict[str, Any], config: Path) -> bool:
+        """Recognise surviving workers without mistaking a reused PID for this job."""
+        if not state.get("worker_pid"):
+            return False
+        psutil = importlib.import_module("psutil")
+
+        try:
+            process = psutil.Process(int(state["worker_pid"]))
+            if process.status() == psutil.STATUS_ZOMBIE:
+                return False
+            if state.get("worker_created_at") is not None:
+                return bool(process.create_time() == state["worker_created_at"])
+            arguments = process.cmdline()
+            return "bindsight.report.web.worker" in arguments and str(config) in arguments
+        except psutil.NoSuchProcess:
+            return False
+        except psutil.AccessDenied:
+            # A process whose identity cannot be checked must not be relabelled
+            # as dead or killed based solely on a possibly reused PID.
+            return True
+
+    def close(self) -> None:
+        """Stop and reap this application's workers before releasing ownership."""
+        with self.lock:
+            if self._closed:
+                return
+            self._closed = True
+            identities = list(self.futures)
+        for identity in identities:
+            try:
+                self.cancel(identity)
+            except ValueError:
+                with self.lock:
+                    self._closed = False
+                raise
+        self.executor.shutdown(wait=True, cancel_futures=True)
+        self._release_ownership()
 
     def directory(self, identity: str) -> Path:
         """Resolve an existing, strictly validated workspace identifier."""
@@ -287,6 +401,19 @@ class Workspace:
                     "Each donor/patient must have exactly one sample from each condition for this paired workflow."
                 )
             formula = f"~ {pair} + {factor}"
+        try:
+            if any(isinstance(options.get(k), bool) for k in ("fdr", "log2fc")):
+                raise ValueError
+            fdr = float(options.get("fdr", 0.05))
+            log2fc = float(options.get("log2fc", 1.0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("The FDR and fold-change thresholds must be finite numbers.") from exc
+        if not math.isfinite(fdr) or not 0 < fdr < 1:
+            raise ValueError(
+                "The FDR threshold must be finite, greater than zero and less than one."
+            )
+        if not math.isfinite(log2fc) or log2fc < 0:
+            raise ValueError("The fold-change threshold must be a finite, nonnegative number.")
         output = self.root / f"analysis-{identity[:12]}"
         cfg = RunConfig.model_validate(
             {
@@ -300,8 +427,8 @@ class Workspace:
                         "contrast": [factor, numerator, denominator],
                         "categorical_factors": [factor, *([pair] if pair else [])],
                         "n_cpus": max(1, min(4, (os.cpu_count() or 2) - 1)),
-                        "fdr_threshold": float(options.get("fdr", 0.05)),
-                        "log2fc_threshold": float(options.get("log2fc", 1.0)),
+                        "fdr_threshold": fdr,
+                        "log2fc_threshold": log2fc,
                     },
                     "target_discovery": {
                         "use_extended_surfaceome": True,
@@ -329,6 +456,8 @@ class Workspace:
             "error": "",
         }
         with self.lock:
+            if self._closed:
+                raise ValueError("The local workspace is closing. Reopen it before starting a run.")
             if (root / "job.json").exists():
                 raise ValueError("An analysis has already been started for these inputs.")
             write_json(root / "config.json", cfg.model_dump(mode="json", by_alias=True))
@@ -350,6 +479,10 @@ class Workspace:
         with self.lock:
             state = self.read(identity)
             if state["state"] == "cancelled":
+                return
+            if self._closed:
+                state.update(state="cancelled", finished_at=now())
+                write_json(root / "job.json", state)
                 return
             state.update(state="running", started_at=now())
             write_json(root / "job.json", state)
@@ -378,6 +511,14 @@ class Workspace:
                         **kwargs,
                     )
                     self.processes[identity] = process
+                    state["worker_pid"] = process.pid
+                    psutil = importlib.import_module("psutil")
+
+                    try:
+                        state["worker_created_at"] = psutil.Process(process.pid).create_time()
+                    except psutil.Error:
+                        state["worker_created_at"] = None
+                    write_json(root / "job.json", state)
                 exit_code = process.wait()
             with self.lock:
                 state = self.read(identity)
@@ -461,13 +602,53 @@ class Workspace:
             if future:
                 future.cancel()
             if process and process.poll() is None:
-                if sys.platform == "win32":
-                    subprocess.run(
-                        ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                        capture_output=True,
-                        timeout=15,
-                        creationflags=subprocess.CREATE_NO_WINDOW,
-                    )
-                else:
-                    os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    self._stop_process_tree(process)
+                except (OSError, subprocess.SubprocessError) as exc:
+                    if process.poll() is None:
+                        state.update(state="running", error=f"Could not stop the analysis: {exc}")
+                        state.pop("finished_at", None)
+                        write_json(self.directory(identity) / "job.json", state)
+                        raise ValueError(state["error"]) from exc
             return state
+
+    @staticmethod
+    def _stop_process_tree(process: subprocess.Popen[bytes]) -> None:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True,
+                timeout=15,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if result.returncode != 0 and process.poll() is None:
+                # Restricted Windows environments can deny taskkill's tree
+                # enumeration even for a process we started. psutil checks
+                # process identity against PID reuse; Popen kills its own
+                # retained process handle, never an unrelated numeric PID.
+                psutil = importlib.import_module("psutil")
+                try:
+                    children = psutil.Process(process.pid).children(recursive=True)
+                    for child in reversed(children):
+                        with suppress(psutil.NoSuchProcess):
+                            child.kill()
+                    if process.poll() is None:
+                        process.kill()
+                    _, alive = psutil.wait_procs(children, timeout=5)
+                    if alive:
+                        raise OSError("Some analysis subprocesses could not be stopped.")
+                except psutil.NoSuchProcess:
+                    pass
+                except psutil.Error as exc:
+                    raise OSError("Windows could not terminate the analysis process tree.") from exc
+            process.wait(timeout=5)
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                return
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=5)

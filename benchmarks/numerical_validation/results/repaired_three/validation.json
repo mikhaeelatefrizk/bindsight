@@ -1,0 +1,599 @@
+{
+  "schema": "bindsight-real-counts-validation/1",
+  "started_at": "2026-09-29T01:13:29.016764+00:00",
+  "purpose": "Numerical consistency on real supplied observations; not independent biological validation",
+  "tolerances": {
+    "relative": 1e-06,
+    "absolute": 1e-08
+  },
+  "inputs": {
+    "counts": {
+      "name": "counts.tsv.gz",
+      "sha256": "ce5c5c6670707568b28a6e2ce561a05b708121f150ad1d093775a05d5503229c"
+    },
+    "design": {
+      "name": "design.tsv",
+      "sha256": "4f7e3fa2b16811d4e294ede695a777776846fa91caf247eeee43df93f44603a4"
+    },
+    "config": {
+      "name": "config.yaml",
+      "sha256": "2d51b24ccc5d3b05765b0390dea892ce4610f77d860a75ad5343a63aa044e82f"
+    }
+  },
+  "parameters": {
+    "design_formula": "~ case_barcode + condition",
+    "categorical_factors": [
+      "condition",
+      "case_barcode"
+    ],
+    "contrast": [
+      "condition",
+      "tumor",
+      "normal"
+    ],
+    "fdr_threshold": 0.05,
+    "log2fc_threshold": 1.0,
+    "min_replicates": 3,
+    "min_count": 10,
+    "n_cpus": 1
+  },
+  "n_input_genes": 19944,
+  "n_samples": 6,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.14",
+  "versions": {
+    "pydeseq2": "0.5.4",
+    "numpy": "2.2.6",
+    "scipy": "1.16.3",
+    "pandas": "2.3.2",
+    "pyarrow": "23.0.1",
+    "formulaic": "1.2.2",
+    "formulaic-contrasts": "1.0.0",
+    "anndata": "0.12.19",
+    "joblib": "1.6.0",
+    "scikit-learn": "1.7.2"
+  },
+  "numeric_thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "git_revision": "ccc88d0305f809c1957f83046efd7e0da98d3eae",
+  "git_working_tree_dirty": true,
+  "source_sha256": {
+    "scripts/validate_real_counts.py": "c30913891c8ce7569e4b60536280c42c72e20d6b8406214e1b0f14574ac9d01e",
+    "bindsight/deg/pydeseq2_runner.py": "1c419ee7d2092761428ac4d04f725178a7bdda0f256c8bc72245e0c5e6163baf",
+    "bindsight/config.py": "b7affc65254a068cf167fa41517998a21d8be67a66ae813f8e697b5c3e54e3e4",
+    "bindsight/deg/inference.py": "62a98b187accc69483e58fd266ae53bc94b306561576585ef4beb94ed2d7f764"
+  },
+  "fits": {
+    "forward": {
+      "n_samples": 6,
+      "n_genes_tested": 15697,
+      "n_significant": 3855,
+      "fdr_threshold": 0.05,
+      "log2fc_threshold": 1.0,
+      "n_cpus": 1,
+      "fit_diagnostics": {
+        "dispersion_fallback_repairs": [
+          {
+            "n_failed": 32,
+            "cr_reg": true,
+            "prior_reg": false
+          },
+          {
+            "n_failed": 9,
+            "cr_reg": true,
+            "prior_reg": true
+          }
+        ],
+        "convergence": {
+          "_genewise_converged": {
+            "not_converged": 32,
+            "unreported": 0
+          },
+          "_MAP_converged": {
+            "not_converged": 9,
+            "unreported": 0
+          },
+          "_LFC_converged": {
+            "not_converged": 0,
+            "unreported": 0
+          }
+        },
+        "design_rank": 4,
+        "residual_degrees_of_freedom": 2
+      },
+      "seconds": 51.39,
+      "sha256": "131d778b8472e7fc28364617da94cb462af1437011236f6179f6df654b0a8308"
+    },
+    "repeat": {
+      "n_samples": 6,
+      "n_genes_tested": 15697,
+      "n_significant": 3855,
+      "fdr_threshold": 0.05,
+      "log2fc_threshold": 1.0,
+      "n_cpus": 1,
+      "fit_diagnostics": {
+        "dispersion_fallback_repairs": [
+          {
+            "n_failed": 32,
+            "cr_reg": true,
+            "prior_reg": false
+          },
+          {
+            "n_failed": 9,
+            "cr_reg": true,
+            "prior_reg": true
+          }
+        ],
+        "convergence": {
+          "_genewise_converged": {
+            "not_converged": 32,
+            "unreported": 0
+          },
+          "_MAP_converged": {
+            "not_converged": 9,
+            "unreported": 0
+          },
+          "_LFC_converged": {
+            "not_converged": 0,
+            "unreported": 0
+          }
+        },
+        "design_rank": 4,
+        "residual_degrees_of_freedom": 2
+      },
+      "seconds": 62.033,
+      "sha256": "131d778b8472e7fc28364617da94cb462af1437011236f6179f6df654b0a8308"
+    },
+    "reverse_contrast": {
+      "n_samples": 6,
+      "n_genes_tested": 15697,
+      "n_significant": 3855,
+      "fdr_threshold": 0.05,
+      "log2fc_threshold": 1.0,
+      "n_cpus": 1,
+      "fit_diagnostics": {
+        "dispersion_fallback_repairs": [
+          {
+            "n_failed": 32,
+            "cr_reg": true,
+            "prior_reg": false
+          },
+          {
+            "n_failed": 9,
+            "cr_reg": true,
+            "prior_reg": true
+          }
+        ],
+        "convergence": {
+          "_genewise_converged": {
+            "not_converged": 32,
+            "unreported": 0
+          },
+          "_MAP_converged": {
+            "not_converged": 9,
+            "unreported": 0
+          },
+          "_LFC_converged": {
+            "not_converged": 0,
+            "unreported": 0
+          }
+        },
+        "design_rank": 4,
+        "residual_degrees_of_freedom": 2
+      },
+      "seconds": 64.895,
+      "sha256": "005bd2b48279a7167a64cd0833e1b8991946bd2e498e2345ec35d9460984da21"
+    },
+    "reverse_sample_order": {
+      "n_samples": 6,
+      "n_genes_tested": 15697,
+      "n_significant": 3855,
+      "fdr_threshold": 0.05,
+      "log2fc_threshold": 1.0,
+      "n_cpus": 1,
+      "fit_diagnostics": {
+        "dispersion_fallback_repairs": [
+          {
+            "n_failed": 32,
+            "cr_reg": true,
+            "prior_reg": false
+          },
+          {
+            "n_failed": 9,
+            "cr_reg": true,
+            "prior_reg": true
+          }
+        ],
+        "convergence": {
+          "_genewise_converged": {
+            "not_converged": 32,
+            "unreported": 0
+          },
+          "_MAP_converged": {
+            "not_converged": 9,
+            "unreported": 0
+          },
+          "_LFC_converged": {
+            "not_converged": 0,
+            "unreported": 0
+          }
+        },
+        "design_rank": 4,
+        "residual_degrees_of_freedom": 2
+      },
+      "seconds": 44.984,
+      "sha256": "131d778b8472e7fc28364617da94cb462af1437011236f6179f6df654b0a8308"
+    },
+    "relabel_samples": {
+      "n_samples": 6,
+      "n_genes_tested": 15697,
+      "n_significant": 3865,
+      "fdr_threshold": 0.05,
+      "log2fc_threshold": 1.0,
+      "n_cpus": 1,
+      "fit_diagnostics": {
+        "dispersion_fallback_repairs": [
+          {
+            "n_failed": 48,
+            "cr_reg": true,
+            "prior_reg": false
+          },
+          {
+            "n_failed": 10,
+            "cr_reg": true,
+            "prior_reg": true
+          }
+        ],
+        "convergence": {
+          "_genewise_converged": {
+            "not_converged": 48,
+            "unreported": 0
+          },
+          "_MAP_converged": {
+            "not_converged": 10,
+            "unreported": 0
+          },
+          "_LFC_converged": {
+            "not_converged": 0,
+            "unreported": 0
+          }
+        },
+        "design_rank": 4,
+        "residual_degrees_of_freedom": 2
+      },
+      "seconds": 49.909,
+      "sha256": "7b7229f98021f190113470df0a00fa434b10a663c03fc7a6215be7697c7aa850"
+    }
+  },
+  "checks": {
+    "forward_arithmetic": {
+      "nonempty_unique_gene_ids": {
+        "passed": true
+      },
+      "positive_finite_standard_errors": {
+        "passed": true
+      },
+      "probabilities_in_unit_interval": {
+        "passed": true
+      },
+      "wald_statistic": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 3.552713678800501e-15,
+        "missing_mask_equal": true
+      },
+      "two_sided_wald_probability": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.498001805406602e-16,
+        "missing_mask_equal": true
+      },
+      "bh_on_independently_retained_genes": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.220446049250313e-16,
+        "missing_mask_equal": true
+      },
+      "significance_rule": {
+        "passed": true
+      }
+    },
+    "repeat_arithmetic": {
+      "nonempty_unique_gene_ids": {
+        "passed": true
+      },
+      "positive_finite_standard_errors": {
+        "passed": true
+      },
+      "probabilities_in_unit_interval": {
+        "passed": true
+      },
+      "wald_statistic": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 3.552713678800501e-15,
+        "missing_mask_equal": true
+      },
+      "two_sided_wald_probability": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.498001805406602e-16,
+        "missing_mask_equal": true
+      },
+      "bh_on_independently_retained_genes": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.220446049250313e-16,
+        "missing_mask_equal": true
+      },
+      "significance_rule": {
+        "passed": true
+      }
+    },
+    "reverse_contrast_arithmetic": {
+      "nonempty_unique_gene_ids": {
+        "passed": true
+      },
+      "positive_finite_standard_errors": {
+        "passed": true
+      },
+      "probabilities_in_unit_interval": {
+        "passed": true
+      },
+      "wald_statistic": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 3.552713678800501e-15,
+        "missing_mask_equal": true
+      },
+      "two_sided_wald_probability": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.498001805406602e-16,
+        "missing_mask_equal": true
+      },
+      "bh_on_independently_retained_genes": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.220446049250313e-16,
+        "missing_mask_equal": true
+      },
+      "significance_rule": {
+        "passed": true
+      }
+    },
+    "reverse_sample_order_arithmetic": {
+      "nonempty_unique_gene_ids": {
+        "passed": true
+      },
+      "positive_finite_standard_errors": {
+        "passed": true
+      },
+      "probabilities_in_unit_interval": {
+        "passed": true
+      },
+      "wald_statistic": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 3.552713678800501e-15,
+        "missing_mask_equal": true
+      },
+      "two_sided_wald_probability": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.498001805406602e-16,
+        "missing_mask_equal": true
+      },
+      "bh_on_independently_retained_genes": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.220446049250313e-16,
+        "missing_mask_equal": true
+      },
+      "significance_rule": {
+        "passed": true
+      }
+    },
+    "relabel_samples_arithmetic": {
+      "nonempty_unique_gene_ids": {
+        "passed": true
+      },
+      "positive_finite_standard_errors": {
+        "passed": true
+      },
+      "probabilities_in_unit_interval": {
+        "passed": true
+      },
+      "wald_statistic": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 3.552713678800501e-15,
+        "missing_mask_equal": true
+      },
+      "two_sided_wald_probability": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.7755575615628914e-16,
+        "missing_mask_equal": true
+      },
+      "bh_on_independently_retained_genes": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.220446049250313e-16,
+        "missing_mask_equal": true
+      },
+      "significance_rule": {
+        "passed": true
+      }
+    },
+    "repeat": {
+      "log2fc": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "lfc_se": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "stat": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "pvalue": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "padj": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "baseMean": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "significance_decisions": {
+        "passed": true
+      }
+    },
+    "reverse_contrast": {
+      "log2fc": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "lfc_se": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "stat": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "pvalue": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "padj": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "baseMean": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "significance_decisions": {
+        "passed": true
+      }
+    },
+    "reverse_sample_order": {
+      "log2fc": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "lfc_se": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "stat": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "pvalue": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "padj": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "baseMean": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0,
+        "missing_mask_equal": true
+      },
+      "significance_decisions": {
+        "passed": true
+      }
+    },
+    "relabel_samples": {
+      "log2fc": {
+        "passed": false,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.004435359922521087,
+        "missing_mask_equal": true
+      },
+      "lfc_se": {
+        "passed": false,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.005603367435964346,
+        "missing_mask_equal": true
+      },
+      "stat": {
+        "passed": false,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.055870403009434355,
+        "missing_mask_equal": true
+      },
+      "pvalue": {
+        "passed": false,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0020030928053353936,
+        "missing_mask_equal": true
+      },
+      "padj": {
+        "passed": false,
+        "n_compared": 15697,
+        "max_absolute_difference": 0.0032786183451607998,
+        "missing_mask_equal": true
+      },
+      "baseMean": {
+        "passed": true,
+        "n_compared": 15697,
+        "max_absolute_difference": 2.3283064365386963e-10,
+        "missing_mask_equal": true
+      },
+      "significance_decisions": {
+        "passed": false
+      }
+    }
+  },
+  "passed": false,
+  "finished_at": "2026-09-29T01:18:02.955839+00:00"
+}

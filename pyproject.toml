@@ -72,9 +72,11 @@ dependencies = [
 # published result has to stay re-derivable. `envs/constraints.txt` pins the
 # exact versions this release was resolved and tested against.
 discover = [
-    "pydeseq2>=0.5,<0.6",
+    # The dispersion-fallback repair is reviewed against this exact upstream API.
+    "pydeseq2==0.5.4",
+    "formulaic>=1.2.2,<2", # modeled variables used for canonical input ordering
     "pandas>=2.2,<3",
-    "pyarrow>=16,<25",
+    "pyarrow>=23.0.1,<25",
     "numpy>=1.26,<3",
     "scipy>=1.11,<2",      # arrives via pydeseq2; its numerics move DEG results
     "biopython>=1.83,<2",

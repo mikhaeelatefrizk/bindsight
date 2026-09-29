@@ -1,0 +1,75 @@
+{
+  "elapsed_seconds": 48.25749540000106,
+  "n_cpus": 1,
+  "sample_order": [
+    "T01",
+    "T02",
+    "T03",
+    "N01",
+    "N02",
+    "N03"
+  ],
+  "design_columns": [
+    "Intercept",
+    "case_barcode[T.TCGA-B0-4712]",
+    "case_barcode[T.TCGA-B0-5697]",
+    "condition[T.tumor]"
+  ],
+  "design_rank": 4,
+  "residual_df": 2,
+  "uns": {
+    "trend_coeffs": [
+      0.17706902604271998,
+      18.032674343479684
+    ],
+    "disp_function_type": "parametric",
+    "_squared_logres": 2.1478761107176054,
+    "prior_disp_var": 0.5029420438693788
+  },
+  "min_disp": 1e-08,
+  "max_disp": 10.0,
+  "python": "3.13.14 (main, Jun 23 2026, 15:19:27) [MSC v.1944 64 bit (AMD64)]",
+  "versions": {
+    "pydeseq2": "0.5.4",
+    "numpy": "2.2.6",
+    "scipy": "1.16.3",
+    "pandas": "2.3.2",
+    "anndata": "0.12.19",
+    "formulaic": "1.2.2",
+    "formulaic-contrasts": "1.0.0",
+    "scikit-learn": "1.7.2",
+    "joblib": "1.6.0",
+    "threadpoolctl": "3.7.0"
+  },
+  "script_sha256": "4fc40153a6fc195b2b2403e1ae72f0176943501f74461d58b0860f1972b8e52b",
+  "threadpools": [
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 8,
+      "prefix": "libscipy_openblas",
+      "filepath": "site-packages/numpy.libs/libscipy_openblas64_-13e2df515630b4a41f92893938845698.dll",
+      "version": "0.3.29",
+      "threading_layer": "pthreads",
+      "architecture": "SkylakeX"
+    },
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 8,
+      "prefix": "libscipy_openblas",
+      "filepath": "site-packages/scipy.libs/libscipy_openblas-48c358d105077551cc9cc3ba79387ed5.dll",
+      "version": "0.3.29.dev",
+      "threading_layer": "pthreads",
+      "architecture": "SkylakeX"
+    },
+    {
+      "user_api": "openmp",
+      "internal_api": "openmp",
+      "num_threads": 8,
+      "prefix": "vcomp",
+      "filepath": "site-packages/sklearn/.libs/vcomp140.dll",
+      "version": null
+    }
+  ]
+}

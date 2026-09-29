@@ -1,5 +1,48 @@
 # Calibration: what the confidence numbers are worth
 
+## Current interpretation: inference over ten backbones
+
+The recorded experiment contains **20 designed sequence/shuffle pairs from ten
+RFdiffusion backbones**. The current CPU reanalysis resamples the ten backbone
+means, so related sequences do not count as independent design attempts.
+
+The mean design-minus-shuffle ipTM difference is **−0.043**, with a 95%
+backbone-cluster bootstrap interval **−0.137 to +0.063** and a two-sided cluster
+sign-flip p-value of **0.43945** (1,024 assignments). The sign-flip calculation
+assumes independent backbones and symmetric backbone-level differences under
+the null. The threshold-crossing rates remain **6/20 designs and 10/20 shuffles**.
+
+These observations do not establish a positive design advantage, equivalence,
+or an absence of binding. Shuffles are computational controls, not
+experimentally confirmed nonbinders: their pass rate is **not a measured
+biological false-positive rate**. The success@0.65 claim remains withdrawn as a
+measure of design quality.
+
+The raw native-versus-decoy score difference has a backbone sign-flip p-value of
+0.05469, rather than the historical sequence-level 0.01131. It remains confounded
+by target identity/size and does not establish specificity. The controlled
+difference-in-differences cannot be reanalysed over backbones from this clone:
+its per-design decoy-shuffle scores are absent. Its old confidence interval is
+retained as historical, not silently promoted to a cluster-aware result.
+
+[`CALIBRATION.md`](CALIBRATION.md) presents current inference first.
+`RESULTS.json` preserves the original scores and calculations and adds a
+`backbone_analysis` block, with its input-score digest. Reproduce this analysis
+without running a model:
+
+```bash
+python benchmarks/calibration/analyse.py --from-summary benchmarks/calibration/RESULTS.json
+```
+
+## Historical study narrative — sequence-pair inference superseded
+
+The narrative below preserves how the experiment developed. Its old intervals,
+p-values, binomial bounds and sample-size calculations assumed independent
+sequences; they are not the current inference for these shared-backbone data.
+Historical “false-positive” language refers only to scramble threshold passes.
+The tables about independent controls remain conditional arithmetic, not a
+certification of this control set or a measured binding error rate.
+
 Every binder number bindsight publishes comes from Boltz-2, and until this
 directory existed nothing said what those numbers meant.
 

@@ -150,6 +150,8 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
     import pydeseq2.default_inference
     import pydeseq2.ds
 
+    import bindsight.deg.inference
+
     gene_ids = ["ENSG00000141736", "ENSG00000146648"]
     captured: dict[str, Any] = {}
 
@@ -169,10 +171,12 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
             *,
             contrast: list[str],
             alpha: float = 0.05,
+            inference: object | None = None,
             quiet: bool = False,
         ) -> None:
             captured["alpha"] = alpha
             captured["contrast"] = contrast
+            captured["stats_inference"] = inference
             self.results_df = _fake_results(gene_ids)
 
         def summary(self) -> None:
@@ -185,7 +189,7 @@ def test_configured_fdr_threshold_reaches_deseq_stats(
         captured["n_cpus"] = kwargs.get("n_cpus")
         return object()
 
-    monkeypatch.setattr(pydeseq2.default_inference, "DefaultInference", _recording_inference)
+    monkeypatch.setattr(bindsight.deg.inference, "RegularizedInference", _recording_inference)
 
     params = DEGParams(
         design_formula="~ condition",

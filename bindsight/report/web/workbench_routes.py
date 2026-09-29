@@ -3,7 +3,11 @@
 
 from __future__ import annotations
 
+import json
 import secrets
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -12,19 +16,48 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from bindsight.report.fit_diagnostics import fit_summary
 from bindsight.report.web.evidence import evidence_bundle
-from bindsight.report.web.workspace import MAX_UPLOAD, Workspace, hardware, inspect_inputs
+from bindsight.report.web.workspace import (
+    MAX_UPLOAD,
+    Workspace,
+    WorkspaceInUseError,
+    hardware,
+    inspect_inputs,
+)
 
 
 def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
     """Register token-protected state changes against a loopback-only workspace."""
     workspace: Workspace | None = None
+    workspace_lock = threading.Lock()
 
     def get_workspace() -> Workspace:
         nonlocal workspace
-        if workspace is None:
-            workspace = Workspace(root)
+        with workspace_lock:
+            if workspace is None:
+                workspace = Workspace(root)
         return workspace
+
+    original_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+        # Acquire ownership before accepting requests. A second launcher must
+        # never serve a second executor against the same persisted job state.
+        get_workspace()
+        try:
+            async with original_lifespan(application):
+                yield
+        finally:
+            if workspace is not None:
+                await run_in_threadpool(workspace.close)
+
+    app.router.lifespan_context = lifespan
+
+    @app.exception_handler(WorkspaceInUseError)
+    async def workspace_in_use(request: Request, exc: WorkspaceInUseError) -> JSONResponse:
+        return JSONResponse({"error": str(exc)}, status_code=409)
 
     @app.middleware("http")
     async def local_security(request: Request, call_next: Any) -> Any:
@@ -138,7 +171,12 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
         try:
             if int(request.headers.get("content-length", "0")) > 16_384:
                 raise ValueError("The analysis settings are too large.")
-            options = await request.json()
+            payload = bytearray()
+            async for chunk in request.stream():
+                if len(payload) + len(chunk) > 16_384:
+                    raise ValueError("The analysis settings are too large.")
+                payload.extend(chunk)
+            options = json.loads(payload)
             if not isinstance(options, dict):
                 raise ValueError("Analysis settings must be an object.")
             return await run_in_threadpool(get_workspace().launch, identity, options)
@@ -153,6 +191,11 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
     def status(identity: str) -> Any:
         try:
             state = get_workspace().read(identity)
+            if state.get("state") in {"completed", "incomplete_annotation"}:
+                run = Path(state["run_dir"]).resolve()
+                if run.parent != get_workspace().root:
+                    raise ValueError("The recorded output directory is outside this workspace.")
+                state["numerical_fit"] = fit_summary(run)
             log = get_workspace().directory(identity) / "analysis.log"
             if log.is_file():
                 with log.open("rb") as stream:
@@ -186,6 +229,7 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
                 "config": run / "config.yaml",
                 "taxonomy": run / "taxonomy/failure_taxonomy.parquet",
                 "coverage": run / "annotation_coverage.json",
+                "fit_diagnostics": run / "deg/fit_diagnostics.json",
             }
             path = paths.get(kind)
             if path is None or not path.is_file():

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -16,6 +17,14 @@ from bindsight.benchmark.designer_bench import (
     run_designer_benchmark,
     run_one_designer,
 )
+
+
+@pytest.fixture(autouse=True)
+def offline_alphafold(monkeypatch: pytest.MonkeyPatch) -> Mock:
+    """Keep mock benchmark tests offline; individual resolution tests may override."""
+    fetch = Mock(return_value=None)
+    monkeypatch.setattr("bindsight.structures.alphafolddb.AlphaFoldDBClient.fetch", fetch)
+    return fetch
 
 
 def test_read_metrics_and_floats(tmp_path: Path) -> None:
@@ -86,6 +95,33 @@ def test_run_designer_benchmark_mock(tmp_path: Path) -> None:
     md = (tmp_path / "out" / "RESULTS.md").read_text()
     assert "MOCK" in md
     assert "rfdiff_mpnn" in md
+
+
+def test_empty_targets_perform_no_design_or_reference_lookup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, offline_alphafold: Mock
+) -> None:
+    """An explicit empty selection must not silently launch the default targets."""
+    from bindsight.benchmark import designer_bench as db
+
+    designer = Mock()
+    monkeypatch.setattr(db, "get_designer", lambda name: designer)
+    monkeypatch.setattr(db, "get_runner", lambda *args, **kwargs: object())
+    summary = db.run_designer_benchmark(
+        out_dir=tmp_path / "empty",
+        backend="mock",
+        designers=("rfdiff_mpnn",),
+        targets=[],
+    )
+
+    assert summary["targets"] == []
+    assert len(summary["designers"]) == 1
+    score = summary["designers"][0]
+    assert score["error"] is None
+    assert score["n_targets"] == score["n_designs"] == 0
+    assert score["per_target"] == []
+    offline_alphafold.assert_not_called()
+    designer.make_spec.assert_not_called()
+    designer.submit.assert_not_called()
 
 
 class TestBinderArtifactStaging:

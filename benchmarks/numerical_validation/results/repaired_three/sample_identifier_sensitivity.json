@@ -1,0 +1,67 @@
+{
+  "purpose": "Additional classification detail; original validation.json is unchanged",
+  "input_sha256": {
+    "forward.parquet": "131d778b8472e7fc28364617da94cb462af1437011236f6179f6df654b0a8308",
+    "relabel_samples.parquet": "7b7229f98021f190113470df0a00fa434b10a663c03fc7a6215be7697c7aa850"
+  },
+  "comparison": {
+    "log2fc": {
+      "passed": false,
+      "n_compared": 15697,
+      "max_absolute_difference": 0.004435359922521087,
+      "missing_mask_equal": true
+    },
+    "lfc_se": {
+      "passed": false,
+      "n_compared": 15697,
+      "max_absolute_difference": 0.005603367435964346,
+      "missing_mask_equal": true
+    },
+    "stat": {
+      "passed": false,
+      "n_compared": 15697,
+      "max_absolute_difference": 0.055870403009434355,
+      "missing_mask_equal": true
+    },
+    "pvalue": {
+      "passed": false,
+      "n_compared": 15697,
+      "max_absolute_difference": 0.0020030928053353936,
+      "missing_mask_equal": true
+    },
+    "padj": {
+      "passed": false,
+      "n_compared": 15697,
+      "max_absolute_difference": 0.0032786183451607998,
+      "missing_mask_equal": true
+    },
+    "baseMean": {
+      "passed": true,
+      "n_compared": 15697,
+      "max_absolute_difference": 2.3283064365386963e-10,
+      "missing_mask_equal": true
+    },
+    "significance_decisions": {
+      "passed": false,
+      "changed": 14,
+      "gained": 12,
+      "lost": 2
+    }
+  },
+  "changed_genes": [
+    "ENSG00000010361",
+    "ENSG00000058262",
+    "ENSG00000062822",
+    "ENSG00000107551",
+    "ENSG00000124343",
+    "ENSG00000125741",
+    "ENSG00000130055",
+    "ENSG00000135406",
+    "ENSG00000149196",
+    "ENSG00000163684",
+    "ENSG00000167114",
+    "ENSG00000174306",
+    "ENSG00000176915",
+    "ENSG00000189283"
+  ]
+}

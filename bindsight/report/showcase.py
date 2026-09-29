@@ -441,7 +441,7 @@ class DesignerShowcase:
         of a real artifact, and it is reported for comparability with published
         de novo work — but a paired control folded each design beside a shuffle
         of its own sequence, and the shuffles cleared the same bar more often
-        (50% against 30%; paired difference -0.043, 95% CI -0.142 to +0.054).
+        (50% against 30%; paired difference -0.043, 95% backbone-cluster CI -0.137 to +0.063).
 
         Any surface rendering this must carry that with it, adjacently, and
         ``bindsight.report.web`` does. It is deliberately not a headline

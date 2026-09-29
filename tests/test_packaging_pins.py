@@ -66,8 +66,6 @@ def _result_affecting() -> list[str]:
 
 RESULT_AFFECTING = _result_affecting()
 
-_REQ_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
-
 
 def _pyproject() -> dict:
     return tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
@@ -81,12 +79,41 @@ def _requirements() -> dict[str, str]:
     groups += list(project.get("optional-dependencies", {}).values())
     for group in groups:
         for req in group:
-            match = _REQ_NAME.match(req)
-            if match is None:  # pragma: no cover - malformed requirement
-                continue
-            name = match.group(1).lower()
-            specs[name] = req[match.end() :]
+            requirement = Requirement(req)
+            specs[requirement.name.lower()] = str(requirement.specifier)
     return specs
+
+
+def _has_upper_bound(spec: str) -> bool:
+    """Recognize version ceilings without mistaking markers or exclusions for bounds.
+
+    Exact equality pins are bounded, as are prefix matches such as ``==0.5.*``:
+    the latter permit several releases but cannot cross the specified series.
+    ``!=`` exclusions and lower bounds alone never impose a ceiling.
+    """
+    return any(
+        part.operator in {"<", "<=", "~=", "==", "==="}
+        for part in Requirement(f"dependency{spec}").specifier
+    )
+
+
+@pytest.mark.parametrize(
+    ("spec", "bounded"),
+    [
+        ("==0.5.4", True),
+        ("==0.5.*", True),
+        ("===0.5.4", True),
+        (">=0.5.4,<0.6", True),
+        ("<=0.5.4", True),
+        ("~=0.5.4", True),
+        (">=0.5.4", False),
+        (">=0.5.4,!=0.6.*", False),
+        (">=0.5.4; python_version < '3.13'", False),
+        ("", False),
+    ],
+)
+def test_dependency_bound_detection_uses_version_specifiers(spec: str, bounded: bool) -> None:
+    assert _has_upper_bound(spec) is bounded
 
 
 # ---------------------------------------------------------------------------
@@ -110,7 +137,7 @@ def test_result_affecting_dependency_is_bounded_somewhere(package: str) -> None:
 
     There are two honest ways to do that, and this checks the right one applies:
 
-    - **Declared in pyproject** -- then it needs an upper bound, or a resolver
+    - **Declared in pyproject** -- then it needs an upper bound or exact pin, or a resolver
       may cross a breaking boundary. ``torch`` and ``transformers`` sit here and
       had none, while driving the ESM-2 prescreen that decides which designs
       reach validation.
@@ -124,7 +151,7 @@ def test_result_affecting_dependency_is_bounded_somewhere(package: str) -> None:
     """
     spec = _requirements().get(package)
     if spec is not None:
-        assert "<" in spec, (
+        assert _has_upper_bound(spec), (
             f"{package}{spec} is declared in pyproject and unbounded above; "
             "a resolver may cross a major boundary and move a published number"
         )
@@ -203,7 +230,7 @@ def test_constraints_respect_the_pyproject_bounds() -> None:
         # could not see a minor ceiling at all. The one test whose job is
         # catching a pin outside its range was blind to both boundary cases.
         requirement = Requirement(f"{name}{spec}")
-        assert any(op in spec for op in ("<", "==")), (
+        assert _has_upper_bound(spec), (
             f"{name} is pinned but unbounded above in pyproject ({spec!r})"
         )
         assert requirement.specifier.contains(Version(version), prereleases=True), (
