@@ -174,7 +174,8 @@ lacks the required per-design decoy-shuffle scores.
 ## What remains unverified
 
 The [recorded local software checks](audits/local-software-checks-2026-09-29.json)
-completed with 2,387 tests passed, 15 skipped, two deselected and one failure.
+completed with over 2,300 tests passed and one failure; the dated record retains
+the exact passing, skipped and deselected counts and the original log checksum.
 The failure is the Windows Application Control restriction described below;
 the test remains enabled. Software checks do not establish scientific validity.
 
