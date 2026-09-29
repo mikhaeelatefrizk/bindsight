@@ -464,8 +464,11 @@ def test_cpu_recipe_check_never_writes_gpu_ready_receipt(tmp_path, monkeypatch):
     assert result["cuda_tested"] is False
     assert result["models_downloaded"] is False
     assert any(
-        "boltz==2.0.3" in command and "torch==2.2.2+cu118" in command for command in commands
+        {"boltz==2.0.3", "torch==2.5.1+cu118", "trifast==0.1.11"}.issubset(command)
+        for command in commands
     )
+    assert "trifast==0.1.11" in (root / "boltz.constraints.txt").read_text()
+    assert gpu.recipe()["validation"]["torch"] == "2.5.1+cu118"
 
 
 @pytest.mark.parametrize("require_cuda", [False, True])
@@ -493,8 +496,9 @@ def test_smoke_checks_actual_entrypoints_and_only_requested_cuda(
     assert "protein_mpnn_utils.__file__" in se3
     assert "import boltz.main" in boltz
     assert "'1.12.1+cu113'" in se3
-    assert "'2.2.2+cu118'" in boltz
+    assert "'2.5.1+cu118'" in boltz
     assert "version('boltz') == '2.0.3'" in boltz
+    assert "version('trifast') == '0.1.11'" in boltz
     assert ("device='cuda'" in se3) is require_cuda
     assert ("device='cuda'" in boltz) is require_cuda
     assert ("g.update_all" in se3) is require_cuda

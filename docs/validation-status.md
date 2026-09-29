@@ -192,7 +192,7 @@ self-tests on Windows, both Mac architectures and Linux. The CI dependency check
 installs and imports the actual RFdiffusion, ProteinMPNN and Boltz environments
 on a CPU runner; it cannot verify CUDA or scientific inference.
 
-The later local software suite passed 2,464 tests, with 15 skipped and two
+The later local software suite passed over 2,400 tests, with 15 skipped and two
 deselected. Its one failure was a declaration check that did not yet recognize
 the new local `companion` package. After adding that namespace to the check,
 all 18 tests in the dependency-declaration and companion-publication groups

@@ -85,7 +85,7 @@ async function renderGpuTargets(identity,ready,host){
     const boxes=[];
     const rows=data.targets.map(t=>{
       const checkbox=N('input',{type:'checkbox',value:t.id,disabled:!t.eligible});boxes.push(checkbox);
-      return N('label',{class:'target-choice'},checkbox,N('span',{},N('strong',{},t.uniprot),para('Chain '+t.chain+' · '+t.residues.length+' residues'),caption(t.eligible?'Recorded extracellular ranges: '+JSON.stringify(t.design_ranges):t.reasons.join(' '))));
+      return N('label',{class:'target-choice'},checkbox,N('span',{},N('strong',{},t.uniprot),para('Chain '+t.chain+' · '+(t.residues.length?t.residues.length+' specified hotspot residues':'No specified hotspots')),caption(t.eligible?'Recorded extracellular ranges: '+t.design_ranges.map(([start,end])=>start+'–'+end).join(', '):t.reasons.join(' '))));
     });
     const settings={};
     const setting=(name,text,min,max)=>{const control=N('input',{type:'number',id:'gpu-'+name,min,max,step:1,value:ready.defaults[name]});settings[name]=control;return field(text,control);};

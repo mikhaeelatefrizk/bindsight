@@ -153,7 +153,9 @@ def prepare(config: dict[str, Any]) -> Path:
     }
     checked = RunConfig.model_validate(settings)
     (output / "config.yaml").write_text(
-        yaml.safe_dump(checked.model_dump(mode="json", by_alias=True)), encoding="utf-8"
+        yaml.safe_dump(checked.model_dump(mode="json", by_alias=True)),
+        encoding="utf-8",
+        newline="\n",
     )
     manifest = new_manifest(
         name="Protein design from " + (original.name or "local discovery"),

@@ -42,7 +42,12 @@ def recipe() -> dict[str, Any]:
         "proteinmpnn_commit": tools.PROTEINMPNN_COMMIT,
         "boltz": tools.BOLTZ_PIP,
         "se3": {"python": "3.9", "torch": "1.12.1+cu113", "dgl": "1.0.2+cu113", "numpy": "1.23.5"},
-        "validation": {"python": "3.11", "torch": "2.2.2+cu118", "numpy": "1.26.4"},
+        "validation": {
+            "python": "3.11",
+            "torch": "2.5.1+cu118",
+            "numpy": "1.26.4",
+            "trifast": "0.1.11",
+        },
         "micromamba_sha256": MICROMAMBA_SHA256,
         "checkpoint_expected_sha256": tools.RFDIFF_WEIGHT_SHA256,
         "minimum_memory_mib": MIN_MEMORY_MIB,

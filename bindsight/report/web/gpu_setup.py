@@ -116,7 +116,7 @@ def smoke(root: Path, env: dict[str, str], *, require_cuda: bool = True) -> dict
         "boltz": (root / "boltz/bin/python", "import boltz.main; "),
     }
     for name, (python, imports) in programs.items():
-        expected_torch = "1.12.1+cu113" if name == "se3" else "2.2.2+cu118"
+        expected_torch = "1.12.1+cu113" if name == "se3" else "2.5.1+cu118"
         expected_python = (3, 9) if name == "se3" else (3, 11)
         program = (
             "import json, sys, torch; from importlib.metadata import version; "
@@ -128,6 +128,7 @@ def smoke(root: Path, env: dict[str, str], *, require_cuda: bool = True) -> dict
                 if name == "se3"
                 else "assert version('boltz') == '2.0.3', 'Unexpected Boltz version'; "
                 "assert version('numpy') == '1.26.4', 'Unexpected NumPy version'; "
+                "assert version('trifast') == '0.1.11', 'Unexpected trifast version'; "
             )
         )
         if require_cuda:
@@ -222,10 +223,16 @@ def install(config: dict[str, Any], job_directory: Path, *, check_recipe: bool =
         )
 
     (root / "se3.constraints.txt").write_text(
-        "torch==1.12.1+cu113\ndgl==1.0.2+cu113\nnumpy==1.23.5\ne3nn==0.3.3\n", encoding="ascii"
+        "torch==1.12.1+cu113\ndgl==1.0.2+cu113\nnumpy==1.23.5\ne3nn==0.3.3\n",
+        encoding="ascii",
+        newline="\n",
     )
+    # Boltz's required trifast>=0.1.11 needs torch>=2.5.1; later trifast
+    # releases require newer torch. Resolve the compatible reviewed pair together.
     (root / "boltz.constraints.txt").write_text(
-        "torch==2.2.2+cu118\nboltz==2.0.3\nnumpy==1.26.4\n", encoding="ascii"
+        "torch==2.5.1+cu118\nboltz==2.0.3\nnumpy==1.26.4\ntrifast==0.1.11\n",
+        encoding="ascii",
+        newline="\n",
     )
 
     phase("Prepare private Python environments")
@@ -303,8 +310,9 @@ def install(config: dict[str, Any], job_directory: Path, *, check_recipe: bool =
     phase("Install the isolated Boltz prediction environment")
     pip(
         "boltz",
-        "torch==2.2.2+cu118",
+        "torch==2.5.1+cu118",
         tools.BOLTZ_PIP,
+        "trifast==0.1.11",
         "numpy==1.26.4",
         "biopython>=1.83,<2",
         "--extra-index-url",

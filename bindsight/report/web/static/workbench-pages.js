@@ -92,14 +92,15 @@ async function api(path,options={}){
 }
 function renderRun(){if(localMode)renderLocalRun();else renderInstallation();}
 function renderInstallation(){
-  const osSelect=N('select',{id:'install-os',class:'filter'},option('Windows · Intel / AMD','windows-x64'),option('Mac · Apple silicon','macos-arm64'),option('Mac · Intel','macos-x64'),option('Linux · Intel / AMD','linux-x64'));
-  const platform=navigator.platform.toLowerCase();osSelect.value=platform.includes('mac')?'macos-arm64':platform.includes('linux')?'linux-x64':'windows-x64';
+  const osSelect=N('select',{id:'install-os',class:'filter'},option('Select your computer',''),option('Windows · Intel / AMD','windows-x64'),option('Mac · Apple silicon','macos-arm64'),option('Mac · Intel','macos-x64'),option('Linux · Intel / AMD','linux-x64'));
+  const platform=navigator.platform.toLowerCase();osSelect.value=platform.includes('mac')?'':platform.includes('linux')?'linux-x64':platform.includes('win')?'windows-x64':'';
   const download=N('a',{class:'button',id:'companion-download',hidden:true,download:true},'Download companion');
   const status=para('Checking available installers…');status.setAttribute('role','status');
   const details=N('div',{class:'source-caption'});
   let manifest;
   function choose(){
     download.hidden=true;
+    if(!osSelect.value){status.textContent='Choose your computer to see its download. On a Mac, About This Mac shows either an Apple chip or an Intel processor.';details.replaceChildren();return;}
     if(!manifest)return;
     const item=manifest.platforms?.[osSelect.value];
     if(!item||!/^Bindsight-Companion-[a-z0-9-]+(?:\.exe|\.zip)?$/.test(item.filename)||!/^[a-f0-9]{64}$/.test(item.sha256)){

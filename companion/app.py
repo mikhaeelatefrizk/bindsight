@@ -213,6 +213,7 @@ def run_gui() -> int:
                                     json.dumps({"revision": revision, "url": url, "owner": owner})
                                     + "\n",
                                     encoding="utf-8",
+                                    newline="\n",
                                 )
                                 messages.put(("browser", url))
 
@@ -396,7 +397,9 @@ def main() -> int:
             result = smoke_existing(args.smoke_existing_root)
         except Exception as exc:
             result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-        args.self_test_output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        args.self_test_output.write_text(
+            json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
         return 0 if result["ok"] else 1
     if args.headless:
         if not args.setup_approved or args.uri is not None or sys.platform != "linux":

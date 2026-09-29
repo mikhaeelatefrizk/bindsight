@@ -413,7 +413,7 @@ def _bridge(
     try:
         while process.poll() is None:
             if cancel.wait(0.15):
-                marker.write_text("cancel\n", encoding="utf-8")
+                marker.write_text("cancel\n", encoding="utf-8", newline="\n")
                 report(
                     "Stopping the Linux companion and its owned work; saved runs remain in Linux."
                 )
@@ -433,7 +433,7 @@ def _bridge(
             )
     finally:
         if process.poll() is None:
-            marker.write_text("cancel\n", encoding="utf-8")
+            marker.write_text("cancel\n", encoding="utf-8", newline="\n")
             try:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
