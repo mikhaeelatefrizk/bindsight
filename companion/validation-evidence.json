@@ -1,0 +1,93 @@
+{
+  "schema": "bindsight-companion-development-validation/1",
+  "platform": "windows-x64",
+  "validation_date": "2026-09-29",
+  "publishable_binary": false,
+  "source_install_smoke": {
+    "schema": "bindsight-companion-install-smoke/1",
+    "passed": true,
+    "installation": {
+      "schema": "bindsight-companion-install/1",
+      "revision": "338adf6003540d8c989f99cd8b32b4455dc082fa",
+      "source_sha256": "f562eb0644033d8b924d5d5edb83eba9f698e4964f342ba24036593055e394a7",
+      "uv_version": "0.12.19",
+      "python_version": "3.12.12",
+      "platform": "windows-x64",
+      "source": "releases\\338adf6003540d8c989f99cd8b32b4455dc082fa-1d83451f\\source\\bindsight",
+      "python": "releases\\338adf6003540d8c989f99cd8b32b4455dc082fa-1d83451f\\environment\\Scripts\\python.exe"
+    },
+    "workspace": {
+      "url": "http://127.0.0.1:59294/workbench",
+      "http_status": 200,
+      "html_sha256": "5287664a340e452927f37e9e92cf70c6cfcf1f3e1258d40f3620bf4482791b0f",
+      "bytes": 8252
+    },
+    "shortcuts_registered": false,
+    "protocol_registered": false,
+    "system_python_changed": false,
+    "global_path_changed": false
+  },
+  "packaged_build": {
+    "revision": "ff5694ec31df7786b7e89d0bd660ebfd6af6ffd9",
+    "platform": "windows-x64",
+    "filename": "Bindsight-Companion-windows-x64.exe",
+    "sha256": "a604fef02399eabba7580140b2844636ee893bfddaa16aa6d6ded995d1df64d7",
+    "size_bytes": 12412788,
+    "development_dirty_build": true,
+    "self_test": {
+      "ok": true,
+      "revision": "ff5694ec31df7786b7e89d0bd660ebfd6af6ffd9",
+      "platform": "windows-x64",
+      "uv_version": "0.12.19",
+      "uv_sha256": "6dbb02d79e419522f1c500f0adb1cddcff0cda7d59b0d66ea7f5e3b4a1b2f5f0",
+      "python_version": "3.12.12",
+      "tcl": "8.6.12",
+      "network_requests": 0,
+      "packages_installed": 0,
+      "gui_created": false
+    }
+  },
+  "packaged_external_python_smoke": {
+    "ok": true,
+    "companion_revision": "ff5694ec31df7786b7e89d0bd660ebfd6af6ffd9",
+    "installed_source_revision": "338adf6003540d8c989f99cd8b32b4455dc082fa",
+    "workspace": {
+      "http_status": 200,
+      "html_sha256": "cb5fa0d9ec9fb254ea62a31405dd26f6f942dbf41e6617b5c5d4ec2ad0b77d69",
+      "bytes": 8252
+    },
+    "downloads": 0,
+    "registered_launchers": false
+  },
+  "tested_file_sha256": {
+    "companion/app.py": "ad2fe215c3030ee25de832c8e230c3ffd8dab11aa7c80c1b7a7ff7fe18f3e9b3",
+    "companion/core.py": "98adf7c10332479336895239f1c828edbcf25358cce7be5d86add7db0662477f",
+    "companion/desktop.py": "31fb27c5197828a42d3b29ae9feb1bfb9b92923e5ed5c5b8e7be762d024c7a51",
+    "companion/protocol.py": "d9dfc21416109f0a4836bc9d7fd0c76b7ca2c3807f54d8e5e29ccfd815d8eb7f",
+    "companion/wsl.py": "4a715d32a2d073da478d297be51026100702d6352d87c5edd4ded2f7f92c0497",
+    "companion/validation.py": "d607ccf5146247dd6a13291303766534b6ce9f868fc840fcdc06c3e4672ac590",
+    "companion/pins.json": "79d318ab013137d321ae7d1326c485d98d4b8b755edd8cad869338b093888632",
+    "companion/build.py": "7a43542c6f7e42368e84d2388a737345953a9d80054e3591a0168781431b4a7f",
+    "companion/companion.spec": "770344e3d46d8deca353f54c30ba6383c87cf2ccf7cdfcb5a24e0223ee4dcaaf"
+  },
+  "checks": {
+    "targeted_tests_passed": 85,
+    "ruff_lint": "passed",
+    "ruff_format": "passed",
+    "mypy": "passed"
+  },
+  "raw_evidence": {
+    "install_log": "work/companion-install-smoke/smoke.log",
+    "install_receipt": "work/companion-install-smoke/smoke-receipt.json",
+    "packaged_log": "work/companion-install-smoke/packaged-smoke.log",
+    "packaged_receipt": "work/companion-install-smoke/packaged-final-smoke-receipt.json"
+  },
+  "limitations": [
+    "Development dirty build; release must be rebuilt from its committed revision.",
+    "No Windows or WSL global installation, protocol registration, shortcut creation, or GPU inference was performed by these smoke checks.",
+    "CPU dependency installation used the then-published 338adf6 source; the packaged interoperability smoke deliberately reports its separate companion build revision.",
+    "No Authenticode signing or Apple notarization.",
+    "macOS and Linux packaging await the corresponding CI jobs; their desktop interaction and registration are not locally verified.",
+    "Raw work logs retain an initial archive-case validation failure before the corrected successful installation."
+  ]
+}

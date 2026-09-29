@@ -64,6 +64,8 @@ _SOURCE_FILES = (
     "bindsight/report/web/app.py",
     "bindsight/report/web/workbench_routes.py",
     "bindsight/report/web/workspace.py",
+    "bindsight/report/web/resources.py",
+    "bindsight/report/web/gpu.py",
     "bindsight/report/web/worker.py",
 )
 
@@ -162,6 +164,14 @@ def exercise(args: argparse.Namespace, record: dict[str, Any]) -> None:
             record["final_state"] = status
             if status not in {"completed", "incomplete_annotation"}:
                 raise RuntimeError("The real scientific process did not complete")
+            target_list = _json(client.get(f"/api/workbench/jobs/{identity}/targets"))
+            eligible_targets = [target for target in target_list["targets"] if target["eligible"]]
+            record["design_handoff"] = {
+                "recorded_targets": len(target_list["targets"]),
+                "eligible_targets": len(eligible_targets),
+                "scope": "Read-only target selection and provenance check; GPU design was not run.",
+            }
+            record["resource_admission"] = state.get("resource_admission")
 
             payloads: dict[str, bytes] = {}
             for kind in ARTIFACTS:
@@ -232,6 +242,10 @@ def exercise(args: argparse.Namespace, record: dict[str, Any]) -> None:
                 "annotation_state_matches_coverage": (status == "incomplete_annotation")
                 == bool(record["coverage"].get("unassessed_lookups")),
                 "source_unchanged_during_execution": source_hashes() == record["source_sha256"],
+                "eligible_targets_have_recorded_hashes": all(
+                    re.fullmatch(r"[a-f0-9]{64}", target["structure_sha256"] or "") is not None
+                    for target in eligible_targets
+                ),
             }
             if not all(record["checks"].values()):
                 raise RuntimeError("One or more workflow verification checks failed")

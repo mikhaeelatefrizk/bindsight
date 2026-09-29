@@ -26,18 +26,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,discover,report]"
       - name: Ruff check
-        run: ruff check bindsight tests scripts benchmarks
+        run: ruff check bindsight tests scripts benchmarks companion
       - name: Test the read-only website relay
         run: node --test hosting/site-proxy.test.mjs
+      - name: Test the production Worker request implementation
+        run: |
+          npm install --prefix "$RUNNER_TEMP/relay-runtime" --no-audit --no-fund miniflare@5.20260926.1-alpha
+          BINDSIGHT_MINIFLARE_DIR="$RUNNER_TEMP/relay-runtime" node --test hosting/site-proxy.workerd-test.mjs
       - name: Ruff format
-        run: ruff format --check bindsight tests scripts benchmarks
+        run: ruff format --check bindsight tests scripts benchmarks companion
       # Blocking. pyproject sets strict = true and CI swallowed the result with
       # `|| true`, so 53 errors accumulated unnoticed -- including the arity bug
       # that left the Snakemake front-end dead for five weeks. That front-end is
       # scripts/, which this step did not check: the justification named a
       # directory outside its own scope.
       - name: mypy
-        run: mypy bindsight scripts benchmarks
+        run: mypy bindsight scripts benchmarks companion
 
   test:
     name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
@@ -140,6 +144,55 @@ jobs:
           name: dist
           path: dist/
 
+  gpu-recipe:
+    name: GPU recipe installation and imports (CPU runner)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install the setup driver
+        run: python -m pip install -e . "psutil>=5.9,<8"
+      - name: Resolve and import both actual scientific environments
+        run: python -m bindsight.report.web.gpu_setup --check-recipe --root "$RUNNER_TEMP/bindsight-gpu-recipe"
+      - name: Retain the dependency check record
+        uses: actions/upload-artifact@v7
+        with:
+          name: gpu-recipe-import-check
+          path: ${{ runner.temp }}/bindsight-gpu-recipe/recipe_check.json
+          if-no-files-found: error
+      # This installs actual GPU packages, but deliberately downloads no model
+      # weights, runs no GPU computation and never creates a ready.json receipt.
+
+  companion:
+    name: Companion (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-latest, platform: windows-x64}
+          - {os: macos-latest, platform: macos-arm64}
+          - {os: macos-15-intel, platform: macos-x64}
+          - {os: ubuntu-22.04, platform: linux-x64}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install the pinned packaging tool
+        run: python -m pip install pyinstaller==6.16.0
+      - name: Package the companion for this tested source
+        run: python companion/build.py --revision ${{ github.sha }} --output companion-dist
+      - name: Upload the companion and its build record
+        uses: actions/upload-artifact@v7
+        with:
+          name: companion-${{ matrix.platform }}
+          path: companion-dist/
+          if-no-files-found: error
+
   gate:
     # One check for the branch ruleset on `main` to require.
     #
@@ -153,7 +206,7 @@ jobs:
     # this file by tests/test_packaging_pins.py rather than by memory.
     name: All CI jobs passed
     runs-on: ubuntu-latest
-    needs: [lint, test, pinned, build]
+    needs: [lint, test, pinned, build, companion, gpu-recipe]
     # Without this the gate is skipped when anything it needs fails, and a
     # skipped required check never reports -- the merge would block on silence
     # rather than on the failure, which reads like an outage.

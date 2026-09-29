@@ -171,13 +171,47 @@ advantage nor equivalence nor absence of binding. Controlled cross-target
 inference cannot be recomputed over backbones because the historical summary
 lacks the required per-design decoy-shuffle scores.
 
+## Companion and local workflow checks
+
+A second [real CPU/API run](audits/local-workflow-companion-2026-09-29.json)
+completed on 2026-09-29 at 18:47 UTC. It checked the same 19,944 input genes,
+completed discovery and reporting, verified all eight downloadable artifacts
+against their recorded hashes, and exposed five eligible structure targets with
+original-file hashes for GPU continuation. It took 423.362 seconds with one
+analysis worker while other software checks shared the computer; this is not a
+performance benchmark. Numerical fitting warnings remain visible in the record.
+Its source hashes identify the tested development snapshot, rather than claiming
+that every subsequent edit was part of that run.
+
+The [Windows companion development record](https://github.com/mikhaeelatefrizk/bindsight/blob/main/companion/validation-evidence.json)
+records a real isolated CPU installation and a packaged executable launching the
+managed Python workspace. That installation used the previous published source
+revision, explicitly identified in the record. The development binary is not a
+release artifact. Publication requires clean, matching builds and packaged
+self-tests on Windows, both Mac architectures and Linux. The CI dependency check
+installs and imports the actual RFdiffusion, ProteinMPNN and Boltz environments
+on a CPU runner; it cannot verify CUDA or scientific inference.
+
+The later local software suite passed over 2,400 tests, with 15 skipped and two
+deselected. Its one failure was a declaration check that did not yet recognize
+the new local `companion` package. After adding that namespace to the check,
+the dependency-declaration and companion-publication test groups
+passed. Coverage was 83.62%. Final release checks are reported separately by
+[GitHub Actions](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml).
+
+These checks do not establish binding, biological effectiveness, comprehensive
+security, or compatibility with every visitor's computer. Desktop application
+signing/notarization, real WSL setup and a complete new GPU design run have not
+been verified here.
+
 ## What remains unverified
 
 The [recorded local software checks](audits/local-software-checks-2026-09-29.json)
 completed with over 2,300 tests passed and one failure; the dated record retains
 the exact passing, skipped and deselected counts and the original log checksum.
-The failure is the Windows Application Control restriction described below;
-the test remains enabled. Software checks do not establish scientific validity.
+That earlier failure was the Windows Application Control restriction described
+below; it did not recur in the later run above. The dated record is retained
+unchanged. Software checks do not establish scientific validity.
 
 The independent [R DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
 comparison above has been performed; the remaining implementation differences
@@ -191,11 +225,11 @@ package-database result, not proof of software security, numerical correctness,
 or coverage of optional GPU environments. The inference correction is guarded
 for PyDESeq2 0.5.4 and requires review before changing that version.
 
-The local software suite also has an environment limitation: Windows Application
-Control blocks the compiled `Bio.Align._codonaligner` import used by a
-calibration-staging PDB sequence test. That test remains a failure; it was not
-skipped, and no operating-system security setting was changed. The separate real
-CPU/API workflow above succeeds. Software checks and scientific validation
+The earlier local software suite encountered Windows Application Control
+blocking the compiled `Bio.Align._codonaligner` import used by a
+calibration-staging PDB sequence test. The same enabled test passed in the later
+run; no operating-system security setting was changed. This does not establish
+which host-policy condition changed. Software checks and scientific validation
 answer different questions.
 
 No new complete GPU design run was performed for this audit. The local 2 GB

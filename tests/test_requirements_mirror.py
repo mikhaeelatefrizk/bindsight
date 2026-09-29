@@ -261,6 +261,7 @@ class TestNothingIsImportedThatIsNotDeclared:
         "tests": "the test package importing its own siblings",
         "scripts": "repository tests importing scripts/validate_real_counts.py",
         "launch": "tests/test_website_archive.py importing the root launcher",
+        "companion": "the repository's packaged desktop companion and its tests",
     }
 
     @staticmethod

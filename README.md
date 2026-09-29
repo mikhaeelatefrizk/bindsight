@@ -11,15 +11,19 @@ download the repository to explore the existing results.
 | Understand the findings and their limitations | [The evidence](https://bindsight-research.mikha-50.chatgpt.site/#evidence) — inspect the study and paired controls. |
 | Analyse your own human bulk RNA-seq data | [Run locally](https://bindsight-research.mikha-50.chatgpt.site/#run) — choose your operating system and follow the one-time setup. |
 
-For a new analysis, download and extract the workspace, then use its launcher.
-The local app checks your computer and input files before running CPU discovery.
+For a new analysis, choose your computer on **Run locally**, download the companion,
+and approve its one-time setup. It installs its own Python and analysis packages;
+no terminal commands or existing Python installation are needed for CPU discovery.
+The local app checks your computer and input files before running the analysis.
+Its **Protein design** page offers optional GPU preparation, target selection,
+design, prediction, results and real process logs on supported hardware.
 Your count matrices and results stay on your computer; public reference queries
 require internet access. [Complete setup instructions and GPU requirements](docs/local-workspace.md).
 
 The website and local application share the interface in `bindsight/report/web/`.
 The `bindsight/` Python package is the analysis engine; the other repository
 folders contain scientific evidence, references, examples, documentation and tests.
-Keep the downloaded folders together. The site displays real computational
+The companion manages those folders together. The site displays real computational
 outputs; those predictions are not experimentally confirmed binding results.
 
 **Before interpreting a result:** read the [validation status](docs/validation-status.md).
@@ -29,11 +33,12 @@ and independent R results still differ. A significant gene is a statistical resu
 under the fitted model, not proof of a suitable target or binder.
 
 The public workspace follows successful CI runs on the latest `main` commit.
-GitHub Actions builds its interface, evidence and local download together on
+GitHub Actions builds its interface, evidence, source download and platform companions together on
 GitHub Pages; the hosted address serves that release through a read-only relay.
 The source revision shown in the site identifies the published commit. A failed
 test or deployment leaves the preceding release live. Existing local downloads
-must be replaced to receive an update.
+must be replaced to receive an update; saved research is kept separately from
+the companion's versioned software environment.
 
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
@@ -103,10 +108,11 @@ HTML report you can open in a browser. It needs internet on first run (the cohor
 and the enrichment lookups are cached afterwards) and takes a few minutes of real
 DESeq2. No GPU.
 
-For a local interface over the same thing — the evidence behind every claim
-below, the demo, your own cohort, and the predicted binder–target complexes
-rendered in 3-D. Served from your machine; nothing is fetched from a network
-once installed.
+For a local interface over the evidence behind the claims below, your own cohort,
+and predicted binder–target complexes rendered in 3-D, use the companion above
+or the following command. Bundled evidence can be explored offline. New analyses
+need internet access for public references; GPU setup and model weights also
+require downloads.
 
 ```bash
 bindsight ui      # opens http://localhost:8501

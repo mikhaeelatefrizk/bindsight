@@ -15,7 +15,8 @@ function switchPage(route) {
   });
   if (page === 'structures' && molecularViewer) { molecularViewer.resize(); molecularViewer.render(); }
   if (page === 'runs' && localMode && typeof refreshRuns === 'function') refreshRuns();
-  const names={structures:'Structure explorer',evidence:'The evidence',methods:'Methods & sources',run:localMode?'New analysis':'Run locally',runs:'Your analyses'};
+  if (page === 'gpu' && localMode && typeof renderGpu === 'function') renderGpu();
+  const names={structures:'Structure explorer',evidence:'The evidence',methods:'Methods & sources',run:localMode?'New analysis':'Run locally',runs:'Your analyses',gpu:'Protein design'};
   document.title=names[page]+' · bindsight';
   if(anchor==='calibration'&&page==='evidence')requestAnimationFrame(()=>$('evidence-calibration')?.scrollIntoView({block:'start'}));
   else window.scrollTo({top:0,behavior:'instant'});
@@ -59,7 +60,8 @@ $('spin').addEventListener('click', () => { if (!molecularViewer) return; rotati
 $('reset-view').addEventListener('click', () => { if (molecularViewer) { molecularViewer.zoomTo(); molecularViewer.zoom(1.75); molecularViewer.render(); } });
 window.addEventListener('resize', () => { if (molecularViewer) { molecularViewer.resize(); molecularViewer.render(); } });
 async function boot() {
-  if(localMode)renderRun();
+  if(!$('run-content').childElementCount)renderRun();
+  switchPage(location.hash.slice(1) || 'structures');
   try {
     const response = await fetch(localMode ? '/api/workbench/evidence' : 'evidence.json');
     if (!response.ok) throw new Error('The evidence dataset is unavailable. No substitute results are shown.');
@@ -74,12 +76,15 @@ async function boot() {
     });
     if (typeof renderEvidence === 'function') renderEvidence();
     if (typeof renderMethods === 'function') renderMethods();
-    if (!localMode && typeof renderRun === 'function') renderRun();
     switchPage(location.hash.slice(1) || 'structures');
     if (evidence.binders.length) await selectBinder(evidence.binders[0]);
     else $('viewer-status').textContent = 'No committed structures are available in this installation.';
     registerResearchTools();
-  } catch(error) { $('load-error').textContent = error.message; $('load-error').hidden = false; }
+  } catch(error) {
+    $('load-error').replaceChildren(document.createTextNode(error.message+' '),button(null,'Retry evidence',()=>{ $('load-error').hidden=true; boot(); },'inline-link'));
+    $('load-error').hidden = false;
+    $('viewer-status').textContent='The recorded structures could not be loaded. You can still open the setup page.';
+  }
 }
 boot();
 

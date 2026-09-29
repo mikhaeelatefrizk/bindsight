@@ -1,0 +1,13 @@
+{
+  "uv_version": "0.12.19",
+  "python_version": "3.12.12",
+  "release_base": "https://mikhaeelatefrizk.github.io/bindsight/workspace/",
+  "repository": "https://github.com/mikhaeelatefrizk/bindsight",
+  "provenance": "https://api.github.com/repos/astral-sh/uv/releases/tags/0.12.19",
+  "artifacts": {
+    "windows-x64": {"name": "uv-x86_64-pc-windows-msvc.zip", "bytes": 17955780, "sha256": "6dbb02d79e419522f1c500f0adb1cddcff0cda7d59b0d66ea7f5e3b4a1b2f5f0"},
+    "macos-arm64": {"name": "uv-aarch64-apple-darwin.tar.gz", "bytes": 16988553, "sha256": "a9a8df1eedeb192f2e47e40e2faabfb387db4b850209118786d42f89dde3e0ba"},
+    "macos-x64": {"name": "uv-x86_64-apple-darwin.tar.gz", "bytes": 20718482, "sha256": "cb5fa57bafe68fc0fb94b17f06bee0b0b9a7feb94ccbd110445afa0696e39273"},
+    "linux-x64": {"name": "uv-x86_64-unknown-linux-gnu.tar.gz", "bytes": 19831732, "sha256": "23bf5552d220e0842b65c862097b2ebaeba0064b74eda5e565e77fd25969d8c8"}
+  }
+}

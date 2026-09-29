@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import secrets
 import threading
@@ -26,6 +27,23 @@ from bindsight.report.web.workspace import (
     inspect_inputs,
 )
 
+ARTIFACTS = {
+    "report": "report.html",
+    "manifest": "run_manifest.jsonld",
+    "candidates": "targets/candidates.parquet",
+    "deg": "deg/results.parquet",
+    "config": "config.yaml",
+    "taxonomy": "taxonomy/failure_taxonomy.parquet",
+    "coverage": "annotation_coverage.json",
+    "fit_diagnostics": "deg/fit_diagnostics.json",
+    "ranking": "rank/ranking.parquet",
+    "validated": "validate/validated.parquet",
+    "design_archive": "design/results.tar.gz",
+    "gpu_environment": "gpu_environment.json",
+    "gpu_setup_receipt": "gpu_setup_receipt.json",
+    "source_manifest": "source_discovery_manifest.jsonld",
+}
+
 
 def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
     """Register token-protected state changes against a loopback-only workspace."""
@@ -38,6 +56,33 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
             if workspace is None:
                 workspace = Workspace(root)
         return workspace
+
+    def job_run(state: dict[str, Any]) -> Path:
+        run = Path(state["run_dir"]).resolve()
+        if run.parent != get_workspace().root:
+            raise ValueError("The recorded output directory is outside this workspace.")
+        return run
+
+    def available(state: dict[str, Any]) -> dict[str, Path]:
+        run = job_run(state)
+        return {
+            kind: run / name
+            for kind, name in ARTIFACTS.items()
+            if (run / name).is_file()
+            and not (run / name).is_symlink()
+            and (run / name).resolve().is_relative_to(run)
+        }
+
+    async def settings(request: Request) -> dict[str, Any]:
+        payload = bytearray()
+        async for chunk in request.stream():
+            payload.extend(chunk)
+            if len(payload) > 16_384:
+                raise ValueError("The analysis settings are too large.")
+        body = json.loads(payload)
+        if not isinstance(body, dict):
+            raise ValueError("Analysis settings must be an object.")
+        return body
 
     original_lifespan = app.router.lifespan_context
 
@@ -101,8 +146,52 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
         return evidence_bundle()
 
     @app.get("/api/workbench/hardware")
-    def capabilities() -> Any:
-        return hardware(get_workspace().storage)
+    async def capabilities() -> Any:
+        return await run_in_threadpool(hardware, get_workspace().storage)
+
+    @app.get("/api/workbench/gpu/readiness")
+    async def gpu_readiness() -> Any:
+        from bindsight.report.web.gpu import readiness
+
+        return await run_in_threadpool(readiness, get_workspace())
+
+    @app.post("/api/workbench/gpu/setup")
+    async def gpu_setup(request: Request) -> Any:
+        from bindsight.report.web.gpu import start_setup
+
+        try:
+            return await run_in_threadpool(start_setup, get_workspace(), await settings(request))
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+    @app.get("/api/workbench/jobs/{identity}/targets")
+    async def gpu_targets(identity: str) -> Any:
+        from bindsight.report.web.gpu import targets
+
+        try:
+            return await run_in_threadpool(targets, get_workspace(), identity)
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+    @app.post("/api/workbench/jobs/{identity}/design")
+    async def gpu_design(identity: str, request: Request) -> Any:
+        from bindsight.report.web.gpu import start_design
+
+        try:
+            return await run_in_threadpool(
+                start_design, get_workspace(), identity, await settings(request)
+            )
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+    @app.post("/api/workbench/jobs/{identity}/resume")
+    async def resume_gpu(identity: str) -> Any:
+        from bindsight.report.web.gpu import resume
+
+        try:
+            return await run_in_threadpool(resume, get_workspace(), identity)
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
 
     @app.get("/api/workbench/sequence/{identity}")
     def sequence(identity: str) -> Any:
@@ -185,17 +274,28 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
 
     @app.get("/api/workbench/jobs")
     def jobs() -> Any:
-        return {"jobs": get_workspace().list()}
+        jobs = get_workspace().list()
+        for state in jobs:
+            try:
+                state["available_artifacts"] = list(available(state))
+            except (ValueError, OSError):
+                state["available_artifacts"] = []
+        return {"jobs": jobs}
 
     @app.get("/api/workbench/jobs/{identity}")
     def status(identity: str) -> Any:
         try:
             state = get_workspace().read(identity)
-            if state.get("state") in {"completed", "incomplete_annotation"}:
-                run = Path(state["run_dir"]).resolve()
-                if run.parent != get_workspace().root:
-                    raise ValueError("The recorded output directory is outside this workspace.")
+            state["available_artifacts"] = list(available(state))
+            if (
+                state.get("state") in {"completed", "incomplete_annotation"}
+                and state.get("kind") != "gpu_setup"
+            ):
+                run = job_run(state)
                 state["numerical_fit"] = fit_summary(run)
+            progress = get_workspace().directory(identity) / "progress.json"
+            if progress.is_file():
+                state["progress"] = json.loads(progress.read_text(encoding="utf-8"))
             log = get_workspace().directory(identity) / "analysis.log"
             if log.is_file():
                 with log.open("rb") as stream:
@@ -218,20 +318,7 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
     def artifact(identity: str, kind: str) -> Any:
         try:
             state = get_workspace().read(identity)
-            run = Path(state["run_dir"]).resolve()
-            if run.parent != get_workspace().root:
-                raise ValueError("The recorded output directory is outside this workspace.")
-            paths = {
-                "report": run / "report.html",
-                "manifest": run / "run_manifest.jsonld",
-                "candidates": run / "targets/candidates.parquet",
-                "deg": run / "deg/results.parquet",
-                "config": run / "config.yaml",
-                "taxonomy": run / "taxonomy/failure_taxonomy.parquet",
-                "coverage": run / "annotation_coverage.json",
-                "fit_diagnostics": run / "deg/fit_diagnostics.json",
-            }
-            path = paths.get(kind)
+            path = available(state).get(kind)
             if path is None or not path.is_file():
                 raise ValueError("This artifact is not available for this analysis.")
             if kind == "report":
@@ -244,5 +331,56 @@ def register(app: FastAPI, templates: Jinja2Templates, root: Path) -> None:
                     },
                 )
             return FileResponse(path, filename=path.name)
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+
+    def structures_for(identity: str) -> dict[str, Path]:
+        state = get_workspace().read(identity)
+        if state.get("kind") != "gpu_design" or state["state"] not in {
+            "completed",
+            "incomplete_annotation",
+        }:
+            return {}
+        run = job_run(state)
+        result = {}
+        for path in (run / "validate").rglob("*"):
+            if (
+                path.suffix.lower() in {".pdb", ".cif"}
+                and path.is_file()
+                and not path.is_symlink()
+                and path.resolve().is_relative_to(run)
+            ):
+                key = hashlib.sha256(path.relative_to(run).as_posix().encode()).hexdigest()[:20]
+                result[key] = path
+        return result
+
+    @app.get("/api/workbench/jobs/{identity}/structures")
+    def job_structures(identity: str) -> Any:
+        from bindsight.provenance.manifest import sha256_file
+
+        try:
+            return {
+                "structures": [
+                    {
+                        "id": key,
+                        "filename": path.name,
+                        "format": path.suffix.lstrip(".").lower(),
+                        "sha256": sha256_file(path),
+                        "url": f"/api/workbench/jobs/{identity}/structures/{key}",
+                    }
+                    for key, path in structures_for(identity).items()
+                ],
+                "note": "Original computational prediction files; binding is not experimentally established.",
+            }
+        except (ValueError, OSError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+
+    @app.get("/api/workbench/jobs/{identity}/structures/{key}")
+    def job_structure(identity: str, key: str) -> Any:
+        try:
+            path = structures_for(identity).get(key)
+            if path is None:
+                raise ValueError("No recorded structure has that identifier.")
+            return FileResponse(path, filename=path.name, media_type="text/plain")
         except (ValueError, OSError) as exc:
             return JSONResponse({"error": str(exc)}, status_code=404)

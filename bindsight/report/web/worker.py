@@ -9,6 +9,37 @@ import sys
 from pathlib import Path
 
 
+def record_structure_inputs(run: Path) -> None:
+    """Attest original local structure bytes before offering them for GPU continuation."""
+    import pandas as pd
+
+    from bindsight.io.paths import resolve_run_path
+    from bindsight.provenance import append as provenance
+
+    table = run / "epitopes/epitopes.parquet"
+    outputs = {}
+    if table.is_file():
+        frame = pd.read_parquet(table)
+        for index, value in enumerate(frame.get("structure_path", [])):
+            path = resolve_run_path(run, value)
+            if (
+                path is not None
+                and path.is_file()
+                and not path.is_symlink()
+                and path.resolve().is_relative_to(run.resolve())
+            ):
+                outputs[f"target_structure_{index}"] = path
+    provenance.record(
+        run,
+        name="structure_inputs",
+        tool="bindsight.report.web.worker",
+        inputs={"epitopes": table},
+        outputs=outputs,
+        params={"n_recorded_structures": len(outputs)},
+        notes="Original structure bytes for a possible local GPU continuation; no additional structure or binding validation.",
+    )
+
+
 def main(config_path: Path) -> int:
     """Use the scientific pipeline unchanged and propagate failed manifests."""
     from bindsight.config import RunConfig
@@ -30,6 +61,7 @@ def main(config_path: Path) -> int:
         return 1
     import pandas as pd
 
+    record_structure_inputs(config.out_dir)
     taxonomy_path = config.out_dir / "taxonomy/failure_taxonomy.parquet"
     if not taxonomy_path.is_file():
         raise RuntimeError("The scientific run did not produce its annotation coverage table")

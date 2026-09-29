@@ -11,7 +11,6 @@ import math
 import os
 import re
 import secrets
-import shutil
 import signal
 import subprocess
 import sys
@@ -59,13 +58,16 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 
 def hardware(root: Path) -> dict[str, Any]:
     """Report measured hardware, separating GPU presence from tool readiness."""
+    from bindsight.report.web.gpu import nvidia_smi
+    from bindsight.report.web.resources import dependency_status, measured_resources
+
     gpus = []
     creationflags = 0
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NO_WINDOW
     try:
         result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+            [nvidia_smi(), "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -77,24 +79,15 @@ def hardware(root: Path) -> dict[str, Any]:
                     gpus.append({"name": row[0].strip(), "memory_mib": int(row[1].strip())})
     except (OSError, ValueError, subprocess.TimeoutExpired):
         pass
-    memory = None
-    try:
-        psutil = importlib.import_module("psutil")
-        memory = psutil.virtual_memory().available
-    except ImportError:
-        pass
-    scientific = all(
-        importlib.util.find_spec(name) is not None
-        for name in ("pydeseq2", "pandas", "pyarrow", "numpy", "scipy")
-    )
+    measured = measured_resources(root)
+    dependencies = dependency_status()
     return {
         "platform": sys.platform,
         "python": sys.version.split()[0],
-        "cpus": os.cpu_count() or 1,
-        "memory_available_bytes": memory,
-        "disk_free_bytes": shutil.disk_usage(root).free,
+        **measured,
         "gpus": gpus,
-        "discovery_installed": scientific,
+        "discovery_installed": dependencies["usable"],
+        "dependency_status": dependencies,
         "gpu_design_note": "A detected GPU is not a verified design environment. Local design needs the pinned RFdiffusion, ProteinMPNN and Boltz environments; available memory must fit the target.",
     }
 
@@ -227,7 +220,7 @@ def inspect_inputs(counts: Path, design: Path) -> dict[str, Any]:
 
 
 class Workspace:
-    """One local, persistent workspace with a single active CPU job."""
+    """One owned workspace with a single active analysis or GPU setup job."""
 
     def __init__(self, root: Path):
         self.root = root.resolve()
@@ -312,7 +305,12 @@ class Workspace:
             if state.get("worker_created_at") is not None:
                 return bool(process.create_time() == state["worker_created_at"])
             arguments = process.cmdline()
-            return "bindsight.report.web.worker" in arguments and str(config) in arguments
+            workers = {
+                "bindsight.report.web.worker",
+                "bindsight.report.web.gpu_worker",
+                "bindsight.report.web.gpu_setup",
+            }
+            return bool(workers.intersection(arguments)) and str(config) in arguments
         except psutil.NoSuchProcess:
             return False
         except psutil.AccessDenied:
@@ -366,6 +364,7 @@ class Workspace:
     def launch(self, identity: str, options: dict[str, Any]) -> dict[str, Any]:
         """Validate complete inputs and enqueue one genuine discovery process."""
         from bindsight.config import RunConfig
+        from bindsight.report.web.resources import assess_execution
 
         root = self.directory(identity)
         if (root / "job.json").exists():
@@ -414,6 +413,15 @@ class Workspace:
             )
         if not math.isfinite(log2fc) or log2fc < 0:
             raise ValueError("The fold-change threshold must be a finite, nonnegative number.")
+        admission = assess_execution(
+            self.storage,
+            genes=checked["genes"],
+            samples=checked["samples"],
+            input_bytes=counts.stat().st_size + design.stat().st_size,
+            refresh_dependencies=True,
+        )
+        if not admission["admitted"]:
+            raise ValueError(" ".join(admission["reasons"]))
         output = self.root / f"analysis-{identity[:12]}"
         cfg = RunConfig.model_validate(
             {
@@ -426,7 +434,7 @@ class Workspace:
                         "design_formula": formula,
                         "contrast": [factor, numerator, denominator],
                         "categorical_factors": [factor, *([pair] if pair else [])],
-                        "n_cpus": max(1, min(4, (os.cpu_count() or 2) - 1)),
+                        "n_cpus": admission["n_cpus"],
                         "fdr_threshold": fdr,
                         "log2fc_threshold": log2fc,
                     },
@@ -454,6 +462,7 @@ class Workspace:
             "genes": checked["genes"],
             "contrast": [factor, numerator, denominator],
             "error": "",
+            "resource_admission": admission,
         }
         with self.lock:
             if self._closed:
@@ -487,7 +496,9 @@ class Workspace:
             state.update(state="running", started_at=now())
             write_json(root / "job.json", state)
         try:
-            with (root / "analysis.log").open("w", encoding="utf-8") as log:
+            with (root / "analysis.log").open("a", encoding="utf-8") as log:
+                log.write(f"\n--- Worker attempt started {now()} ---\n")
+                log.flush()
                 kwargs: dict[str, Any] = {"stdout": log, "stderr": subprocess.STDOUT}
                 if sys.platform == "win32":
                     kwargs["creationflags"] = (
@@ -495,7 +506,18 @@ class Workspace:
                     )
                 else:
                     kwargs["start_new_session"] = True
-                env = dict(os.environ, PYTHONUNBUFFERED="1", PYTHONUTF8="1")
+                env = dict(
+                    os.environ,
+                    PYTHONUNBUFFERED="1",
+                    PYTHONUTF8="1",
+                    OMP_NUM_THREADS="1",
+                    OPENBLAS_NUM_THREADS="1",
+                    MKL_NUM_THREADS="1",
+                )
+                worker = {
+                    "gpu_setup": "bindsight.report.web.gpu_setup",
+                    "gpu_design": "bindsight.report.web.gpu_worker",
+                }.get(state.get("kind", "discovery"), "bindsight.report.web.worker")
                 with self.lock:
                     state = self.read(identity)
                     if state["state"] in {"cancelled", "cancelling"}:
@@ -504,7 +526,7 @@ class Workspace:
                         [
                             sys.executable,
                             "-m",
-                            "bindsight.report.web.worker",
+                            worker,
                             str(root / "config.json"),
                         ],
                         env=env,
@@ -529,6 +551,18 @@ class Workspace:
                         state="failed",
                         error="The analysis did not complete. Read the actual error in the log; partial outputs are not a completed result.",
                     )
+                elif state.get("kind") == "gpu_setup":
+                    from bindsight.report.web.gpu import recipe
+
+                    receipt = Path(state["run_dir"]) / "gpu_setup_receipt.json"
+                    body = json.loads(receipt.read_text(encoding="utf-8"))
+                    if body.get("recipe_id") != recipe()["id"] or not body.get("cuda_smoke_passed"):
+                        state.update(
+                            state="failed",
+                            error="GPU setup did not produce a valid environment receipt.",
+                        )
+                    else:
+                        state["state"] = "completed"
                 else:
                     manifest = Path(state["run_dir"]) / "run_manifest.jsonld"
                     body = json.loads(manifest.read_text(encoding="utf-8"))
@@ -538,7 +572,12 @@ class Workspace:
                         for s in stages
                         if s.get("status") in {"completed", "skipped_cache"}
                     }
-                    if not {"deg", "discover", "report"}.issubset(complete) or any(
+                    required = (
+                        {"design", "validate", "rank", "report"}
+                        if state.get("kind") == "gpu_design"
+                        else {"deg", "discover", "report"}
+                    )
+                    if not required.issubset(complete) or any(
                         s.get("status") in {"failed", "running"} for s in stages
                     ):
                         state.update(
@@ -556,6 +595,7 @@ class Workspace:
                         state["state"] = (
                             "incomplete_annotation"
                             if coverage.get("unassessed_lookups", 0)
+                            or state.get("source_annotation_incomplete")
                             else "completed"
                         )
                 state["finished_at"] = now()
