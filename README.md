@@ -1,5 +1,7 @@
 # bindsight
 
+**Author:** [Mikhaeel Atef Rizk Wahba](https://github.com/mikhaeelatefrizk) · GitHub: `@mikhaeelatefrizk`
+
 ### [Open the Bindsight research workspace](https://bindsight-research.mikha-50.chatgpt.site)
 
 **Start here:** open the website above. You do not need to understand the code or
