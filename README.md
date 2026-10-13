@@ -44,8 +44,8 @@ the companion's versioned software environment.
 
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
-> machine-readable provenance from every ranked binder back to the patient samples
-> it came from.
+> machine-readable provenance across analysis and design stages. The [provenance
+> evidence](#the-join) documents the limits of the committed artifacts.
 
 [![CI](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml/badge.svg)](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/bindsight.svg)](https://pypi.org/project/bindsight/)
