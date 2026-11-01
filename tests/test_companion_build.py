@@ -87,7 +87,7 @@ def test_ci_installs_the_canonical_packager_file():
     workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
     commands = [step["run"] for step in workflow["jobs"]["companion"]["steps"] if "run" in step]
     canonical_install = re.compile(
-        r"(?m)^\s*python\s+-m\s+pip\s+install\b[^#\n]*\s-r\s+companion/requirements-build\.txt\b"
+        r"(?m)^\s*uv\s+pip\s+install\b[^#\n]*\s-r\s+companion/requirements-build\.txt\b"
     )
     assert any(canonical_install.search(cmd) for cmd in commands)
     assert not any(re.search(r"pyinstaller\s*==", cmd, re.I) for cmd in commands)

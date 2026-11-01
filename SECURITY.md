@@ -69,6 +69,13 @@ uses a new Python 3.11.18 image digest and refreshed system certificates.
 GPU installers use the same verified uv release instead of network operations
 through the legacy environment's pip. Scientific package pins are unchanged.
 
+GPU setup and generated Kaggle jobs deliberately ignore inherited uv/pip settings
+and remove `SSL_CERT_FILE`, `SSL_CERT_DIR`, and `CURL_CA_BUNDLE` overrides.
+Networks that require a private certificate authority through those variables
+may therefore fail during setup. Custom certificate configuration is not currently
+supported by these installers; use a connection that can validate the public
+download endpoints without overriding certificate checks.
+
 Updating this repository does not patch an existing local environment. Download
 the new matching companion/source release, or update an existing Python
 installation using the [Python security team's instructions](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576).

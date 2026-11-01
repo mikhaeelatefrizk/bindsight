@@ -165,6 +165,7 @@ def main() -> None:
                 )
         metadata = {
             "revision": args.revision,
+            "python_version": sys.version.split()[0],
             "pyinstaller_version": pyinstaller_version,
             "platform": key,
             "filename": filename,
