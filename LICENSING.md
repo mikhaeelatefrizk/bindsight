@@ -1,8 +1,10 @@
 # Licensing inventory
 
-> **Read this before any commercial use.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
+> **Read this before commercial use or redistribution.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This inventory records the stated terms and review scope; it does not certify legal suitability for a particular use or distribution.
 >
-> Last reviewed: 2026-11-01 — scoped review for release 0.3.7. The [2026-09-29 tool-registry change](https://github.com/mikhaeelatefrizk/bindsight/commit/3b08a00c273ba9e4b22deb633242cf29e8f8a4ce) routes Boltz through Bindsight's precision shim; it changes no upstream tool or model pins. Re-checked the affected Boltz 2.0.3 code licence and the upstream statement covering its model weights, and checked the licences for the uv 0.13.6 bootstrap now used by the companion and GPU/Kaggle installers. The version-specific sources are linked below. Other rows retain their previous review; this date does not claim a new review of all data providers or transitive dependencies.
+> Last reviewed: 2026-11-01 — scoped review for candidate 0.3.8. Checked PyTorch 2.14.1's source licence; licences inside the hash-verified Hydra 1.3.8, e3nn 0.3.3, PyTorch Lightning 2.6.6, Requests 2.34.2 and Biopython 1.88 release wheels; and the three pinned CUDA 11 packages' licence metadata against NVIDIA's CUDA 11.8 EULA. The e3nn compatibility patch and Boltz distribution-metadata patch retain their upstream licences. This is not a complete transitive-dependency review; unchanged rows keep their earlier review scope.
+>
+> Earlier scoped review, 2026-11-01, release 0.3.7: the [2026-09-29 tool-registry change](https://github.com/mikhaeelatefrizk/bindsight/commit/3b08a00c273ba9e4b22deb633242cf29e8f8a4ce) routed Boltz through Bindsight's precision shim without changing upstream tool or model pins. That review re-checked Boltz 2.0.3's code licence and model-weight statement, and uv 0.13.6's bootstrap licences. It did not refresh every data-provider or transitive-dependency row.
 >
 > Previous full inventory review: 2026-09-20 — every row re-checked on this date against the source it names: the GitHub licence API and the `LICENSE` file for each code row, the publisher's own terms page for each data row. Eight rows changed as a result. Human Protein Atlas data is CC BY 4.0, not CC BY-SA 3.0. The AlphaFold2 model parameters are CC BY 4.0 with no non-commercial clause, and the AF2-IG row now names the real basis of its restriction, PyRosetta's non-commercial terms, rather than the weights. The SURFY site states no licence and the article it accompanies is CC BY-NC-ND 4.0, so that row no longer says CC BY. recount3 states no reuse terms of its own. The RFdiffusion weights row cites the `LICENSE` file, which covers code and weights, rather than an announcement. The ColabFold MSA server row credits the ColabFold team and its fair-use policy, which is how the project states it. The pydeseq2 row follows the repository to `scverse`. A row for an Open Targets Python client was deleted: this package has no such dependency. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
@@ -20,9 +22,12 @@ Documentation, manuscripts, figures, and generated results (e.g. `paper/`) are l
 
 ---
 
-## 2. Default pipeline (commercial-friendly)
+## 2. Default pipeline components
 
-The default `bindsight` configuration uses components whose stated licences permit commercial use, with one exception marked ⚠️ below — the SURFY list, whose publisher states no terms of its own — and one reference-only row (recount3) that is not integrated:
+The table below records the application and data components reviewed previously,
+including the SURFY list whose publisher states no terms of its own and the
+reference-only rows not integrated into Bindsight. The managed GPU runtime adds
+the separately licensed components described below the table.
 
 | Component | License | Commercial use |
 |---|---|---|
@@ -57,6 +62,47 @@ The default `bindsight` configuration uses components whose stated licences perm
 | [uv 0.13.6](https://github.com/astral-sh/uv/blob/0.13.6/README.md#license) | MIT OR Apache-2.0, at the user's option ([MIT](https://github.com/astral-sh/uv/blob/0.13.6/LICENSE-MIT), [Apache-2.0](https://github.com/astral-sh/uv/blob/0.13.6/LICENSE-APACHE)) | ✅ Yes, subject to the chosen licence's notice and redistribution requirements |
 
 The companion and GPU/Kaggle installers download an official uv archive during setup and verify its pinned size and SHA-256 before extracting the executable. The uv binary is not bundled in Bindsight's Python package or companion executable. If redistributing an installed workspace or image containing uv, include the applicable licence and copyright notices and account for its third-party components; the code licence above is not an audit of every dependency in the binary. Downloading Python and scientific packages through uv does not change their separate licence terms.
+
+### Managed GPU runtime — scoped 0.3.8 review
+
+| Component | Verified licence and source | Scope and obligations |
+| --- | --- | --- |
+| PyTorch 2.14.1+cu126 | BSD-style 3-clause, [v2.14.1 source LICENSE](https://github.com/pytorch/pytorch/blob/v2.14.1/LICENSE) | Preserve source/binary notices and avoid implied endorsement. Vendored components and CUDA libraries have separate terms. |
+| hydra-core 1.3.8 | MIT, `hydra_core-1.3.8.dist-info/licenses/LICENSE` inside the [official release wheel](https://pypi.org/project/hydra-core/1.3.8/#files) | The wheel's size and SHA256 matched PyPI metadata. Retain the Facebook and affiliates copyright and permission notice. |
+| e3nn 0.3.3 | MIT, `e3nn-0.3.3.dist-info/LICENSE` inside the [official release wheel](https://pypi.org/project/e3nn/0.3.3/#files) | The wheel's size and SHA256 matched PyPI metadata. Retain the UC/LBNL, EPFL, Free University of Berlin and Kostiantyn Lapchevskyi notices, including in a redistributed modified package. |
+| PyTorch Lightning 2.6.6 | Apache-2.0, `licenses/LICENSE` inside the [official release wheel](https://pypi.org/project/pytorch-lightning/2.6.6/#files) | The wheel's size and SHA256 matched PyPI metadata. Preserve the licence and applicable notices under its redistribution terms. |
+| Requests 2.34.2 | Apache-2.0, `licenses/LICENSE` and `licenses/NOTICE` inside the [official release wheel](https://pypi.org/project/requests/2.34.2/#files) | The wheel's size and SHA256 matched PyPI metadata. Preserve its licence and Kenneth Reitz copyright notice under the applicable terms. |
+| Biopython 1.88 | Biopython License Agreement, `licenses/LICENSE.rst` inside the [official Linux CPython 3.11 release wheel](https://pypi.org/project/biopython/1.88/#files) | The wheel's size and SHA256 matched PyPI metadata. Retain copyright and permission notices; contributor names require permission for advertising. Only files explicitly marked accordingly offer the alternative BSD 3-clause licence. |
+| NVIDIA CUDA 11 runtime libraries listed below | NVIDIA Proprietary Software in exact-version PyPI metadata; [CUDA 11.8 EULA](https://docs.nvidia.com/cuda/archive/11.8.0/eula/index.html) | These are not open-source components. Use and redistribution have NVIDIA's separate conditions. |
+
+The CUDA 11 package versions are
+[`nvidia-cuda-runtime-cu11` 11.8.89](https://pypi.org/project/nvidia-cuda-runtime-cu11/11.8.89/),
+[`nvidia-cusparse-cu11` 11.7.5.86](https://pypi.org/project/nvidia-cusparse-cu11/11.7.5.86/) and
+[`nvidia-cublas-cu11` 11.11.3.6](https://pypi.org/project/nvidia-cublas-cu11/11.11.3.6/).
+They are downloaded into a separate auxiliary prefix for DGL; they are not
+bundled in Bindsight's wheel or companion. The review checked package metadata
+and the official EULA, not each NVIDIA wheel's embedded licence file.
+
+NVIDIA's Attachment A lists the relevant shared libraries as redistributable
+with applications, subject to its distribution requirements. These include
+added application functionality and consistent distribution terms. Downloading
+them during setup does not grant unrestricted redistribution or resolve the
+licensing of a bundled AGPL application. Before redistributing an installed
+environment or image, review its NVIDIA and third-party notices and applicable
+terms. This inventory is not a licence-compatibility opinion.
+
+The Boltz runtime distribution `2.0.3+bindsight.1` changes its version and four
+dependency requirements, renames its metadata directory and regenerates its
+wheel record. All 106 files under `boltz/` and its original MIT licence remain
+byte-identical to the verified upstream 2.0.3 wheel. The local version identifies
+this downstream packaging change; it does not replace the upstream licence or
+the separate licences of the newly selected dependencies.
+
+Bindsight changes one e3nn constant loader after verifying the original file
+and constants hashes. The adjustment retains `weights_only=True` with a scoped
+`slice` allowlist; it leaves the package's MIT licence in place. It is a
+compatibility modification, not a new licence for e3nn. Runtime testing and
+scientific validation are documented separately in [the runtime guide](docs/gpu-runtime.md).
 
 ---
 
@@ -95,12 +141,14 @@ Record the verification in the relevant `envs/*.yaml` or `bindsight/<module>/_LI
 ## 5. What this means for users
 
 ### Academic users
-Everything is fine. Use whatever you want. Cite all upstream tools (the per-run manifest emits `software.bib` to make this easy).
+Academic use still requires the relevant data-access, attribution and software
+licence terms, including NVIDIA's GPU-library terms. Cite upstream tools; the
+per-run manifest emits `software.bib` to help with attribution.
 
 ### Industry / commercial users
-- **Default config** is commercially safe for every component that states its terms; the SURFY list's source states none (⚠️ in §2), so confirm that one for commercial work.
+- **Default components** have the stated terms in §2. The SURFY list states no licence, and the managed GPU runtime includes proprietary NVIDIA libraries; assess those terms for the intended use and any redistribution.
 - **Opt-in** components carry banners. Read them.
-- Use the `bindsight verify-licenses` command (available since v0.1) to audit a specific run config and flag any non-commercial components.
+- `bindsight verify-licenses` prints a static inventory; it does not inspect current upstream terms or audit every installed transitive dependency.
 
 ### Pharma / IND filings
 - Treat `bindsight` as an in-silico discovery aid, not a regulated tool.

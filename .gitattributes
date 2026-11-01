@@ -19,6 +19,8 @@ Snakefile text
 # Recorded evidence is checksum-addressed: retain its exact archived bytes.
 benchmarks/numerical_validation/** -text whitespace=cr-at-eol
 docs/audits/** -text whitespace=cr-at-eol
+# Preserve the progress-bar padding in the original GPU execution log.
+docs/audits/gpu-runtime/**/runtime/commands.log whitespace=-blank-at-eol
 # R's captured session/log output intentionally pads its printed columns.
 benchmarks/numerical_validation/reference/**/session-info.txt whitespace=-blank-at-eol
 benchmarks/numerical_validation/reference/setup-session-info.txt whitespace=-blank-at-eol

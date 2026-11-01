@@ -1,0 +1,163 @@
+{
+  "schema": "bindsight-incomplete-gpu-attempt/1",
+  "attempt_label": "instrumented-full-gpu-attempt-4939383",
+  "candidate": {
+    "version": "0.3.8",
+    "wheel_filename": "bindsight-0.3.8-py3-none-any.whl",
+    "wheel_bytes": 922500,
+    "wheel_sha256": "a2cf2d8b8d726a66b802114f1799a9bc9888a93e05a3c9fe40a2e577f608c53d",
+    "prepared_git_commit": "493938376ffbbd554998c6b559a7c265827ffb73",
+    "recipe_id": "42c8a0ae3859473ed6b0a49b5396b22b73d883fa6c3be1bc490290010a6ff9ce",
+    "identity_receipts_agree": true,
+    "scope": "This failed candidate only; not final-release acceptance"
+  },
+  "outcome": {
+    "complete": false,
+    "final_backend_status": "ERROR",
+    "status_observed_utc": "2026-11-01T18:41:19.565190+00:00",
+    "requested_session_budget_seconds": 14400,
+    "completed_result_archive_present": false,
+    "scientific_acceptance": false,
+    "precise_observed_failure": "First Boltz checkpoint load raised _pickle.UnpicklingError: weights_only=True rejected omegaconf.dictconfig.DictConfig"
+  },
+  "input": {
+    "target_uniprot": "P04626",
+    "target_chain": "A",
+    "target_ranges": [
+      [
+        511,
+        652
+      ]
+    ],
+    "binder_length": [
+      60,
+      60
+    ],
+    "trajectories": 1,
+    "seed": 42,
+    "proteinmpnn_sequences": 2,
+    "proteinmpnn_temperature": 0.1,
+    "diffusion_samples": 1,
+    "max_parallel_samples": 1,
+    "spec_sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+    "transported_spec_sha256": "ee113944dbc1a5229ee62e42eb841a7b2f89441c88706e2ffbfc0a03f31136cf",
+    "spec_json_semantically_identical": true,
+    "target_sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+    "hosted_msa_requested": true,
+    "empty_msa_requested": false
+  },
+  "timeline": [
+    {
+      "event": "Submitted",
+      "utc": "2026-11-01T18:29:18+00:00",
+      "source": "submission-handle"
+    },
+    {
+      "event": "RFdiffusion",
+      "started_utc": "2026-11-01T18:35:01.481864+00:00",
+      "duration_seconds": 195.383804533,
+      "derived_end_utc": "2026-11-01T18:38:16.865669+00:00",
+      "derived_end_scope": "Start wall time plus monotonic command duration",
+      "returncode": 0,
+      "outcome": "ok",
+      "source": "command-000002"
+    },
+    {
+      "event": "ProteinMPNN",
+      "started_utc": "2026-11-01T18:38:16.884086+00:00",
+      "duration_seconds": 4.846517632999962,
+      "derived_end_utc": "2026-11-01T18:38:21.730604+00:00",
+      "derived_end_scope": "Start wall time plus monotonic command duration",
+      "returncode": 0,
+      "outcome": "ok",
+      "source": "command-000003"
+    },
+    {
+      "event": "First Boltz validation",
+      "started_utc": "2026-11-01T18:38:21.806336+00:00",
+      "duration_seconds": 85.99934994600005,
+      "derived_end_utc": "2026-11-01T18:39:47.805686+00:00",
+      "derived_end_scope": "Start wall time plus monotonic command duration",
+      "returncode": 1,
+      "outcome": "nonzero",
+      "source": "command-000004"
+    },
+    {
+      "event": "Backend ERROR observed",
+      "utc": "2026-11-01T18:41:19.565190+00:00",
+      "source": "terminal-backend-status"
+    }
+  ],
+  "msa": {
+    "first_boltz_input": "P04626_binder_42_seq0.yaml",
+    "protein_entities": 2,
+    "phase_timeout_seconds": 1800,
+    "phase_completed": true,
+    "observed_elapsed_seconds": 42.963,
+    "observed_server_transitions": [
+      "SUBMIT",
+      "PENDING",
+      "RUNNING",
+      "COMPLETE"
+    ],
+    "completed_progress_sequences": 2,
+    "source": "command-000004",
+    "raw_a3m_csv_and_processed_npz_preserved": true,
+    "limitation": "This attempt demonstrates actual hosted MSA completion. It does not diagnose the earlier canceled attempt."
+  },
+  "checkpoint": {
+    "phase": "model_cls.load_from_checkpoint -> Lightning -> torch.load",
+    "exception": "_pickle.UnpicklingError",
+    "detail": "Weights only load failed; unsupported global omegaconf.dictconfig.DictConfig",
+    "publisher_asset": {
+      "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/boltz2_conf.ckpt",
+      "bytes": 2286561469,
+      "sha256": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+      "pin_match": true
+    },
+    "publisher_revision": "6fdef46d763fee7fbb83ca5501ccceff43b85607",
+    "cache_verified_before_prediction": true,
+    "inference_not_completed": true
+  },
+  "runtime": {
+    "se3": {
+      "python": "3.11.18",
+      "torch": "2.14.1+cu126",
+      "cuda": "12.6",
+      "cuda_tested": true,
+      "dgl_cuda_tested": true,
+      "device": "Tesla T4",
+      "dgl": "1.0.2+cu118",
+      "numpy": "1.23.5",
+      "boltz": null,
+      "trifast": null
+    },
+    "boltz": {
+      "python": "3.11.18",
+      "torch": "2.14.1+cu126",
+      "cuda": "12.6",
+      "cuda_tested": true,
+      "dgl_cuda_tested": false,
+      "device": "Tesla T4",
+      "dgl": null,
+      "numpy": "1.26.4",
+      "boltz": "2.0.3+bindsight.1",
+      "trifast": "0.1.11"
+    }
+  },
+  "preserved_artifacts": {
+    "downloaded_files": 50,
+    "downloaded_bytes": 11868529,
+    "all_download_inventory_hashes_reverified": true,
+    "job_manifest_raw_files": 16,
+    "all_job_manifest_hashes_reverified": true,
+    "rf_backbone_and_trb": true,
+    "proteinmpnn_fasta": true,
+    "completed_msa": true,
+    "boltz_structure_prediction": false,
+    "result_archive": false,
+    "archives_extracted": false
+  },
+  "scientific_scope": "Command success and retained raw evidence establish RFdiffusion and ProteinMPNN progression plus hosted MSA completion. Complete prediction, metric verification, biological efficacy and final release acceptance remain unestablished.",
+  "privacy_and_transformation": "Selected fields and logical source aliases only; raw private logs, account identifiers, machine paths, protein sequence bytes, model weights and credentials are not copied here."
+}

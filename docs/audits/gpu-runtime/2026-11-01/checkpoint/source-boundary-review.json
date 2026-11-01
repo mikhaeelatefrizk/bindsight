@@ -1,0 +1,122 @@
+{
+  "schema": "bindsight-boltz-checkpoint-boundary-review/1",
+  "status": "Source review and unit checks complete; actual production-loader CPU acceptance is recorded separately by the v3 package; full GPU prediction remains a separate gate",
+  "sources": [
+    {
+      "distribution_wheel": "boltz-2.0.3-py3-none-any.whl",
+      "member": "boltz/main.py",
+      "bytes": 39549,
+      "sha256": "655e5b93a89cb31686778dcf98e6e19f2763e074319d589398b03156a8ccfc65"
+    },
+    {
+      "distribution_wheel": "boltz-2.0.3-py3-none-any.whl",
+      "member": "boltz/model/models/boltz2.py",
+      "bytes": 51298,
+      "sha256": "c14592dc0bce81fb7e62872605c4cfe70ccfecc9a8d592fe610a51808c879bc2"
+    },
+    {
+      "distribution_wheel": "pytorch_lightning-2.6.6-py3-none-any.whl",
+      "member": "pytorch_lightning/core/module.py",
+      "bytes": 80061,
+      "sha256": "ba5461af71728704315b9fd5beef370e8cf9335ce70f78b6215e93a3ddaca9ff"
+    },
+    {
+      "distribution_wheel": "pytorch_lightning-2.6.6-py3-none-any.whl",
+      "member": "pytorch_lightning/core/saving.py",
+      "bytes": 16465,
+      "sha256": "2ccf5ae904f3ee8b04e7e2d716f066a7d7da4f10b8e6db94055543c757f74619"
+    },
+    {
+      "distribution_wheel": "pytorch_lightning-2.6.6-py3-none-any.whl",
+      "member": "pytorch_lightning/utilities/model_helpers.py",
+      "bytes": 5544,
+      "sha256": "aa2f389e8f1f753e416d7996f68dd1525308e827acb2b3f3eb8549ad5a64edb1"
+    },
+    {
+      "distribution_wheel": "pytorch_lightning-2.6.6-py3-none-any.whl",
+      "member": "pytorch_lightning/utilities/migration/utils.py",
+      "bytes": 9067,
+      "sha256": "3bbd9f2297bc4c9e7364705072d81e14ca742f4029a5db66bad9d4686516093b"
+    },
+    {
+      "distribution_wheel": "pytorch_lightning-2.6.6-py3-none-any.whl",
+      "member": "lightning_fabric/utilities/cloud_io.py",
+      "bytes": 7088,
+      "sha256": "718f7f303262b7e9587f6ba1dd081620d7366774488a5622d0bbec56442654b8"
+    }
+  ],
+  "observations": [
+    "Boltz main1171 and1243 call inherited Lightning load_from_checkpoint without weights_only.",
+    "Lightning module1796 forwards IO and weights_only to saving72; bundledFabric51-57 passes IO and weights_only to torch.load.",
+    "Lightning migration utils137-159 applies migrations before checkpoint_path branch; absent path suppresses only upgrade logging.",
+    "Exact Boltz model package inspection found no secondary torch.load, pickle.load or load_from_checkpoint call; Boltz2 on_load_checkpoint1206 adjusts in-memory optimizer and hyperparameter state.",
+    "Lightning model_helpers118-133 returns a functools wrapper whose __func__ is descriptor.method.",
+    "Verified both source copies of Fabric cloud_io are byte-identical; runtime uses the copy bundled in pytorch-lightning2.6.6, not a required separate distribution.",
+    "Independent CPU v2 confirmed10 confidence globals and7 affinity globals; registry identity set restored; list order is not meaningful."
+  ],
+  "claude": {
+    "completed": true,
+    "review_file": "claude-review.md",
+    "review_sha256": "fe9252bbed8e6cd25760a65bed0b0f16f6e9fa65c38d89b338e4a013823c67bd",
+    "initial_attempt": "timeout with no useful output under restricted execution",
+    "recovery": "inference-free doctor passed; approved-network retry with actual probe result succeeded",
+    "accepted": [
+      "per-asset exact globals",
+      "same-handle post-load hash",
+      "descriptor guard and restoration",
+      "source/call-shape checks",
+      "main-thread and recursive-load rejection",
+      "IO migration side effect reviewed"
+    ],
+    "not_adopted": [
+      "empty ambient safe_globals refusal: actualTorch pre-registers multiple types; instead clear and restore exact prior objects within authenticated per-load scope"
+    ],
+    "corrected_assumption": "OmegaConf actually2.3.1, not2.3.0; guard follows measured version"
+  },
+  "implementation": {
+    "bindsight/runners/boltz_checkpoint.py": "1d940ae0f1b824f47c07a08de9688d2f5a0e0612dd5b3656bbabf1d9d95a8c95",
+    "tests/test_boltz_checkpoint.py": "e41214c2a444ce66deb57aaff8e9a9ba58b1394af7b9f7447a08216f98d7a46f"
+  },
+  "checks": {
+    "unit_tests_passed": 27,
+    "unit_tests_skipped": 1,
+    "skip_reason": "Windows host disallows test symlink creation",
+    "ruff": "passed",
+    "mypy": "passed",
+    "git_diff_check": "passed"
+  },
+  "limits": [
+    "Process-global PyTorch registry is not suitable for unrelated concurrent loads; adapter is for one short-lived main-thread prediction driver.",
+    "A same open file descriptor and before/after hashes detect substitution/corruption; they do not defend against a same-user writer changing and restoring bytes during reading.",
+    "Fixed safe_globals is defense in depth only for exact authenticated publisher checkpoints, not approval for arbitrary pickle files.",
+    "No full inference success is established by source inspection, unit tests, or direct torch CPU loads."
+  ],
+  "implementation_identity_basis": {
+    "bindsight/runners/boltz_checkpoint.py": {
+      "reviewed_working_copy_sha256": "1d940ae0f1b824f47c07a08de9688d2f5a0e0612dd5b3656bbabf1d9d95a8c95",
+      "git_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+      "git_blob_bytes": 9263,
+      "git_blob_sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3",
+      "working_copy_normalized_to_lf_equals_git_blob": true,
+      "change": "CRLF to LF only; code text unchanged",
+      "git_lf_reexpanded_to_crlf_matches_reviewed_working_hash": true
+    },
+    "tests/test_boltz_checkpoint.py": {
+      "reviewed_working_copy_sha256": "e41214c2a444ce66deb57aaff8e9a9ba58b1394af7b9f7447a08216f98d7a46f",
+      "git_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+      "git_blob_bytes": 13641,
+      "git_blob_sha256": "4d7523c5226d67d361bb0dfc878b9fb46dd805cc6e5f3993c102af812d894265",
+      "working_copy_normalized_to_lf_equals_git_blob": true,
+      "change": "CRLF to LF only; code text unchanged",
+      "git_lf_reexpanded_to_crlf_matches_reviewed_working_hash": true
+    }
+  },
+  "implementation_basis_note": "Original implementation hashes above identify the working copies at unit review time. Git release bytes are separately recorded below; these identities must not be conflated.",
+  "subsequent_cpu_evidence": {
+    "package": "evidence-checkpoint-cpu-38fb37a-public",
+    "manifest_sha256": "62310513c320c4d60fc17449eaf622566bbb6fdb5972cdeb347f145ee04a518c",
+    "scope": "Actual production context and both Boltz2/Lightning CPU model constructors, no GPU or prediction claim; original base-wheel and helper-overlay identities retained",
+    "original_manifest_sha256": "de8dc1d6417272b1f413d7a5456bbe3692e9297ce4155ad7410b0a603566e1b2",
+    "public_transformation": "Private execution references removed from submission and verification records; science and exact source bytes unchanged; original public-artifact hashes retained in nested manifest."
+  }
+}

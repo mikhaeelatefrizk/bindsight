@@ -1,0 +1,201 @@
+{
+  "schema": "bindsight-ci-verification/1",
+  "verified_at": "2026-11-01 18:32:53 UTC",
+  "repository": "mikhaeelatefrizk/bindsight",
+  "pull_request": 21,
+  "head_sha": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "tested_checkout_sha": "831e8bc0ec84b0479c810a065a9ea7785edcb57c",
+  "checkout_note": "GitHub pull_request synthetic merge of head_sha into main 1b2c255d5b35a841aedabe60fb9fdec187d12804, verified from actual Linux job checkout log.",
+  "ci": {
+    "run_id": 41336508233,
+    "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233",
+    "jobs": [
+      {
+        "id": 124937473867,
+        "name": "Lint (ruff + mypy)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937473867"
+      },
+      {
+        "id": 124937473929,
+        "name": "Test (Python 3.12 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937473929"
+      },
+      {
+        "id": 124937473947,
+        "name": "GPU recipe installation and imports (CPU runner)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937473947"
+      },
+      {
+        "id": 124937473991,
+        "name": "Companion (linux-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937473991"
+      },
+      {
+        "id": 124937473999,
+        "name": "Test (Python 3.12 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937473999"
+      },
+      {
+        "id": 124937474034,
+        "name": "Pinned environment (constraints.txt)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474034"
+      },
+      {
+        "id": 124937474039,
+        "name": "Companion (windows-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474039"
+      },
+      {
+        "id": 124937474051,
+        "name": "Test (Python 3.11 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474051"
+      },
+      {
+        "id": 124937474053,
+        "name": "Test (Python 3.12 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474053"
+      },
+      {
+        "id": 124937474057,
+        "name": "Test (Python 3.11 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474057"
+      },
+      {
+        "id": 124937474063,
+        "name": "Test (Python 3.11 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474063"
+      },
+      {
+        "id": 124937474102,
+        "name": "Test (Python 3.13 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474102"
+      },
+      {
+        "id": 124937474126,
+        "name": "Test (Python 3.13 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474126"
+      },
+      {
+        "id": 124937474128,
+        "name": "Companion (macos-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474128"
+      },
+      {
+        "id": 124937474195,
+        "name": "Companion (macos-arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474195"
+      },
+      {
+        "id": 124937474214,
+        "name": "Test (Python 3.13 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124937474214"
+      },
+      {
+        "id": 124938894432,
+        "name": "Build wheel + sdist",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124938894432"
+      },
+      {
+        "id": 124939189170,
+        "name": "All CI jobs passed",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233/job/124939189170"
+      }
+    ],
+    "all_18_jobs_success": true
+  },
+  "docker": {
+    "run_id": 41336508390,
+    "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508390",
+    "jobs": [
+      {
+        "id": 124937365446,
+        "name": "docker",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508390/job/124937365446"
+      }
+    ]
+  },
+  "linux_python_311": {
+    "job_id": 124937474063,
+    "name": "Test (Python 3.11 on ubuntu-latest)",
+    "conclusion": "success",
+    "passed": 2893,
+    "skipped": 11,
+    "deselected": 2,
+    "warnings": 14,
+    "duration_seconds": 100.02,
+    "total_coverage_percent": 84.61,
+    "minimum_coverage_percent": 75,
+    "command": "pytest -m \"not gpu and not slow\" --maxfail=5 -q --cov-fail-under=75",
+    "skipped_reasons": [
+      "SKIPPED [1] tests/test_colab_result_import.py:421: Windows junction regression",
+      "SKIPPED [1] tests/test_docs_claims.py:1098: paper/validation/manuscript.md does not discuss the designer benchmark",
+      "SKIPPED [1] tests/test_docs_claims.py:1150: dated historical entries, not a current claim",
+      "SKIPPED [1] tests/test_docs_claims.py:1164: README.md names the metric without stating its rate",
+      "SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/README.md names the metric without stating its rate",
+      "SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/designer_benchmark/README.md names the metric without stating its rate",
+      "SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/designer_benchmark/RUN_FREE_GPU.md names the metric without stating its rate",
+      "SKIPPED [1] tests/test_docs_claims.py:1164: docs/what-is-bindsight.md names the metric without stating its rate",
+      "SKIPPED [1] tests/test_embeddings.py:59: could not import 'torch': No module named 'torch'",
+      "SKIPPED [1] tests/test_licensing_review.py:56: needs a full clone to read the tool registry's history",
+      "SKIPPED [1] tests/test_packaging_pins.py:409: wheel build unavailable here: d environment and sources, then see https://build.pypa.io/en/stable/how-to/troubleshooting.html#debug-a-failed-build for help debugging a failed build"
+    ],
+    "raw_log": "linux-test-summary.txt",
+    "python_version": "3.11.18",
+    "targeted_regressions": {
+      "case_count": 10,
+      "case_ids": [
+        "tests/test_boltz_msa.py::test_alarm_restored_after_success_or_failure[False]",
+        "tests/test_boltz_msa.py::test_alarm_restored_after_success_or_failure[True]",
+        "tests/test_boltz_msa.py::test_deadline_escapes_client_retry_loop_and_restores_alarm",
+        "tests/test_boltz_msa.py::test_existing_alarm_refused_without_mutation",
+        "tests/test_boltz_msa.py::test_worker_thread_refused_before_original",
+        "tests/test_kaggle_progress.py::test_snapshot_copies_only_changed_bounded_files_and_keeps_atomic_json",
+        "tests/test_kaggle_progress.py::test_snapshot_rejects_links_fifo_and_destination_escape",
+        "tests/test_kaggle_progress.py::test_snapshot_budget_is_for_retained_bytes_across_passes",
+        "tests/test_kaggle_progress.py::test_snapshot_rejects_a_file_swapped_for_symlink_before_open",
+        "tests/test_job_exec_streaming.py::test_sigterm_reaps_active_scientific_child_and_records_interruption"
+      ],
+      "not_skipped": true,
+      "basis": "The complete selected Linux suite passed with the 11 skips listed above; none refer to these files/cases. A read-only local pytest collection at the same clean head with the identical not-gpu/not-slow marker expression confirms all listed cases are selected. Their platform guards enable on Linux. The CI -q log does not emit individual passing test names; this records selection plus complete suite outcome, not a separate targeted execution."
+    }
+  },
+  "verification_scope": "Read-only connector queries and actual completed job logs; no reruns, no code changes. Separate real-GPU acceptance remains required."
+}

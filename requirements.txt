@@ -21,7 +21,7 @@ pandas>=2.2,<3
 pyarrow>=23.0.1,<25
 numpy>=1.26,<3
 scipy>=1.11,<2
-biopython>=1.83,<2
+biopython>=1.88,<2
 openpyxl>=3.1
 
 # ---- report ----

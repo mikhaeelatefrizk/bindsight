@@ -1,0 +1,1899 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T19:37:17.108109+00:00",
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "tested_candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "candidate_wheel_sha256": "3e0ee56bcadb88e852ec20243b81b3a8a1226d857886872b4007da52517edea2",
+  "gpu_status": "passed-reviewed-small-smoke",
+  "ci_status": "included-see-manifest-scope",
+  "checkpoint_cpu_status": "passed-production-loader-cpu-only",
+  "publication_attestation": false,
+  "remaining_gate": "Root-owned publication identity and deployment verification",
+  "assembler_sha256": "760cb137466183330dea81398b830f3ae29f3fb2281b3f8ea9032b01f4bf9106",
+  "files": [
+    {
+      "artifact": "history/components-and-ci-8773fed/security/dgl-security-boundary.json",
+      "bytes": 32488,
+      "sha256": "1a175c021a6f1f79ec5cb4665bdedf55b41ea45bad29c7fe8f5bce11861eebd3",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/dgl-security-boundary.json",
+          "sha256": "1a175c021a6f1f79ec5cb4665bdedf55b41ea45bad29c7fe8f5bce11861eebd3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/components/rfdiffusion-probe-receipt.json",
+      "bytes": 1026,
+      "sha256": "2db1a31aa136257c828137865ecd722d98b30b7253d60de8260a354e26931342",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/components/rfdiffusion-probe-receipt.json",
+          "sha256": "2db1a31aa136257c828137865ecd722d98b30b7253d60de8260a354e26931342"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/components/rfdiffusion-cuda-check.json",
+      "bytes": 3363,
+      "sha256": "9176f60487b3ad51eab2554057aff25428c9ff8d4693b12e9b16f73de21898b3",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/components/rfdiffusion-cuda-check.json",
+          "sha256": "9176f60487b3ad51eab2554057aff25428c9ff8d4693b12e9b16f73de21898b3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/components/rfdiffusion-freeze.txt",
+      "bytes": 1627,
+      "sha256": "8618915b514dbb0cff0115e20f0c9e3e2c1ae81e7470f261186a6f391cd766e1",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/components/rfdiffusion-freeze.txt",
+          "sha256": "8618915b514dbb0cff0115e20f0c9e3e2c1ae81e7470f261186a6f391cd766e1"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/components/boltz-probe-receipt.json",
+      "bytes": 2822,
+      "sha256": "b7204f51d10482ce24ceccc9354051d0931cd09551a694a91df4bb42f36cabf6",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/components/boltz-probe-receipt.json",
+          "sha256": "b7204f51d10482ce24ceccc9354051d0931cd09551a694a91df4bb42f36cabf6"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/components/boltz-freeze.txt",
+      "bytes": 2022,
+      "sha256": "c8ae83bfafaf125a4ed93650f09d165c2e0f58157d42357c6acf2d68ddea8e23",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/components/boltz-freeze.txt",
+          "sha256": "c8ae83bfafaf125a4ed93650f09d165c2e0f58157d42357c6acf2d68ddea8e23"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/boltz-component-audit.json",
+      "bytes": 7998,
+      "sha256": "432191c3c16101c33217d1d33599a98377b0bd326c7bb315088562a67215f2bc",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/boltz-component-audit.json",
+          "sha256": "432191c3c16101c33217d1d33599a98377b0bd326c7bb315088562a67215f2bc"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/boltz-component-audit.scope.json",
+      "bytes": 410,
+      "sha256": "bc9f81116e45452223c9f6b224a5509061c3ffd00a33a607df0de84b494e88f0",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/boltz-component-audit.scope.json",
+          "sha256": "bc9f81116e45452223c9f6b224a5509061c3ffd00a33a607df0de84b494e88f0"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/boltz-component-audit-requirements.txt",
+      "bytes": 1884,
+      "sha256": "e78c4fea8464dd8bd5ab15f897edef119daca8c7e9b0511ef34a4ecf2b6bfc46",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/boltz-component-audit-requirements.txt",
+          "sha256": "e78c4fea8464dd8bd5ab15f897edef119daca8c7e9b0511ef34a4ecf2b6bfc46"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/ci/recipe-check.json",
+      "bytes": 24756,
+      "sha256": "60049f3e9c54fb15b0f3cbd7da09a78ef0c3c49c9f21a67fdcef5c4276d33006",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/ci/recipe-check.json",
+          "sha256": "60049f3e9c54fb15b0f3cbd7da09a78ef0c3c49c9f21a67fdcef5c4276d33006"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/ci/se3-freeze.txt",
+      "bytes": 1455,
+      "sha256": "b185c602afc033f1a93bd2c603dd14456f0330d59316a53a5b492df4fe15da80",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/ci/se3-freeze.txt",
+          "sha256": "b185c602afc033f1a93bd2c603dd14456f0330d59316a53a5b492df4fe15da80"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-se3-audit.json",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-se3-audit.scope.json",
+      "bytes": 496,
+      "sha256": "f9fb485a4542d49764daaacb4d24e21e7dbfb72f29002d47964e2d52ad837aea",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-se3-audit.scope.json",
+          "sha256": "f9fb485a4542d49764daaacb4d24e21e7dbfb72f29002d47964e2d52ad837aea"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-se3-audit-requirements.txt",
+      "bytes": 1167,
+      "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-se3-audit-requirements.txt",
+          "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/ci/boltz-freeze.txt",
+      "bytes": 2272,
+      "sha256": "c90c2e87bbdbc971e7d3e3c29c25aca2a68d7cedad71d38eb480ca8075fbe461",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/ci/boltz-freeze.txt",
+          "sha256": "c90c2e87bbdbc971e7d3e3c29c25aca2a68d7cedad71d38eb480ca8075fbe461"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "b785ffc88a5c7b7f27a71ec75315bddc680d2a3281a7b2ef3fb79e9393fc7413",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-boltz-audit.json",
+          "sha256": "b785ffc88a5c7b7f27a71ec75315bddc680d2a3281a7b2ef3fb79e9393fc7413"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-boltz-audit.scope.json",
+      "bytes": 482,
+      "sha256": "6d79948e964988eb151a6de5a594a6c0fd8d6fb99046f6cf8537cb78e77f27d7",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-boltz-audit.scope.json",
+          "sha256": "6d79948e964988eb151a6de5a594a6c0fd8d6fb99046f6cf8537cb78e77f27d7"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-boltz-audit-requirements.txt",
+      "bytes": 2061,
+      "sha256": "4015c09add1739ef823bc5a796f83f61259a35553cc5fac5c15b73e841ef38bd",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-boltz-audit-requirements.txt",
+          "sha256": "4015c09add1739ef823bc5a796f83f61259a35553cc5fac5c15b73e841ef38bd"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-cuda11-audit.json",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/security/ci-cuda11-audit-requirements.txt",
+      "bytes": 120,
+      "sha256": "c83de4eec2165f365613f7398cf267a4e03a85d8d1facefae5ee7d2d6702f99d",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/security/ci-cuda11-audit-requirements.txt",
+          "sha256": "c83de4eec2165f365613f7398cf267a4e03a85d8d1facefae5ee7d2d6702f99d"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/ci/run-summary.json",
+      "bytes": 5979,
+      "sha256": "889c5f72fc7b02500208fcfa655086b7c384693b9233b8f669b8ef60512d8c5b",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/ci/run-summary.json",
+          "sha256": "889c5f72fc7b02500208fcfa655086b7c384693b9233b8f669b8ef60512d8c5b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/preservation/scientific-baseline-hashes.json",
+      "bytes": 66076,
+      "sha256": "56b354800926d86ea17d6e3e7d63983bba90acedaa7bb7957f7ad6974d269f50",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/preservation/scientific-baseline-hashes.json",
+          "sha256": "56b354800926d86ea17d6e3e7d63983bba90acedaa7bb7957f7ad6974d269f50"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/preservation/historical-preservation-check.json",
+      "bytes": 1077,
+      "sha256": "0934670f6ede98d4da72aaf6b17cbfbf60cfa0f78b2dd2aeb162861f338867c1",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/preservation/historical-preservation-check.json",
+          "sha256": "0934670f6ede98d4da72aaf6b17cbfbf60cfa0f78b2dd2aeb162861f338867c1"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/preservation/candidate-source-comparison.json",
+      "bytes": 996,
+      "sha256": "bf70f2cdeba3001636597a79bad172d82e78e9a0c91cb934882121ffbdd865cc",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/preservation/candidate-source-comparison.json",
+          "sha256": "bf70f2cdeba3001636597a79bad172d82e78e9a0c91cb934882121ffbdd865cc"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/preservation/boltz-dependency-patch.json",
+      "bytes": 12310,
+      "sha256": "20260c23363a3d6ca607893a606bd80406fb5738eefc0bc0cb6763dde54e215a",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/preservation/boltz-dependency-patch.json",
+          "sha256": "20260c23363a3d6ca607893a606bd80406fb5738eefc0bc0cb6763dde54e215a"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/licenses/DGL-APACHE-2.0.txt",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/licenses/DGL-APACHE-2.0.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/licenses/RFdiffusion-LICENSE.txt",
+      "bytes": 1749,
+      "sha256": "eefc2ae77cb92b1414a6ac76b246642fae2189747b1b07747e92e5ddc696ec24",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/licenses/RFdiffusion-LICENSE.txt",
+          "sha256": "eefc2ae77cb92b1414a6ac76b246642fae2189747b1b07747e92e5ddc696ec24"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/licenses/SE3Transformer-LICENSE.txt",
+      "bytes": 1071,
+      "sha256": "1195ca3cd4b6035cc2fb6cc58e89836a5b6e7951a008994a6a578438db66f5e2",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/licenses/SE3Transformer-LICENSE.txt",
+          "sha256": "1195ca3cd4b6035cc2fb6cc58e89836a5b6e7951a008994a6a578438db66f5e2"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/README.md",
+      "bytes": 2815,
+      "sha256": "b9bff62a37ee429904b15e12c7f47d249d0ab824b31af9f5c9b73f3b78f357a3",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/README.md",
+          "sha256": "b9bff62a37ee429904b15e12c7f47d249d0ab824b31af9f5c9b73f3b78f357a3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/components-and-ci-8773fed/manifest.json",
+      "bytes": 19501,
+      "sha256": "52b023bcbd5033ab0fb455e6a566c85f1cea6bb4231750f304b672ee39b7a6ff",
+      "sources": [
+        {
+          "source_role": "historical-components-and-ci-8773fed/manifest.json",
+          "sha256": "52b023bcbd5033ab0fb455e6a566c85f1cea6bb4231750f304b672ee39b7a6ff"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/recipe-check.json",
+      "bytes": 24941,
+      "sha256": "bea142af44ad5170545e95a9e18d72bde3692276515b1d628cccff581ad72a98",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/recipe-check.json",
+          "sha256": "bea142af44ad5170545e95a9e18d72bde3692276515b1d628cccff581ad72a98"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/se3-freeze.txt",
+      "bytes": 1399,
+      "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/se3-freeze.txt",
+          "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/boltz-freeze.txt",
+      "bytes": 2169,
+      "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/boltz-freeze.txt",
+          "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/auxiliary-cuda11-packages.json",
+      "bytes": 147,
+      "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/auxiliary-cuda11-packages.json",
+          "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/run-summary.json",
+      "bytes": 9358,
+      "sha256": "0ec10d1fbfd7e9aaa57904206da2fc313de2632b5b000a1bbc7555a8395b9b3b",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/run-summary.json",
+          "sha256": "0ec10d1fbfd7e9aaa57904206da2fc313de2632b5b000a1bbc7555a8395b9b3b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/linux-test-summary.txt",
+      "bytes": 1689,
+      "sha256": "37adb46cfb92c106c3af17f85bd8967f5355f315c2147507ef73a655208bdc20",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/linux-test-summary.txt",
+          "sha256": "37adb46cfb92c106c3af17f85bd8967f5355f315c2147507ef73a655208bdc20"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/ci/artifact-provenance.json",
+      "bytes": 823,
+      "sha256": "a494ade50dc73df05dd56065a6afb82bc0b0d71477f2f1bacd5b7d4f79f3fefd",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/ci/artifact-provenance.json",
+          "sha256": "a494ade50dc73df05dd56065a6afb82bc0b0d71477f2f1bacd5b7d4f79f3fefd"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-se3-audit.json",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-se3-audit.scope.json",
+      "bytes": 550,
+      "sha256": "673e1b3726927dfbcbed3cc467296828215f49a56edc32c5cf9fb2e2f7e02cc2",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-se3-audit.scope.json",
+          "sha256": "673e1b3726927dfbcbed3cc467296828215f49a56edc32c5cf9fb2e2f7e02cc2"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-se3-audit-requirements.txt",
+      "bytes": 1113,
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-se3-audit-requirements.txt",
+          "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-boltz-audit.json",
+          "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-boltz-audit.scope.json",
+      "bytes": 536,
+      "sha256": "107f3000996c354bcc569afa3535827fd2309fcd65c72d010153e5f2d1ea01a3",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-boltz-audit.scope.json",
+          "sha256": "107f3000996c354bcc569afa3535827fd2309fcd65c72d010153e5f2d1ea01a3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-boltz-audit-requirements.txt",
+      "bytes": 1960,
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-boltz-audit-requirements.txt",
+          "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-cuda11-audit.json",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-cuda11-audit-requirements.txt",
+      "bytes": 116,
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-cuda11-audit-requirements.txt",
+          "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/ci-boltz-audit-query.json",
+      "bytes": 927,
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/ci-boltz-audit-query.json",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/security/dependency-comparison.json",
+      "bytes": 3024,
+      "sha256": "19f7e78ea2a354366663c06cf73388ee50b52f5ec0f49bb175fa663988231397",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/security/dependency-comparison.json",
+          "sha256": "19f7e78ea2a354366663c06cf73388ee50b52f5ec0f49bb175fa663988231397"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/README.md",
+      "bytes": 3193,
+      "sha256": "c4c359be6438cda056b758785e0e8afc803f559612f0065dcb509c321e559b51",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/README.md",
+          "sha256": "c4c359be6438cda056b758785e0e8afc803f559612f0065dcb509c321e559b51"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/ci-4939383/manifest.json",
+      "bytes": 13117,
+      "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be",
+      "sources": [
+        {
+          "source_role": "historical-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/canceled-full-attempt/observations.json",
+      "bytes": 6011,
+      "sha256": "f9b37d58b79d92164df64c301f7b5c4bced9bed9725ecbe5372f6c656591bdbd",
+      "sources": [
+        {
+          "source_role": "canceled-first-attempt/observations.json",
+          "sha256": "f9b37d58b79d92164df64c301f7b5c4bced9bed9725ecbe5372f6c656591bdbd"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/canceled-full-attempt/README.md",
+      "bytes": 2674,
+      "sha256": "30383d9fcbd77dabfc349752abe60ff5f4da6a72c6bb90b4c1aa74b800156dcb",
+      "sources": [
+        {
+          "source_role": "canceled-first-attempt/README.md",
+          "sha256": "30383d9fcbd77dabfc349752abe60ff5f4da6a72c6bb90b4c1aa74b800156dcb"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/canceled-full-attempt/manifest.json",
+      "bytes": 3589,
+      "sha256": "89e265d85f9da9f866ab11c830be56d019b4de544cf533bcb7485ef123889476",
+      "sources": [
+        {
+          "source_role": "canceled-first-attempt/manifest.json",
+          "sha256": "89e265d85f9da9f866ab11c830be56d019b4de544cf533bcb7485ef123889476"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/checkpoint-failed-attempt-4939383/source-manifest.json",
+      "bytes": 8290,
+      "sha256": "5d6f07e2d3d6285b7f8813863556aabfb17a4528e547fd498974bc6def6db2be",
+      "sources": [
+        {
+          "source_role": "original-legacy-manifest",
+          "sha256": "5d6f07e2d3d6285b7f8813863556aabfb17a4528e547fd498974bc6def6db2be"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/checkpoint-failed-attempt-4939383/observations.json",
+      "bytes": 6057,
+      "sha256": "adf3c5787ae051dac3a9550cc63710b497c7e21ee55174a4dfc55098dd8635e6",
+      "sources": [
+        {
+          "source_role": "original-derived-observations",
+          "sha256": "adf3c5787ae051dac3a9550cc63710b497c7e21ee55174a4dfc55098dd8635e6"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/checkpoint-failed-attempt-4939383/manifest.json",
+      "bytes": 882,
+      "sha256": "a7ae4bce4ebd643a1fedb68a4acafc192415d1c32e62f0783db4beda9d0635e7",
+      "sources": [
+        {
+          "source_role": "new-legacy-inventory-wrapper",
+          "sha256": "5d6f07e2d3d6285b7f8813863556aabfb17a4528e547fd498974bc6def6db2be"
+        }
+      ],
+      "transformation": "New file inventory; original source manifest retained separately"
+    },
+    {
+      "artifact": "ci/ci/recipe-check.json",
+      "bytes": 25363,
+      "sha256": "8ed0baddacf259d24280a730fe3b1897c3596613d23a99adbd2a3a79a4d8e34a",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/recipe-check.json",
+          "sha256": "8ed0baddacf259d24280a730fe3b1897c3596613d23a99adbd2a3a79a4d8e34a"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/se3-freeze.txt",
+      "bytes": 1399,
+      "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/se3-freeze.txt",
+          "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/boltz-freeze.txt",
+      "bytes": 2169,
+      "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/boltz-freeze.txt",
+          "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/auxiliary-cuda11-packages.json",
+      "bytes": 147,
+      "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/auxiliary-cuda11-packages.json",
+          "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/run-summary.json",
+      "bytes": 6611,
+      "sha256": "c99cb6dfaf2a38cac2cdeed60c9528a71cc0d0f88232a60649cedff3032c5130",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/run-summary.json",
+          "sha256": "c99cb6dfaf2a38cac2cdeed60c9528a71cc0d0f88232a60649cedff3032c5130"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/linux-test-summary.txt",
+      "bytes": 1689,
+      "sha256": "ad66214af71e283ba5d50b9497fafee984ab5592d3e4468f6232da3121910198",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/linux-test-summary.txt",
+          "sha256": "ad66214af71e283ba5d50b9497fafee984ab5592d3e4468f6232da3121910198"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/ci/artifact-provenance.json",
+      "bytes": 689,
+      "sha256": "3a037ef562edf75ff3149974a4b41351fca8c0155167afb2802204e25f855060",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/ci/artifact-provenance.json",
+          "sha256": "3a037ef562edf75ff3149974a4b41351fca8c0155167afb2802204e25f855060"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-se3-audit.json",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-se3-audit-requirements.txt",
+      "bytes": 1113,
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-se3-audit-requirements.txt",
+          "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-boltz-audit.json",
+          "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-boltz-audit-requirements.txt",
+      "bytes": 1960,
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-boltz-audit-requirements.txt",
+          "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-boltz-audit-query.json",
+      "bytes": 927,
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-boltz-audit-query.json",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-cuda11-audit.json",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-cuda11-audit-requirements.txt",
+      "bytes": 116,
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-cuda11-audit-requirements.txt",
+          "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-se3-audit.scope.json",
+      "bytes": 713,
+      "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-se3-audit.scope.json",
+          "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/ci-boltz-audit.scope.json",
+      "bytes": 697,
+      "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/ci-boltz-audit.scope.json",
+          "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/security/dependency-comparison.json",
+      "bytes": 3021,
+      "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/security/dependency-comparison.json",
+          "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/SCOPE.txt",
+      "bytes": 1458,
+      "sha256": "ec2dd6ddb064a5caf37206933ae40e16d8069a9291af005ddf5b3f0ebc243da9",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/SCOPE.txt",
+          "sha256": "ec2dd6ddb064a5caf37206933ae40e16d8069a9291af005ddf5b3f0ebc243da9"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "ci/manifest.json",
+      "bytes": 14919,
+      "sha256": "0ecf6e67431ed1329fc3bb8dc71525c8350a7a2f195eb4ba1bc6afbf8ae929bf",
+      "sources": [
+        {
+          "source_role": "current-candidate-ci/manifest.json",
+          "sha256": "0ecf6e67431ed1329fc3bb8dc71525c8350a7a2f195eb4ba1bc6afbf8ae929bf"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "preservation/preservation-verification.json",
+      "bytes": 1133,
+      "sha256": "6bc90b791c751b974ebcef0f54555a6b151345703bec9e5cb5805514f4589550",
+      "sources": [
+        {
+          "source_role": "current-preservation/preservation-verification.json",
+          "sha256": "6bc90b791c751b974ebcef0f54555a6b151345703bec9e5cb5805514f4589550"
+        }
+      ],
+      "transformation": "JSON formatting; candidate-wheel absolute path reduced to basename when present"
+    },
+    {
+      "artifact": "preservation/candidate-source-comparison.json",
+      "bytes": 731,
+      "sha256": "21b8e8f3b4276ce2dfef21da0d893fe7759468ee88740cd20e21fa7b7bf45e94",
+      "sources": [
+        {
+          "source_role": "current-preservation/candidate-source-comparison.json",
+          "sha256": "eee8ab0ee0033642dde288daa7a4e064edf6ff1c5aa73391471778660b7966dc"
+        }
+      ],
+      "transformation": "JSON formatting; candidate-wheel absolute path reduced to basename when present"
+    },
+    {
+      "artifact": "history/rf-geometry-4939383/conclusion.json",
+      "bytes": 4849,
+      "sha256": "0af40f5f091eab17f489f22f85b53a4e0ac615c8a64db71cf6859aa64cfb6dd1",
+      "sources": [
+        {
+          "source_role": "rf-geometry-source-conclusion",
+          "sha256": "311bf3d5445eeb7b38df98f051cd299601d1ad45f5d1e2a1f276bb37947c7790"
+        }
+      ],
+      "transformation": "JSON formatting; internal collaboration run/session/account identifiers removed; findings unchanged"
+    },
+    {
+      "artifact": "history/rf-geometry-4939383/trajectory-invariant.json",
+      "bytes": 1076,
+      "sha256": "c0dc47b25b3eb8177b4f8f40adbb9a882f9b3b3a6945233d45699fef20002732",
+      "sources": [
+        {
+          "source_role": "rf-actual-trajectory-invariant",
+          "sha256": "5a126358f65ee2500115e3ac035b8a921ad67dc8301df82f452a606dacf42dc6"
+        }
+      ],
+      "transformation": "JSON formatting; internal collaboration run/session/account identifiers removed; findings unchanged"
+    },
+    {
+      "artifact": "checkpoint/source-boundary-review.json",
+      "bytes": 6905,
+      "sha256": "ad8a81632975580055e71952c97f7ed9e83b472823f1002f32fa5c14593c68cc",
+      "sources": [
+        {
+          "source_role": "checkpoint-source-boundary-review",
+          "sha256": "2d837ee055ee1ff50c1836b242f85f30dee70e7ba8490a259e43235602da3c16"
+        }
+      ],
+      "transformation": "JSON formatting; internal collaboration run/session/account identifiers removed; findings unchanged"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/checkpoint-result.json",
+      "bytes": 55463,
+      "sha256": "a936bf1c545c4536e0e4b8f1b6c8b8c539d5eb2c7a92398969e6a6a46dd99a64",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/checkpoint-result.json",
+          "sha256": "a936bf1c545c4536e0e4b8f1b6c8b8c539d5eb2c7a92398969e6a6a46dd99a64"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/bootstrap-result.json",
+      "bytes": 590,
+      "sha256": "8cb04e727b44b41824ae47488817fe3e82b594ac40dd251c8a46c9acce581bea",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/bootstrap-result.json",
+          "sha256": "8cb04e727b44b41824ae47488817fe3e82b594ac40dd251c8a46c9acce581bea"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/base-runtime-receipt.json",
+      "bytes": 20669,
+      "sha256": "17a66ef41421684e9f7741c8184a08052dd44a12bbe28122545598a0d348b6cd",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/base-runtime-receipt.json",
+          "sha256": "17a66ef41421684e9f7741c8184a08052dd44a12bbe28122545598a0d348b6cd"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/resolved-packages.txt",
+      "bytes": 2206,
+      "sha256": "3da1bfab260965551521c5a6a0c80dc28625806b8a4920b8256f3edd1433eb40",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/resolved-packages.txt",
+          "sha256": "3da1bfab260965551521c5a6a0c80dc28625806b8a4920b8256f3edd1433eb40"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/production-loader.py",
+      "bytes": 9263,
+      "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/production-loader.py",
+          "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/submission.json",
+      "bytes": 343,
+      "sha256": "a60954d83a939cc19f928e9aa623adfee66e841c8c9415dce248646e48d912c2",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/submission.json",
+          "sha256": "a60954d83a939cc19f928e9aa623adfee66e841c8c9415dce248646e48d912c2"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/verification.json",
+      "bytes": 3407,
+      "sha256": "b408d6b2ce9f530f577b52a4e3fa4e3f4c1e43c8ffd5fa5967a29eec7a61231a",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/verification.json",
+          "sha256": "b408d6b2ce9f530f577b52a4e3fa4e3f4c1e43c8ffd5fa5967a29eec7a61231a"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/README.md",
+      "bytes": 2783,
+      "sha256": "289183803683a3d0bb7eb483dffba4eff44190d7bab57f5797e53d776fcf9bcb",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/README.md",
+          "sha256": "289183803683a3d0bb7eb483dffba4eff44190d7bab57f5797e53d776fcf9bcb"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "checkpoint/cpu-probe/manifest.json",
+      "bytes": 7118,
+      "sha256": "62310513c320c4d60fc17449eaf622566bbb6fdb5972cdeb347f145ee04a518c",
+      "sources": [
+        {
+          "source_role": "reviewed-production-loader-cpu-probe/manifest.json",
+          "sha256": "62310513c320c4d60fc17449eaf622566bbb6fdb5972cdeb347f145ee04a518c"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/verification.json",
+      "bytes": 26086,
+      "sha256": "67552cff06849b499f794e48134fe2d902a915875c55a9c2c70c18b56b500446",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/verification.json",
+          "sha256": "67552cff06849b499f794e48134fe2d902a915875c55a9c2c70c18b56b500446"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/import/verification.json",
+      "bytes": 855,
+      "sha256": "1f763d8fe84699de892f74b1362acd6126768e00b932d4c6f51b556e6367c5a3",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/import/verification.json",
+          "sha256": "1f763d8fe84699de892f74b1362acd6126768e00b932d4c6f51b556e6367c5a3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/history/verification-reference-v1.json",
+      "bytes": 17524,
+      "sha256": "79d0840f1b269a510adad05fe40412b823a65fc2be2e708bd1152e8a32d0002e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/history/verification-reference-v1.json",
+          "sha256": "79d0840f1b269a510adad05fe40412b823a65fc2be2e708bd1152e8a32d0002e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/wheel-reference/reproduction.json",
+      "bytes": 15062,
+      "sha256": "daa6f74bfcf06a329081f13879097ee6f96b5f2f029951107efddfa82f291308",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/wheel-reference/reproduction.json",
+          "sha256": "daa6f74bfcf06a329081f13879097ee6f96b5f2f029951107efddfa82f291308"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/wheel-reference/reproduce.py",
+      "bytes": 2179,
+      "sha256": "7f3142473502f2b4ef21f78db91af5e733f8dec92837726013efbafeadcac6a9",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/wheel-reference/reproduce.py",
+          "sha256": "7f3142473502f2b4ef21f78db91af5e733f8dec92837726013efbafeadcac6a9"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/interpretation-review.json",
+      "bytes": 2561,
+      "sha256": "15e47a69664339c9520527fda922624da29cc23426dae727c34fafc4f39835e0",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/interpretation-review.json",
+          "sha256": "15e47a69664339c9520527fda922624da29cc23426dae727c34fafc4f39835e0"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/methods/verify_smoke.py",
+      "bytes": 50283,
+      "sha256": "fc7a9fedac825c3ba055707bfde9c80bbed0ae54ffc75698c96871360bfea941",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/methods/verify_smoke.py",
+          "sha256": "fc7a9fedac825c3ba055707bfde9c80bbed0ae54ffc75698c96871360bfea941"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/methods/verify_real_import.py",
+      "bytes": 4670,
+      "sha256": "95be630ff32c4ba2f380916375bf50ce7ea401111cf554480a50fe61e3c8d26d",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/methods/verify_real_import.py",
+          "sha256": "95be630ff32c4ba2f380916375bf50ce7ea401111cf554480a50fe61e3c8d26d"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/methods/extract_actual_results.py",
+      "bytes": 4001,
+      "sha256": "d87591f8da1e4eb900749351aa26e66d2837b1ab5e47f271e34f585446b5512c",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/methods/extract_actual_results.py",
+          "sha256": "d87591f8da1e4eb900749351aa26e66d2837b1ab5e47f271e34f585446b5512c"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/verification.json",
+      "bytes": 1425,
+      "sha256": "c1aa36f0a6d50e0d07ed34b8a9ef5791c6dc42a0e821822163f26e7cdeb84e33",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/verification.json",
+          "sha256": "c1aa36f0a6d50e0d07ed34b8a9ef5791c6dc42a0e821822163f26e7cdeb84e33"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/audit-result.json",
+      "bytes": 668,
+      "sha256": "f1fae4ec5aed27b8796402e3017f5bd4cbca6a16cb3fdac2898c98caf9a51e70",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/audit-result.json",
+          "sha256": "f1fae4ec5aed27b8796402e3017f5bd4cbca6a16cb3fdac2898c98caf9a51e70"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/boltz-freeze.txt",
+      "bytes": 2200,
+      "sha256": "f4cbabff62268a6f590463e23f3b9586493047cfadba6d817350c36ee7c060a4",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/boltz-freeze.txt",
+          "sha256": "f4cbabff62268a6f590463e23f3b9586493047cfadba6d817350c36ee7c060a4"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/boltz-requirements.scope.json",
+      "bytes": 455,
+      "sha256": "e516a6e617a1f94572988491fe9da250f88a8ab72023781a2b7b0c75648f3af7",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/boltz-requirements.scope.json",
+          "sha256": "e516a6e617a1f94572988491fe9da250f88a8ab72023781a2b7b0c75648f3af7"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/boltz-requirements.txt",
+      "bytes": 2061,
+      "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/boltz-requirements.txt",
+          "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/comparison.json",
+      "bytes": 7420,
+      "sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/comparison.json",
+          "sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/cuda11-freeze.txt",
+      "bytes": 116,
+      "sha256": "898b8607d06d046696333d30d34a30d823138baf653443c52ae550a46b29099f",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/cuda11-freeze.txt",
+          "sha256": "898b8607d06d046696333d30d34a30d823138baf653443c52ae550a46b29099f"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/cuda11-requirements.scope.json",
+      "bytes": 85,
+      "sha256": "7b245eca6d93c5e87e9bb17170506cdc999dd1dcc88087051f10357b4919f4d0",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/cuda11-requirements.scope.json",
+          "sha256": "7b245eca6d93c5e87e9bb17170506cdc999dd1dcc88087051f10357b4919f4d0"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/cuda11-requirements.txt",
+      "bytes": 120,
+      "sha256": "3c86789455ff46ca1f08f9c827a408a94f8a7fc200dbbf5038bfaeafbf81ed05",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/cuda11-requirements.txt",
+          "sha256": "3c86789455ff46ca1f08f9c827a408a94f8a7fc200dbbf5038bfaeafbf81ed05"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited-basis.json",
+      "bytes": 3615,
+      "sha256": "e120b4d47c342f33d566930c74e607d06281f1d143ccc9b902bd34f6d09e675b",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited-basis.json",
+          "sha256": "e120b4d47c342f33d566930c74e607d06281f1d143ccc9b902bd34f6d09e675b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-boltz-audit-query.json",
+      "bytes": 927,
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-boltz-audit-query.json",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-boltz-audit-requirements.txt",
+      "bytes": 1960,
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-boltz-audit-requirements.txt",
+          "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-boltz-audit.json",
+          "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-boltz-audit.scope.json",
+      "bytes": 697,
+      "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-boltz-audit.scope.json",
+          "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-cuda11-audit-requirements.txt",
+      "bytes": 116,
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-cuda11-audit-requirements.txt",
+          "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-cuda11-audit.json",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-se3-audit-requirements.txt",
+      "bytes": 1113,
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-se3-audit-requirements.txt",
+          "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-se3-audit.json",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/ci-se3-audit.scope.json",
+      "bytes": 713,
+      "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/ci-se3-audit.scope.json",
+          "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/inherited/dependency-comparison.json",
+      "bytes": 3021,
+      "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/inherited/dependency-comparison.json",
+          "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/preparation-manifest.json",
+      "bytes": 3574,
+      "sha256": "607e2292686e7a3e28853d57c69ccd84a8d16b7a46c877652ffc23a3a6fe6877",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/preparation-manifest.json",
+          "sha256": "607e2292686e7a3e28853d57c69ccd84a8d16b7a46c877652ffc23a3a6fe6877"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/se3-freeze.txt",
+      "bytes": 1401,
+      "sha256": "914435451559102084bd68ffb0d759cf3cfcf43c3e19a473b7dee834385675c0",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/se3-freeze.txt",
+          "sha256": "914435451559102084bd68ffb0d759cf3cfcf43c3e19a473b7dee834385675c0"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/se3-requirements.scope.json",
+      "bytes": 442,
+      "sha256": "1bdb5ada1db2246e397517a3db467c910f1abf48f66be9c9783b3e9db19f40a3",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/se3-requirements.scope.json",
+          "sha256": "1bdb5ada1db2246e397517a3db467c910f1abf48f66be9c9783b3e9db19f40a3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/security/se3-requirements.txt",
+      "bytes": 1167,
+      "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/security/se3-requirements.txt",
+          "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/job/original-manifest.json",
+      "bytes": 6843,
+      "sha256": "788fb808999537a388ae658f46976c476e513b647d963cc31424372fb059a561",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/job/original-manifest.json",
+          "sha256": "788fb808999537a388ae658f46976c476e513b647d963cc31424372fb059a561"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/job/original-provenance.json",
+      "bytes": 745,
+      "sha256": "928971696bdd07a8b979a9282da915027f8fb249841ca6dcd2a1aeb427af7fcc",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/job/original-provenance.json",
+          "sha256": "928971696bdd07a8b979a9282da915027f8fb249841ca6dcd2a1aeb427af7fcc"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/job/original-weights.json",
+      "bytes": 523,
+      "sha256": "8b9a0cbc818e9faffbf99c0000e07e2750b6a9397b696e5a6acfc24188100186",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/job/original-weights.json",
+          "sha256": "8b9a0cbc818e9faffbf99c0000e07e2750b6a9397b696e5a6acfc24188100186"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/job/original-spec.json",
+      "bytes": 661,
+      "sha256": "ee113944dbc1a5229ee62e42eb841a7b2f89441c88706e2ffbfc0a03f31136cf",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/job/original-spec.json",
+          "sha256": "ee113944dbc1a5229ee62e42eb841a7b2f89441c88706e2ffbfc0a03f31136cf"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/inputs/original-spec.json",
+      "bytes": 688,
+      "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/inputs/original-spec.json",
+          "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/results/metrics.jsonl",
+      "bytes": 854,
+      "sha256": "5de082187b07cf02b1317a2d82310e86047ca4d08069bf4c0967e83919ca44be",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/results/metrics.jsonl",
+          "sha256": "5de082187b07cf02b1317a2d82310e86047ca4d08069bf4c0967e83919ca44be"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/runtime-receipt.json",
+      "bytes": 30047,
+      "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/runtime-receipt.json",
+          "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/provision-receipt.json",
+      "bytes": 30047,
+      "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/provision-receipt.json",
+          "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/source-wheel.json",
+      "bytes": 152,
+      "sha256": "9133d6c18a5ba96359961979312e2d0ec0e07912af9b53c9165172fcded378ea",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/source-wheel.json",
+          "sha256": "9133d6c18a5ba96359961979312e2d0ec0e07912af9b53c9165172fcded378ea"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/attached-wheel.json",
+      "bytes": 163,
+      "sha256": "71557cbc9fa886b2dacb1a3b4006a351cf54cac3880abc1b674e5fe6874d86ec",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/attached-wheel.json",
+          "sha256": "71557cbc9fa886b2dacb1a3b4006a351cf54cac3880abc1b674e5fe6874d86ec"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/model-weights.json",
+      "bytes": 9149,
+      "sha256": "6f7b7ce07db7ae1677738437aeebe646a85501c820c1557778c886fe17557f3f",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/model-weights.json",
+          "sha256": "6f7b7ce07db7ae1677738437aeebe646a85501c820c1557778c886fe17557f3f"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/result.json",
+      "bytes": 44,
+      "sha256": "d1cfa1233727ae32135e9cad04bb85038cbb4bc8e616f71ec65af66b82fea84b",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/result.json",
+          "sha256": "d1cfa1233727ae32135e9cad04bb85038cbb4bc8e616f71ec65af66b82fea84b"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/memory.json",
+      "bytes": 13855,
+      "sha256": "3280b99ecd05c90e3096166167e88ff191e53d2bc2981e4823647018399efe82",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/memory.json",
+          "sha256": "3280b99ecd05c90e3096166167e88ff191e53d2bc2981e4823647018399efe82"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/hardware.txt",
+      "bytes": 74,
+      "sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/hardware.txt",
+          "sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/runtime/commands.log",
+      "bytes": 93430,
+      "sha256": "1322954e93171605d48613fa2363e71c31ed3e304734f86c5d27606c96b7f8cf",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/runtime/commands.log",
+          "sha256": "1322954e93171605d48613fa2363e71c31ed3e304734f86c5d27606c96b7f8cf"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/commands/000001.json",
+      "bytes": 898,
+      "sha256": "25c41076a97581db70bb7ab0d5b84064bfbebb33f35cd7531414ab4cd49209eb",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/commands/000001.json",
+          "sha256": "25c41076a97581db70bb7ab0d5b84064bfbebb33f35cd7531414ab4cd49209eb"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/commands/000002.json",
+      "bytes": 25702,
+      "sha256": "ab0d3fc1152ae3a89b62ffddea27f32d16c630144e5d76d64639b8d069383572",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/commands/000002.json",
+          "sha256": "ab0d3fc1152ae3a89b62ffddea27f32d16c630144e5d76d64639b8d069383572"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/commands/000003.json",
+      "bytes": 1603,
+      "sha256": "2a141e0fdacdfdd6f3da1dfa95c9714806482d17e616210c80f5d8a7c9d87667",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/commands/000003.json",
+          "sha256": "2a141e0fdacdfdd6f3da1dfa95c9714806482d17e616210c80f5d8a7c9d87667"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/commands/000004.json",
+      "bytes": 4171,
+      "sha256": "dceaad7e3e1b9a3c53b4c7c686bad567546f3b2b8ee0b4870df2635c40eb70fe",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/commands/000004.json",
+          "sha256": "dceaad7e3e1b9a3c53b4c7c686bad567546f3b2b8ee0b4870df2635c40eb70fe"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/commands/000005.json",
+      "bytes": 4986,
+      "sha256": "690ab370fa38714897c338d9c7f0a2aaee0c26a6d269753fd737d58e94f2d62e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/commands/000005.json",
+          "sha256": "690ab370fa38714897c338d9c7f0a2aaee0c26a6d269753fd737d58e94f2d62e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/inputs/target.pdb",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/inputs/target.pdb",
+          "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/rfdiffusion/backbone.pdb",
+      "bytes": 54136,
+      "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/rfdiffusion/backbone.pdb",
+          "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/rfdiffusion/xt-trajectory.pdb",
+      "bytes": 4222020,
+      "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/rfdiffusion/xt-trajectory.pdb",
+          "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/rfdiffusion/px0-trajectory.pdb",
+      "bytes": 4419000,
+      "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/rfdiffusion/px0-trajectory.pdb",
+          "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/proteinmpnn/original.fa",
+      "bytes": 499,
+      "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/proteinmpnn/original.fa",
+          "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq0/P04626_binder_42_seq0_model_0.cif",
+      "bytes": 134913,
+      "sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq0/P04626_binder_42_seq0_model_0.cif",
+          "sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq0/pae_P04626_binder_42_seq0_model_0.npz",
+      "bytes": 145176,
+      "sha256": "76ce09a3f50a238a617abfc77b4d836c6159c6b281814dbaa0b168f3d9fd47d3",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq0/pae_P04626_binder_42_seq0_model_0.npz",
+          "sha256": "76ce09a3f50a238a617abfc77b4d836c6159c6b281814dbaa0b168f3d9fd47d3"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq0/plddt_P04626_binder_42_seq0_model_0.npz",
+      "bytes": 954,
+      "sha256": "53ef1f39f76ef61230ec168d5ec09e9cfed05d41bb9b158934d2e9e93818cf97",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq0/plddt_P04626_binder_42_seq0_model_0.npz",
+          "sha256": "53ef1f39f76ef61230ec168d5ec09e9cfed05d41bb9b158934d2e9e93818cf97"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq0/confidence_P04626_binder_42_seq0_model_0.json",
+      "bytes": 655,
+      "sha256": "baecb6a017aa940201a4061ac10b333ee6fcaadce422ca7e4388f70fdf1c467e",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq0/confidence_P04626_binder_42_seq0_model_0.json",
+          "sha256": "baecb6a017aa940201a4061ac10b333ee6fcaadce422ca7e4388f70fdf1c467e"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq1/P04626_binder_42_seq1_model_0.cif",
+      "bytes": 134668,
+      "sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq1/P04626_binder_42_seq1_model_0.cif",
+          "sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq1/pae_P04626_binder_42_seq1_model_0.npz",
+      "bytes": 145662,
+      "sha256": "237303058a8bdf87bdeee7369eb440c7951ccd4cf1acf1463656e27bcf956bf6",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq1/pae_P04626_binder_42_seq1_model_0.npz",
+          "sha256": "237303058a8bdf87bdeee7369eb440c7951ccd4cf1acf1463656e27bcf956bf6"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq1/plddt_P04626_binder_42_seq1_model_0.npz",
+      "bytes": 946,
+      "sha256": "765e3d7446902e29ac02faab6c51dbe26670bb848cee160b1cd5c29a2feb7e94",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq1/plddt_P04626_binder_42_seq1_model_0.npz",
+          "sha256": "765e3d7446902e29ac02faab6c51dbe26670bb848cee160b1cd5c29a2feb7e94"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/scientific/boltz/P04626_binder_42_seq1/confidence_P04626_binder_42_seq1_model_0.json",
+      "bytes": 656,
+      "sha256": "fe874e2813e9d29fc430cc15bea0b5335c2cd13e0619fd192f6f1255ed16c8ca",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/scientific/boltz/P04626_binder_42_seq1/confidence_P04626_binder_42_seq1_model_0.json",
+          "sha256": "fe874e2813e9d29fc430cc15bea0b5335c2cd13e0619fd192f6f1255ed16c8ca"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/README.md",
+      "bytes": 3232,
+      "sha256": "7e49e2665808bc670614e56cb7ee21a41732b0c03c58cf452261213fdcd38e0f",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/README.md",
+          "sha256": "7e49e2665808bc670614e56cb7ee21a41732b0c03c58cf452261213fdcd38e0f"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "gpu/manifest.json",
+      "bytes": 39553,
+      "sha256": "e6a209b2ccb0e47c152833a05f73aecb9f1f2985ecfa0d80f183b7460924b90f",
+      "sources": [
+        {
+          "source_role": "reviewed-actual-gpu-package/manifest.json",
+          "sha256": "e6a209b2ccb0e47c152833a05f73aecb9f1f2985ecfa0d80f183b7460924b90f"
+        }
+      ],
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "README.md",
+      "bytes": 2132,
+      "sha256": "f7486f6a08600332177ed8ea77473800af3bbda2bd791ef5c13ce2cafe2b0b41",
+      "sources": [
+        {
+          "source_role": "new-aggregate-description",
+          "sha256": null
+        }
+      ],
+      "transformation": "New scope description"
+    }
+  ]
+}

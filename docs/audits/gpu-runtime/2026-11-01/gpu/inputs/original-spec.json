@@ -1,0 +1,27 @@
+{
+  "target_uniprot": "P04626",
+  "target_structure_path": "target.pdb",
+  "epitope_chain": "A",
+  "epitope_residues": [],
+  "design_ranges": [
+    [
+      511,
+      652
+    ]
+  ],
+  "binder_length_min": 60,
+  "binder_length_max": 60,
+  "n_trajectories": 1,
+  "seed": 42,
+  "extra_params": {
+    "designer": "rfdiff_mpnn",
+    "designer_version": "0.1.0",
+    "validator": "boltz2",
+    "mode": "design_and_validate",
+    "rfdiff_commit": "2d0c003df46b9db41d119321f15403dec3716cd9",
+    "proteinmpnn_commit": "8907e6671bfbfc92303b5f79c4b5e6ce47cdef57",
+    "target_structure_name": "target.pdb",
+    "diffusion_samples": 1,
+    "max_parallel_samples": 1
+  }
+}

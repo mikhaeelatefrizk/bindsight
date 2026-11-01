@@ -9,6 +9,60 @@ This enforces reproducibility at the workflow boundary; it does not establish
 that the underlying estimator is stable under arbitrary row order. The workflow must not be described as fully validated,
 100% accurate, or a demonstrated biological breakthrough.
 
+## November 2026 runtime maintenance — 0.3.8
+
+The supported-Python GPU component check on a real Kaggle T4 passed CUDA tensor
+operations, local DGL graph operations, scientific imports and a nonzero
+SE3 forward/rotation-equivariance check. It used Python 3.11.18,
+PyTorch 2.14.1 with CUDA 12.6, DGL 1.0.2 with its CUDA 11.8 libraries,
+NumPy 1.23.5 and e3nn 0.3.3. The probe used Hydra 1.3.6; the subsequent advisory
+review required Hydra 1.3.8 for the updated runtime. This historical component
+result must not be reported as a full test of that later dependency set.
+
+A separate real T4 prediction-component probe passed scientific imports and
+CUDA arithmetic with Boltz `2.0.3+bindsight.1`, Python 3.11.18, PyTorch
+2.14.1+cu126, Hydra 1.3.8 and PyTorch Lightning 2.6.6. It loaded **zero model
+weights and ran zero predictions**. The local Boltz wheel changes four
+dependency requirements and distribution metadata while preserving all 106
+Boltz package files byte-for-byte; Requests 2.34.2 and Biopython 1.88 are the
+other corrected requirements. Dependency compatibility is not numerical
+equivalence.
+
+The earlier prediction-component probe's 2026-11-01 advisory lookup reported no
+known vulnerabilities in 92 queried PyPI versions. Its local Boltz wheel was
+excluded and reviewed separately. Current CI freezes match the versions in the
+retained dated advisory reports; no new query is implied. The [evidence and
+audit scope](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01) retain source-package exclusions and the
+design environment's known DGL advisory.
+
+**The updated recipe completed a small RFdiffusion → ProteinMPNN → Boltz run
+on 2026-11-01 using a Kaggle Tesla T4.** It produced one backbone, two sequences
+and two predictions from the frozen HER2 protocol. All eight independent
+artifact checks passed for the exact tested commit and wheel in the
+[evidence bundle](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01).
+
+The RF check follows the pinned model: nonfinal frames retain the fixed target's
+internal geometry, and the saved final backbone matches both final trajectory
+frames. Final target displacement is reported without a new quality threshold
+or a requirement that the final prediction rigidly copy the input. Historical
+numerical equivalence is not established. The canceled first attempt,
+checkpoint-failed second attempt and separate CPU model-construction test are
+retained with their original scopes.
+
+The wrappers share one provisioner, but no live Colab or Modal execution is
+claimed. The [runtime guide](gpu-runtime.md) and
+[security policy](https://github.com/mikhaeelatefrizk/bindsight/blob/main/SECURITY.md)
+retain the remaining unpatched DGL RPC advisory. The environment is not claimed
+to have zero known vulnerabilities.
+
+Existing research tables, structures, sequences and dated numerical audits are
+preserved. The runtime update neither regenerates those results nor proves
+their numerical equivalence under new dependencies. Historical releases remain
+available for attribution and reproduction; they are not the recommended setup
+for new work after a tested successor is published.
+
+## September 2026 numerical audit
+
 This page records the numerical audits and independent R comparison performed
 on **2026-09-29**. The
 [numerical audit protocol](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/numerical_validation/README.md)
@@ -199,10 +253,10 @@ the dependency-declaration and companion-publication test groups
 passed. Coverage was 83.62%. Final release checks are reported separately by
 [GitHub Actions](https://github.com/mikhaeelatefrizk/bindsight/actions/workflows/ci.yml).
 
-These checks do not establish binding, biological effectiveness, comprehensive
-security, or compatibility with every visitor's computer. Desktop application
-signing/notarization, real WSL setup and a complete new GPU design run have not
-been verified here.
+Those dated checks did not establish binding, biological effectiveness,
+comprehensive security, or compatibility with every visitor's computer. At that
+audit stage, desktop application signing/notarization, real WSL setup and a
+complete new GPU design run had not been verified.
 
 ## What remains unverified
 
@@ -232,7 +286,7 @@ run; no operating-system security setting was changed. This does not establish
 which host-policy condition changed. Software checks and scientific validation
 answer different questions.
 
-No new complete GPU design run was performed for this audit. The local 2 GB
+The September numerical audit did not include a new complete GPU design run. The local 2 GB
 MX450 cannot be presented as reproducing the committed workload that used
 14,859 MiB peak memory on a T4. CPU tests and hardware detection do not exercise
 the folding models. See [local workspace requirements](local-workspace.md).

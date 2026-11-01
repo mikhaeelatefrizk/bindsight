@@ -1,0 +1,446 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T16:09:04.323560+00:00",
+  "status": "component and CI evidence only; final full GPU run pending",
+  "candidate_commit": "8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+  "ci_run_url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720",
+  "corroborated_freezes": [
+    "ci/se3-freeze.txt",
+    "ci/boltz-freeze.txt"
+  ],
+  "audit_summary": {
+    "ci-se3-audit": {
+      "records": 54,
+      "with_advisories": 0,
+      "skipped": [
+        {
+          "name": "dgl",
+          "reason": "Dependency not found on PyPI and could not be audited: dgl (1.0.2)"
+        }
+      ]
+    },
+    "ci-boltz-audit": {
+      "records": 101,
+      "with_advisories": 0,
+      "skipped": []
+    },
+    "ci-cuda11-audit": {
+      "records": 4,
+      "with_advisories": 0,
+      "skipped": []
+    }
+  },
+  "files": [
+    {
+      "artifact": "security/dgl-security-boundary.json",
+      "sha256": "1a175c021a6f1f79ec5cb4665bdedf55b41ea45bad29c7fe8f5bce11861eebd3",
+      "bytes": 32488,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/dgl-security-boundary.json",
+          "sha256": "f3918f4a4824be541cad563dd8d3371256b7190ba9a3c3719c222c92bcc4bacd"
+        }
+      ],
+      "purpose": "Exact pinned wheel identity, advisory, hashed source excerpts, bounded import/startup review",
+      "limitations": "Static source review; vulnerable imported RPC code remains; no network monitoring or native-library audit",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "components/rfdiffusion-probe-receipt.json",
+      "sha256": "2db1a31aa136257c828137865ecd722d98b30b7253d60de8260a354e26931342",
+      "bytes": 1026,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/probe-result-v4/bindsight-runtime-probe/probe-result.json",
+          "sha256": "0d01246614d68cdbcdfbfceda0aa0d97563f5c2343525bcb355135857c69f395"
+        }
+      ],
+      "purpose": "Selected measured setup/identity fields from the successful supported-Python T4 component probe",
+      "limitations": "Hydra1.3.6 historical component recipe; no model checkpoint or full pipeline run; hardware check is separate",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "components/rfdiffusion-cuda-check.json",
+      "sha256": "9176f60487b3ad51eab2554057aff25428c9ff8d4693b12e9b16f73de21898b3",
+      "bytes": 3363,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/probe-result-v4/bindsight-runtime-probe/cuda-probe.json",
+          "sha256": "9176f60487b3ad51eab2554057aff25428c9ff8d4693b12e9b16f73de21898b3"
+        }
+      ],
+      "purpose": "Actual T4 CUDA, DGL reduction, SE3 forward/equivariance and installed version measurements",
+      "limitations": "Hydra1.3.6 rather than final1.3.8; model_checkpoints_loaded=0; no scientific equivalence claim",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "components/rfdiffusion-freeze.txt",
+      "sha256": "8618915b514dbb0cff0115e20f0c9e3e2c1ae81e7470f261186a6f391cd766e1",
+      "bytes": 1627,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/probe-result-v4/bindsight-runtime-probe/resolved-packages.txt",
+          "sha256": "8618915b514dbb0cff0115e20f0c9e3e2c1ae81e7470f261186a6f391cd766e1"
+        }
+      ],
+      "purpose": "Measured installed packages for the RF/SE3 component probe",
+      "limitations": "Historical component environment, not final release lock",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "components/boltz-probe-receipt.json",
+      "sha256": "b7204f51d10482ce24ceccc9354051d0931cd09551a694a91df4bb42f36cabf6",
+      "bytes": 2822,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-probe-result-v2/bindsight-boltz-probe/result.json",
+          "sha256": "b7204f51d10482ce24ceccc9354051d0931cd09551a694a91df4bb42f36cabf6"
+        }
+      ],
+      "purpose": "Actual T4 prediction-component imports/CUDA check and patched Boltz wheel identity",
+      "limitations": "No downloaded/loaded model weights and zero predictions; not full GPU inference",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "components/boltz-freeze.txt",
+      "sha256": "c8ae83bfafaf125a4ed93650f09d165c2e0f58157d42357c6acf2d68ddea8e23",
+      "bytes": 2022,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-probe-result-v2/bindsight-boltz-probe/resolved-packages.txt",
+          "sha256": "c8ae83bfafaf125a4ed93650f09d165c2e0f58157d42357c6acf2d68ddea8e23"
+        }
+      ],
+      "purpose": "Measured installed packages for the Boltz component probe",
+      "limitations": "Component environment, not final release lock",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "security/boltz-component-audit.json",
+      "sha256": "432191c3c16101c33217d1d33599a98377b0bd326c7bb315088562a67215f2bc",
+      "bytes": 7998,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-v2-audit.json",
+          "sha256": "ea98e4003c923275c524df2ce7b648fc7790dd6019b833f1b6552fe7b0a82151"
+        }
+      ],
+      "purpose": "Dated advisory lookup of 92 packages from the actual T4 prediction-component freeze",
+      "limitations": "Local Boltz wheel excluded; database lookup is not exhaustive security review",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "security/boltz-component-audit.scope.json",
+      "sha256": "bc9f81116e45452223c9f6b224a5509061c3ffd00a33a607df0de84b494e88f0",
+      "bytes": 410,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-v2-audit-requirements.scope.json",
+          "sha256": "faa7f4ab686393f0f4026b973f2bd2847aa53651480b1fe0596873e02480a02f"
+        }
+      ],
+      "purpose": "Package count and local-wheel exclusions for the component audit",
+      "limitations": "See corresponding audit and raw freeze",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "security/boltz-component-audit-requirements.txt",
+      "sha256": "e78c4fea8464dd8bd5ab15f897edef119daca8c7e9b0511ef34a4ecf2b6bfc46",
+      "bytes": 1884,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-v2-audit-requirements.txt",
+          "sha256": "e78c4fea8464dd8bd5ab15f897edef119daca8c7e9b0511ef34a4ecf2b6bfc46"
+        }
+      ],
+      "purpose": "Exact normalized input to the component advisory lookup",
+      "limitations": "Excludes local Boltz wheel; not install instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "ci/recipe-check.json",
+      "sha256": "60049f3e9c54fb15b0f3cbd7da09a78ef0c3c49c9f21a67fdcef5c4276d33006",
+      "bytes": 24756,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-8773fed/recipe_check.json",
+          "sha256": "adb95592fc72443fb978e4b16b0e00fc45ad208f0aed038e3c70b0bce93325b7"
+        }
+      ],
+      "purpose": "Canonical --check-only provisioning/import receipt from the all-green CI run at 8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+      "limitations": "CPU/import check only: cuda_tested=false and models_downloaded=false; not GPU inference",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "ci/se3-freeze.txt",
+      "sha256": "b185c602afc033f1a93bd2c603dd14456f0330d59316a53a5b492df4fe15da80",
+      "bytes": 1455,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-se3-freeze.txt",
+          "sha256": "c8d2433c63b47ac8d70456995297de468042094c62bbcac8062c56a40710213b"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-8773fed/recipe_check.json",
+          "sha256": "adb95592fc72443fb978e4b16b0e00fc45ad208f0aed038e3c70b0bce93325b7"
+        }
+      ],
+      "purpose": "Freeze exactly corroborated against canonical CI receipt",
+      "limitations": "Paths normalized; not install instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "security/ci-se3-audit.json",
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "bytes": 4819,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-se3-audit.json",
+          "sha256": "0033ce127f50ef754ee158c23e8194e3c54a82bd37d6e6d79c262c77c7fd0591"
+        }
+      ],
+      "purpose": "Advisory lookup of the canonical CI environment's measured packages",
+      "limitations": "DGL skipped by package lookup; manual advisory applies; source exclusions in scope",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "security/ci-se3-audit.scope.json",
+      "sha256": "f9fb485a4542d49764daaacb4d24e21e7dbfb72f29002d47964e2d52ad837aea",
+      "bytes": 496,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-se3-audit.scope.json",
+          "sha256": "4a8c13fb70c6ab6e439220521a31f819aeacf7b5386bc691e0a3a82d2c292838"
+        }
+      ],
+      "purpose": "Exact audited package count and excluded source packages",
+      "limitations": "Records lookup scope, not proof of comprehensive safety",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "security/ci-se3-audit-requirements.txt",
+      "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e",
+      "bytes": 1167,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-se3-audit.txt",
+          "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e"
+        }
+      ],
+      "purpose": "Normalized package versions supplied to advisory lookup",
+      "limitations": "Not installation instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "ci/boltz-freeze.txt",
+      "sha256": "c90c2e87bbdbc971e7d3e3c29c25aca2a68d7cedad71d38eb480ca8075fbe461",
+      "bytes": 2272,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-boltz-freeze.txt",
+          "sha256": "3ce5ccf2f47f2fd78861d9e1f9507625be58f43b26ad108ca7b41b6bb60406e4"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-8773fed/recipe_check.json",
+          "sha256": "adb95592fc72443fb978e4b16b0e00fc45ad208f0aed038e3c70b0bce93325b7"
+        }
+      ],
+      "purpose": "Freeze exactly corroborated against canonical CI receipt",
+      "limitations": "Paths normalized; not install instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.json",
+      "sha256": "b785ffc88a5c7b7f27a71ec75315bddc680d2a3281a7b2ef3fb79e9393fc7413",
+      "bytes": 8769,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-boltz-audit.json",
+          "sha256": "f14933c19b1f72d77f821672ed17e70f60fa5240d9e6ed375858ec5cd3bb8515"
+        }
+      ],
+      "purpose": "Advisory lookup of the canonical CI environment's measured packages",
+      "limitations": "Local Bindsight and Boltz wheels excluded; source exclusions in scope",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.scope.json",
+      "sha256": "6d79948e964988eb151a6de5a594a6c0fd8d6fb99046f6cf8537cb78e77f27d7",
+      "bytes": 482,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-boltz-audit.scope.json",
+          "sha256": "755a82e9ccb5c5f33f6ce2273dc813b849d130c42045cb7fb238e3b2b95dc76a"
+        }
+      ],
+      "purpose": "Exact audited package count and excluded source packages",
+      "limitations": "Records lookup scope, not proof of comprehensive safety",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "security/ci-boltz-audit-requirements.txt",
+      "sha256": "4015c09add1739ef823bc5a796f83f61259a35553cc5fac5c15b73e841ef38bd",
+      "bytes": 2061,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-boltz-audit.txt",
+          "sha256": "4015c09add1739ef823bc5a796f83f61259a35553cc5fac5c15b73e841ef38bd"
+        }
+      ],
+      "purpose": "Normalized package versions supplied to advisory lookup",
+      "limitations": "Not installation instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit.json",
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "bytes": 426,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-cuda11-audit.json",
+          "sha256": "47f9de64662ce432c6e4fd695416b620b82410e4734cb92c4a9787638c5739a1"
+        }
+      ],
+      "purpose": "Advisory lookup of three auxiliary CUDA11 packages and certifi",
+      "limitations": "Package-database result; not a native binary vulnerability audit",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit-requirements.txt",
+      "sha256": "c83de4eec2165f365613f7398cf267a4e03a85d8d1facefae5ee7d2d6702f99d",
+      "bytes": 120,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-cuda11-audit.txt",
+          "sha256": "c83de4eec2165f365613f7398cf267a4e03a85d8d1facefae5ee7d2d6702f99d"
+        }
+      ],
+      "purpose": "Exact auxiliary package versions supplied to advisory lookup",
+      "limitations": "Not installation instructions",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "ci/run-summary.json",
+      "sha256": "889c5f72fc7b02500208fcfa655086b7c384693b9233b8f669b8ef60512d8c5b",
+      "bytes": 5979,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-success-8773fed.json",
+          "sha256": "1d133a73f41559a183992bffe5de6159b1ff4ea0f5ec74410f876230b11c28b8"
+        }
+      ],
+      "purpose": "Public URLs, identities and successful conclusions for all 18 CI jobs",
+      "limitations": "Specific candidate commit; full scientific GPU execution is separate",
+      "transformation": "Selected fields and path normalization; see README"
+    },
+    {
+      "artifact": "preservation/scientific-baseline-hashes.json",
+      "sha256": "56b354800926d86ea17d6e3e7d63983bba90acedaa7bb7957f7ad6974d269f50",
+      "bytes": 66076,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/scientific-baseline-hashes.json",
+          "sha256": "eebec300205adc52240c7e01a40895aacea2de05924269a66638c79440bb6ff2"
+        }
+      ],
+      "purpose": "216-file baseline inventory of existing historical research and evidence",
+      "limitations": "Hashes and byte counts only; historical evidence is not regenerated",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "preservation/historical-preservation-check.json",
+      "sha256": "0934670f6ede98d4da72aaf6b17cbfbf60cfa0f78b2dd2aeb162861f338867c1",
+      "bytes": 1077,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/preservation-verification.json",
+          "sha256": "fc51c22371dea199353ac37224f266c8212f580877aa49a0ae843234e3adbd00"
+        }
+      ],
+      "purpose": "213 byte-identical historical files and three version-label-only differences at candidate commit",
+      "limitations": "Scope and compared revisions are explicit; new commits require a fresh comparison",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "preservation/candidate-source-comparison.json",
+      "sha256": "bf70f2cdeba3001636597a79bad172d82e78e9a0c91cb934882121ffbdd865cc",
+      "bytes": 996,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/candidate-source-comparison.json",
+          "sha256": "2b25bbd5b64252cc9ba7cb41cc6b4c51e860beea537972c58d2f471905ce2fac"
+        }
+      ],
+      "purpose": "Identity comparison between submitted candidate wheel and reviewed CI commit",
+      "limitations": "The source's tested_wheel field identifies the submitted wheel; it does not assert a completed GPU job",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "preservation/boltz-dependency-patch.json",
+      "sha256": "20260c23363a3d6ca607893a606bd80406fb5738eefc0bc0cb6763dde54e215a",
+      "bytes": 12310,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-source/boltz-dependency-patch.json",
+          "sha256": "e57b252d9276b45112695de1aa27b36022e39d89bd95aae6c13f5c4cac9e9c20"
+        }
+      ],
+      "purpose": "Upstream/patched wheel identities, four dependency changes and unchanged Boltz implementation hashes",
+      "limitations": "Byte preservation is not numerical equivalence under changed dependencies",
+      "transformation": "JSON formatting and path normalization only"
+    },
+    {
+      "artifact": "licenses/DGL-APACHE-2.0.txt",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/dgl-boundary-source/dgl-LICENSE.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ],
+      "purpose": "Apache2.0 licence accompanying DGL source excerpts",
+      "limitations": "Text retrieved from https://raw.githubusercontent.com/dmlc/dgl/master/LICENSE; exact inspected wheel metadata states APACHE",
+      "transformation": "Path normalization only"
+    },
+    {
+      "artifact": "licenses/RFdiffusion-LICENSE.txt",
+      "sha256": "eefc2ae77cb92b1414a6ac76b246642fae2189747b1b07747e92e5ddc696ec24",
+      "bytes": 1749,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/dgl-boundary-source/rfdiffusion-source.zip",
+          "sha256": "2f105f3f68f3033f2356242799d0dc465a19db8295f962a0ea6b216010f08193",
+          "member": "RFdiffusion-2d0c003df46b9db41d119321f15403dec3716cd9/LICENSE"
+        }
+      ],
+      "purpose": "Licence accompanying excerpts from pinned RFdiffusion/SE3 source",
+      "limitations": "Other upstream notices remain applicable",
+      "transformation": "Exact archive member bytes"
+    },
+    {
+      "artifact": "licenses/SE3Transformer-LICENSE.txt",
+      "sha256": "1195ca3cd4b6035cc2fb6cc58e89836a5b6e7951a008994a6a578438db66f5e2",
+      "bytes": 1071,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/dgl-boundary-source/rfdiffusion-source.zip",
+          "sha256": "2f105f3f68f3033f2356242799d0dc465a19db8295f962a0ea6b216010f08193",
+          "member": "RFdiffusion-2d0c003df46b9db41d119321f15403dec3716cd9/env/SE3Transformer/LICENSE"
+        }
+      ],
+      "purpose": "Licence accompanying excerpts from the pinned vendored SE3Transformer",
+      "limitations": "Upstream notices retained",
+      "transformation": "Exact archive member bytes"
+    },
+    {
+      "artifact": "README.md",
+      "sha256": "b9bff62a37ee429904b15e12c7f47d249d0ab824b31af9f5c9b73f3b78f357a3",
+      "bytes": 2815,
+      "sources": [],
+      "purpose": "Evidence scope and publication transformations",
+      "limitations": "Full GPU completion remains pending",
+      "transformation": "New packaging description"
+    }
+  ]
+}

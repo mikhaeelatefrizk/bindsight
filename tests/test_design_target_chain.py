@@ -21,6 +21,7 @@ silently treated as "the whole receptor was intended".
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
 from types import SimpleNamespace
@@ -61,6 +62,7 @@ _DESIGNED_SEQ = ("GSHMSLEQKKGADII" * 4)[:_BINDER_LEN]
 _MPNN_FASTA = (
     f">native, score=2.0\n{'G' * _BINDER_LEN}\n>T=0.1, sample=1, score=0.8\n{_DESIGNED_SEQ}\n"
 )
+_CHECKPOINT_BYTES = b"stub checkpoint bytes"
 
 _THREE = {
     "A": "ALA",
@@ -145,7 +147,17 @@ def _spec(**overrides: object) -> dict:
 
 
 @pytest.fixture
-def recorded_run(monkeypatch):
+def synthetic_checkpoint_hashes(monkeypatch):
+    """Authenticate only the synthetic files used by these CPU dispatch fixtures."""
+    monkeypatch.setattr(
+        tools,
+        "RFDIFF_WEIGHT_SHA256",
+        {name: hashlib.sha256(_CHECKPOINT_BYTES).hexdigest() for name in tools.RFDIFF_WEIGHTS},
+    )
+
+
+@pytest.fixture
+def recorded_run(monkeypatch, synthetic_checkpoint_hashes):
     """Patch the subprocess seam with design-tool stubs; yields the argv lists run."""
     calls: list[list[str]] = []
 
@@ -166,7 +178,7 @@ def recorded_run(monkeypatch):
             # behaviour under test.
             dst = Path(cmd[cmd.index("-O") + 1])
             dst.parent.mkdir(parents=True, exist_ok=True)
-            dst.write_bytes(b"stub checkpoint bytes")
+            dst.write_bytes(_CHECKPOINT_BYTES)
         elif "protein_mpnn_run.py" in s:
             seqs = Path(cmd[cmd.index("--out_folder") + 1]) / "seqs"
             seqs.mkdir(parents=True, exist_ok=True)
@@ -282,7 +294,7 @@ def test_executor_designs_the_binder_chain_and_holds_the_target_fixed(
 
 
 def test_executor_refuses_a_backbone_whose_binder_chain_is_ambiguous(
-    monkeypatch, tmp_path: Path
+    monkeypatch, tmp_path: Path, synthetic_checkpoint_hashes
 ) -> None:
     """A target-only 'backbone' must fail, not fall back to designing everything."""
 
@@ -292,7 +304,7 @@ def test_executor_refuses_a_backbone_whose_binder_chain_is_ambiguous(
             # writes nothing fails there instead of at the behaviour under test.
             dst = Path(cmd[cmd.index("-O") + 1])
             dst.parent.mkdir(parents=True, exist_ok=True)
-            dst.write_bytes(b"stub checkpoint bytes")
+            dst.write_bytes(_CHECKPOINT_BYTES)
         if any("run_inference.py" in a for a in cmd):
             prefix = next(
                 a.split("=", 1)[1] for a in cmd if a.startswith("inference.output_prefix=")

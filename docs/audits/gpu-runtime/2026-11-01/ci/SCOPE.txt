@@ -1,0 +1,22 @@
+Final CI evidence for candidate 38fb37ae748e5a7c6430012dc4610c1a7d7abe2a
+
+All 18 jobs in CI run 41339383404 and the separate Docker run passed. Linux Python 3.11:
+2,924 passed, 11 skipped, 2 deselected, 84.69% coverage. Full skip list and checkout
+identity are retained in ci/linux-test-summary.txt. Quiet CI output does not
+enumerate each passing test. The runtime recipe was actually installed and
+executed on CPU. checks.boltz.checkpoint_loader_checked is true; cuda_tested
+and models_downloaded are false. This proves the canonical preflight runs;
+it does not establish publisher-checkpoint loading or full GPU inference.
+
+GitHub artifact 13097056201 was downloaded and checked against its SHA256.
+Both measured freezes and the separate CUDA11 inventory exactly match prior
+candidate 493938376ffbbd554998c6b559a7c265827ffb73. Prior advisory response/query/input bytes are retained
+with their original dates; no new vulnerability query was performed. DGL's
+distributed-RPC advisory GHSA-3x5x-fw77-g54c remains applicable and explicitly
+outside supported operation. Local/source-package exclusions and database
+coverage limitations remain explicit. Unchanged versions do not prove
+numerical equivalence under changed execution code.
+
+The manifest hashes each file and source. CI paths alone are normalized to
+logical roots. Full logs, signed URLs, model bytes, credentials and private
+GPU identifiers are excluded. Earlier evidence is preserved unchanged.

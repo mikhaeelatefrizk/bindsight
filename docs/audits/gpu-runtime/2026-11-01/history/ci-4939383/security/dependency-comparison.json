@@ -1,0 +1,70 @@
+{
+  "schema": "bindsight-ci-dependency-comparison/1",
+  "current_head_sha": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "prior_head_sha": "8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+  "prior_ci_run": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720",
+  "current_ci_run": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233",
+  "prior_receipt_sha256": "adb95592fc72443fb978e4b16b0e00fc45ad208f0aed038e3c70b0bce93325b7",
+  "current_receipt_sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2",
+  "se3": {
+    "freeze_entries": 56,
+    "full_freeze_exactly_unchanged": true,
+    "audit_requirements": 54,
+    "audit_result": "Retained prior report, not a fresh query",
+    "prior_report_date": "2026-11-01",
+    "prior_packaged_at": "2026-11-01T16:09:04.323560+00:00",
+    "date_note": "Original query clock was not recorded; retained evidence was packaged at prior_packaged_at.",
+    "queried_without_advisories": 53,
+    "skipped": [
+      "dgl==1.0.2"
+    ],
+    "excluded_source_packages": [
+      "rfdiffusion",
+      "se3-transformer"
+    ]
+  },
+  "boltz": {
+    "freeze_entries": 103,
+    "unchanged_freeze_entries": 102,
+    "changes": [
+      {
+        "package": "platformdirs",
+        "before": "4.14.2",
+        "after": "4.14.3"
+      }
+    ],
+    "audit_requirements": 101,
+    "audit_result": "Fresh full 101-package PyPI query; no reported advisories, no skipped packages",
+    "query_started_at": "2026-11-01T18:37:23.228658+00:00",
+    "query_completed_at": "2026-11-01T18:37:36.027422+00:00",
+    "excluded_local_packages": [
+      "bindsight",
+      "boltz"
+    ]
+  },
+  "auxiliary_cuda11": {
+    "versions_exactly_unchanged": true,
+    "packages": {
+      "nvidia-cusparse-cu11": "11.7.5.86",
+      "nvidia-cublas-cu11": "11.11.3.6",
+      "nvidia-cuda-runtime-cu11": "11.8.89",
+      "certifi": "2026.10.23"
+    },
+    "audit_result": "Retained prior four-package report, not a fresh query",
+    "prior_report_date": "2026-11-01",
+    "prior_packaged_at": "2026-11-01T16:09:04.323560+00:00",
+    "date_note": "Original query clock was not recorded; retained evidence was packaged at prior_packaged_at."
+  },
+  "known_unpatched_boundary": {
+    "dependency": "DGL 1.0.2+cu118",
+    "advisory": "GHSA-3x5x-fw77-g54c",
+    "url": "https://github.com/dmlc/dgl/security/advisories/GHSA-3x5x-fw77-g54c",
+    "scope": "Distributed RPC remains vulnerable and unsupported; this runtime uses local graph operations. Package lookup skipped DGL; this retained manual finding is not cleared by the audit."
+  },
+  "limits": [
+    "Package database lookup is not exhaustive security review or native CUDA binary audit.",
+    "Source packages/local patched distributions remain outside the package database query.",
+    "Unchanged package versions do not establish numerical equivalence under changed execution code.",
+    "CPU recipe checks performed no CUDA computation and downloaded no model weights; full GPU completion is not established."
+  ]
+}

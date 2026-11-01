@@ -1,0 +1,17 @@
+{
+  "checked_at_utc": "2026-11-01T18:59:19.822428+00:00",
+  "compared_revision": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "passed": true,
+  "candidate_wheel": "bindsight-0.3.8-py3-none-any.whl",
+  "tested_wheel_sha256": "3e0ee56bcadb88e852ec20243b81b3a8a1226d857886872b4007da52517edea2",
+  "candidate_wheel_bytes": 926066,
+  "comparison_mode": "strict byte identity",
+  "package_files_checked": 137,
+  "membership_exact": true,
+  "byte_identical": 137,
+  "all_package_bytes_identical": true,
+  "differences": [],
+  "reviewed_historical_exception_used": false,
+  "gpu_run_verified": false,
+  "scope": "Artifact/source identity only. A completed GPU run and its matching input/weight receipts must be established separately."
+}

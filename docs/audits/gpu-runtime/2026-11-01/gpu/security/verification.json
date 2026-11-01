@@ -1,0 +1,28 @@
+{
+  "schema": "bindsight-actual-runtime-evidence-verification/1",
+  "checked_at": "2026-11-01T19:28:35.192912+00:00",
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "passed": true,
+  "download_receipt_sha256": "38a4e15fc31842cf25ff673d5ec2c2e8a47aee0a9c14f2b84bd0445660eebd81",
+  "official_files_checked": 63,
+  "official_bytes_checked": 19541630,
+  "audit_preparation_manifest_sha256": "607e2292686e7a3e28853d57c69ccd84a8d16b7a46c877652ffc23a3a6fe6877",
+  "audit_members_checked": 23,
+  "audit_result_sha256": "f1fae4ec5aed27b8796402e3017f5bd4cbca6a16cb3fdac2898c98caf9a51e70",
+  "comparison_sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57",
+  "actual_final_freeze_counts": {
+    "se3": 56,
+    "boltz": 103
+  },
+  "auxiliary_provisioning_inventory_count": 4,
+  "changed_or_new_pairs": 0,
+  "removed_pairs": 0,
+  "fresh_advisory_query": false,
+  "privacy_scan_passed": true,
+  "known_limitations": [
+    "DGL 1.0.2+cu118 retains unpatched distributed-RPC GHSA-3x5x-fw77-g54c; RPC is unsupported; skipped database lookup is not clearance",
+    "Local Bindsight/Boltz and RFdiffusion/SE3 source packages are excluded from package advisory lookup",
+    "Package-version queries do not establish comprehensive/native-binary safety or scientific equivalence"
+  ],
+  "scientific_acceptance": "Separate parent verification; not performed in this check"
+}

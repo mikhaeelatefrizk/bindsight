@@ -6,6 +6,82 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.8] - 2026-11-01
+
+### Security
+
+- Raise dependency minimums to the already tested Pydantic 2.14.2, Requests
+  2.34.2, Jinja2 3.1.6 and Biopython 1.88. Existing installations can no longer
+  satisfy these requirements with the older affected versions. Keep the
+  recorded scientific versions unchanged and align the discovery environment's
+  installer and certificate requirements with the security bootstrap.
+
+### Supported scientific runtime
+
+- Replace the managed RFdiffusion Python 3.9 environment with Python 3.11.18
+  and PyTorch 2.14.1. Use one recorded installation recipe for the local GPU
+  workbench, Kaggle, Colab and Modal. Preserve the RFdiffusion and ProteinMPNN
+  source revisions, model parameters and scientific defaults.
+- Isolate the three CUDA 11 libraries required by local DGL graph operations
+  from PyTorch's CUDA 12 packages. Verify the loaded CUDA random-number library
+  and retain the original e3nn constants with a narrowly scoped safe loader.
+- Install Boltz `2.0.3+bindsight.1`, a dependency-only local wheel variant with
+  patched Hydra, Lightning, Requests and Biopython requirements. All 106 Boltz
+  implementation/resource files remain identical to upstream 2.0.3.
+
+### Integrity and reliability
+
+- Verify RFdiffusion checkpoints and Boltz model/molecule assets against fixed
+  SHA256 values. Boltz assets use an immutable publisher revision, bounded safe
+  extraction and cache verification again before prediction.
+- Load the authenticated Boltz checkpoints with PyTorch's restricted loader and
+  an explicit, scoped allowlist for their configuration data. Preserve the
+  model's bytes and reject unverified checkpoints instead of disabling
+  `weights_only` to work around the newer PyTorch default.
+- Refuse modified scientific tool checkouts and stale runtime receipts. Bind
+  readiness to the installed Bindsight implementation and complete recipe;
+  rebuild owned obsolete environments without removing scientific outputs.
+- Retain actual commands, precision, package versions, model hashes and raw
+  scientific outputs in new GPU job evidence. Missing version or model outputs
+  cannot silently become successful validation.
+- Stream bounded, redacted scientific progress and retain partial evidence
+  during hosted jobs so a session limit cannot erase all diagnostics. Request
+  Boltz's full PAE output explicitly for the inter-chain error calculation;
+  keep its model settings and hosted MSA default unchanged.
+- Bound the hosted MSA phase and validate its downloaded archive before
+  extraction. A stalled alignment service fails with retained diagnostics
+  instead of silently retrying for the entire GPU session.
+- Bound decompression and extended tar headers before parsing both MSA and
+  imported scientific result archives, retaining existing path and type checks.
+- Transfer large development wheels to Kaggle through a private, version-pinned
+  input with a full integrity check, avoiding Kaggle's script-size limit. Pin
+  remote release bootstraps to verified published artifacts.
+- Import downloaded Colab results against the saved notebook job specification,
+  with separate handles for target sites, bounded archive validation and checks
+  for mismatched targets or metrics. Preserve original downloads and refuse
+  conflicting existing results. Update the current guide to this managed path;
+  live Colab allocation remains unverified.
+
+### Validation and preserved evidence
+
+- Complete a one-backbone, two-sequence, two-prediction smoke on a Kaggle Tesla T4
+  using the frozen protocol. All eight independent artifact checks pass;
+  [recorded evidence](docs/audits/gpu-runtime/2026-11-01/README.md) identifies the tested code, wheel,
+  environment, model assets, commands, trajectories, sequences and outputs.
+- Retain the canceled and checkpoint-failed attempts as dated history. Verify
+  both real Boltz model constructors on CPU through the production restricted
+  loader. Keep CI installation/import checks separate from GPU prediction proof.
+- Preserve historical scientific outputs and releases. The RF trajectory
+  verifier checks the pinned model's nonfinal fixed-target geometry and final
+  predicted-frame correspondence without inventing a new quality threshold.
+
+Historical scientific results and release artifacts remain preserved. This
+maintenance does not turn prediction confidence into evidence of binding.
+Distributed DGL/RPC remains unsupported: its upstream advisory has no patched
+release, and static source review found no distributed entry-point calls in the
+supported workflow. This is not a runtime network-isolation guarantee. See
+[GPU runtime](docs/gpu-runtime.md) and [security scope](SECURITY.md).
+
 ## [0.3.7] - 2026-11-01
 
 ### Security

@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "stage": "complete",
+  "checkpoint_downloads": 0,
+  "uv_download_attempts": [
+    {
+      "url": "https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "f29c3e94ffabd7e6f3ba521dba169a9b7ec12100bf3257087f0f24f6123f3645"
+    }
+  ],
+  "uv_download_source": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
+  "dgl_wheel_sha256_observed": "84c6c705a01692a7c36038581a54c1b04a6cd3ce86d20f1607695aa61d9edd3b",
+  "elapsed_seconds": 78.586,
+  "cleanup": {
+    "passed": true,
+    "root": "/kaggle/working/bindsight-runtime-probe",
+    "removed": [
+      "environment",
+      "python",
+      "cache",
+      "RFdiffusion",
+      "ProteinMPNN",
+      "uv.tar.gz",
+      "uv",
+      "dgl-1.0.2+cu118-cp311-cp311-manylinux1_x86_64.whl"
+    ]
+  }
+}

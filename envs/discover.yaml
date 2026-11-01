@@ -5,12 +5,14 @@ channels:
 dependencies:
   # Python core
   - python=3.11
-  - pip>=24.0
+  - pip>=26.2.2
+  - certifi>=2026.10.19
   # CLI + config
   - click>=8.1
   - rich>=13.7
   - pyyaml>=6.0
   - tenacity>=8.4
+  - jinja2>=3.1.6
   # Data layer. Upper bounds match pyproject.toml: these are the libraries whose
   # release can change the numbers a run reports. envs/constraints.txt carries
   # the exact versions this release was tested against.
@@ -23,11 +25,11 @@ dependencies:
   - pydeseq2==0.5.4
   - formulaic>=1.2.2,<2
   # Bio I/O
-  - biopython>=1.83,<2
+  - biopython>=1.88,<2
   # Provenance / validation
-  - pydantic>=2.6
+  - pydantic>=2.14.2
   # HTTP / GraphQL
-  - requests>=2.32
+  - requests>=2.34.2
   - urllib3>=2.0
   - platformdirs>=4.2
   # Workflow

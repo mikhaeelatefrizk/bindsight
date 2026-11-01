@@ -1,0 +1,66 @@
+{
+  "schema": "bindsight-rfdiffusion-target-geometry-review/1",
+  "conclusion": "Verifier property mismatch: fixed target applies to nonfinal denoising inputs, while final output is upstream predicted px0",
+  "upstream_commit": "2d0c003df46b9db41d119321f15403dec3716cd9",
+  "upstream_source_archive_sha256": "2f105f3f68f3033f2356242799d0dc465a19db8295f962a0ea6b216010f08193",
+  "source_file_sha256": {
+    "config/inference/base.yaml": "05c311be2b7f34297c499777a885b1cb09e4f6329dd2ce21b2305b54ddbeb12a",
+    "rfdiffusion/inference/model_runners.py": "65202c42c2e43fe7ba3b008e74bf166cf02185d7d22f7d6e6880e02647424655",
+    "rfdiffusion/inference/utils.py": "ed8b93b35180a7d4d142d4cec4f1093cbc274067d0b8515a05d4305f9ef9375b",
+    "rfdiffusion/kinematics.py": "1d86aaf09547cfa4beeb792da85c5b43d537b6438875d005b4123ab65b95da9b",
+    "rfdiffusion/diffusion.py": "cc0882a4d210626f9511a7c83c9b7c96fc0be0c784f41a6cc43a66e15e48e635",
+    "scripts/run_inference.py": "a22624d7d40d3d207d91e92163441da5a778c867ed6ea85aa546cc9fdbeb2105",
+    "rfdiffusion/util.py": "688dca4c8f07ef480f117b8cae1b3fa692a1d2f3b299ef1217918db5a3dc6908"
+  },
+  "source_anchors": {
+    "target_copy": "model_runners.py428-435: mapped target input atom slots copied; get_init_xyz fills missing positions",
+    "initialization": "kinematics.py291-308: intact target N/CA/C only globally translated; ideal initialization replaces masked positions",
+    "forward_motif_restore": "diffusion.py639-648,685-687: center then restore fixed motif slots",
+    "nonfinal_restore": "inference/utils.py447-499: align model prediction, update diffused positions and copy motif back when include_motif_sidechains",
+    "final_prediction": "inference/model_runners.py871-896: at t==final_step, directly clone px0 and bypass denoiser/motif restoration",
+    "stack_order_and_file": "scripts/run_inference.py93-114,137-145,170-188: sample descending, reverse stacks, save index0 and both full trajectories",
+    "frozen_defaults": "config/inference/base.yaml13,16,18,20,119: trajectories enabled, SelfConditioning, align_motif=True, final_step1, motif_sidechain_input=True",
+    "rounding": "util.py writepdb/writepdb_multi use %8.3f coordinates; pair difference bound between two rounded files is 2*sqrt(3)*0.001Angstrom",
+    "sampled_motif_log": "inference/utils.py318-349: aligned N/CA/C RMSD for nonfinal px0 only; final prediction does not invoke this logger"
+  },
+  "observed_geometry": {
+    "final_ca": {
+      "rigid_aligned_rmsd_angstrom": 0.20976309589998945,
+      "biopython_rmsd_angstrom": 0.20976309589998893,
+      "max_aligned_atom_displacement_angstrom": 0.8395315527626157,
+      "max_pairwise_distance_difference_angstrom": 1.0310985630962648,
+      "proper_rotation_determinant": 1.0000000000000002
+    },
+    "final_backbone_n_ca_c": {
+      "rigid_aligned_rmsd_angstrom": 0.224344372057229,
+      "biopython_rmsd_angstrom": 0.2243443720572295,
+      "max_aligned_atom_displacement_angstrom": 1.013254139873743,
+      "max_pairwise_distance_difference_angstrom": 1.2162763274669253,
+      "proper_rotation_determinant": 1.000000000000001
+    },
+    "final_matches_xt_frame0_ca_exactly": true,
+    "final_matches_px0_frame0_ca_exactly": true,
+    "xt_nonfinal_max_target_pair_delta_angstrom": 1.4210854715202004e-14,
+    "xt_nonfinal_max_target_aligned_rmsd_angstrom": 1.5402329636615944e-14,
+    "xt_nonfinal_target_ca_all_frames_identical": true
+  },
+  "verifier_change": {
+    "scope": "Scratch verifier only; no product code, upstream model settings, historical results or runtime defaults changed",
+    "frame_count": 50,
+    "frame_order": "index0=t1; index49=t50",
+    "nonfinal_frames_checked": 49,
+    "pair_distance_bound_formula": "2*sqrt(3)*0.001 + 1e-6Angstrom",
+    "final_frame_comparison": "Exact parsed CA arrays for target and binder equal final RF file in both Xt and pX0 trajectories",
+    "final_rmsd": "Report proper-Kabsch RMSD and maximum pair-distance change without an uncalibrated final quality threshold",
+    "parser": "Bounded UTF-8 PDB text; ENDMDL frames; no TRB/pickle execution; reject duplicate atoms, missing CA, nonfinite coordinates, sequence/chain changes and malformed/incomplete frame counts"
+  },
+  "claude_review": {
+    "status": "completed; verified_final_result",
+    "task": "rfdiff-target-geometry",
+    "scope": "Public pinned source excerpts and numeric geometry; no tools or raw private logs",
+    "accepted": "Final-step bypass and get_init_xyz distinction; independently confirmed against actual trajectories",
+    "not_adopted": "Suggested new covalent/clash quality gates; not needed for this narrow source-supported correction. Single-file rounding proposal corrected to two-file error bound by root."
+  },
+  "complete_gpu_acceptance": false,
+  "prior_attempt_diagnosis": "No new inference about earlier canceled run cause"
+}

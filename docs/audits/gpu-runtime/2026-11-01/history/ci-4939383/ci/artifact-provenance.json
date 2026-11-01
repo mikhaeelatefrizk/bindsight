@@ -1,0 +1,17 @@
+{
+  "run_id": 41336508233,
+  "head_sha": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "artifact_id": 13095970191,
+  "artifact_name": "gpu-recipe-import-check",
+  "created_at": "2026-11-01T18:27:13Z",
+  "api_url": "https://api.github.com/repos/mikhaeelatefrizk/bindsight/actions/artifacts/13095970191",
+  "download_method": "GitHub connector; followed its returned download reference",
+  "zip_bytes": 8975,
+  "zip_sha256": "1a1d3852c184ee3338878891de7cfc38ab1c9a7dde7fbad65abfb4e863b9050d",
+  "github_digest_matches_download": true,
+  "member": "recipe_check.json",
+  "original_member_bytes": 25607,
+  "original_member_sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2",
+  "public_member": "recipe-check.json",
+  "public_transformation": "JSON formatting and explicit CI path normalization only"
+}

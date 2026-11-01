@@ -1,0 +1,235 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T18:44:06.837348+00:00",
+  "status": "Failed instrumented GPU attempt; checkpoint compatibility failure after completed hosted MSA",
+  "sources": [
+    {
+      "source_role": "candidate-identity",
+      "bytes": 16806,
+      "sha256": "87bfcab1bc1c4229a8449bf5343fe242e58f08078309599830b95ed2ec100557",
+      "copied": false
+    },
+    {
+      "source_role": "submission-handle",
+      "bytes": 345,
+      "sha256": "323acfe069b80655ccc0917fb1d32acf1ce3fae4aae7ef89eb80f9759982b5ef",
+      "copied": false
+    },
+    {
+      "source_role": "terminal-backend-status",
+      "bytes": 165,
+      "sha256": "5abac703bbae1e355d28084fff7050c7a047fd8fe2124b9d3f9afda8f125f0d2",
+      "copied": false
+    },
+    {
+      "source_role": "download-receipt",
+      "bytes": 11662,
+      "sha256": "512a80f2fa55ba093ecefa8dc33fd0d8657964397b0691445df2a718d7dbf30d",
+      "copied": false
+    },
+    {
+      "source_role": "original-spec",
+      "bytes": 688,
+      "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+      "copied": false
+    },
+    {
+      "source_role": "original-target",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+      "copied": false
+    },
+    {
+      "source_role": "source-wheel-receipt",
+      "bytes": 152,
+      "sha256": "491a1433845ca8a6d9db6e4897dd5f0367e5f8106f9cb1339d02bd8aa2e94d41",
+      "copied": false
+    },
+    {
+      "source_role": "attached-wheel-receipt",
+      "bytes": 228,
+      "sha256": "4a1f6f5e11fdd1beb32f32e72e49459269806d5e354bf28f5e1bb2e6650ff015",
+      "copied": false
+    },
+    {
+      "source_role": "runtime-receipt",
+      "bytes": 30030,
+      "sha256": "9c25a327bdd3943424f5ce2081c8fac13eee3d102bdf6c65907053d44a455191",
+      "copied": false
+    },
+    {
+      "source_role": "model-weights-receipt",
+      "bytes": 8789,
+      "sha256": "797895f45d96f328b447c76d0541684f406f3e535764b985ecb8250b217af4a3",
+      "copied": false
+    },
+    {
+      "source_role": "job-manifest",
+      "bytes": 4259,
+      "sha256": "a97920f1b8e0386d4f968119b1726dd9490927e5fdbe140873c657a5e2d5163a",
+      "copied": false
+    },
+    {
+      "source_role": "commands-log",
+      "bytes": 92334,
+      "sha256": "10f86ad37efc58c21510e38fb4f8bf0daa84f4fd17c89533b0c539a4215fa714",
+      "copied": false
+    },
+    {
+      "source_role": "official-kernel-log",
+      "bytes": 146123,
+      "sha256": "6150921e8d43d03b749e7052bd6b03e5fc1c2b70211f80fc55436b02935bc08c",
+      "copied": false
+    },
+    {
+      "source_role": "se3-final-freeze",
+      "bytes": 1463,
+      "sha256": "b83ee514e4019d63f4d90f2a2c53883515c2598136fa42fff104d0ec9f49d17a",
+      "copied": false
+    },
+    {
+      "source_role": "boltz-final-freeze",
+      "bytes": 2255,
+      "sha256": "423bc4d8e6971c4c3b56bdc3462a6dc0ea9c5535e82d26d62241d059b73b3a6d",
+      "copied": false
+    },
+    {
+      "source_role": "command-000001",
+      "bytes": 925,
+      "sha256": "85ac07ad7f7312276a9c1d90f2e49cf2f906f1844742f4355864ae969e4b7de0",
+      "copied": false
+    },
+    {
+      "source_role": "command-000002",
+      "bytes": 26119,
+      "sha256": "5784dcd0d5e49c58c6e3c61d689ed5cfbc8d7d39349c12f38b98e93cc9cb1358",
+      "copied": false
+    },
+    {
+      "source_role": "command-000003",
+      "bytes": 1739,
+      "sha256": "317c2da45018c285a5c1b9258ac018f0c016af913ebd442678002aab5d20c76e",
+      "copied": false
+    },
+    {
+      "source_role": "command-000004",
+      "bytes": 8722,
+      "sha256": "66ef1be0823b594b31928374aec7b9fee9332ca114ec524c3515845088b4c235",
+      "copied": false
+    }
+  ],
+  "raw_artifacts": [
+    {
+      "category": "target",
+      "logical_path": "target.pdb",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+      "copied": false
+    },
+    {
+      "category": "rfdiffusion",
+      "logical_path": "rfdiff_out/binder_42.pdb",
+      "bytes": 54136,
+      "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64",
+      "copied": false
+    },
+    {
+      "category": "rfdiffusion",
+      "logical_path": "rfdiff_out/binder_42.trb",
+      "bytes": 57344,
+      "sha256": "bdf9fcdc58f1d5fbaff3b95ebd27d3c27b31819921cb4f00f15d78d5d61a5976",
+      "copied": false
+    },
+    {
+      "category": "rfdiffusion",
+      "logical_path": "rfdiff_out/traj/binder_42_Xt-1_traj.pdb",
+      "bytes": 4222020,
+      "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+      "copied": false
+    },
+    {
+      "category": "rfdiffusion",
+      "logical_path": "rfdiff_out/traj/binder_42_pX0_traj.pdb",
+      "bytes": 4419000,
+      "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+      "copied": false
+    },
+    {
+      "category": "proteinmpnn",
+      "logical_path": "mpnn_out/binder_42/seqs/binder_42.fa",
+      "bytes": 499,
+      "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_0.csv",
+      "bytes": 932561,
+      "sha256": "d80428138bc36062cd8b76ef110f87cc33730fbc23a0e3d6aab2be86c72a5f88",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_1.csv",
+      "bytes": 139,
+      "sha256": "9a1ef3311f5986aa379e1e2d2a5eaefe85a0a21d8c41bdfc0cb2fc45d158780d",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_paired_tmp_pairgreedy-env/pair.a3m",
+      "bytes": 216,
+      "sha256": "d8762ac4f9f7824bd7e55fe5aea9c78ffab261c438790c94b67a4542b5e8ff5f",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_unpaired_tmp_env/bfd.mgnify30.metaeuk30.smag30.a3m",
+      "bytes": 316501,
+      "sha256": "6d5c7f75d07f5b61e7945a4710b03ff4051553231ad83c329454a559bbe706d6",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_unpaired_tmp_env/uniref.a3m",
+      "bytes": 977575,
+      "sha256": "78ef214c4a092f26d48ab8ac7cfb5b4a45c247bc7ea2b5bc148853cc12c992bf",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/manifest.json",
+      "bytes": 666,
+      "sha256": "ffec73211f1ac3174d897ebec76770f54140ac9b0434c746b829082f746cdf3c",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/msa/P04626_binder_42_seq0_0.npz",
+      "bytes": 365098,
+      "sha256": "fc3d77755f48b0aab3709f6ae0399a4d58d687222feb61928799f175eb837378",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/msa/P04626_binder_42_seq0_1.npz",
+      "bytes": 749,
+      "sha256": "9ed7c49254e3888a5e90e9300c9a5c408b9b0d47a2bc4906e087a4db5f55b5b7",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/records/P04626_binder_42_seq0.json",
+      "bytes": 651,
+      "sha256": "a923d6fb6d134087c24242d0b79bbc025ae5864810cec76713a3c35fb6d6120f",
+      "copied": false
+    },
+    {
+      "category": "boltz",
+      "logical_path": "boltz_out/P04626_binder_42_seq0.yaml",
+      "bytes": 296,
+      "sha256": "3cd52fd3fcb701f1575ab4b39a07352aecadee11d014a5d77bf5e17f1ad149da",
+      "copied": false
+    }
+  ]
+}

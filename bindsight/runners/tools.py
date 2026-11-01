@@ -45,9 +45,9 @@ def _design_python() -> str:
     """Interpreter for the design subprocesses (RFdiffusion / ProteinMPNN).
 
     Defaults to ``python`` on PATH. Hosts that run the *designer* in a different
-    Python env than the orchestrator (e.g. the Kaggle split-env build, where
-    RFdiffusion needs a legacy py3.9/torch1.12 env while ``job_exec`` itself runs
-    under the modern Boltz-2 env) point this at that env's interpreter via
+    Python env than the orchestrator (the managed split environment keeps
+    RFdiffusion's numerical dependencies separate from Boltz-2) point this at
+    that environment's interpreter via
     ``BINDSIGHT_DESIGN_PYTHON``.
     """
     return os.environ.get("BINDSIGHT_DESIGN_PYTHON") or "python"
@@ -83,21 +83,14 @@ RFDIFF_WEIGHTS: dict[str, str] = {
     "Complex_base_ckpt.pt": "https://files.ipd.uw.edu/pub/RFdiffusion/e29311f6f1bf1af907f9ef9f44b8328b/Complex_base_ckpt.pt",
 }
 
-#: sha256 of each checkpoint, or None where one has not been established yet.
-#:
-#: Both download sites now hash what they fetched and log it, and refuse to
-#: proceed when a hash here disagrees. Pinning is therefore a two-step process
-#: on purpose: run once, read the hash out of the run log, paste it here. A
-#: hash invented locally would only certify whatever this machine happened to
-#: download, which is the thing being checked.
-#:
-#: The 32-hex path segment in each URL is IPD's own content digest, so a change
-#: upstream arrives as a new URL rather than as different bytes at the same one.
-#: That makes a silent substitution unlikely; it does not make a truncated or
-#: corrupted transfer detectable, which is what these hashes are for.
+#: Integrity pins cross-checked against EasyBuild's independently maintained
+#: RFdiffusion-models 1.1.0 recipe, commit 70a0031f863537cccd071d287d719e45c0390191.
+#: These identify the unchanged original files, not retrained model weights.
+#: URL path components are opaque identifiers, not verified file checksums.
+#: https://github.com/easybuilders/easybuild-easyconfigs/blob/70a0031f863537cccd071d287d719e45c0390191/easybuild/easyconfigs/r/RFdiffusion-models/RFdiffusion-models-1.1.0.eb
 RFDIFF_WEIGHT_SHA256: dict[str, str | None] = {
-    "Base_ckpt.pt": None,
-    "Complex_base_ckpt.pt": None,
+    "Base_ckpt.pt": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+    "Complex_base_ckpt.pt": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
 }
 
 PROTEINMPNN_REPO = "https://github.com/dauparas/ProteinMPNN"
@@ -398,7 +391,17 @@ def build_boltz_cmd(
         raise ValueError(f"diffusion_samples must be at least 1; got {diffusion_samples}")
     if max_parallel_samples < 1:
         raise ValueError(f"max_parallel_samples must be at least 1; got {max_parallel_samples}")
-    cmd = [*_boltz_command(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
+    # The pinned Click option is a flag whose actual default is False despite
+    # its help text saying True. The inter-chain PAE metric needs this matrix;
+    # requesting serialization leaves the model parameters and draws unchanged.
+    cmd = [
+        *_boltz_command(),
+        "predict",
+        str(yaml_path),
+        "--out_dir",
+        str(out_dir),
+        "--write_full_pae",
+    ]
     if use_msa_server:
         cmd.append("--use_msa_server")
     if seed is not None:

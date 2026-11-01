@@ -1,0 +1,17 @@
+{
+  "schema": "bindsight-boltz-checkpoint-bootstrap/1",
+  "passed": true,
+  "gpu_requested": false,
+  "predictions_run": 0,
+  "stage": "complete",
+  "source_head": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "kernel_sha256": "20a83d6839d1d412af864df4489951b0dde399b8079ab845e7beb2678ea0a169",
+  "source_wheel": {
+    "filename": "bindsight-0.3.8-py3-none-any.whl",
+    "bytes": 922500,
+    "sha256": "a2cf2d8b8d726a66b802114f1799a9bc9888a93e05a3c9fe40a2e577f608c53d"
+  },
+  "diagnostic_completed": true,
+  "elapsed_seconds": 279.582511901,
+  "private_runtime_and_weights_removed": true
+}

@@ -1,0 +1,17 @@
+{
+  "measured_freeze": "..\\gpu-modernization\\ci-boltz-freeze.txt",
+  "packages": 101,
+  "excluded": [
+    {
+      "name": "bindsight",
+      "source": "file:///CI_REPOSITORY",
+      "reason": "Pinned source, not a PyPI distribution"
+    },
+    {
+      "name": "boltz",
+      "source": "file:///CI_RUNTIME/patched-wheels/boltz-2.0.3+bindsight.1-py3-none-any.whl",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ],
+  "published_freeze": "../ci/boltz-freeze.txt"
+}

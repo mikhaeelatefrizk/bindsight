@@ -1,0 +1,38 @@
+{
+  "argv": [
+    "/GPU_JOB/runtime/se3-python",
+    "/GPU_JOB/runtime/tools/ProteinMPNN/protein_mpnn_run.py",
+    "--pdb_path",
+    "/GPU_JOB/work/rfdiff_out/binder_42.pdb",
+    "--pdb_path_chains",
+    "B",
+    "--out_folder",
+    "/GPU_JOB/work/mpnn_out/binder_42",
+    "--num_seq_per_target",
+    "2",
+    "--sampling_temp",
+    "0.1",
+    "--seed",
+    "42"
+  ],
+  "cwd": null,
+  "started_utc": "2026-11-01T19:17:43.522763+00:00",
+  "duration_seconds": 4.98080913900003,
+  "timeout_seconds": 21600.0,
+  "outcome": "ok",
+  "returncode": 0,
+  "stdout": {
+    "text": "----------------------------------------\nchain_id_jsonl is NOT loaded\n----------------------------------------\nfixed_positions_jsonl is NOT loaded\n----------------------------------------\npssm_jsonl is NOT loaded\n----------------------------------------\nomit_AA_jsonl is NOT loaded\n----------------------------------------\nbias_AA_jsonl is NOT loaded\n----------------------------------------\ntied_positions_jsonl is NOT loaded\n----------------------------------------\nbias by residue dictionary is not loaded, or not provided\n----------------------------------------\n----------------------------------------\nNumber of edges: 48\nTraining noise level: 0.2A\nGenerating sequences for: binder_42\n2 sequences of length 202 generated in 1.826 seconds\n",
+    "redacted_bytes": 744,
+    "observed_bytes": 744,
+    "suppressed_oversized_lines": 0,
+    "truncated": false
+  },
+  "stderr": {
+    "text": "",
+    "redacted_bytes": 0,
+    "observed_bytes": 0,
+    "suppressed_oversized_lines": 0,
+    "truncated": false
+  }
+}

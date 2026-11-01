@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "tested_wheel_sha256": "9e25102ab501ecd0a2af8a94bc71ff1bd1f14604d266e9c61b732bfc92a499de",
+  "compared_revision": "8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+  "package_files_checked": 134,
+  "byte_identical": 132,
+  "non_executable_differences": [
+    {
+      "path": "bindsight/runners/boltz_compat.py",
+      "scope": "comments/formatting only; identical Python AST",
+      "tested_sha256": "25fd8589a02ca6b4cfd0ebd2af8a20581d15c46e845b0c68a8604b6b96c778a3",
+      "committed_sha256": "9d5bb060b26737e725fa3c474d41b62a8bc6b60706e84de0a94aacd970a16bb9"
+    },
+    {
+      "path": "bindsight/runners/release_bootstrap.py",
+      "scope": "Explicit LF receipt formatting in published-wheel download path; GPU run used attached wheel instead; 59 focused bootstrap tests passed",
+      "tested_sha256": "205eba529c241dd9854403e19bff9ab117cf944f7443db4f50f55444bcd9acfe",
+      "committed_sha256": "f718c96e56e988a943748767529848c58c3d049b2fd8c1b06d9a8b3c0e189d83"
+    }
+  ]
+}

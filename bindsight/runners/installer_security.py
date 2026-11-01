@@ -1,20 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Verified external installer for legacy scientific Python environments.
+"""Verified independent package installer shared by managed GPU backends.
 
-Python 3.9 cannot run the patched pip 26.2.2. Package downloads therefore run
-through this independent uv executable; this does not make Python 3.9 supported.
-The same functions are embedded in the standalone Kaggle script before Bindsight
-is installed there. Keep them self-contained and free of package imports.
+Bootstrap functions can be embedded before Bindsight is installed. Keep their
+dependencies in the standard library and retain identical artifact verification
+for every official download source.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 UV_VERSION = "0.13.6"
 UV_ARCHIVE_URL = (
     "https://releases.astral.sh/github/uv/releases/download/0.13.6/"
     "uv-x86_64-unknown-linux-gnu.tar.gz"
+)
+UV_ARCHIVE_URLS = (
+    UV_ARCHIVE_URL,
+    "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
 )
 UV_ARCHIVE_BYTES = 16799024
 UV_ARCHIVE_SHA256 = "f29c3e94ffabd7e6f3ba521dba169a9b7ec12100bf3257087f0f24f6123f3645"
@@ -67,9 +71,69 @@ def extract_verified_uv(archive: bytes, destination: Path) -> Path:
     return destination
 
 
+def download_verified_uv(destination: Path, *, report: Callable[[str], None] | None = None) -> Path:
+    """Fetch from official sources only; transport fallback never relaxes integrity."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    archive = destination.with_suffix(".tar.gz")
+    provenance = destination.with_suffix(".download.json")
+    attempts: list[dict[str, str]] = []
+    if archive.is_file():
+        if report:
+            report("Verifying the cached independent package installer")
+        if archive.stat().st_size != UV_ARCHIVE_BYTES:
+            raise RuntimeError("The cached uv archive does not match its official size.")
+        return extract_verified_uv(archive.read_bytes(), destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    for url in UV_ARCHIVE_URLS:
+        try:
+            with urllib.request.urlopen(url, timeout=45) as response:
+                data = response.read(UV_ARCHIVE_BYTES + 1)
+        except (urllib.error.URLError, TimeoutError) as error:
+            attempts.append({"url": url, "error": str(error)})
+            if report:
+                report(f"Installer download unavailable from {url}: {error}")
+            if url == UV_ARCHIVE_URLS[-1]:
+                provenance.write_text(
+                    json.dumps({"attempts": attempts}, indent=2) + "\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                raise
+            continue
+        # Hash or archive-layout errors are fatal; do not fall back after one.
+        extract_verified_uv(data, destination)
+        temporary = archive.with_name(archive.name + ".partial")
+        temporary.write_bytes(data)
+        temporary.replace(archive)
+        attempts.append({"url": url, "sha256": UV_ARCHIVE_SHA256})
+        provenance.write_text(
+            json.dumps({"source": url, "attempts": attempts, "sha256": UV_ARCHIVE_SHA256}, indent=2)
+            + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        if report:
+            report(f"Verified independent package installer from {url}")
+        return destination
+    raise RuntimeError("No approved package installer source is configured.")
+
+
 def package_environment(environment: dict[str, str], cache: Path) -> dict[str, str]:
     """Keep inherited installer configuration from changing indexes or TLS validation."""
-    blocked = {"VIRTUAL_ENV", "CONDA_PREFIX", "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE"}
+    blocked = {
+        "VIRTUAL_ENV",
+        "CONDA_PREFIX",
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "CURL_CA_BUNDLE",
+        "PYTHONPATH",
+        "PYTHONHOME",
+        "PYTHONSTARTUP",
+        "PYTHONUSERBASE",
+    }
     clean = {
         key: value
         for key, value in environment.items()

@@ -24,6 +24,7 @@ DOI and the retracted novelty claim verbatim while describing their removal.
 from __future__ import annotations
 
 import functools
+import hashlib
 import json
 import re
 import subprocess
@@ -34,6 +35,39 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Dated receipts and method snapshots are evidence, not current test-count
+# claims or maintained generators. Exempt only this exact reviewed inventory;
+# new/unmanifested files remain covered by the ordinary documentation guards.
+_GPU_AUDIT = "docs/audits/gpu-runtime/2026-11-01"
+_GPU_AUDIT_MANIFEST_SHA = "1e89c186dd1c4610b0a7f25264dd4e65c30def56728682a82dd9c970bad4c071"
+
+
+@functools.lru_cache(maxsize=1)
+def _frozen_gpu_evidence_files() -> frozenset[str]:
+    manifest_bytes = (ROOT / _GPU_AUDIT / "manifest.json").read_bytes()
+    assert hashlib.sha256(manifest_bytes).hexdigest() == _GPU_AUDIT_MANIFEST_SHA
+    manifest = json.loads(manifest_bytes)
+    return frozenset(f"{_GPU_AUDIT}/{row['artifact']}" for row in manifest["files"])
+
+
+def test_frozen_gpu_evidence_retains_its_complete_exact_inventory() -> None:
+    """Historical counts/methods must retain their actual recorded bytes."""
+    directory = ROOT / _GPU_AUDIT
+    manifested = _frozen_gpu_evidence_files()
+    inventory = {
+        path.relative_to(ROOT).as_posix() for path in directory.rglob("*") if path.is_file()
+    }
+    assert inventory == manifested | {f"{_GPU_AUDIT}/manifest.json"}
+    manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    for row in manifest["files"]:
+        path = directory / row["artifact"]
+        assert not path.is_symlink()
+        assert path.resolve().is_relative_to(directory.resolve())
+        data = path.read_bytes()
+        assert len(data) == row["bytes"], row["artifact"]
+        assert hashlib.sha256(data).hexdigest() == row["sha256"], row["artifact"]
+
 
 # --- The exact strings the E-docs fixes turned on ----------------------------
 
@@ -659,7 +693,7 @@ def _documents_stating_a_test_count() -> list[tuple[str, bool, int, str]]:
     found: list[tuple[str, bool, int, str]] = []
     for path in _shipped_documents():
         rel = path.relative_to(ROOT).as_posix()
-        if path.name in _TEST_COUNT_EXEMPT:
+        if path.name in _TEST_COUNT_EXEMPT or rel in _frozen_gpu_evidence_files():
             continue
         for over, number, plus, noun in _TEST_COUNT_CLAIM.findall(path.read_text(encoding="utf-8")):
             metric = "functions" if "function" in noun.lower() else "collected"
@@ -1548,26 +1582,47 @@ class TestTheSurfaceomeSizesAgreeWithTheData:
         assert sizes["core"] + sizes["added"] == sizes["total"]
 
 
-def test_the_colab_recipe_pins_and_seeds_like_the_pipeline() -> None:
-    """The Colab how-to installed ``boltz==2.*`` and ran ``boltz predict`` with
-    neither ``--seed`` nor ``--diffusion_samples`` — a floating version and a
-    single unseeded draw, in a document teaching the same measurement the
-    pipeline takes care to pin and seed.
+def test_the_colab_recipe_uses_the_managed_pipeline() -> None:
+    """Keep the guide on the provisioned, pinned and seeded notebook path.
+
+    Raw Boltz installation/prediction bypasses the dependency patch, asset
+    authentication and GPU precision handling. Notebook behavior tests cover
+    the generated seed/sampling arguments; prose must direct users to that
+    implementation instead of maintaining another installation recipe.
     """
-    from bindsight.validate.boltz2 import PINNED_BOLTZ2_VERSION
+    import shlex
 
     text = _read("docs/colab-design-howto.md")
-
-    installs = [ln for ln in text.splitlines() if "pip install" in ln and "boltz" in ln]
-    assert installs, "the recipe installs no Boltz-2"
-    for line in installs:
-        assert f"boltz=={PINNED_BOLTZ2_VERSION}" in line, (
-            f"the recipe installs a version that is not the pinned one: {line.strip()}"
-        )
-    # Checked on the install lines rather than the whole document: the comment
-    # explaining why the floating spec was replaced necessarily contains it.
-    assert "--seed" in text, "the recipe runs the validator unseeded"
-    assert "--diffusion_samples" in text, "the recipe takes a single draw"
+    blocks = re.findall(r"```[^\n]*\n(.*?)```", text, re.DOTALL)
+    assert blocks, "the Colab guide contains no runnable instructions"
+    code = "\n".join(blocks).replace("\\\n", " ")
+    commands = [shlex.split(line) for line in code.splitlines() if line.strip()]
+    colab = [
+        command
+        for command in commands
+        if command[:2] == ["bindsight", "design"]
+        and "--backend" in command
+        and command[command.index("--backend") + 1] == "colab"
+    ]
+    assert any("--dry-run" in command for command in colab), "no Colab planning command"
+    assert any("--dry-run" not in command for command in colab), "no notebook generation command"
+    for command in colab:
+        for option, expected in (("--designer", "rfdiff_mpnn"), ("--validator", "boltz2")):
+            assert option in command, f"the managed recipe omits {option}: {command}"
+            assert command[command.index(option) + 1] == expected, (
+                f"the guide left the supported managed recipe: {command}"
+            )
+    assert any(command[:2] == ["bindsight", "validate"] for command in commands), (
+        "the guide omits the supported result-import command"
+    )
+    for line in code.splitlines():
+        assert not (
+            re.search(r"\bpip(?:3)?\s+install\b", line) and re.search(r"\bboltz\b", line)
+        ), f"raw Boltz installation bypasses the managed recipe: {line}"
+    assert not re.search(
+        r"(?m)^\s*!?(?:boltz|python(?:3(?:\.\d+)?)?\s+-m\s+boltz(?:\.main)?)\s+predict\b",
+        code,
+    ), "raw Boltz prediction bypasses the managed executor"
 
 
 def test_the_benchmark_schema_identifier_has_one_definition() -> None:
@@ -1815,6 +1870,8 @@ def _modules_that_write_text() -> tuple[str, ...]:
             continue
         if rel.startswith("tests/"):
             continue  # a test's scratch files are not artifacts
+        if rel in _frozen_gpu_evidence_files():
+            continue  # an exact archived method is not a maintained generator
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except (OSError, SyntaxError, UnicodeDecodeError):  # pragma: no cover
@@ -2010,7 +2067,7 @@ def test_the_generator_sweep_covers_every_module_that_writes() -> None:
         if "__pycache__" in path.parts:
             continue
         rel = path.relative_to(ROOT).as_posix()
-        if rel not in tracked or rel.startswith("tests/"):
+        if rel not in tracked or rel.startswith("tests/") or rel in _frozen_gpu_evidence_files():
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))

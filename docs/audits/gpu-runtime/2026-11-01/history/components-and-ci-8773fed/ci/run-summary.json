@@ -1,0 +1,153 @@
+{
+  "run_url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720",
+  "head_sha": "8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+  "conclusion": "success",
+  "created_at": "2026-11-01T15:31:32Z",
+  "updated_at": "2026-11-01T15:37:16Z",
+  "jobs": [
+    {
+      "name": "Pinned environment (constraints.txt)",
+      "databaseId": 124892994169,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994169",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:32:25Z"
+    },
+    {
+      "name": "Companion (linux-x64)",
+      "databaseId": 124892994267,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994267",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:31:52Z"
+    },
+    {
+      "name": "Test (Python 3.13 on ubuntu-latest)",
+      "databaseId": 124892994306,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994306",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:34:01Z"
+    },
+    {
+      "name": "Companion (macos-arm64)",
+      "databaseId": 124892994310,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994310",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:31:58Z"
+    },
+    {
+      "name": "Companion (macos-x64)",
+      "databaseId": 124892994352,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994352",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:36Z",
+      "completedAt": "2026-11-01T15:32:19Z"
+    },
+    {
+      "name": "Test (Python 3.11 on windows-latest)",
+      "databaseId": 124892994369,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994369",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:36:20Z"
+    },
+    {
+      "name": "Test (Python 3.13 on windows-latest)",
+      "databaseId": 124892994372,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994372",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:35:06Z"
+    },
+    {
+      "name": "Test (Python 3.12 on macos-latest)",
+      "databaseId": 124892994373,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994373",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:34:10Z"
+    },
+    {
+      "name": "GPU recipe installation and imports (CPU runner)",
+      "databaseId": 124892994412,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994412",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:33:35Z"
+    },
+    {
+      "name": "Test (Python 3.12 on ubuntu-latest)",
+      "databaseId": 124892994448,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994448",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:35:13Z"
+    },
+    {
+      "name": "Test (Python 3.11 on ubuntu-latest)",
+      "databaseId": 124892994466,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994466",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:34:09Z"
+    },
+    {
+      "name": "Test (Python 3.12 on windows-latest)",
+      "databaseId": 124892994509,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994509",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:34:56Z"
+    },
+    {
+      "name": "Companion (windows-x64)",
+      "databaseId": 124892994564,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994564",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:37Z",
+      "completedAt": "2026-11-01T15:32:14Z"
+    },
+    {
+      "name": "Lint (ruff + mypy)",
+      "databaseId": 124892994569,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994569",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:32:42Z"
+    },
+    {
+      "name": "Test (Python 3.13 on macos-latest)",
+      "databaseId": 124892994593,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994593",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:34:50Z"
+    },
+    {
+      "name": "Test (Python 3.11 on macos-latest)",
+      "databaseId": 124892994681,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124892994681",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:31:35Z",
+      "completedAt": "2026-11-01T15:33:49Z"
+    },
+    {
+      "name": "Build wheel + sdist",
+      "databaseId": 124894205893,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124894205893",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:36:22Z",
+      "completedAt": "2026-11-01T15:37:10Z"
+    },
+    {
+      "name": "All CI jobs passed",
+      "databaseId": 124894418026,
+      "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41321659720/job/124894418026",
+      "conclusion": "success",
+      "startedAt": "2026-11-01T15:37:12Z",
+      "completedAt": "2026-11-01T15:37:15Z"
+    }
+  ]
+}

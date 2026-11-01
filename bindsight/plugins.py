@@ -155,14 +155,14 @@ BACKEND_CAPABILITIES: dict[str, BackendCapability] = {
         provides=frozenset(),
         attempts=frozenset({"rfdiff_mpnn", "boltz2"}),
         compute_capability=(7, 5),
-        note="the generated notebook is unverified and needs a compatible CUDA tool environment",
+        note="the generated notebook uses the shared managed GPU recipe; a live Colab run is unverified",
     ),
     "modal": BackendCapability(
         provides=frozenset({"boltz2"}),
         attempts=frozenset({"rfdiff_mpnn"}),
         note=(
-            "the Modal image installs Boltz-2 on a CUDA devel base; the executor "
-            "would bootstrap RFdiffusion itself, which has not been run"
+            "the pinned published driver provisions the shared managed GPU recipe; "
+            "a live Modal run has not been verified"
         ),
     ),
     "local_docker": BackendCapability(

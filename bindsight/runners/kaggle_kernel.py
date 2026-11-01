@@ -1,72 +1,22 @@
 # SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Builder for the self-contained Kaggle kernel that runs the design+validation job.
-
-Kaggle's *default* free GPU is a **Tesla P100 (sm_60)**, which current PyTorch
-cannot drive at all: it ships no Pascal kernels, so CUDA reports available and
-the first real launch dies hours into a run. This kernel therefore pins
-``machine_shape`` to a **Tesla T4 (sm_75)** and checks compute capability before
-doing any work.
-
-Even on a T4, the preinstalled stack
-(py3.12 / torch 2.10+cu128) supports neither that image's CUDA nor RFdiffusion's
-legacy requirements. RFdiffusion (the only designer that fits 16 GB) needs an old
-py3.9 / torch-1.12 environment, and that environment is mutually exclusive with
-the modern Boltz-2 validator (torch ≥2.2 / py ≥3.10). So the kernel builds **two
-micromamba environments** on the T4 and runs the existing executor
-(:mod:`bindsight.runners.job_exec`) across them:
-
-- ``se3``  (py3.9, torch 1.12.1+cu113 — supports sm_60): RFdiffusion + ProteinMPNN.
-- ``boltz`` (py3.11, torch 2.2.2+cu118 — still ships sm_60): Boltz-2 + bindsight.
-
-``job_exec`` runs under ``boltz`` and invokes the design tools with the ``se3``
-interpreter via ``BINDSIGHT_DESIGN_PYTHON`` (a wrapper that does ``micromamba run
--p .../se3``), so there is still exactly one executor — only the per-tool
-interpreter differs. The design spec + target structure are embedded as base64
-(no Kaggle dataset needed); the results tarball is written to
-``/kaggle/working/<handle_id>.tar.gz`` for :meth:`KaggleRunner.fetch`.
-
-The pinned upstream revisions come from :mod:`bindsight.runners.tools` so the
-kernel can never drift from the Colab/Modal/local paths.
-"""
+"""Generate a T4 job using the same verified runtime provisioner as other backends."""
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import inspect
+import re
+from pathlib import PurePosixPath
 from typing import Any
 
-from bindsight.runners import installer_security, tools
+from bindsight import __version__
+from bindsight.runners import gpu_recipe, installer_security, release_bootstrap, tools
 
-# Channels-free pip recipe for RFdiffusion's legacy env. RFdiffusion's own
-# env/SE3nv.yml pins pytorch=1.9/cudatoolkit=11.1 via conda channels whose ancient
-# builds are unreliable to solve today; the cu113 pip wheels below are the
-# community-proven equivalent and (unlike Kaggle's default cu128 torch) include the
-# P100's sm_60 kernels. SE3-Transformer's own requirements (e3nn==0.3.3, dllogger,
-# …) come from RFdiffusion/env/SE3Transformer/requirements.txt at install time.
-# cu113 is the newest CUDA wheel line for torch 1.12.1; the dgl cu113 wheels at the
-# find-links below are therefore built against this exact torch. Package name is
-# plain ``dgl`` with a ``+cu113`` local version (the old ``dgl-cu113`` name is gone).
-_SE3_TORCH = "torch==1.12.1+cu113"
-_SE3_TORCH_INDEX = "https://download.pytorch.org/whl/cu113"
-_SE3_DGL = "dgl==1.0.2+cu113"
-_SE3_DGL_FIND = "https://data.dgl.ai/wheels/cu113/repo.html"
-_SE3_EXTRA_PIP = [
-    "hydra-core==1.3.2",
-    "pyrsistent",
-    "omegaconf",
-    "icecream",
-    "scipy",
-    "numpy<1.24",
-    "opt_einsum",
-    "opt_einsum_fx",
-    "e3nn==0.3.3",
-]
-# Boltz-2 env: a torch that still ships sm_60 (Kaggle's default cu128 does not).
-_BOLTZ_TORCH = "torch==2.2.2"
-_BOLTZ_TORCH_INDEX = "https://download.pytorch.org/whl/cu118"
-
-
-_BINDSIGHT_REPO = "https://github.com/mikhaeelatefrizk/bindsight.git"
+KAGGLE_ACCELERATOR = "NvidiaTeslaT4"
+MIN_COMPUTE_CAPABILITY = (7, 5)
+KAGGLE_COST_GPU = "T4"
 
 
 def build_kernel_script(
@@ -77,121 +27,101 @@ def build_kernel_script(
     n_trajectories_note: int | None = None,
     bindsight_wheel_b64: str | None = None,
     bindsight_wheel_name: str = "bindsight-0.0.0-py3-none-any.whl",
+    bindsight_wheel_path: str | None = None,
+    bindsight_wheel_sha256: str | None = None,
+    bindsight_wheel_bytes: int | None = None,
     mode: str = "design_and_validate",
 ) -> str:
-    """Return the full Python source of the Kaggle kernel.
+    """Embed actual wheel bytes, or fetch this exact published release with its digest.
 
-    Args:
-        handle_id: stable id; the results tarball is ``<handle_id>.tar.gz``.
-        payload: ``{filename: base64}`` for the spec dir (``spec.json`` + the
-            target structure file the spec references).
-        bindsight_ref: optional git ref (branch/tag/sha) to install bindsight from;
-            defaults to the repository's default branch. Used to run a feature
-            branch before it is merged.
-        n_trajectories_note: optional, embedded only as a log breadcrumb.
-        bindsight_wheel_b64: optional base64 of a wheel built from the working
-            tree. When given the kernel installs it instead of pip-installing
-            from git, which is the only way an unpushed change reaches the GPU.
-            Without it a run silently exercises whatever the ref resolves to.
-        bindsight_wheel_name: the wheel's filename, which must be a valid PEP 427
-            name. pip parses the distribution, version and compatibility tags out
-            of it and rejects anything else outright: writing the payload to
-            ``bindsight-embedded.whl`` failed a run with "Invalid wheel filename
-            (wrong number of parts)" after the environment build had finished.
-        mode: ``design_and_validate`` or ``validate_only``. The latter skips the
-            RFdiffusion clone, its checkpoint download and the entire se3
-            environment, none of which a re-scoring job touches.
+    A development Git reference requires an embedded wheel: a remote branch can
+    move after submission and cannot identify the source that generated this job.
+    The scientific installation is performed solely by gpu_runtime from that wheel.
     """
-    git_url = f"git+{_BINDSIGHT_REPO}" + (f"@{bindsight_ref}" if bindsight_ref else "")
-    # A wheel built from the working tree beats any git ref: it is the code that
-    # launched the run, rather than whatever the named branch points at by the
-    # time pip resolves it. Without one, an unpushed fix is invisible to the GPU.
-    install_source = "embedded wheel" if bindsight_wheel_b64 else git_url
-    # Emit Python *literals* with repr(), not json.dumps() — JSON's null/true/false
-    # are not valid Python identifiers (an early bug embedded ``= null``).
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,99}", handle_id):
+        raise ValueError("The Kaggle handle must be a safe, bounded directory name.")
+    if mode not in gpu_recipe.MODES:
+        raise ValueError(f"Unsupported GPU mode: {mode}")
+    if bindsight_ref and not (bindsight_wheel_b64 or bindsight_wheel_path):
+        raise ValueError("A development reference requires an actual embedded Bindsight wheel.")
+    if not re.fullmatch(r"bindsight-[A-Za-z0-9_.]+-py3-none-any[.]whl", bindsight_wheel_name):
+        raise ValueError("The embedded wheel must have a valid Bindsight wheel filename.")
+    if bindsight_wheel_path:
+        path = PurePosixPath(bindsight_wheel_path)
+        if (
+            bindsight_wheel_b64
+            or not path.is_absolute()
+            or not str(path).startswith("/kaggle/input/")
+            or ".." in path.parts
+            or "\\" in bindsight_wheel_path
+            or path.name != bindsight_wheel_name
+            or any(ord(char) < 32 for char in bindsight_wheel_path)
+            or not re.fullmatch(r"[0-9a-f]{64}", bindsight_wheel_sha256 or "")
+            or type(bindsight_wheel_bytes) is not int
+            or not 0 < bindsight_wheel_bytes <= release_bootstrap.MAX_WHEEL_BYTES
+        ):
+            raise ValueError(
+                "An attached wheel requires a safe Kaggle input path, size and SHA256."
+            )
+    wheel_hash = (
+        hashlib.sha256(base64.b64decode(bindsight_wheel_b64, validate=True)).hexdigest()
+        if bindsight_wheel_b64
+        else bindsight_wheel_sha256
+    )
     consts = {
         "HANDLE_ID": handle_id,
         "PAYLOAD": payload,
         "N_TRAJ_NOTE": n_trajectories_note,
-        "RFDIFF_REPO": tools.RFDIFF_REPO,
+        "RUNTIME_RECIPE": gpu_recipe.recipe(),
         "RFDIFF_COMMIT": tools.RFDIFF_COMMIT,
-        "RFDIFF_WEIGHTS": tools.RFDIFF_WEIGHTS,
-        "RFDIFF_WEIGHT_SHA256": tools.RFDIFF_WEIGHT_SHA256,
-        "MPNN_REPO": tools.PROTEINMPNN_REPO,
-        "MPNN_COMMIT": tools.PROTEINMPNN_COMMIT,
-        "BOLTZ_PIP": tools.BOLTZ_PIP,
-        "SE3_TORCH": _SE3_TORCH,
-        "SE3_TORCH_INDEX": _SE3_TORCH_INDEX,
-        "SE3_DGL": _SE3_DGL,
-        "SE3_DGL_FIND": _SE3_DGL_FIND,
-        "SE3_EXTRA_PIP": _SE3_EXTRA_PIP,
-        "BOLTZ_TORCH": _BOLTZ_TORCH,
-        "BOLTZ_TORCH_INDEX": _BOLTZ_TORCH_INDEX,
-        "BINDSIGHT_GIT": git_url,
+        "RELEASE_VERSION": __version__,
+        "DRIVER_PYTHON": gpu_recipe.BOLTZ_PYTHON,
         "BINDSIGHT_WHEEL_B64": bindsight_wheel_b64 or "",
         "BINDSIGHT_WHEEL_NAME": bindsight_wheel_name,
-        "INSTALL_SOURCE": install_source,
+        "BINDSIGHT_WHEEL_SHA256": wheel_hash,
+        "BINDSIGHT_WHEEL_PATH": bindsight_wheel_path,
+        "BINDSIGHT_WHEEL_BYTES": bindsight_wheel_bytes,
+        "INSTALL_SOURCE": "embedded wheel"
+        if bindsight_wheel_b64
+        else "verified private Kaggle dataset wheel"
+        if bindsight_wheel_path
+        else f"PyPI {__version__}",
         "MIN_CC": MIN_COMPUTE_CAPABILITY,
         "MODE": mode,
         "UV_VERSION": installer_security.UV_VERSION,
-        "UV_ARCHIVE_URL": installer_security.UV_ARCHIVE_URL,
+        "UV_ARCHIVE_URLS": installer_security.UV_ARCHIVE_URLS,
         "UV_ARCHIVE_BYTES": installer_security.UV_ARCHIVE_BYTES,
         "UV_ARCHIVE_SHA256": installer_security.UV_ARCHIVE_SHA256,
         "CERTIFI_REQUIREMENT": installer_security.CERTIFI_REQUIREMENT,
-        "MICROMAMBA_URL": installer_security.MICROMAMBA_URL,
-        "MICROMAMBA_SHA256": installer_security.MICROMAMBA_SHA256,
     }
-    header_lines = ["# Auto-generated by bindsight KaggleRunner — split-env design+validation."]
-    header_lines += [f"{name} = {value!r}" for name, value in consts.items()]
-    # These are the same verified extraction and command builders used by local
-    # setup. Embed their source because Bindsight is not yet installed remotely.
-    installer_source = "from pathlib import Path\n\n" + "\n\n".join(
+    header = "\n".join(
+        ["# Auto-generated by Bindsight: one canonical GPU runtime."]
+        + [f"{name} = {value!r}" for name, value in consts.items()]
+    )
+    bootstrap = "from pathlib import Path\nfrom collections.abc import Callable\n\n"
+    bootstrap += "\n\n".join(
         inspect.getsource(function)
         for function in (
             installer_security.extract_verified_uv,
-            installer_security.write_verified_micromamba,
+            installer_security.download_verified_uv,
             installer_security.package_environment,
             installer_security.uv_install_command,
         )
     )
-    return "\n".join(header_lines) + "\n\n" + installer_source + "\n\n" + _BODY
-
-
-#: Kaggle accelerator to request. ``enable_gpu`` alone gets Kaggle's default,
-#: which is a P100 — and Kaggle's own CLI documentation now warns that the P100
-#: is unusable for GPU compute with the default image, because current PyTorch
-#: builds ship no Pascal (sm_60) kernels. The failure mode is nasty:
-#: ``torch.cuda.is_available()`` returns True and the first real kernel launch
-#: dies with ``cudaErrorNoKernelImageForDevice``. The T4 (sm_75) is also what
-#: current JAX supports, which is what makes BindCraft and AF2 initial-guess
-#: reachable at all.
-KAGGLE_ACCELERATOR = "NvidiaTeslaT4"
-
-#: Compute capability the kernel requires. Turing is 7.5. Anything lower is a
-#: P100 or older and cannot run the pinned stack; the kernel fails fast rather
-#: than burning quota to discover it mid-run.
-MIN_COMPUTE_CAPABILITY = (7, 5)
-
-#: The same accelerator under the name :mod:`bindsight.cost` knows it by.
-#:
-#: These two constants have to agree. When the accelerator was pinned to a T4,
-#: ``KaggleRunner`` kept defaulting to ``"P100"``, so every Kaggle runtime and
-#: cost estimate was computed against a card the run would never be given —
-#: a 3.0x slowdown factor applied where 4.0x was correct, quietly under-quoting
-#: every estimate by a quarter. Deriving the default from here removes the
-#: opportunity to make that mistake twice.
-KAGGLE_COST_GPU = "T4"
+    bootstrap += "\n\n" + inspect.getsource(release_bootstrap).replace(
+        "from __future__ import annotations\n", ""
+    )
+    return header + "\n\n" + bootstrap + "\n\n" + _BODY
 
 
 def build_kernel_metadata(
-    *, username: str, slug: str, accelerator: str = KAGGLE_ACCELERATOR
+    *,
+    username: str,
+    slug: str,
+    accelerator: str = KAGGLE_ACCELERATOR,
+    dataset_sources: list[str] | None = None,
 ) -> dict[str, Any]:
-    """kernel-metadata.json for a GPU + internet script kernel (no dataset sources).
-
-    ``machine_shape`` pins which accelerator Kaggle attaches. Without it Kaggle
-    picks its default, so the hardware a published result was produced on would
-    not be under version control. See :data:`KAGGLE_ACCELERATOR`.
-    """
+    """Request an explicitly named GPU and keep submitted jobs private."""
     return {
         "id": f"{username}/{slug}",
         "title": slug,
@@ -202,48 +132,203 @@ def build_kernel_metadata(
         "enable_gpu": True,
         "machine_shape": accelerator,
         "enable_internet": True,
-        "dataset_sources": [],
+        "dataset_sources": list(dataset_sources or []),
         "competition_sources": [],
         "kernel_sources": [],
     }
 
 
-# The static kernel body. References the variables defined in the generated header
-# above; kept brace-safe (no .format) so the embedded shell/Python is verbatim.
 _BODY = r'''
-import base64, gzip, hashlib, json, os, pathlib, shlex, subprocess, sys, threading, time, urllib.request
+import base64, gzip, hashlib, json, os, pathlib, re, shlex, shutil, signal, stat, subprocess, sys, tempfile, threading, time, traceback
+from urllib.parse import urlsplit, urlunsplit
+from collections.abc import Callable
 
-MR = "/opt/mamba"                       # MAMBA_ROOT_PREFIX (off the /kaggle/working output volume)
-MM = "/opt/micromamba/bin/micromamba"
-TOOLS = "/opt/tools"
-SE3 = f"{MR}/envs/se3"
-BOLTZ = f"{MR}/envs/boltz"
-# dgl's C lib dlopen()s CUDA 11's libcusparse.so.11 etc. via the system loader, so
-# those libs must be on LD_LIBRARY_PATH. We install conda cudatoolkit=11.3 into the
-# se3 env (puts them in $SE3/lib) and also keep torch's bundled libs (torch/lib).
-SE3_LD = f"{SE3}/lib:{SE3}/lib/python3.9/site-packages/torch/lib"
-os.environ["MAMBA_ROOT_PREFIX"] = MR
-_package_env = package_environment(dict(os.environ), pathlib.Path("/opt/uv-cache"))
-os.environ.clear()
-os.environ.update(_package_env)
-UV = pathlib.Path("/opt/bindsight-installer/uv")
-
-
-def install(environment, *requirements):
-    """Use patched external TLS tooling, including for the legacy Python 3.9 target."""
-    argv = uv_install_command(UV, pathlib.Path(environment) / "bin/python", list(requirements))
-    print("\n+ " + shlex.join(argv), flush=True)
-    subprocess.run(argv, env=dict(os.environ), check=True)
+OUTPUT = pathlib.Path("/kaggle/working")
+SCRATCH = pathlib.Path("/kaggle/temp") / ("bindsight-" + HANDLE_ID)
+if SCRATCH.exists() or SCRATCH.is_symlink():
+    raise RuntimeError("Refusing to reuse another job's scratch directory")
+SCRATCH.mkdir(parents=True)
+EVIDENCE = OUTPUT / (HANDLE_ID + "-runtime-evidence")
+EVIDENCE.mkdir(parents=True, exist_ok=False)
+ROOT = SCRATCH / "runtime"
+UV = SCRATCH / "uv"
+env = package_environment(dict(os.environ), SCRATCH / "cache")
+env.pop("UV_NO_PYTHON_DOWNLOADS", None)
+env["UV_PYTHON_INSTALL_DIR"] = str(SCRATCH / "python")
+env["PYTHONNOUSERSITE"] = "1"
 
 
-def sh(cmd, env=None):
-    """Run a shell command, streaming output; raise on non-zero exit."""
-    print(f"\n+ {cmd}", flush=True)
-    t0 = time.time()
-    r = subprocess.run(cmd, shell=True, env={**os.environ, **(env or {})})
-    print(f"  ({time.time()-t0:.0f}s, exit={r.returncode})", flush=True)
-    if r.returncode != 0:
-        raise SystemExit(f"step failed: {cmd}")
+_DIAGNOSTICS_LOCK = threading.Lock()
+_SNAPSHOT_LOCK = threading.Lock()
+_MONITOR_STOP = threading.Event()
+_PHASE = ["bootstrap"]
+_STARTED = time.monotonic()
+_LAST_OUTPUT = [_STARTED]
+_ACTIVE_PID = [None]
+_LOG_LIMIT = 4 * 2**20
+_LINE_LIMIT = 16 * 1024
+_SNAPSHOT_FILE_LIMIT = 8 * 2**20
+_SNAPSHOT_TOTAL_LIMIT = 64 * 2**20
+_SNAPSHOT_STATE = {}
+_COMMAND_TIMEOUT = 21600
+_READER_JOIN_TIMEOUT = 10
+_SECRET_KEY = re.compile(r"(?i)(?:token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)")
+
+
+def outer_redact(text):
+    """Use the executor's credential rules without importing its dependencies."""
+    for key, value in os.environ.items():
+        if (_SECRET_KEY.search(key) or key == "KAGGLE_KEY") and len(value) >= 8:
+            text = text.replace(value, "<redacted>")
+            if "\n" in value or "\r" in value:
+                for line in value.splitlines():
+                    if line:
+                        text = text.replace(line, "<redacted>")
+    def url(match):
+        try:
+            parsed = urlsplit(match.group())
+        except ValueError:
+            return "<redacted malformed URL>"
+        return urlunsplit((parsed.scheme, parsed.netloc.rsplit("@", 1)[-1], parsed.path,
+                           "<redacted>" if parsed.query else "", ""))
+    text = re.sub(r"https?://[^\s\"'<>]+", url, text)
+    text = re.sub(r"(?i)\bBearer\s+[\w.~+/=-]+", "Bearer <redacted>", text)
+    text = re.sub(r"\b(?:hf_|gh[pousr]_|sk-)[A-Za-z0-9_-]{12,}", "<redacted>", text)
+    return re.sub(r"(?i)\b(token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)"
+                  r"([\"']?\s*[:=]\s*[\"']?)[^\s\"',;]+", r"\1\2<redacted>", text)
+
+
+def diagnostic(text):
+    """Stream redacted progress and keep at most two bounded, flushed log files."""
+    safe = outer_redact(text)
+    data = (safe if safe.endswith("\n") else safe + "\n").encode("utf-8", errors="replace")
+    if len(data) > _LOG_LIMIT:
+        marker = b"<bindsight: diagnostic truncated>\n"
+        data = (marker + data[-max(1, _LOG_LIMIT - len(marker)):])[-_LOG_LIMIT:]
+    with _DIAGNOSTICS_LOCK:
+        path = EVIDENCE / "commands.log"
+        if path.exists() and path.stat().st_size + len(data) > _LOG_LIMIT:
+            path.replace(EVIDENCE / "commands.previous.log")
+        with path.open("ab") as log:
+            log.write(data)
+            log.flush()
+        try:
+            print(safe, end="" if safe.endswith("\n") else "\n", flush=True)
+        except (OSError, UnicodeError, ValueError):
+            pass  # A closed/unencodable console must not stop the scientific child.
+
+
+class OutputLines:
+    """Redact complete records; discard oversized lines without splitting secrets."""
+    def __init__(self, emit):
+        self.emit = emit
+        self.pending = bytearray()
+        self.discarding = False
+
+    def feed(self, data):
+        for byte in data:
+            if byte in (10, 13):
+                if self.pending:
+                    self.emit(self.pending.decode("utf-8", errors="replace") + "\n")
+                self.pending.clear()
+                self.discarding = False
+            elif not self.discarding:
+                self.pending.append(byte)
+                if len(self.pending) > _LINE_LIMIT:
+                    self.pending.clear()
+                    self.discarding = True
+                    self.emit("<bindsight: oversized output line omitted>\n")
+
+    def close(self):
+        if self.pending:
+            self.emit(self.pending.decode("utf-8", errors="replace") + "\n")
+        self.pending.clear()
+
+
+def stop_process(process):
+    """Terminate the owned group and observed descendants, including new sessions."""
+    descendants = []
+    try:
+        import psutil
+        descendants = psutil.Process(process.pid).children(recursive=True)
+    except Exception as error:
+        diagnostic("[termination warning] descendant inventory unavailable: " + type(error).__name__ + "\n")
+    for child in reversed(descendants):
+        try:
+            child.terminate()
+        except Exception:
+            pass
+    try:
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGTERM)
+        else:
+            process.terminate()
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
+    except ProcessLookupError:
+        pass
+    finally:
+        # The group may still exist after its leader exits on SIGTERM.
+        if os.name == "posix":
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        for child in reversed(descendants):
+            try:
+                child.kill()
+            except Exception:
+                pass
+
+
+def run(argv, *, environment=None):
+    """Tee live child output without waiting for command completion or finalization."""
+    command = [str(x) for x in argv]
+    shown = [outer_redact(arg) for arg in command]
+    for index, arg in enumerate(command[:-1]):
+        if _SECRET_KEY.fullmatch(arg.lstrip("-")):
+            shown[index + 1] = "<redacted>"
+    diagnostic("\n+ " + shlex.join(shown) + "\n")
+    child_env = dict(environment if environment is not None else env)
+    child_env["PYTHONUNBUFFERED"] = "1"
+    process = subprocess.Popen(command, env=child_env, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, start_new_session=True, bufsize=0)
+    _ACTIVE_PID[0] = process.pid
+    read_errors = []
+    def read_output():
+        lines = OutputLines(diagnostic)
+        try:
+            while True:
+                data = process.stdout.read(4096)
+                if not data:
+                    break
+                _LAST_OUTPUT[0] = time.monotonic()
+                lines.feed(data)
+            lines.close()
+        except (OSError, ValueError) as error:
+            read_errors.append(type(error).__name__)
+    reader = threading.Thread(target=read_output, daemon=True)
+    reader.start()
+    try:
+        code = process.wait(timeout=_COMMAND_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        stop_process(process)
+        raise subprocess.TimeoutExpired(shown, _COMMAND_TIMEOUT) from None
+    except BaseException:
+        stop_process(process)
+        raise
+    finally:
+        reader.join(timeout=_READER_JOIN_TIMEOUT)
+        if reader.is_alive():
+            diagnostic("<bindsight: output pipe remained open after command exit>\n")
+        process.stdout.close()
+        _ACTIVE_PID[0] = None
+        if read_errors:
+            diagnostic("<bindsight: output reader stopped: " + read_errors[0] + ">\n")
+    if code:
+        raise subprocess.CalledProcessError(code, shown)
 
 
 def disk_report(label):
@@ -264,18 +349,22 @@ def disk_report(label):
         except OSError:
             continue
         parts.append(f"{path} {u.free / 2**30:.1f}/{u.total / 2**30:.1f} GiB free")
-    print(f"[disk @ {label}] " + " | ".join(parts), flush=True)
+    diagnostic(f"[disk @ {label}] " + " | ".join(parts) + "\n")
 
 
 _VRAM_PEAK = [0]
+_VRAM_SAMPLES = []
 
 
 def _vram_now():
     """Device-wide VRAM in use, in MiB, or None if it cannot be read."""
-    out = subprocess.run(
-        ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
-        capture_output=True, text=True,
-    )
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
     if out.returncode != 0 or not out.stdout.strip():
         return None
     try:
@@ -297,219 +386,343 @@ def _vram_sampler():
     and it does so regardless of which environment or subprocess holds the
     allocation — which is the reason not to use torch's own counter here.
     """
-    while True:
+    while not _MONITOR_STOP.is_set():
         v = _vram_now()
+        if len(_VRAM_SAMPLES) < 20000:
+            _VRAM_SAMPLES.append({"unix_time": time.time(), "memory_mib": v})
         if v is not None and v > _VRAM_PEAK[0]:
             _VRAM_PEAK[0] = v
-        time.sleep(5)
+        _MONITOR_STOP.wait(5)
 
 
 threading.Thread(target=_vram_sampler, daemon=True).start()
 
 
+def gpu_reading():
+    """Bound driver queries so diagnostics cannot indefinitely stall the executor."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total",
+             "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=5)
+        if out.returncode:
+            return {"error": "nvidia-smi exit " + str(out.returncode)}
+        rows = []
+        for row in out.stdout.strip().splitlines():
+            name, utilization, used, total = [item.strip() for item in row.split(",")]
+            rows.append({"name": name, "utilization_percent": int(utilization),
+                         "memory_used_mib": int(used), "memory_total_mib": int(total)})
+        return {"devices": rows, "observed_unix_time": time.time()}
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return {"error": type(error).__name__}
+
+
 def gpu_report(label):
-    """Print current and peak VRAM, so every memory claim is a measurement."""
-    out = subprocess.run(
-        ["nvidia-smi", "--query-gpu=name,memory.used,memory.total",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True,
-    )
-    if out.returncode == 0 and out.stdout.strip():
-        print(
-            f"[gpu @ {label}] {out.stdout.strip()} | peak so far {_VRAM_PEAK[0]} MiB",
-            flush=True,
-        )
+    """Record current GPU utilization and the sampled memory high-water mark."""
+    diagnostic(f"[gpu @ {label}] {gpu_reading()} | peak so far {_VRAM_PEAK[0]} MiB\n")
 
 
 def step(msg):
-    print(f"\n========== {msg} ==========", flush=True)
+    _PHASE[0] = msg
+    diagnostic(f"\n========== {msg} ==========\n")
     disk_report(msg)
     gpu_report(msg)
 
 
-step("GPU check")
-sh("nvidia-smi --query-gpu=name,memory.total,compute_cap,driver_version "
-   "--format=csv,noheader || true")
 
-# Fail fast on the wrong accelerator. On a P100 the default Kaggle image reports
-# torch.cuda.is_available() == True and then dies on the first kernel launch with
-# cudaErrorNoKernelImageForDevice, hours into the run. Checking compute capability
-# up front costs a second and turns that into an immediate, legible failure.
-_cc = subprocess.run(
-    ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
-    capture_output=True, text=True,
-)
-_cc_text = (_cc.stdout or "").strip().splitlines()[0].strip() if _cc.stdout.strip() else ""
-if _cc_text:
-    _major, _, _minor = _cc_text.partition(".")
-    _have = (int(_major), int(_minor or 0))
-    print(f"compute capability {_have[0]}.{_have[1]} (need >= {MIN_CC[0]}.{MIN_CC[1]})", flush=True)
-    if _have < tuple(MIN_CC):
-        raise SystemExit(
-            f"this kernel needs compute capability >= {MIN_CC[0]}.{MIN_CC[1]} "
-            f"but got {_have[0]}.{_have[1]}. Kaggle attached the wrong accelerator: set "
-            "machine_shape to NvidiaTeslaT4 in kernel-metadata.json. The default P100 "
-            "(6.0) reports CUDA as available and then fails on the first kernel launch."
-        )
-else:
-    print("WARNING: could not read compute capability; continuing unguarded", flush=True)
+def atomic_bytes(path, data):
+    """Publish within the owned output tree using no-follow directory handles."""
+    relative = path.relative_to(EVIDENCE)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    directory = os.open(EVIDENCE, flags)
+    pending = ".pending-" + os.urandom(12).hex()
+    try:
+        for part in relative.parts[:-1]:
+            if part in {"", ".", ".."}:
+                raise ValueError("Unsafe evidence path")
+            try:
+                os.mkdir(part, dir_fd=directory)
+            except FileExistsError:
+                pass
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        fd = os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                     0o600, dir_fd=directory)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(pending, relative.name, src_dir_fd=directory, dst_dir_fd=directory)
+        os.fsync(directory)
+    finally:
+        try:
+            os.unlink(pending, dir_fd=directory)
+        except FileNotFoundError:
+            pass
+        os.close(directory)
 
-step("install micromamba")
-with urllib.request.urlopen(MICROMAMBA_URL, timeout=90) as _response:
-    _micromamba = _response.read(100 * 2**20 + 1)
-write_verified_micromamba(_micromamba, pathlib.Path(MM))
-sh(f"{MM} --version")
 
-step("verify independent secure package installer")
-with urllib.request.urlopen(UV_ARCHIVE_URL, timeout=90) as _response:
-    _uv_archive = _response.read(UV_ARCHIVE_BYTES + 1)
-extract_verified_uv(_uv_archive, UV)
+def save_json(path, value):
+    atomic_bytes(path, (outer_redact(json.dumps(value, indent=2)) + "\n").encode("utf-8"))
 
-# Everything RFdiffusion needs — the clone, ~480 MB of checkpoints, and the
-# whole se3 environment — is design-only. A validate-only job re-scores
-# binders that already exist, so building it there spent roughly six minutes
-# and several gigabytes of a weekly quota on tools the job never invokes.
-if MODE != "validate_only":
-    step("clone RFdiffusion + ProteinMPNN, fetch weights")
-    pathlib.Path(TOOLS).mkdir(parents=True, exist_ok=True)
-    if not pathlib.Path(f"{TOOLS}/RFdiffusion").exists():
-        sh(f"git clone -q {RFDIFF_REPO} {TOOLS}/RFdiffusion")
-        sh(f"git -C {TOOLS}/RFdiffusion checkout -q {RFDIFF_COMMIT}")
-    pathlib.Path(f"{TOOLS}/RFdiffusion/models").mkdir(parents=True, exist_ok=True)
-    for name, url in RFDIFF_WEIGHTS.items():
-        dst = f"{TOOLS}/RFdiffusion/models/{name}"
-        if not pathlib.Path(dst).exists():
-            sh(f"wget -q '{url}' -O '{dst}'")
-        # Hash every checkpoint and print it. Until now these ~480 MB of model
-        # parameters arrived over plain HTTP, were loaded and executed, and nothing
-        # checked that what landed was what was asked for. A truncated transfer
-        # produces a checkpoint that may still load and quietly design differently.
-        # Printing the digest unconditionally is also how a pin gets established:
-        # the first run publishes it into this log.
-        _h = hashlib.sha256()
-        with open(dst, "rb") as _fh:
-            for _chunk in iter(lambda: _fh.read(1 << 20), b""):
-                _h.update(_chunk)
-        _digest = _h.hexdigest()
-        print(f"checkpoint {name}: {pathlib.Path(dst).stat().st_size} bytes sha256={_digest}", flush=True)
-        _want = RFDIFF_WEIGHT_SHA256.get(name)
-        if _want and _digest != _want:
-            raise SystemExit(
-                f"{name}: sha256 {_digest} does not match the pinned {_want}. "
-                "Refusing to design against a checkpoint that is not the one this "
-                "result would claim."
-            )
-    if not pathlib.Path(f"{TOOLS}/ProteinMPNN").exists():
-        sh(f"git clone -q {MPNN_REPO} {TOOLS}/ProteinMPNN")
-        sh(f"git -C {TOOLS}/ProteinMPNN checkout -q {MPNN_COMMIT}")
 
-    step("build se3 env (RFdiffusion: py3.9 / torch1.12+cu113 — covers sm_75)")
-    sh(f"{MM} create -y -p {SE3} -c conda-forge python=3.9")
-    install(SE3, CERTIFI_REQUIREMENT)
-    # CUDA 11.3 runtime libs (libcusparse.so.11 …) that dgl's C library dlopen()s.
-    sh(f"{MM} install -y -p {SE3} -c conda-forge cudatoolkit=11.3")
-    install(SE3, SE3_TORCH, "--extra-index-url", SE3_TORCH_INDEX)
-    install(SE3, SE3_DGL, "-f", SE3_DGL_FIND)
-    install(SE3, *SE3_EXTRA_PIP)
-    # SE3-Transformer's own requirements (e3nn pin, dllogger, …), then the packages.
-    install(SE3, "-r", f"{TOOLS}/RFdiffusion/env/SE3Transformer/requirements.txt")
-    install(SE3, "--no-deps", f"{TOOLS}/RFdiffusion/env/SE3Transformer")
-    install(SE3, "--no-deps", "-e", f"{TOOLS}/RFdiffusion")
+def read_attached_wheel(declared_path, filename, size, digest, input_root=pathlib.Path("/kaggle/input")):
+    """Accept only known mount layouts for the same dataset; reject ambiguity."""
+    relative = pathlib.PurePosixPath(declared_path).relative_to("/kaggle/input")
+    candidates = [input_root.joinpath(*relative.parts)]
+    if len(relative.parts) == 4 and relative.parts[0] == "datasets":
+        _, owner, slug, _ = relative.parts
+        candidates += [input_root / owner / slug / filename, input_root / slug / filename]
+    matches = {}
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        resolved = candidate.resolve()
+        if not resolved.is_relative_to(input_root.resolve()) or not candidate.is_file():
+            raise RuntimeError("Attached wheel mount escapes the expected Kaggle input root")
+        if candidate.stat().st_size != size:
+            raise RuntimeError("Attached wheel size does not match its recorded identity")
+        data = candidate.read_bytes()
+        if hashlib.sha256(data).hexdigest() != digest:
+            raise RuntimeError("Attached wheel integrity check failed")
+        matches[resolved] = data
+    if len(matches) != 1:
+        raise RuntimeError("Attached wheel mount is missing or ambiguous")
+    path, data = next(iter(matches.items()))
+    return path, data
 
-    step("write se3 interpreter wrapper (sets LD_LIBRARY_PATH for dgl's CUDA libs)")
-    # Invoke the se3 python directly (not via `micromamba run`) so the explicit
-    # LD_LIBRARY_PATH reliably reaches the loader when dgl dlopen()s its CUDA deps.
-    wrapper = "/opt/se3_python.sh"
-    pathlib.Path(wrapper).write_text(
-        "#!/bin/bash\n"
-        f"export LD_LIBRARY_PATH={SE3_LD}:$LD_LIBRARY_PATH\n"
-        "export DGLBACKEND=pytorch\n"
-        f"exec {SE3}/bin/python \"$@\"\n"
-    )
-    os.chmod(wrapper, 0o755)
 
-    # Sanity: RFdiffusion importable + CUDA usable on the pinned T4 — via the wrapper, so the
-    # import-time dgl CUDA-lib load is exercised exactly as the real run will do it.
-    sh(f"{wrapper} -c \""
-       "import torch, dgl, e3nn; "
-       "print('se3 torch', torch.__version__, 'dgl', dgl.__version__, 'cuda', torch.cuda.is_available(), "
-       "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
-       "x=torch.zeros(4,device='cuda'); print('se3 cuda op ok', (x+1).sum().item())\"")
+def retain_failed_evidence():
+    """Incrementally snapshot changed small evidence, never models or environments."""
+    if not _SNAPSHOT_LOCK.acquire(blocking=False):
+        return
+    directory = None
+    copied = 0
+    skipped = 0
+    try:
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        directory = os.open(SCRATCH, flags)
+        for part in (HANDLE_ID + "_work", "evidence"):
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        total = sum(item[1] for item in _SNAPSHOT_STATE.values())
+        seen = 0
+        for root, dirs, files, root_fd in os.fwalk(".", dir_fd=directory,
+                                                 follow_symlinks=False):
+            parts = pathlib.PurePosixPath(root).parts
+            if len(parts) >= 8:
+                dirs.clear()
+            for name in sorted(files):
+                seen += 1
+                if seen > 5000:
+                    return
+                relative = pathlib.PurePosixPath(*parts, name)
+                if relative.suffix not in {".json", ".log", ".txt", ".csv", ".tsv", ".yaml", ".yml",
+                                           ".pdb", ".trb", ".cif", ".npz", ".fa", ".fasta", ".a3m"}:
+                    continue
+                try:
+                    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                 dir_fd=root_fd)
+                    with os.fdopen(fd, "rb") as source:
+                        before = os.fstat(source.fileno())
+                        signature = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+                        previous = _SNAPSHOT_STATE.get(str(relative))
+                        if (not stat.S_ISREG(before.st_mode) or before.st_size > _SNAPSHOT_FILE_LIMIT
+                                or (previous and previous[0] == signature)):
+                            continue
+                        data = source.read(_SNAPSHOT_FILE_LIMIT + 1)
+                        after = os.fstat(source.fileno())
+                    current = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
+                    if any((item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns) != signature
+                           for item in (after, current)) or len(data) != before.st_size:
+                        skipped += 1
+                        continue
+                    if relative.suffix in {".json", ".log", ".txt", ".csv", ".tsv", ".yaml", ".yml", ".fa", ".fasta", ".a3m"}:
+                        data = outer_redact(data.decode("utf-8", errors="replace")).encode("utf-8")
+                    revised_total = total - (previous[1] if previous else 0) + len(data)
+                    if revised_total > _SNAPSHOT_TOTAL_LIMIT:
+                        skipped += 1
+                        continue
+                    atomic_bytes(EVIDENCE / "job-evidence" / relative, data)
+                    _SNAPSHOT_STATE[str(relative)] = (signature, len(data))
+                    total = revised_total
+                    copied += 1
+                except OSError:
+                    skipped += 1
+        save_json(EVIDENCE / "snapshot.json", {"copied_this_pass": copied,
+                  "retained_files": len(_SNAPSHOT_STATE), "retained_bytes": total,
+                  "skipped_this_pass": skipped, "unix_time": time.time(),
+                  "file_limit_bytes": _SNAPSHOT_FILE_LIMIT, "total_limit_bytes": _SNAPSHOT_TOTAL_LIMIT})
+    except FileNotFoundError:
+        pass  # The executor has not created its evidence directory yet.
+    finally:
+        if directory is not None:
+            os.close(directory)
+        _SNAPSHOT_LOCK.release()
 
-else:
-    step("skip the se3 environment (validate_only: no designer runs)")
-    # There is no se3 interpreter to point at, so the name stays bound to None
-    # rather than going undefined: everything the design branch defines is read
-    # again further down, and a name that exists in only one branch turns a
-    # skipped step into a NameError at the end of a paid job.
-    wrapper = None
-    print("MODE=validate_only: RFdiffusion is not cloned, its checkpoints are "
-          "not fetched, and the se3 environment is not built.", flush=True)
 
-step("build boltz env (Boltz-2 + bindsight: py3.11 / torch2.2+cu118 — covers sm_75)")
-sh(f"{MM} create -y -p {BOLTZ} -c conda-forge python=3.11.18")
-install(BOLTZ, CERTIFI_REQUIREMENT)
-install(BOLTZ, BOLTZ_TORCH, "--extra-index-url", BOLTZ_TORCH_INDEX)
-install(BOLTZ, BOLTZ_PIP, "biopython")
-# What the validator actually resolved to, recorded in the run log. The install
-# above is quiet, so no run before this one recorded the version of the tool
-# that produced its confidence numbers — the pin said what was asked for, and
-# nothing said what arrived. A pin is a request; this is the receipt.
-sh(f"{MM} run -p {BOLTZ} python -c \""
-   "from importlib.metadata import version; "
-   "print('boltz version', version('boltz'))\"")
-print("bindsight install source:", INSTALL_SOURCE, flush=True)
-if BINDSIGHT_WHEEL_B64:
-    # Install the exact tree that launched this run. Pinning a branch name would
-    # still leave the GPU installing whatever that branch points at now, and an
-    # unpushed commit would be invisible entirely.
-    # The filename matters: pip reads the distribution, version and
-    # compatibility tags out of it, and rejects a name it cannot parse.
-    _whl = f"/tmp/{BINDSIGHT_WHEEL_NAME}"
-    pathlib.Path(_whl).write_bytes(base64.b64decode(BINDSIGHT_WHEEL_B64))
-    print("  wheel bytes:", pathlib.Path(_whl).stat().st_size, flush=True)
-    install(BOLTZ, _whl)
-else:
-    install(BOLTZ, BINDSIGHT_GIT)
-sh(f"{MM} run -p {BOLTZ} python -c \""
-   "import bindsight; print('bindsight', bindsight.__version__, 'from', bindsight.__file__)\"")
-sh(f"{MM} run -p {BOLTZ} python -c \""
-   "import torch; print('boltz torch', torch.__version__, 'cuda', torch.cuda.is_available(), "
-   "torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO-CUDA'); "
-   "x=torch.zeros(4,device='cuda'); print('boltz cuda op ok', (x+1).sum().item())\"")
+def process_reading():
+    """Best-effort process RSS and cumulative CPU seconds, without a new dependency."""
+    pid = _ACTIVE_PID[0]
+    if pid is None:
+        return {"active_pid": None, "processes": []}
+    try:
+        import psutil
+        parent = psutil.Process(pid)
+        rows = []
+        for process in [parent, *parent.children(recursive=True)][:128]:
+            try:
+                cpu = process.cpu_times()
+                rows.append({"pid": process.pid, "name": process.name(),
+                             "rss_bytes": process.memory_info().rss,
+                             "cpu_seconds": cpu.user + cpu.system, "status": process.status()})
+            except (psutil.Error, OSError):
+                continue
+        return {"active_pid": pid, "processes": rows}
+    except Exception as error:
+        return {"active_pid": pid, "error": type(error).__name__}
 
-# job_exec invokes bindsight.runners.boltz_compat in this Boltz environment.
-# The shared subprocess shim uses precision=32 instead of bf16-mixed on T4,
-# checks the pinned upstream source, and does not edit installed package files.
 
-step("materialise spec + target structure (embedded base64)")
-spec_dir = pathlib.Path("/tmp/spec"); spec_dir.mkdir(parents=True, exist_ok=True)
-for name, b64 in PAYLOAD.items():
-    # The payload is gzipped: structures are text and shrink to about a fifth,
-    # which is what keeps the script under Kaggle's size limit once a
-    # working-tree wheel is embedded alongside them.
-    dest = spec_dir / name
-    if not dest.resolve().is_relative_to(spec_dir.resolve()):
-        raise SystemExit(f"payload entry escapes the spec directory: {name}")
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(gzip.decompress(base64.b64decode(b64)))
-    print("  wrote", name, dest.stat().st_size, "bytes")
-print("  spec:", (spec_dir / "spec.json").read_text()[:400])
+def heartbeat():
+    """Persist a live phase, last output age and bounded GPU diagnostic snapshot."""
+    current = None
+    files = sorted((EVIDENCE / "job-evidence").glob("attempt-*/current-command.json"),
+                   key=lambda path: path.stat().st_mtime_ns, reverse=True)
+    if files:
+        try:
+            if files[0].stat().st_size <= 64 * 1024:
+                current = json.loads(files[0].read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+    progress = {"schema": "bindsight-kaggle-progress/1", "unix_time": time.time(),
+                "elapsed_seconds": round(time.monotonic() - _STARTED, 1),
+                "phase": _PHASE[0], "last_output_seconds_ago": round(time.monotonic() - _LAST_OUTPUT[0], 1),
+                "current_command": current, "gpu": gpu_reading(), "processes": process_reading(),
+                "peak_device_memory_mib": _VRAM_PEAK[0]}
+    save_json(EVIDENCE / "heartbeat.json", progress)
+    diagnostic("[heartbeat] " + json.dumps(progress, sort_keys=True) + "\n")
+    save_json(EVIDENCE / "memory-progress.json", {"peak_device_memory_mib": _VRAM_PEAK[0],
+              "sample_count": len(_VRAM_SAMPLES), "recent_samples": _VRAM_SAMPLES[-12:]})
 
-step("run job_exec (RFdiffusion -> ProteinMPNN under se3; Boltz-2 + orchestration under boltz)")
-out_tmp = f"/tmp/{HANDLE_ID}.tar.gz"
-job_env = {"BINDSIGHT_TOOLS_ROOT": TOOLS}
-if wrapper is not None:
-    # Left unset for validate_only, where bindsight falls back to the boltz
-    # environment's own interpreter. Exporting a path that was never built
-    # would dress a step this mode deliberately skips as an exec failure.
-    job_env["BINDSIGHT_DESIGN_PYTHON"] = wrapper
-sh(f"{MM} run -p {BOLTZ} python -m bindsight.runners.job_exec "
-   f"{spec_dir}/spec.json {out_tmp}", env=job_env)
 
-step("stage tarball to /kaggle/working (keep the output volume lean)")
-pathlib.Path("/kaggle/working").mkdir(parents=True, exist_ok=True)
-sh(f"cp {out_tmp} /kaggle/working/{HANDLE_ID}.tar.gz")
-sz = pathlib.Path(f"/kaggle/working/{HANDLE_ID}.tar.gz").stat().st_size
-print(f"\nDONE -> /kaggle/working/{HANDLE_ID}.tar.gz ({sz/1e6:.2f} MB)")
+def monitor_progress():
+    while not _MONITOR_STOP.is_set():
+        try:
+            retain_failed_evidence()
+            heartbeat()
+        except Exception as error:
+            diagnostic("[progress warning] " + type(error).__name__ + ": " + str(error) + "\n")
+        _MONITOR_STOP.wait(30)
+
+
+def cleanup():
+    """Remove only this job's resolved scratch tree outside the output volume."""
+    expected = pathlib.Path("/kaggle/temp").resolve() / ("bindsight-" + HANDLE_ID)
+    if SCRATCH.is_symlink() or SCRATCH.resolve() != expected:
+        raise RuntimeError("Refusing unsafe scratch cleanup")
+    shutil.rmtree(SCRATCH)
+
+
+status = {"passed": False, "stage": "bootstrap"}
+_monitor = threading.Thread(target=monitor_progress, daemon=True)
+_monitor.start()
+try:
+    step("check requested T4 hardware")
+    hardware = subprocess.run(
+        ["nvidia-smi", "--query-gpu=name,memory.total,compute_cap,driver_version",
+         "--format=csv,noheader"], capture_output=True, text=True, check=True, timeout=20)
+    (EVIDENCE / "hardware.txt").write_text(hardware.stdout, encoding="utf-8")
+    capability = tuple(int(part) for part in hardware.stdout.splitlines()[0].split(",")[2].strip().split("."))
+    if capability < tuple(MIN_CC):
+        raise RuntimeError("Set machine_shape to NvidiaTeslaT4; the attached GPU is unsupported.")
+    step("verify installer and create the private driver")
+    download_verified_uv(UV, report=print)
+    run([UV, "--no-config", "python", "install", DRIVER_PYTHON, "--no-bin"])
+    run([UV, "--no-config", "venv", "--python", DRIVER_PYTHON,
+         "--managed-python", SCRATCH / "driver"])
+    driver = SCRATCH / "driver/bin/python"
+    if BINDSIGHT_WHEEL_B64:
+        wheel = SCRATCH / BINDSIGHT_WHEEL_NAME
+        data = base64.b64decode(BINDSIGHT_WHEEL_B64, validate=True)
+        if hashlib.sha256(data).hexdigest() != BINDSIGHT_WHEEL_SHA256:
+            raise RuntimeError("Embedded wheel integrity check failed")
+        wheel.write_bytes(data)
+    elif BINDSIGHT_WHEEL_PATH:
+        attached, data = read_attached_wheel(BINDSIGHT_WHEEL_PATH, BINDSIGHT_WHEEL_NAME,
+                                             BINDSIGHT_WHEEL_BYTES, BINDSIGHT_WHEEL_SHA256)
+        save_json(EVIDENCE / "attached-wheel.json", {"path": str(attached),
+                  "bytes": len(data), "sha256": BINDSIGHT_WHEEL_SHA256})
+        wheel = SCRATCH / BINDSIGHT_WHEEL_NAME
+        wheel.write_bytes(data)
+    else:
+        wheel = download_release_wheel(RELEASE_VERSION, SCRATCH / "source")
+    print("bindsight install source:", INSTALL_SOURCE, flush=True)
+    save_json(EVIDENCE / "source-wheel.json", {
+        "filename": wheel.name, "bytes": wheel.stat().st_size,
+        "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest()})
+    run(uv_install_command(UV, driver, [str(wheel), "psutil>=5.9,<8"]))
+    status["stage"] = "provision"
+    step("provision the canonical scientific runtime")
+    run([driver, "-I", "-m", "bindsight.runners.gpu_runtime", "--root", ROOT,
+         "--source", wheel, "--mode", MODE, "--receipt", EVIDENCE / "runtime-receipt.json"])
+    receipt = json.loads((EVIDENCE / "runtime-receipt.json").read_text())
+    # The shared provisioner records actual Python, torch, CUDA and boltz versions.
+    print("boltz version and runtime checks:", receipt["checks"], flush=True)
+    job_env = dict(env)
+    for key in ("BINDSIGHT_BOLTZ_BIN", "BINDSIGHT_LOCAL_IMAGE", "BINDSIGHT_DESIGN_PYTHON",
+                "PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE"):
+        job_env.pop(key, None)
+    job_env.update(receipt["execution_environment"])
+    job_env["BINDSIGHT_GPU_DIAGNOSTICS"] = "1"
+    # boltz_compat retains the audited precision=32 setting instead of bf16-mixed.
+    step("materialise spec + target structure")
+    spec_dir = SCRATCH / "spec"
+    spec_dir.mkdir()
+    for name, b64 in PAYLOAD.items():
+        dest = spec_dir / name
+        if not dest.resolve().is_relative_to(spec_dir.resolve()):
+            raise RuntimeError(f"payload entry escapes the spec directory: {name}")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(gzip.decompress(base64.b64decode(b64)))
+    status["stage"] = "inference"
+    step("run scientific executor")
+    out_tmp = SCRATCH / (HANDLE_ID + ".tar.gz")
+    run([receipt["boltz_python"], "-I", "-m", "bindsight.runners.job_exec",
+         spec_dir / "spec.json", out_tmp], environment=job_env)
+    shutil.copy2(out_tmp, OUTPUT / (HANDLE_ID + ".tar.gz"))
+    status.update(passed=True, stage="complete")
+except BaseException as error:
+    status["error"] = f"{type(error).__name__}: {error}"
+    atomic_bytes(EVIDENCE / "error.txt", outer_redact(traceback.format_exc()).encode("utf-8"))
+    raise
+finally:
+    _PHASE[0] = "finalize runtime evidence"
+    retain_failed_evidence()
+    for source_name in ("provision-receipt.json", "ready.json"):
+        source_file = ROOT / source_name
+        if source_file.is_file():
+            shutil.copy2(source_file, EVIDENCE / source_name)
+    if (ROOT / "boltz/bin/python").is_file():
+        try:
+            for name in ("se3", "boltz"):
+                python = ROOT / name / "bin/python"
+                if python.is_file():
+                    frozen = subprocess.run(
+                        [str(UV), "--no-config", "pip", "freeze", "--python", str(python)],
+                        env=env, capture_output=True, text=True, check=True, timeout=60)
+                    atomic_bytes(EVIDENCE / (name + "-final-freeze.txt"), outer_redact(frozen.stdout).encode("utf-8"))
+            run([driver, "-I", "-c",
+                 "from pathlib import Path; from bindsight.runners.gpu_runtime import collect_model_weights, write_json; "
+                 "import sys; write_json(Path(sys.argv[3]), collect_model_weights(Path(sys.argv[1]), Path(sys.argv[2])))",
+                 ROOT, SCRATCH / (HANDLE_ID + "_work") / "evidence", EVIDENCE / "model-weights.json"])
+        except Exception as error:
+            status["weight_receipt_error"] = str(error)
+    _MONITOR_STOP.set()
+    _monitor.join(timeout=15)
+    retain_failed_evidence()
+    save_json(EVIDENCE / "result.json", status)
+    save_json(EVIDENCE / "memory.json", {"peak_device_memory_mib": _VRAM_PEAK[0], "samples": _VRAM_SAMPLES})
+    if not _monitor.is_alive():
+        cleanup()
 '''

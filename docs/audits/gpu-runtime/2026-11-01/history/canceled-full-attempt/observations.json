@@ -1,0 +1,185 @@
+{
+  "schema": "bindsight-incomplete-gpu-attempt/1",
+  "attempt_label": "initial-full-gpu-attempt",
+  "candidate": {
+    "version": "0.3.8",
+    "wheel_filename": "bindsight-0.3.8-py3-none-any.whl",
+    "wheel_bytes": 902674,
+    "wheel_sha256": "9e25102ab501ecd0a2af8a94bc71ff1bd1f14604d266e9c61b732bfc92a499de",
+    "recipe_id": "971278376e222da4079608f14c361d07666931766930954e53ea24ddc1d5bc13",
+    "identity_scope": "Wheel identity agrees across candidate, attached-source and runtime receipts; no final-release identity claim."
+  },
+  "outcome": {
+    "complete": false,
+    "final_backend_status": "CANCEL_ACKNOWLEDGED",
+    "status_evidence": "coordinator-status-record: gpu.last_observed_status",
+    "status_record_updated_at_utc": "2026-11-01T17:55:00Z",
+    "raw_backend_status_response_included": false,
+    "requested_session_budget_seconds": 7200,
+    "exact_cancellation_time": null,
+    "completed_result_archive_present": false,
+    "precise_cause": "unknown"
+  },
+  "input": {
+    "target_uniprot": "P04626",
+    "target_chain": "A",
+    "target_ranges": [
+      [
+        511,
+        652
+      ]
+    ],
+    "binder_length": [
+      60,
+      60
+    ],
+    "trajectories": 1,
+    "seed": 42,
+    "diffusion_samples": 1,
+    "max_parallel_samples": 1,
+    "spec_sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+    "target_sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+    "hosted_msa_requested": true,
+    "empty_msa_requested": false,
+    "msa_request_or_completion_observed": false
+  },
+  "timeline": [
+    {
+      "order": 1,
+      "event": "Submitted",
+      "utc": "2026-11-01T15:20:36+00:00",
+      "evidence": {
+        "source": "submission-record",
+        "field": "submitted_at"
+      }
+    },
+    {
+      "order": 2,
+      "event": "Runtime setup reported complete; CUDA checks passed",
+      "elapsed_log_seconds": 483.986242321,
+      "evidence": {
+        "source": "outer-log",
+        "event_marker": "boltz version and runtime checks"
+      },
+      "scope": "Setup/import/CUDA operations; does not establish scientific inference."
+    },
+    {
+      "order": 3,
+      "event": "Scientific executor launched",
+      "elapsed_log_seconds": 484.065590423,
+      "evidence": {
+        "source": "outer-log",
+        "event_marker": "-m bindsight.runners.job_exec"
+      }
+    },
+    {
+      "order": 4,
+      "event": "RFdiffusion command logged, then ProteinMPNN command logged",
+      "elapsed_log_seconds": null,
+      "evidence": [
+        {
+          "source": "commands-log",
+          "line": 482
+        },
+        {
+          "source": "commands-log",
+          "line": 483
+        }
+      ],
+      "scope": "Command progression; raw outputs not retained for numerical verification."
+    },
+    {
+      "order": 5,
+      "event": "Executor reported two designs",
+      "elapsed_log_seconds": null,
+      "evidence": {
+        "source": "commands-log",
+        "line": 484,
+        "excerpt": "designer produced 2 designs"
+      },
+      "scope": "Completion in executor flow, not independent structure/sequence validation."
+    },
+    {
+      "order": 6,
+      "event": "First Boltz prediction command logged with hosted MSA",
+      "elapsed_log_seconds": null,
+      "evidence": {
+        "source": "commands-log",
+        "line": 486
+      },
+      "command_semantics": {
+        "entrypoint": "bindsight.runners.boltz_compat predict",
+        "input_basename": "P04626_binder_42_seq0.yaml",
+        "use_msa_server": true,
+        "seed": 2498828884
+      },
+      "completion_observed": false
+    },
+    {
+      "order": 7,
+      "event": "Final cancellation status recorded by coordinator",
+      "utc": null,
+      "evidence": {
+        "source": "coordinator-status-record",
+        "field": "gpu.last_observed_status",
+        "value": "CANCEL_ACKNOWLEDGED"
+      }
+    }
+  ],
+  "setup_receipt": {
+    "cuda_smoke_passed": true,
+    "models_downloaded": true,
+    "scientific_gpu_validation": "not established by setup checks",
+    "checks": {
+      "se3": {
+        "python": "3.11.18",
+        "torch": "2.14.1+cu126",
+        "cuda": "12.6",
+        "cuda_tested": true,
+        "dgl_cuda_tested": true,
+        "device": "Tesla T4",
+        "dgl": "1.0.2+cu118",
+        "numpy": "1.23.5",
+        "boltz": null,
+        "trifast": null
+      },
+      "boltz": {
+        "python": "3.11.18",
+        "torch": "2.14.1+cu126",
+        "cuda": "12.6",
+        "cuda_tested": true,
+        "dgl_cuda_tested": false,
+        "device": "Tesla T4",
+        "dgl": null,
+        "numpy": "1.26.4",
+        "boltz": "2.0.3+bindsight.1",
+        "trifast": "0.1.11"
+      }
+    }
+  },
+  "independent_scientific_verification": {
+    "summary": {
+      "passed": 0,
+      "failed": 0,
+      "incomplete": 8
+    },
+    "missing_raw_artifacts": [
+      "generated RFdiffusion backbone/TRB",
+      "ProteinMPNN generated sequences",
+      "Boltz prediction structures and confidence values",
+      "completed result archive and transported evidence manifest"
+    ],
+    "scope": "The output inventory has receipts and logs only. No numerical-equivalence or binding-efficacy claim."
+  },
+  "diagnosis": {
+    "observed_last_stage": "First Boltz command launched; no completion record",
+    "plausible_unconfirmed_explanation": "Hosted MSA wait/retry: source review found unbounded retries/polling in the then-used upstream client.",
+    "other_explanations_not_excluded": [
+      "slow prediction or first-use computation",
+      "preprocessing or another child-process stall"
+    ],
+    "instrumentation_limit": "Nested scientific output was buffered; stage timestamps, final child output and per-stage process telemetry were not retained.",
+    "source_review": "source-diagnosis and upstream-msa-source"
+  },
+  "privacy_and_transformation": "Selected fields and logical source aliases only; no private account/kernel identifiers, machine-home paths, raw credentials, model weights or input structure bytes."
+}

@@ -1,0 +1,20 @@
+{
+  "measured_freeze": "../ci/boltz-freeze.txt",
+  "packages": 101,
+  "excluded": [
+    {
+      "name": "bindsight",
+      "source": "file:///CI_REPOSITORY",
+      "reason": "Pinned source, not a PyPI distribution"
+    },
+    {
+      "name": "boltz",
+      "source": "file:///CI_RUNTIME/patched-wheels/boltz-2.0.3+bindsight.1-py3-none-any.whl",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ],
+  "receipt": "../ci/recipe-check.json",
+  "query_status": "Retained dated report; no new query; complete package freeze exactly matches4939383",
+  "reuse_basis_candidate": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "current_candidate": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a"
+}

@@ -23,11 +23,14 @@ divergent copy lives here.
 
 from __future__ import annotations
 
+import base64
+import inspect
 import json
+import re
 from pathlib import Path
 from typing import Any
 
-from bindsight.runners import tools
+from bindsight.runners import installer_security, release_bootstrap, tools
 from bindsight.runners.notebook import (
     build_notebook,
     code_cell_from_template,
@@ -55,30 +58,35 @@ def build_design_notebook(
     Returns:
         Jupyter v4 notebook dict ready for serialisation.
     """
-    spec_json = json.dumps(spec, indent=2)
+    from bindsight import __version__
+
+    version = release_bootstrap.published_version(__version__)
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", handle_id):
+        raise ValueError("The notebook job ID must be a safe directory name.")
+    mode = spec.get("extra_params", {}).get("mode", "design_and_validate")
+    if mode not in {"design_and_validate", "validate_only"}:
+        raise ValueError("Unsupported GPU job mode.")
+    spec_b64 = base64.b64encode(json.dumps(spec).encode("utf-8")).decode("ascii")
     cells = [
         markdown_cell(_intro(handle_id, designer, gpu_type)),
         code_cell_from_template(_GPU_CHECK_CELL, {}),
         markdown_cell(
             "## 1. Install RFdiffusion + ProteinMPNN + Boltz-2 + bindsight\n\n"
-            "Pinned upstream revisions (~5–10 min first run, cached afterwards)."
+            f"Uses published Bindsight {version} and its canonical managed GPU recipe. "
+            "Unpublished changes are not included. The first setup downloads packages and models."
         ),
         code_cell_from_template(
             _INSTALL_CELL,
             {
-                "rfdiff_repo": tools.RFDIFF_REPO,
-                "rfdiff_commit": tools.RFDIFF_COMMIT,
-                "mpnn_repo": tools.PROTEINMPNN_REPO,
-                "mpnn_commit": tools.PROTEINMPNN_COMMIT,
-                "boltz_pip": tools.BOLTZ_PIP,
-                "base_url": tools.RFDIFF_WEIGHTS["Base_ckpt.pt"],
-                "complex_url": tools.RFDIFF_WEIGHTS["Complex_base_ckpt.pt"],
+                "bootstrap_source": _bootstrap_source(),
+                "version": version,
+                "mode": mode,
             },
         ),
         markdown_cell("## 2. Load the design spec + target structure"),
         code_cell_from_template(
             _LOAD_SPEC_CELL,
-            {"handle_id": handle_id, "spec_json": spec_json.replace("\\", "\\\\")},
+            {"handle_id": handle_id, "spec_b64": spec_b64},
         ),
         markdown_cell(
             "## 3. Run the design + validation pipeline\n\n"
@@ -132,61 +140,94 @@ def _intro(handle_id: str, designer: str, gpu_type: str) -> str:
     )
 
 
+def _bootstrap_source() -> str:
+    """Embed reviewed stdlib helpers, without fetching executable bootstrap code."""
+    source = inspect.getsource(release_bootstrap).replace(
+        "from __future__ import annotations\n", ""
+    )
+    constants = "\n".join(
+        f"{name} = {getattr(installer_security, name)!r}"
+        for name in (
+            "UV_ARCHIVE_URLS",
+            "UV_ARCHIVE_BYTES",
+            "UV_ARCHIVE_SHA256",
+            "CERTIFI_REQUIREMENT",
+        )
+    )
+    functions = "\n\n".join(
+        inspect.getsource(function)
+        for function in (
+            installer_security.extract_verified_uv,
+            installer_security.download_verified_uv,
+            installer_security.package_environment,
+            installer_security.uv_install_command,
+        )
+    )
+    return (
+        "from __future__ import annotations\nfrom collections.abc import Callable\n"
+        + source
+        + "\n"
+        + constants
+        + "\n"
+        + functions
+    )
+
+
 _GPU_CHECK_CELL = """\
 # Confirm a CUDA GPU is available — RFdiffusion and Boltz-2 both require it.
 import subprocess, sys
 try:
     info = subprocess.check_output(['nvidia-smi'], text=True)
-    print(info.split('\\n')[8])  # GPU model line
-    print('GPU OK ✓')
+    print(info)
+    print('GPU detected; managed setup will check compatibility.')
 except (FileNotFoundError, subprocess.CalledProcessError):
     print('No GPU. Runtime → Change runtime type → T4 GPU.', file=sys.stderr)
     raise SystemExit(1)
 """
 
 _INSTALL_CELL = """\
-# Install the pinned design tools + bindsight, then point bindsight at them via
-# BINDSIGHT_TOOLS_ROOT so the executor reuses them instead of re-cloning.
-import os, pathlib, subprocess
-ROOT = pathlib.Path('/content/bindsight_tools'); ROOT.mkdir(exist_ok=True)
-os.environ['BINDSIGHT_TOOLS_ROOT'] = str(ROOT)
+{{ bootstrap_source }}
 
-def sh(*cmd): subprocess.run(list(cmd), check=True)
-
-# RFdiffusion (https://github.com/RosettaCommons/RFdiffusion)
-rfdiff = ROOT / 'RFdiffusion'
-if not rfdiff.exists():
-    sh('git', 'clone', '-q', '{{ rfdiff_repo }}', str(rfdiff))
-    sh('git', '-C', str(rfdiff), 'checkout', '-q', '{{ rfdiff_commit }}')
-    models = rfdiff / 'models'; models.mkdir(exist_ok=True)
-    for url, name in [('{{ base_url }}', 'Base_ckpt.pt'), ('{{ complex_url }}', 'Complex_base_ckpt.pt')]:
-        if not (models / name).exists():
-            sh('wget', '-q', url, '-O', str(models / name))
-    sh('pip', 'install', '-q', '-r', str(rfdiff / 'env/SE3Transformer/requirements.txt'))
-    sh('pip', 'install', '-q', '--no-deps', str(rfdiff / 'env/SE3Transformer'))
-    sh('pip', 'install', '-q', '--no-deps', '-e', str(rfdiff))
-
-# ProteinMPNN (https://github.com/dauparas/ProteinMPNN)
-mpnn = ROOT / 'ProteinMPNN'
-if not mpnn.exists():
-    sh('git', 'clone', '-q', '{{ mpnn_repo }}', str(mpnn))
-    sh('git', '-C', str(mpnn), 'checkout', '-q', '{{ mpnn_commit }}')
-
-# Boltz-2 + bindsight (installed from GitHub so the notebook runs this checkout, not the PyPI release)
-sh('pip', 'install', '-q', '{{ boltz_pip }}', 'git+https://github.com/mikhaeelatefrizk/bindsight.git')
-print('tools installed ✓')
+# RFdiffusion, ProteinMPNN and Boltz use the shared managed GPU provisioner.
+# The notebook's global Python environment is not modified.
+import os, subprocess
+ROOT = Path('/content/bindsight_tools'); ROOT.mkdir(exist_ok=True)
+RELEASE_VERSION = '{{ version }}'
+UV = download_verified_uv(ROOT / 'bootstrap/uv', report=print)
+WHEEL = download_release_wheel(RELEASE_VERSION, ROOT / 'release')
+ENV = package_environment(dict(os.environ), ROOT / 'uv-cache')
+ENV.pop('UV_NO_PYTHON_DOWNLOADS', None)
+ENV['UV_PYTHON_INSTALL_DIR'] = str(ROOT / 'python')
+subprocess.run([str(UV), '--no-config', 'python', 'install', '3.11.18'], env=ENV, check=True)
+DRIVER = ROOT / 'driver/bin/python'
+subprocess.run([str(UV), '--no-config', 'venv', '--python', '3.11.18', '--managed-python',
+                str(ROOT / 'driver')], env=ENV, check=True)
+subprocess.run(uv_install_command(UV, DRIVER, [str(WHEEL), "psutil>=5.9,<8"]), env=ENV, check=True)
+subprocess.run([str(DRIVER), '-I', '-m', 'bindsight.runners.gpu_runtime',
+                '--root', str(ROOT / 'runtime'), '--source', str(WHEEL),
+                '--mode', '{{ mode }}', '--receipt', str(ROOT / 'provision-receipt.json')],
+               env=ENV, check=True)
+print('Managed GPU recipe prepared; source wheel receipt:', WHEEL.with_suffix('.source.json'))
 """
 
 _LOAD_SPEC_CELL = """\
 # Write the design spec + target structure the executor will read.
 import base64, json, pathlib
 JOB_ID = '{{ handle_id }}'
-SPEC = json.loads('''{{ spec_json }}''')
+SPEC = json.loads(base64.b64decode('{{ spec_b64 }}', validate=True).decode('utf-8'))
 spec_dir = pathlib.Path(f'/content/{JOB_ID}_spec'); spec_dir.mkdir(exist_ok=True)
 (spec_dir / 'spec.json').write_text(json.dumps(SPEC, indent=2))
 name = SPEC.get('extra_params', {}).get('target_structure_name', 'target.pdb')
 if 'target_structure_b64' in SPEC:
-    (spec_dir / name).write_bytes(base64.b64decode(SPEC['target_structure_b64']))
+    if not isinstance(name, str):
+        raise ValueError('Target structure path must be a string.')
+    target = spec_dir / name
+    if ('\\\\' in name or '..' in pathlib.PurePosixPath(name).parts
+            or not target.resolve().is_relative_to(spec_dir.resolve())
+            or target.resolve() in {spec_dir.resolve(), (spec_dir / 'spec.json').resolve()}):
+        raise ValueError('Target structure path escapes its job directory.')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(base64.b64decode(SPEC['target_structure_b64'], validate=True))
     print('target structure written:', name)
 else:
     print('WARNING: no target_structure_b64 in spec; upload', name, 'into', spec_dir)
@@ -195,12 +236,18 @@ print('target:', SPEC.get('target_uniprot'), '| residues:', SPEC.get('epitope_re
 
 _RUN_CELL = """\
 # Run the real RFdiffusion → ProteinMPNN → Boltz-2 pipeline via the executor.
-import subprocess, sys
+import json, os, subprocess
 JOB_ID = '{{ handle_id }}'
+receipt = json.loads((ROOT / 'provision-receipt.json').read_text())
+job_env = dict(os.environ)
+for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'PYTHONUSERBASE',
+            'BINDSIGHT_BOLTZ_BIN', 'BINDSIGHT_LOCAL_IMAGE', 'BINDSIGHT_DESIGN_PYTHON'):
+    job_env.pop(key, None)
+job_env.update(receipt['execution_environment'])
 subprocess.run(
-    [sys.executable, '-m', 'bindsight.runners.job_exec',
+    [receipt['boltz_python'], '-I', '-m', 'bindsight.runners.job_exec',
      f'/content/{JOB_ID}_spec/spec.json', f'/content/{JOB_ID}.tar.gz'],
-    check=True,
+    env=job_env, check=True,
 )
 print('done -> /content/{{ handle_id }}.tar.gz')
 """

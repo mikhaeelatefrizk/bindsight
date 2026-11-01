@@ -1,0 +1,143 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T19:06:32.574589+00:00",
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "base_candidate_commit": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "base_wheel_sha256": "a2cf2d8b8d726a66b802114f1799a9bc9888a93e05a3c9fe40a2e577f608c53d",
+  "helper_overlay_sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3",
+  "status": "Actual production-helper CPU model construction passed for both pinned checkpoints; no GPU/prediction completion claim",
+  "files": [
+    {
+      "artifact": "checkpoint-result.json",
+      "bytes": 55463,
+      "sha256": "a936bf1c545c4536e0e4b8f1b6c8b8c539d5eb2c7a92398969e6a6a46dd99a64",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/checkpoint-result.json",
+          "sha256": "a936bf1c545c4536e0e4b8f1b6c8b8c539d5eb2c7a92398969e6a6a46dd99a64"
+        }
+      ],
+      "purpose": "Actual production-context CPU model construction and restoration results",
+      "transformation": "JSON formatting and logical CPU/candidate path normalization only"
+    },
+    {
+      "artifact": "bootstrap-result.json",
+      "bytes": 590,
+      "sha256": "8cb04e727b44b41824ae47488817fe3e82b594ac40dd251c8a46c9acce581bea",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/bootstrap-result.json",
+          "sha256": "8cb04e727b44b41824ae47488817fe3e82b594ac40dd251c8a46c9acce581bea"
+        }
+      ],
+      "purpose": "Actual kernel source/base-wheel identity, duration and successful private-data cleanup",
+      "transformation": "JSON formatting and logical path normalization only; base commit remains4939383"
+    },
+    {
+      "artifact": "base-runtime-receipt.json",
+      "bytes": 20669,
+      "sha256": "17a66ef41421684e9f7741c8184a08052dd44a12bbe28122545598a0d348b6cd",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/runtime-receipt.json",
+          "sha256": "93b96597ade66d5d691aea2e183e76de5e9997b2e14c33ee02d2c3a9d11ab319"
+        }
+      ],
+      "purpose": "Canonical validate_only/check_only base environment used by the test",
+      "transformation": "JSON formatting and logical path normalization only; the subsequent model loads are documented separately"
+    },
+    {
+      "artifact": "resolved-packages.txt",
+      "bytes": 2206,
+      "sha256": "3da1bfab260965551521c5a6a0c80dc28625806b8a4920b8256f3edd1433eb40",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/resolved-packages.txt",
+          "sha256": "70fbe75408cbc1c1d5a87d945e834381baa876135382f6554b7adcc8ccff4ba6"
+        }
+      ],
+      "purpose": "Exact installed versions corroborated against the base runtime receipt",
+      "transformation": "Logical candidate source paths normalized; not installation instructions"
+    },
+    {
+      "artifact": "production-loader.py",
+      "bytes": 9263,
+      "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/boltz_checkpoint.py",
+          "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3"
+        },
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/boltz_checkpoint.py",
+          "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3"
+        }
+      ],
+      "purpose": "Exact production source tested, with its original AGPL header",
+      "transformation": "Exact LF bytes from committed Git source; no normalization"
+    },
+    {
+      "artifact": "submission.json",
+      "bytes": 343,
+      "sha256": "a60954d83a939cc19f928e9aa623adfee66e841c8c9415dce248646e48d912c2",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/submission.json",
+          "sha256": "047da7de716996eee3e76294a869fab106814bcfea30d9ca5e56856831bc5b24"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-checkpoint-cpu-38fb37a/submission.json",
+          "sha256": "386aef205f7fc9e6f7a3f2a8a192c084dec4bd85500b5286ebc781f191119c01"
+        }
+      ],
+      "purpose": "Actual private CPU-only kernel version, timing, source hash and platform bound",
+      "transformation": "JSON formatting only; no account secrets included; private account/kernel identifiers and private kernel URL omitted from the public copy"
+    },
+    {
+      "artifact": "verification.json",
+      "bytes": 3407,
+      "sha256": "b408d6b2ce9f530f577b52a4e3fa4e3f4c1e43c8ffd5fa5967a29eec7a61231a",
+      "sources": [
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/checkpoint-result.json",
+          "sha256": "a936bf1c545c4536e0e4b8f1b6c8b8c539d5eb2c7a92398969e6a6a46dd99a64"
+        },
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/output-v3/bindsight-boltz-checkpoint-probe/runtime-receipt.json",
+          "sha256": "93b96597ade66d5d691aea2e183e76de5e9997b2e14c33ee02d2c3a9d11ab319"
+        },
+        {
+          "path": "work/gpu-modernization/production-instrumented-smoke-4939383/output-v1/4a235d81b102-runtime-evidence/runtime-receipt.json",
+          "sha256": "9c25a327bdd3943424f5ce2081c8fac13eee3d102bdf6c65907053d44a455191"
+        },
+        {
+          "path": "work/gpu-modernization/boltz-checkpoint-probe/v3/overlay-identity.json",
+          "sha256": "4559eec6e0ce93042d618e37d11e4f6505bec9fa0926254240a2a922979cac8e"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-checkpoint-cpu-38fb37a/verification.json",
+          "sha256": "059c817f4f192fa87234c209b8b39db8292ee7c80b30047cc37a4d33261dd65f"
+        }
+      ],
+      "purpose": "Independent comparisons against known checkpoint pins, actual failed-run environment and committed helper bytes",
+      "transformation": "New derived verification; no source result values changed; private account/kernel identifiers and private kernel URL omitted from the public copy"
+    },
+    {
+      "artifact": "README.md",
+      "bytes": 2783,
+      "sha256": "289183803683a3d0bb7eb483dffba4eff44190d7bab57f5797e53d776fcf9bcb",
+      "sources": [],
+      "purpose": "Scope, exact execution identity, stage distinctions and limitations",
+      "transformation": "New packaging description"
+    }
+  ],
+  "public_privacy_correction": {
+    "previous_package": "evidence-checkpoint-cpu-38fb37a",
+    "previous_manifest_sha256": "de8dc1d6417272b1f413d7a5456bbe3692e9297ce4155ad7410b0a603566e1b2",
+    "changed_files": [
+      "submission.json",
+      "verification.json"
+    ],
+    "reason": "Omit private kernel/account identifiers; original package and raw receipt bytes preserved. Scientific results and source bytes unchanged."
+  }
+}

@@ -9,6 +9,8 @@ import os
 import pathlib
 import shlex
 import tarfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -64,6 +66,49 @@ def test_secure_installer_pin_matches_the_independently_verified_companion_pin()
     assert linux["sha256"] == secure.UV_ARCHIVE_SHA256
 
 
+def test_uv_transport_failure_uses_verified_official_fallback(tmp_path, monkeypatch):
+    archive = _archive()
+    _fixture_pin(monkeypatch, archive)
+    calls = []
+
+    def response(url, **kwargs):
+        calls.append(url)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError(url, 403, "host unavailable", {}, None)
+        return io.BytesIO(archive)
+
+    monkeypatch.setattr(urllib.request, "urlopen", response)
+    target = tmp_path / "uv"
+    assert secure.download_verified_uv(target) == target
+    assert calls == list(secure.UV_ARCHIVE_URLS)
+    assert target.read_bytes() == b"ARTIFICIAL EXECUTABLE FIXTURE"
+    provenance = json.loads(target.with_suffix(".download.json").read_text())
+    assert provenance["source"] == secure.UV_ARCHIVE_URLS[-1]
+    assert provenance["sha256"] == secure.UV_ARCHIVE_SHA256
+    assert "403" in provenance["attempts"][0]["error"]
+    # Re-use still authenticates the archive and repairs a changed executable.
+    target.write_bytes(b"MODIFIED EXECUTABLE")
+    secure.download_verified_uv(target)
+    assert len(calls) == 2
+    assert target.read_bytes() == b"ARTIFICIAL EXECUTABLE FIXTURE"
+
+
+def test_uv_integrity_failure_never_tries_another_source(tmp_path, monkeypatch):
+    archive = _archive()
+    _fixture_pin(monkeypatch, archive)
+    calls = []
+
+    def response(url, **kwargs):
+        calls.append(url)
+        return io.BytesIO(b"CORRUPTED ARCHIVE")
+
+    monkeypatch.setattr(urllib.request, "urlopen", response)
+    with pytest.raises(RuntimeError, match="SHA256"):
+        secure.download_verified_uv(tmp_path / "uv")
+    assert calls == [secure.UV_ARCHIVE_URLS[0]]
+    assert not (tmp_path / "uv").exists()
+
+
 def test_environment_cannot_select_insecure_tls_or_a_different_package_index(tmp_path):
     original = {
         "UV_INSECURE_HOST": "pypi.org",
@@ -97,7 +142,7 @@ def test_generated_kernel_uses_the_same_installer_and_exact_python_target(tmp_pa
     definitions = [
         node
         for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name in {"uv_install_command", "install"}
+        if isinstance(node, ast.FunctionDef) and node.name == "uv_install_command"
     ]
     calls = []
     namespace = {
@@ -115,14 +160,14 @@ def test_generated_kernel_uses_the_same_installer_and_exact_python_target(tmp_pa
     )
     for environment in ("se3", "boltz"):
         target = tmp_path / environment
-        namespace["install"](str(target), "torch==1.12.1+cu113")
-        argv, options = calls[-1]
-        assert argv == secure.uv_install_command(
-            tmp_path / "uv", target / "bin/python", ["torch==1.12.1+cu113"]
+        argv = namespace["uv_install_command"](
+            tmp_path / "uv", target / "bin/python", ["torch==2.14.1+cu126"]
         )
-        assert options["check"] is True
-        assert options.get("shell") is not True
+        assert argv == secure.uv_install_command(
+            tmp_path / "uv", target / "bin/python", ["torch==2.14.1+cu126"]
+        )
     assert "pip install" not in script  # The target interpreter's pip never makes a download.
     assert "micro.mamba.pm" not in script
-    assert secure.MICROMAMBA_SHA256 in script
-    assert "write_verified_micromamba(_micromamba, pathlib.Path(MM))" in script
+    assert secure.UV_ARCHIVE_SHA256 in script
+    assert "download_verified_uv(UV, report=print)" in script
+    assert "bindsight.runners.gpu_runtime" in script

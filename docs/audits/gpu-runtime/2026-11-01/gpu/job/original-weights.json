@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Base_ckpt.pt",
+    "bytes": 483616107,
+    "sha256": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+    "expected_sha256": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+    "pin_match": true
+  },
+  {
+    "name": "Complex_base_ckpt.pt",
+    "bytes": 483619179,
+    "sha256": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
+    "expected_sha256": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
+    "pin_match": true
+  }
+]

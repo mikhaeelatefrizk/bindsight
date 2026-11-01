@@ -28,19 +28,643 @@ assembly without a GPU.
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tarfile
-from dataclasses import dataclass
+import tempfile
+import threading
+import time
+from collections.abc import Iterator
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from functools import cache
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from bindsight.runners import tools
+from bindsight.runners.boltz_runtime_wheel import RUNTIME_VERSION
+from bindsight.validate.boltz2 import PINNED_BOLTZ2_VERSION
+from bindsight.validate.protocol import UNRECORDED_VERSION
 
 LOG = logging.getLogger(__name__)
+
+_SECRET_KEY = re.compile(
+    r"(?i)(?:token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)"
+)
+_LOG_LIMIT = 512 * 1024
+_LINE_LIMIT = 64 * 1024
+_ARTIFACT_LIMIT = 64 * 1024 * 1024
+_EVIDENCE_LIMIT = 256 * 1024 * 1024
+
+
+@dataclass
+class _JobEvidence:
+    work: Path
+    directory: Path
+    commands: int = 0
+    log_bytes: int = 0
+    weights: list[dict[str, Any]] = field(default_factory=list)
+
+
+_EVIDENCE: ContextVar[_JobEvidence | None] = ContextVar("job_evidence", default=None)
+
+
+def _redact(text: str) -> str:
+    """Remove credentials without guessing that protein sequences are secrets."""
+    for key, value in os.environ.items():
+        if (_SECRET_KEY.search(key) or key == "KAGGLE_KEY") and len(value) >= 8:
+            text = text.replace(value, "<redacted>")
+            if "\n" in value or "\r" in value:
+                for line in value.splitlines():
+                    if line:
+                        text = text.replace(line, "<redacted>")
+
+    def url(match: re.Match[str]) -> str:
+        try:
+            parsed = urlsplit(match.group())
+        except ValueError:
+            return "<redacted malformed URL>"
+        host = parsed.netloc.rsplit("@", 1)[-1]
+        return urlunsplit(
+            (parsed.scheme, host, parsed.path, "<redacted>" if parsed.query else "", "")
+        )
+
+    text = re.sub(r"https?://[^\s\"'<>]+", url, text)
+    text = re.sub(r"(?i)\bBearer\s+[\w.~+/=-]+", "Bearer <redacted>", text)
+    text = re.sub(r"\b(?:hf_|gh[pousr]_|sk-)[A-Za-z0-9_-]{12,}", "<redacted>", text)
+    return re.sub(
+        r"(?i)\b(token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)"
+        r"([\"']?\s*[:=]\s*[\"']?)[^\s\"',;]+",
+        r"\1\2<redacted>",
+        text,
+    )
+
+
+def _safe_record(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            key: "<redacted>" if _SECRET_KEY.fullmatch(str(key)) else _safe_record(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_safe_record(item) for item in value]
+    return _redact(value) if isinstance(value, str) else value
+
+
+def _evidence_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_suffix(path.suffix + ".tmp")
+    pending.write_text(
+        json.dumps(_safe_record(value), indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
+    pending.replace(path)
+
+
+def _record_command(
+    cmd: list[str],
+    cwd: Path | None,
+    started: str,
+    duration: float,
+    outcome: str,
+    returncode: int | None,
+    stdout: str | bytes | None,
+    stderr: str | bytes | None,
+    capture: dict[str, dict[str, Any]] | None = None,
+) -> None:
+    evidence = _EVIDENCE.get()
+    if evidence is None:
+        return
+    evidence.commands += 1
+    argv = _redacted_argv(cmd)
+
+    def stream(value: str | bytes | None, name: str) -> dict[str, Any]:
+        raw = value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value or ""
+        data = _redact(raw).encode("utf-8")
+        limit = min(_LOG_LIMIT, max(0, 64 * 1024 * 1024 - evidence.log_bytes))
+        kept = _bounded_bytes(data, limit) if len(data) > limit else data
+        evidence.log_bytes += len(kept)
+        return {
+            "text": kept.decode("utf-8", errors="replace"),
+            "redacted_bytes": (capture or {}).get(name, {}).get("redacted_bytes", len(data)),
+            "observed_bytes": (capture or {})
+            .get(name, {})
+            .get("observed_bytes", len(raw.encode("utf-8"))),
+            "suppressed_oversized_lines": (capture or {})
+            .get(name, {})
+            .get("suppressed_oversized_lines", 0),
+            "truncated": len(data) > limit or (capture or {}).get(name, {}).get("truncated", False),
+        }
+
+    _evidence_json(
+        evidence.directory / "commands" / f"{evidence.commands:06d}.json",
+        {
+            "argv": argv,
+            "cwd": str(cwd) if cwd else None,
+            "started_utc": started,
+            "duration_seconds": duration,
+            "timeout_seconds": _TOOL_TIMEOUT_S,
+            "outcome": outcome,
+            "returncode": returncode,
+            "stdout": stream(stdout, "stdout"),
+            "stderr": stream(stderr, "stderr"),
+        },
+    )
+    _current_command(cmd, cwd, started, outcome, duration, returncode, evidence.commands)
+
+
+def _redacted_argv(cmd: list[str]) -> list[str]:
+    argv = [_redact(arg) for arg in cmd]
+    for index, arg in enumerate(cmd[:-1]):
+        if _SECRET_KEY.fullmatch(arg.lstrip("-")):
+            argv[index + 1] = "<redacted>"
+    return argv
+
+
+def _current_command(
+    cmd: list[str],
+    cwd: Path | None,
+    started: str,
+    phase: str,
+    elapsed: float = 0,
+    returncode: int | None = None,
+    index: int | None = None,
+) -> None:
+    evidence = _EVIDENCE.get()
+    if evidence is not None:
+        _evidence_json(
+            evidence.directory / "current-command.json",
+            {
+                "schema": "bindsight-current-command/1",
+                "command_index": index if index is not None else evidence.commands + 1,
+                "argv": _redacted_argv(cmd),
+                "cwd": str(cwd) if cwd else None,
+                "started_utc": started,
+                "phase": phase,
+                "running": phase == "running",
+                "elapsed_seconds": elapsed,
+                "returncode": returncode,
+                "python_unbuffered": True,
+            },
+        )
+
+
+def _bounded_bytes(data: bytes, limit: int) -> bytes:
+    if len(data) <= limit:
+        return data
+    marker = b"\n<bindsight: output truncated>\n"[:limit]
+    head = (limit - len(marker)) // 2
+    tail = limit - len(marker) - head
+    return data[:head] + marker + (data[-tail:] if tail else b"")
+
+
+class _OutputBuffer:
+    """Keep bounded first/last bytes, preserving complete small command output."""
+
+    def __init__(self, limit: int) -> None:
+        self.limit = limit
+        self.total = 0
+        self.head = bytearray()
+        self.tail = bytearray()
+
+    def add(self, data: bytes) -> None:
+        self.total += len(data)
+        wanted = max(0, self.limit // 2 - len(self.head))
+        self.head.extend(data[:wanted])
+        self.tail.extend(data[wanted:])
+        tail_limit = self.limit - self.limit // 2
+        if len(self.tail) > tail_limit:
+            del self.tail[: len(self.tail) - tail_limit]
+
+    def data(self) -> bytes:
+        data = bytes(self.head + self.tail)
+        if self.total > self.limit:
+            # Include a marker even though retained content is already bounded.
+            return self._truncated(data)
+        return data
+
+    def _truncated(self, data: bytes) -> bytes:
+        marker = b"\n<bindsight: output truncated>\n"[: self.limit]
+        head = (self.limit - len(marker)) // 2
+        tail = self.limit - len(marker) - head
+        return data[:head] + marker + (data[-tail:] if tail else b"")
+
+    def text(self) -> str:
+        return (
+            self.data().decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
+        )
+
+
+class _StreamedProcess(subprocess.CompletedProcess[str]):
+    safe_stdout: str
+    safe_stderr: str
+    capture: dict[str, dict[str, Any]]
+
+
+def _echo_output(destination: Any, text: str) -> None:
+    """Console availability/encoding must not decide whether GPU work succeeds."""
+    if destination is None:
+        return
+    try:
+        encoding = getattr(destination, "encoding", None) or "utf-8"
+        printable = text.encode(encoding, errors="replace").decode(encoding)
+        destination.write(printable)
+        destination.flush()
+    except (OSError, UnicodeError, ValueError, LookupError):
+        pass  # durable redacted evidence was persisted independently
+
+
+@contextlib.contextmanager
+def _job_termination() -> Iterator[None]:
+    """Unwind an active main-thread job on SIGTERM, including its owned child tree."""
+    import signal
+
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = signal.getsignal(signal.SIGTERM)
+
+    def terminate(signum: int, frame: Any) -> None:
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        raise SystemExit(128 + signum)
+
+    signal.signal(signal.SIGTERM, terminate)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
+@cache
+def _windows_pipe_api() -> Any:
+    if sys.platform != "win32":
+        raise RuntimeError("Windows pipe inspection is only available on Windows")
+    import ctypes
+    from ctypes import wintypes
+
+    peek = ctypes.WinDLL("kernel32", use_last_error=True).PeekNamedPipe
+    peek.argtypes = [
+        wintypes.HANDLE,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        ctypes.POINTER(wintypes.DWORD),
+        wintypes.LPVOID,
+    ]
+    peek.restype = wintypes.BOOL
+    return peek
+
+
+def _pipe_read(fd: int) -> bytes | None:
+    """Nonblocking pipe read, including Windows/Python 3.11 anonymous pipes."""
+    if sys.platform == "win32":
+        import ctypes
+        import msvcrt
+        from ctypes import wintypes
+
+        available = wintypes.DWORD()
+        success = _windows_pipe_api()(
+            wintypes.HANDLE(msvcrt.get_osfhandle(fd)),
+            None,
+            0,
+            None,
+            ctypes.byref(available),
+            None,
+        )
+        if not success:
+            error = ctypes.get_last_error()
+            if error in {109, 233}:  # broken or disconnected pipe
+                return b""
+            raise ctypes.WinError(error)
+        if not available.value:
+            return None
+        return os.read(fd, min(available.value, 16384))
+    try:
+        return os.read(fd, 16384)
+    except BlockingIOError:
+        return None
+
+
+def _terminate_command(process: subprocess.Popen[bytes]) -> None:
+    """Stop only this owned command tree on a timeout/capture failure."""
+    if sys.platform == "win32":
+        if process.poll() is None:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+                check=False,
+            )
+    else:
+        import signal
+
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+    if process.poll() is None:
+        process.kill()
+    process.wait(timeout=10)
+
+
+def _stream_command(
+    cmd: list[str],
+    *,
+    cwd: Path | None,
+    timeout: float,
+) -> subprocess.CompletedProcess[str]:
+    """Drain both pipes concurrently; persist redacted output before live display."""
+    evidence = _EVIDENCE.get()
+    raw = {name: _OutputBuffer(_LOG_LIMIT) for name in ("stdout", "stderr")}
+    safe = {name: _OutputBuffer(_LOG_LIMIT) for name in raw}
+    suppressed = {name: 0 for name in raw}
+    live_limit = _LOG_LIMIT
+    if evidence is not None:
+        live_limit = min(_LOG_LIMIT, max(0, (64 * 1024**2 - evidence.log_bytes) // 4))
+        evidence.log_bytes += live_limit * 2  # reserve both live files inside the job budget
+    live = {name: _OutputBuffer(live_limit) for name in raw}
+    stop = threading.Event()
+    failures: list[Exception] = []
+    console_lock = threading.Lock()
+    creationflags = 0
+    if sys.platform == "win32":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    process = subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=0,
+        env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        start_new_session=os.name != "nt",
+        creationflags=creationflags,
+    )
+    threads = []
+
+    def reader(name: str, pipe: Any) -> None:
+        pending = bytearray()
+        discarding = False
+        cr_ended = False
+        printed = 0
+        last_write = 0.0
+        last_total = -1
+        path = None
+        if evidence is not None:
+            path = evidence.directory / "live" / f"{evidence.commands + 1:06d}.{name}.log"
+
+        def persist(force: bool = False) -> None:
+            nonlocal last_write, last_total
+            if not force and live[name].total == 0:
+                return
+            now = time.monotonic()
+            if path is not None and (
+                force or (now - last_write >= 1 and live[name].total != last_total)
+            ):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                temporary = path.with_suffix(".tmp")
+                temporary.write_bytes(live[name].data())
+                temporary.replace(path)
+                last_write = now
+                last_total = live[name].total
+
+        def emit(data: bytes) -> None:
+            nonlocal printed
+            text = data.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
+            clean = _redact(text).encode("utf-8")
+            safe[name].add(clean)
+            live[name].add(clean)
+            # Persist the first line immediately, then at most once/s and on exit.
+            persist(force=last_write == 0)
+            remaining = max(0, _LOG_LIMIT - printed)
+            if remaining:
+                text = clean[:remaining].decode("utf-8", errors="replace")
+                with console_lock:
+                    destination = sys.stdout if name == "stdout" else sys.stderr
+                    _echo_output(destination, text)
+                printed += len(clean[:remaining])
+
+        try:
+            fd = pipe.fileno()
+            if sys.platform != "win32":
+                os.set_blocking(fd, False)
+            while not stop.is_set():
+                chunk = _pipe_read(fd)
+                if chunk is None:
+                    persist()
+                    stop.wait(0.02)
+                    continue
+                if not chunk:
+                    break
+                raw[name].add(chunk)
+                pending.extend(chunk)
+                if cr_ended:
+                    if pending.startswith(b"\n"):
+                        del pending[:1]
+                    cr_ended = False
+                while match := re.search(b"[\r\n]", pending):
+                    end = match.end()
+                    if pending[end - 1] == 13:
+                        if end < len(pending) and pending[end] == 10:
+                            end += 1
+                        elif end == len(pending):
+                            cr_ended = True
+                    if not discarding:
+                        if end <= _LINE_LIMIT:
+                            emit(bytes(pending[:end]))
+                        else:
+                            suppressed[name] += 1
+                            emit(b"<bindsight: oversized output line suppressed>\n")
+                    del pending[:end]
+                    discarding = False
+                if len(pending) > _LINE_LIMIT:
+                    if not discarding:
+                        suppressed[name] += 1
+                        emit(b"<bindsight: oversized output line suppressed>\n")
+                    pending.clear()
+                    discarding = True
+            if pending and not discarding:
+                emit(bytes(pending))
+            persist(force=True)
+        except Exception as error:
+            failures.append(error)
+        finally:
+            pipe.close()
+
+    assert process.stdout is not None
+    assert process.stderr is not None
+    expired = False
+    interrupted: BaseException | None = None
+    deadline = time.monotonic() + timeout
+    try:
+        for name, pipe in (("stdout", process.stdout), ("stderr", process.stderr)):
+            thread = threading.Thread(
+                target=reader, args=(name, pipe), name=f"bindsight-{name}-{process.pid}"
+            )
+            try:
+                thread.start()
+            except RuntimeError as error:
+                raise OSError("Cannot start command output reader") from error
+            threads.append(thread)
+        while process.poll() is None:
+            if failures:
+                raise OSError(f"Cannot retain live command output: {failures[0]}")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                expired = True
+                _terminate_command(process)
+                break
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.wait(timeout=min(0.1, remaining))
+    except BaseException as error:
+        interrupted = error
+        try:
+            _terminate_command(process)
+        except Exception as cleanup_error:
+            LOG.error("Unable to finish owned command cleanup: %s", _redact(str(cleanup_error)))
+    finally:
+        # A detached grandchild can keep a pipe open after its parent exits. Reads
+        # never block, so bounded draining and a stop flag leave no reader threads.
+        for thread in threads:
+            thread.join(timeout=1)
+        stop.set()
+        for thread in threads:
+            thread.join()
+        process.stdout.close()
+        process.stderr.close()
+    if interrupted is not None:
+        interrupted.stdout = safe["stdout"].text()  # type: ignore[attr-defined]
+        interrupted.stderr = safe["stderr"].text()  # type: ignore[attr-defined]
+        raise interrupted
+    if failures:
+        raise OSError(f"Cannot retain live command output: {failures[0]}")
+    if expired:
+        raise subprocess.TimeoutExpired(
+            cmd, timeout, output=safe["stdout"].text(), stderr=safe["stderr"].text()
+        )
+    result = _StreamedProcess(cmd, process.returncode, raw["stdout"].text(), raw["stderr"].text())
+    result.safe_stdout, result.safe_stderr = safe["stdout"].text(), safe["stderr"].text()
+    result.capture = {
+        name: {
+            "redacted_bytes": safe[name].total,
+            "observed_bytes": raw[name].total,
+            "suppressed_oversized_lines": suppressed[name],
+            "truncated": raw[name].total > _LOG_LIMIT
+            or safe[name].total > _LOG_LIMIT
+            or bool(suppressed[name]),
+        }
+        for name in raw
+    }
+    return result
+
+
+def _finish_evidence(spec: dict[str, Any], status: str, error: str | None = None) -> None:
+    evidence = _EVIDENCE.get()
+    if evidence is None:
+        return
+    work, destination = evidence.work, evidence.directory
+    _evidence_json(destination / "spec.json", spec)
+    _evidence_json(destination / "weights.json", evidence.weights)
+    copied: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    total = 0
+    groups: dict[str, list[Path]] = {
+        "target": [work / "target.pdb", work / "target_design_region.pdb"],
+        "rfdiffusion": [
+            p for p in (work / "rfdiff_out").rglob("*") if p.suffix in {".pdb", ".trb"}
+        ],
+        "proteinmpnn": [
+            p
+            for p in (work / "mpnn_out").rglob("*")
+            if p.suffix in {".fa", ".fasta"} and "seqs" in p.parts
+        ],
+        "boltz": [
+            p
+            for p in (work / "boltz_out").rglob("*")
+            if (
+                (p.parent == work / "boltz_out" and p.suffix in {".yaml", ".yml"})
+                or (
+                    bool({"msa", "msas"} & set(p.relative_to(work / "boltz_out").parts))
+                    and p.suffix in {".a3m", ".csv", ".npz", ".fa", ".fasta"}
+                )
+                or ("processed" in p.parts and p.suffix == ".json")
+            )
+        ],
+    }
+    for category, paths in groups.items():
+        for path in sorted(paths):
+            relative = path.relative_to(work)
+            if any(
+                parent.is_symlink() for parent in (path, *path.parents) if parent != work.parent
+            ):
+                skipped.append({"path": relative.as_posix(), "reason": "symbolic link"})
+                continue
+            if not path.is_file():
+                continue
+            size = path.stat().st_size
+            if size > _ARTIFACT_LIMIT or total + size > _EVIDENCE_LIMIT:
+                skipped.append(
+                    {"path": relative.as_posix(), "reason": "evidence size limit", "bytes": size}
+                )
+                continue
+            data = path.read_bytes()
+            if path.suffix in {".yaml", ".yml", ".json", ".csv", ".a3m", ".fa", ".fasta"}:
+                data = _redact(data.decode("utf-8", errors="replace")).encode("utf-8")
+            target = destination / "raw" / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            copied.append(
+                {
+                    "category": category,
+                    "path": relative.as_posix(),
+                    "bytes": len(data),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                }
+            )
+            total += size
+    _evidence_json(
+        destination / "manifest.json",
+        {
+            "schema": "bindsight-job-evidence/1",
+            "status": status,
+            "error": error,
+            "commands": evidence.commands,
+            "files": copied,
+            "skipped": skipped,
+            "missing_categories": [
+                name for name in groups if not any(row["category"] == name for row in copied)
+            ],
+            "note": "Credential-like text is redacted; logs and raw artifacts have explicit size limits. Model weights and environment variables are not archived.",
+        },
+    )
+    try:
+        package_version = version("bindsight")
+    except PackageNotFoundError:
+        package_version = "unrecorded"
+    _evidence_json(
+        destination / "provenance.json",
+        {
+            "bindsight_version": package_version,
+            "executor_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "tool_commands_sha256": hashlib.sha256(Path(tools.__file__).read_bytes()).hexdigest(),
+            "python": sys.version,
+            "platform": sys.platform,
+            "design_python": tools._design_python(),
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "upstream_pins": {
+                "rfdiffusion": tools.RFDIFF_COMMIT,
+                "proteinmpnn": tools.PROTEINMPNN_COMMIT,
+                "boltz": tools.BOLTZ_PIP,
+            },
+            "note": "Upstream pins describe the requested tools, not an independently verified installed version. Command receipts and checkpoint receipts record observed execution.",
+        },
+    )
 
 
 @dataclass
@@ -65,30 +689,69 @@ _TOOL_TIMEOUT_S = float(os.environ.get("BINDSIGHT_TOOL_TIMEOUT", 6 * 60 * 60))
 
 
 def _run(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    """Run a subprocess, capturing output; raise on non-zero exit.
+    """Run a subprocess with bounded live diagnostics; raise on non-zero exit.
 
     The single subprocess seam — monkeypatched in tests so the dispatch +
     output-assembly logic is exercised without a GPU.
     """
-    LOG.info("exec: %s", " ".join(cmd))
+    LOG.info("exec: %s", " ".join(_redacted_argv(cmd)))
+    started = datetime.now(UTC).isoformat()
+    clock = time.monotonic()
+    _current_command(cmd, cwd, started, "running")
     try:
-        proc = subprocess.run(
-            cmd,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=_TOOL_TIMEOUT_S,
-        )
+        proc = _stream_command(cmd, cwd=cwd, timeout=_TOOL_TIMEOUT_S)
     except subprocess.TimeoutExpired as exc:
-        LOG.error("command exceeded %.0f s and was killed: %s", _TOOL_TIMEOUT_S, " ".join(cmd))
+        _record_command(
+            cmd, cwd, started, time.monotonic() - clock, "timeout", None, exc.stdout, exc.stderr
+        )
+        LOG.error(
+            "command exceeded %.0f s and was killed: %s",
+            _TOOL_TIMEOUT_S,
+            " ".join(_redacted_argv(cmd)),
+        )
         raise RuntimeError(
             f"{cmd[0]} exceeded the {_TOOL_TIMEOUT_S:.0f}s tool timeout and was killed. "
             "Raise BINDSIGHT_TOOL_TIMEOUT if the job genuinely needs longer."
         ) from exc
+    except OSError as exc:
+        _record_command(
+            cmd, cwd, started, time.monotonic() - clock, "spawn_error", None, "", str(exc)
+        )
+        raise
+    except BaseException as exc:
+        try:
+            _record_command(
+                cmd,
+                cwd,
+                started,
+                time.monotonic() - clock,
+                "interrupted",
+                None,
+                getattr(exc, "stdout", ""),
+                getattr(exc, "stderr", ""),
+            )
+        except Exception as record_error:
+            LOG.error(
+                "Unable to retain interrupted-command evidence: %s", _redact(str(record_error))
+            )
+        raise
+    _record_command(
+        cmd,
+        cwd,
+        started,
+        time.monotonic() - clock,
+        "ok" if proc.returncode == 0 else "nonzero",
+        proc.returncode,
+        getattr(proc, "safe_stdout", proc.stdout),
+        getattr(proc, "safe_stderr", proc.stderr),
+        getattr(proc, "capture", None),
+    )
     if proc.returncode != 0:
         LOG.error(
-            "command failed (%d): %s\n%s", proc.returncode, " ".join(cmd), proc.stderr[-2000:]
+            "command failed (%d): %s\n%s",
+            proc.returncode,
+            " ".join(_redacted_argv(cmd)),
+            getattr(proc, "safe_stderr", _redact(proc.stderr))[-2000:],
         )
         raise RuntimeError(f"{cmd[0]} failed with code {proc.returncode}")
     return proc
@@ -150,6 +813,17 @@ def _verify_checkpoint(path: Path, expected_sha256: str | None) -> str:
             h.update(chunk)
     digest = h.hexdigest()
     size = path.stat().st_size
+    evidence = _EVIDENCE.get()
+    if evidence is not None:
+        evidence.weights.append(
+            {
+                "name": path.name,
+                "bytes": size,
+                "sha256": digest,
+                "expected_sha256": expected_sha256,
+                "pin_match": digest == expected_sha256 if expected_sha256 else None,
+            }
+        )
     LOG.info("checkpoint %s: %d bytes sha256=%s", path.name, size, digest)
     if expected_sha256 and digest != expected_sha256:
         raise RuntimeError(
@@ -162,8 +836,27 @@ def _verify_checkpoint(path: Path, expected_sha256: str | None) -> str:
 
 
 def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
+    python = tools._design_python()
+    try:
+        _run(
+            [
+                python,
+                "-c",
+                "import sys; "
+                "sys.version_info >= (3, 11) or sys.exit('RFdiffusion runtime requires Python 3.11 or newer'); "
+                "import rfdiffusion, se3_transformer, torch, dgl, e3nn; "
+                "print('design runtime', sys.version, 'torch', torch.__version__, 'dgl', dgl.__version__)",
+            ]
+        )
+    except (RuntimeError, OSError) as exc:
+        raise RuntimeError(
+            "The selected design interpreter is not a prepared RFdiffusion runtime. "
+            "Complete the supported GPU environment setup first, or set "
+            "BINDSIGHT_DESIGN_PYTHON to your prepared Python 3.11+ interpreter with "
+            "RFdiffusion, SE3Transformer, CUDA-enabled torch, DGL and e3nn. "
+            "The job executor does not install or alter dependencies in that interpreter."
+        ) from exc
     rfdiff_dir = tools_root / "RFdiffusion"
-    fresh = not rfdiff_dir.exists()
     rfdiff = _git_clone(tools.RFDIFF_REPO, tools.RFDIFF_COMMIT, rfdiff_dir)
     weights = rfdiff / "models"
     weights.mkdir(parents=True, exist_ok=True)
@@ -172,22 +865,6 @@ def _ensure_rfdiff_mpnn(tools_root: Path) -> tuple[Path, Path]:
         if not dst.exists():
             _run(["wget", "-q", url, "-O", str(dst)])
         _verify_checkpoint(dst, tools.RFDIFF_WEIGHT_SHA256.get(name))
-    python = tools._design_python()
-    needs_install = fresh
-    if not fresh:
-        try:
-            _run([python, "-c", "import rfdiffusion, se3_transformer"])
-        except RuntimeError:
-            needs_install = True
-    if needs_install:
-        # Install the Python packages into the same interpreter that runs
-        # design. CUDA-enabled torch/DGL and the compatible legacy environment
-        # must already exist; this is not a complete GPU environment installer.
-        req = rfdiff / "env" / "SE3Transformer" / "requirements.txt"
-        if req.exists():
-            _run([python, "-m", "pip", "install", "-q", "-r", str(req)])
-        _run([python, "-m", "pip", "install", "-q", "--no-deps", str(req.parent)])
-        _run([python, "-m", "pip", "install", "-q", "--no-deps", "-e", str(rfdiff)])
     mpnn = _git_clone(tools.PROTEINMPNN_REPO, tools.PROTEINMPNN_COMMIT, tools_root / "ProteinMPNN")
     return rfdiff, mpnn
 
@@ -496,6 +1173,19 @@ def warn_if_unseeded(designer: str, seed: int) -> str | None:
 # ---------------------------------------------------------------------------
 # Validators
 # ---------------------------------------------------------------------------
+def _observed_boltz_version(command: list[str], stdout: str) -> str:
+    """Read the successful worker's version, never the controller's installation."""
+    if "bindsight.runners.boltz_compat" not in command:
+        # An explicitly configured executable has no standard version receipt.
+        return UNRECORDED_VERSION
+    receipts: list[str] = re.findall(
+        r"^bindsight: Boltz (\S+) precision=(?:32|bf16-mixed)\r?$", stdout, re.MULTILINE
+    )
+    if len(receipts) != 1 or receipts[0] not in {PINNED_BOLTZ2_VERSION, RUNTIME_VERSION}:
+        raise RuntimeError("Managed Boltz worker omitted a unique supported version receipt")
+    return receipts[0]
+
+
 def _validate_boltz2(
     spec: dict[str, Any], designs: list[Design], work: Path
 ) -> list[dict[str, Any]]:
@@ -528,22 +1218,21 @@ def _validate_boltz2(
         # would correlate their draws, and each binder's number is read on its
         # own. Stable across reruns because it comes from the id, not from
         # enumeration order.
-        proc = _run(
-            tools.build_boltz_cmd(
-                yaml_path=yaml_path,
-                out_dir=out_dir,
-                seed=_binder_seed(int(spec.get("seed", 0)), d.binder_id),
-                diffusion_samples=int(spec.get("extra_params", {}).get("diffusion_samples", 1)),
-                max_parallel_samples=int(
-                    spec.get("extra_params", {}).get("max_parallel_samples", 1)
-                ),
-            )
+        command = tools.build_boltz_cmd(
+            yaml_path=yaml_path,
+            out_dir=out_dir,
+            seed=_binder_seed(int(spec.get("seed", 0)), d.binder_id),
+            diffusion_samples=int(spec.get("extra_params", {}).get("diffusion_samples", 1)),
+            max_parallel_samples=int(spec.get("extra_params", {}).get("max_parallel_samples", 1)),
         )
+        proc = _run(command)
+        observed_version = _observed_boltz_version(command, proc.stdout or "")
         result = tools.parse_boltz_output(
             output_dir=out_dir,
             binder_id=d.binder_id,
             target_uniprot=str(spec.get("target_uniprot", "")),
         )
+        result = result.model_copy(update={"validator_version": observed_version})
         # Fill PAE-interaction from the predicted PAE matrix (mean inter-chain PAE)
         # when Boltz's confidence JSON didn't carry it. Token order is target then
         # binder (per the YAML), so the chain lengths split the matrix.
@@ -561,8 +1250,11 @@ def _validate_boltz2(
                 "boltz stdout tail:\n%s\nboltz stderr tail:\n%s",
                 d.binder_id,
                 out_dir,
-                (proc.stdout or "")[-2000:],
-                (proc.stderr or "")[-2000:],
+                getattr(proc, "safe_stdout", _redact(proc.stdout or ""))[-2000:],
+                getattr(proc, "safe_stderr", _redact(proc.stderr or ""))[-2000:],
+            )
+            raise RuntimeError(
+                f"Boltz produced no confidence for {d.binder_id}; refusing incomplete validation"
             )
         _stage_validate_outputs(out_dir, validate_root / d.binder_id)
         metrics.append(result.model_dump())
@@ -935,6 +1627,33 @@ def _apply_prescreen(
 
 
 def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None) -> Path:
+    """Execute one job with isolated, bounded diagnostic evidence."""
+    work = Path(work_dir).resolve()
+    work.mkdir(parents=True, exist_ok=True)
+    evidence_root = work / "evidence"
+    if evidence_root.is_symlink():
+        raise ValueError("The job evidence directory must not be a symbolic link")
+    evidence_root.mkdir(exist_ok=True)
+    evidence = _JobEvidence(work, Path(tempfile.mkdtemp(prefix="attempt-", dir=evidence_root)))
+    token = _EVIDENCE.set(evidence)
+    try:
+        with _job_termination():
+            try:
+                _finish_evidence(spec, "running")
+                return _execute_job(spec, work, tarball=tarball)
+            except BaseException as exc:
+                try:
+                    _finish_evidence(spec, "failed", f"{type(exc).__name__}: {exc}")
+                except Exception as record_error:
+                    LOG.error(
+                        "Unable to retain failed-job evidence: %s", _redact(str(record_error))
+                    )
+                raise
+    finally:
+        _EVIDENCE.reset(token)
+
+
+def _execute_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None) -> Path:
     """Run design + validation for one spec; write the results tarball.
 
     Args:
@@ -1004,6 +1723,9 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
         # set, and it keeps everything if the optional `embed` extra is absent.
         designs, prescreen_note = _apply_prescreen(spec, designs)
 
+    # Retain completed backbone/sequence artifacts before a slow validator can
+    # exhaust the remote session. The job is still running, not completed.
+    _finish_evidence(spec, "running")
     metrics = _VALIDATORS[validator](spec, designs, work_dir)
     # Written unconditionally. A missing file used to mean either "the screen
     # ran and had nothing to report" or "the screen was never reached", and a
@@ -1017,7 +1739,19 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
     tools.write_metrics_jsonl(metrics, work_dir / "metrics.jsonl")
 
     out_tar = Path(tarball) if tarball else work_dir.with_suffix(".tar.gz")
+    for name in ("design", "validate", "evidence"):
+        if out_tar.resolve().is_relative_to((work_dir / name).resolve()):
+            raise ValueError("The results archive must be outside archived output directories")
     out_tar.parent.mkdir(parents=True, exist_ok=True)
+    _finish_evidence(spec, "completed")
+
+    def safe_member(member: tarfile.TarInfo) -> tarfile.TarInfo | None:
+        if not (member.isfile() or member.isdir()):
+            return None
+        member.uid = member.gid = 0
+        member.uname = member.gname = ""
+        return member
+
     with tarfile.open(out_tar, "w:gz", encoding="utf-8") as tf:
         # ``prescreen.txt`` is in this list because it is the only record that
         # the ESM-2 screen did not run. The screen fails open by design -- losing
@@ -1029,7 +1763,10 @@ def run_job(spec: dict[str, Any], work_dir: Path, *, tarball: Path | None = None
         for sub in ("design", "validate", "metrics.jsonl", "prescreen.txt"):
             p = work_dir / sub
             if p.exists():
-                tf.add(p, arcname=sub)
+                tf.add(p, arcname=sub, filter=safe_member)
+        evidence = _EVIDENCE.get()
+        if evidence is not None:
+            tf.add(evidence.directory, arcname="evidence", filter=safe_member)
     LOG.info("wrote %s", out_tar)
     return out_tar
 

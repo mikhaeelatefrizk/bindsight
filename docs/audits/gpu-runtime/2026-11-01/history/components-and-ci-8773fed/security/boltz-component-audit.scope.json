@@ -1,0 +1,12 @@
+{
+  "measured_freeze": "..\\gpu-modernization\\boltz-probe-result-v2\\bindsight-boltz-probe\\resolved-packages.txt",
+  "packages": 92,
+  "excluded": [
+    {
+      "name": "boltz",
+      "source": "file:///kaggle/working/bindsight-boltz-probe/boltz-2.0.3+bindsight.1-py3-none-any.whl",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ],
+  "published_freeze": "../components/boltz-freeze.txt"
+}

@@ -72,6 +72,7 @@ nav:
   - Glossary: glossary.md
   - How to use: how-to-use.md
   - Local workspace: local-workspace.md
+  - Supported GPU runtime: gpu-runtime.md
   - Try your data: try-your-data.md
   - Use cases: use-cases.md
   - Designing on Colab: colab-design-howto.md

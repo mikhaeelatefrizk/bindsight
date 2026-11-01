@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "stage": "complete",
+  "hardware_environment": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "LD_LIBRARY_PATH": "/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/torch/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cublas/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cuda_cupti/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cuda_nvrtc/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cuda_runtime/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cudnn/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cufft/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cufile/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/curand/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cusolver/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cusparse/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/cusparselt/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/nccl/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/nvjitlink/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/nvshmem/lib:/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/nvidia/nvtx/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64:/usr/local/cuda/lib64"
+  },
+  "cuda_driver_probe": {
+    "library": "libcuda.so.1",
+    "cuInit": 0,
+    "cuDriverGetVersion": 0,
+    "driver_version": 13000
+  },
+  "torch_cuda_init": "passed",
+  "python": "3.11.18",
+  "torch": "2.14.1+cu126",
+  "cuda": "12.6",
+  "cuda_available": true,
+  "arch_list": [
+    "sm_50",
+    "sm_60",
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90"
+  ],
+  "device": "Tesla T4",
+  "capability": [
+    7,
+    5
+  ],
+  "memory_bytes": 15636037632,
+  "cuda_tensor_operation": true,
+  "dgl_cuda_reduction": true,
+  "model_import_locations": {
+    "rfdiffusion": "/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/rfdiffusion/inference/model_runners.py",
+    "se3_transformer": "/kaggle/working/bindsight-runtime-probe/environment/lib/python3.11/site-packages/se3_transformer/__init__.py"
+  },
+  "versions": {
+    "numpy": "1.23.5",
+    "scipy": "1.13.1",
+    "dgl": "1.0.2+cu118",
+    "e3nn": "0.3.3",
+    "sympy": "1.14.0",
+    "networkx": "3.6.1",
+    "certifi": "2026.10.23",
+    "hydra-core": "1.3.6",
+    "nvidia-cuda-runtime-cu11": "11.8.89",
+    "nvidia-cusparse-cu11": "11.7.5.86",
+    "nvidia-cublas-cu11": "11.11.3.6"
+  },
+  "model_imports": true,
+  "se3_cuda_forward": true,
+  "output_shapes": {
+    "0": [
+      4,
+      4,
+      1
+    ],
+    "1": [
+      4,
+      1,
+      3
+    ]
+  },
+  "equivariance_max_absolute_error": {
+    "scalar": 2.9802322387695312e-08,
+    "vector": 1.1175870895385742e-08
+  },
+  "tf32": false,
+  "model_checkpoints_loaded": 0,
+  "numerical_equivalence_to_legacy": "not tested"
+}

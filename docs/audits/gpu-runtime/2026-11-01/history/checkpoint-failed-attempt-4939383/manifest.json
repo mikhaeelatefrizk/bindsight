@@ -1,0 +1,21 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "files": [
+    {
+      "artifact": "source-manifest.json",
+      "bytes": 8290,
+      "sha256": "5d6f07e2d3d6285b7f8813863556aabfb17a4528e547fd498974bc6def6db2be",
+      "source_role": "original-legacy-manifest",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "observations.json",
+      "bytes": 6057,
+      "sha256": "adf3c5787ae051dac3a9550cc63710b497c7e21ee55174a4dfc55098dd8635e6",
+      "source_role": "original-derived-observations",
+      "transformation": "Exact byte copy"
+    }
+  ],
+  "status": "Historical failed attempt; no full scientific acceptance",
+  "normalization": "Original manifest inventoried sources/raw_artifacts but omitted files[]. This wrapper first measures the two provided files and preserves original bytes; it is not a retroactive original-file integrity attestation."
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "bindsight-advisory-query/1",
+  "started_at": "2026-11-01T18:37:23.228658+00:00",
+  "completed_at": "2026-11-01T18:37:36.027422+00:00",
+  "tool": "pip-audit 2.10.1",
+  "service": "PyPI",
+  "requirements": "ci-boltz-audit-requirements.txt",
+  "resolution": "disabled; exact versions from actual final CI receipt",
+  "fresh_http_cache": true,
+  "exit_code": 0,
+  "command": "pip-audit --requirement boltz-audit-requirements.txt --no-deps --disable-pip --progress-spinner off --vulnerability-service pypi --cache-dir fresh-cache --timeout 30 --format json --output boltz-audit.json",
+  "stderr": "WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies\nWARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes\nNo known vulnerabilities found\n",
+  "published_response": "ci-boltz-audit.json"
+}

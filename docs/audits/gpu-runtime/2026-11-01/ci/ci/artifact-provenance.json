@@ -1,0 +1,15 @@
+{
+  "run_id": 41339383404,
+  "head_sha": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "artifact_id": 13097056201,
+  "artifact_name": "gpu-recipe-import-check",
+  "created_at": "2026-11-01T19:01:03Z",
+  "download_method": "GitHub connector followed by returned temporary download reference",
+  "zip_bytes": 9095,
+  "zip_sha256": "48ed8e51516ad02423bc5331ea01dfa96f456400c9485c5b4f22fe599048f6c4",
+  "github_digest_matches_download": true,
+  "member": "recipe_check.json",
+  "original_member_bytes": 26029,
+  "original_member_sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58",
+  "public_transformation": "JSON formatting and explicit CI path normalization only"
+}

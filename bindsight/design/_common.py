@@ -17,6 +17,7 @@ import shutil
 import tarfile
 from pathlib import Path
 
+from bindsight.archive_bounds import open_bounded_tar
 from bindsight.design.protocol import DesignResult, DesignSpec
 from bindsight.runners.protocol import GPURunner, JobHandle
 
@@ -372,7 +373,7 @@ def _archive_is_readable(tar_path: Path) -> bool:
     where a truncated file fails.
     """
     try:
-        with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
+        with open_bounded_tar(tar_path, max_bytes=8 * 1024**3, max_members=100_000) as tf:
             return bool(tf.getnames())
     except (tarfile.TarError, OSError, EOFError) as e:
         LOG.warning("cached archive %s is not readable: %s", tar_path, e)
@@ -384,7 +385,7 @@ def extract_member(tar_path: Path, member: str, dest: Path) -> None:
     if not tar_path.exists():
         return
     try:
-        with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
+        with open_bounded_tar(tar_path, max_bytes=8 * 1024**3, max_members=100_000) as tf:
             names = {Path(n).name: n for n in tf.getnames()}
             if member in names:
                 src = tf.extractfile(names[member])

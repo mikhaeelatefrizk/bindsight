@@ -57,17 +57,15 @@ def test_kernel_script_sources_pins_from_tools() -> None:
     assert tools.RFDIFF_COMMIT in src
     assert tools.PROTEINMPNN_COMMIT in src
     assert tools.BOLTZ_PIP in src
-    for url in tools.RFDIFF_WEIGHTS.values():
-        assert url in src
-    # Split-env wiring the executor relies on.
-    assert "BINDSIGHT_TOOLS_ROOT" in src
-    assert "BINDSIGHT_DESIGN_PYTHON" in src
+    for digest in tools.RFDIFF_WEIGHT_SHA256.values():
+        assert digest in src
+    # Scientific installation belongs to the exact source wheel, not a second recipe.
+    assert "bindsight.runners.gpu_runtime" in src
     assert "bindsight.runners.job_exec" in src
-    assert "micromamba" in src
-    # Both envs are built and the result is staged to the output volume.
-    assert "envs/se3" in src
-    assert "envs/boltz" in src
-    assert "/kaggle/working/" in src
+    assert 'receipt["execution_environment"]' in src
+    assert 'receipt["boltz_python"]' in src
+    assert "/kaggle/working" in src
+    assert "pip install" not in src
 
 
 def test_kernel_metadata_is_gpu_internet_script_no_dataset() -> None:
@@ -173,7 +171,8 @@ class TestTheValidatorIsPinnedAndRecorded:
         """A pin is what was asked for. The log has to say what arrived."""
         src = kaggle_kernel.build_kernel_script(handle_id="h", payload={"spec.json": "e30="})
         assert "boltz version" in src
-        assert "importlib.metadata import version" in src
+        assert 'receipt["checks"]' in src
+        assert '"runtime-receipt.json"' in src
 
 
 # ---------------------------------------------------------------------------
@@ -289,33 +288,34 @@ class TestTheKernelKnowsWhichJobItIs:
         assert "MODE = 'validate_only'" in self._script("validate_only")
         assert "MODE = 'design_and_validate'" in self._script("design_and_validate")
 
-    def test_the_designer_environment_is_guarded_not_deleted(self) -> None:
-        """Design jobs still need it, so it is skipped at run time, not removed."""
-        script = self._script("validate_only")
-        assert 'if MODE != "validate_only":' in script
-        assert "build se3 env" in script, "the design path must still be there"
-
-    def test_every_designer_step_sits_inside_the_guard(self) -> None:
-        """Indentation is the whole mechanism, so check it rather than trust it."""
-        script = self._script("validate_only")
-        for probe in (
-            'step("clone RFdiffusion',
-            'step("build se3 env',
-            "{MM} create -y -p {SE3}",
-            "RFDIFF_WEIGHTS.items()",
-        ):
-            line = next(ln for ln in script.splitlines() if probe in ln)
-            assert line.startswith("    "), f"not guarded: {line.strip()[:60]}"
-
-    def test_the_validator_environment_is_never_guarded(self) -> None:
-        """Boltz-2 runs in both modes; guarding it would break re-scoring."""
-        script = self._script("validate_only")
-        line = next(ln for ln in script.splitlines() if 'step("build boltz env' in ln)
-        assert not line.startswith(" "), "the validator environment must always build"
-
-    def test_a_validate_only_job_says_what_it_skipped(self) -> None:
-        script = self._script("validate_only")
-        assert "RFdiffusion is not cloned" in script
+    def test_mode_is_forwarded_to_the_canonical_provisioner(self) -> None:
+        # Mode-specific installation is covered behaviorally in test_gpu_runtime.
+        # The generated job must forward it unchanged instead of rebuilding a recipe.
+        tree = ast.parse(self._script("validate_only"))
+        calls = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "run"
+            and node.args
+            and isinstance(node.args[0], ast.List)
+        ]
+        provision = next(
+            call.args[0].elts
+            for call in calls
+            if any(
+                isinstance(arg, ast.Constant) and arg.value == "bindsight.runners.gpu_runtime"
+                for arg in call.args[0].elts
+            )
+        )
+        mode_index = next(
+            i
+            for i, arg in enumerate(provision)
+            if isinstance(arg, ast.Constant) and arg.value == "--mode"
+        )
+        assert isinstance(provision[mode_index + 1], ast.Name)
+        assert provision[mode_index + 1].id == "MODE"
 
     def test_the_runner_reads_the_mode_from_the_spec(self, tmp_path: Path) -> None:
         """The spec is the only place that says which kind of job this is."""
@@ -422,82 +422,53 @@ class TestTheWholeSpecDirectoryTravels:
         assert "escapes the spec directory" in script
 
 
-def _bound_names(nodes: list[ast.stmt]) -> set[str]:
-    """Every name these statements bind, at any nesting depth below them."""
-    bound: set[str] = set()
-    for node in nodes:
-        for sub in ast.walk(node):
-            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Store):
-                bound.add(sub.id)
-            elif isinstance(sub, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
-                bound.add(sub.name)
-            elif isinstance(sub, ast.Import | ast.ImportFrom):
-                for alias in sub.names:
-                    bound.add(alias.asname or alias.name.split(".")[0])
-    return bound
+def test_generated_kernel_has_no_second_scientific_environment_branch() -> None:
+    # Each mode executes the same complete wrapper. The shared runtime owns the
+    # design guard, so conditional variables cannot leak from a duplicated installer.
+    script = kaggle_kernel.build_kernel_script(handle_id="t", payload={}, mode="validate_only")
+    tree = ast.parse(script)
+    assert not [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.If) and "MODE" in ast.dump(node.test)
+    ]
+    assert "collect_model_weights" in script
+    assert "retain_failed_evidence()" in script
+    assert "se3-final-freeze" not in script  # Freeze names are derived for actual installed envs.
+    assert "cleanup()" in script
 
 
-class TestValidateOnlySkipsNothingItStillNeeds:
-    """A skipped step must not leave a name the rest of the script reads.
-
-    Guarding the class, not one name. Wrapping the designer setup in
-    ``if MODE != "validate_only":`` moved every name that block defines into a
-    branch, and ``wrapper`` was still read unconditionally two hundred lines
-    later. Python binds names at runtime, so the script imported, built two
-    conda environments, downloaded Boltz-2 and materialised the payload before
-    raising ``NameError`` — about ten minutes of GPU quota to learn that a
-    variable was missing. Nothing in the suite noticed, because the assertions
-    were all substring checks against a script that is never executed here.
-    """
-
-    def _design_branch(self) -> tuple[ast.If, ast.Module]:
-        """The rendered validate-only script and its ``MODE`` guard."""
-        tree = ast.parse(
-            kaggle_kernel.build_kernel_script(
-                handle_id="t", payload={"design/b0.fasta": "eJw="}, mode="validate_only"
-            )
-        )
-        guards = [
-            node
-            for node in tree.body
-            if isinstance(node, ast.If) and "validate_only" in ast.dump(node.test) and node.orelse
-        ]
-        assert len(guards) == 1, f"expected one MODE guard, found {len(guards)}"
-        return guards[0], tree
-
-    def test_no_name_is_defined_only_by_the_branch_validate_only_skips(self) -> None:
-        guard, tree = self._design_branch()
-        design_only = _bound_names(guard.body) - _bound_names(guard.orelse)
-        # Names the module also binds outside the guard are fine: the skipped
-        # branch only rebinds them.
-        elsewhere = _bound_names([n for n in tree.body if n is not guard])
-        design_only -= elsewhere
-
-        body_ids = {id(n) for n in ast.walk(guard) if n not in guard.orelse}
-        read_outside = {
-            sub.id
-            for node in tree.body
-            for sub in ast.walk(node)
-            if isinstance(sub, ast.Name)
-            and isinstance(sub.ctx, ast.Load)
-            and id(sub) not in body_ids
-        }
-
-        leaked = sorted(design_only & read_outside)
-        assert not leaked, (
-            f"validate_only skips the block that defines {leaked}, but the script "
-            "still reads those names — the kernel will raise NameError on the GPU"
-        )
-
-    def test_the_guard_has_teeth(self) -> None:
-        """Reading a design-branch name outside the branch must be caught.
-
-        Without this the test above passes on any script, including one where
-        the guard was silently dropped.
-        """
-        guard, _tree = self._design_branch()
-        assert _bound_names(guard.body) - _bound_names(guard.orelse), (
-            "the design branch binds nothing the else branch does not, so the "
-            "check above has nothing to detect"
-        )
-        assert "wrapper" in _bound_names(guard.body)
+def test_generated_kernel_removes_inherited_executable_overrides() -> None:
+    tree = ast.parse(kaggle_kernel.build_kernel_script(handle_id="t", payload={}))
+    main = next(node for node in tree.body if isinstance(node, ast.Try))
+    index = next(
+        i
+        for i, node in enumerate(main.body)
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "job_env" for target in node.targets)
+    )
+    forbidden = {
+        "BINDSIGHT_BOLTZ_BIN",
+        "BINDSIGHT_LOCAL_IMAGE",
+        "BINDSIGHT_DESIGN_PYTHON",
+        "PYTHONPATH",
+        "PYTHONHOME",
+        "PYTHONSTARTUP",
+        "PYTHONUSERBASE",
+    }
+    namespace = {
+        "env": {**dict.fromkeys(forbidden, "inherited injection"), "NORMAL": "keep"},
+        "receipt": {"execution_environment": {"BINDSIGHT_DESIGN_PYTHON": "/owned/se3-python"}},
+    }
+    exec(
+        compile(
+            ast.Module(body=main.body[index : index + 3], type_ignores=[]),
+            "kernel-environment",
+            "exec",
+        ),
+        namespace,
+    )
+    assert namespace["job_env"] == {
+        "NORMAL": "keep",
+        "BINDSIGHT_DESIGN_PYTHON": "/owned/se3-python",
+    }

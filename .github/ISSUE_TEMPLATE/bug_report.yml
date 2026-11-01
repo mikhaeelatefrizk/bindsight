@@ -41,7 +41,7 @@ body:
     attributes:
       label: Version
       description: "Output of `bindsight --version`."
-      placeholder: "0.3.7"
+      placeholder: "0.3.8"
     validations:
       required: true
 
