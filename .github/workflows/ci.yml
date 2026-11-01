@@ -19,11 +19,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.11.18"
+          check-latest: true
           cache: "pip"
       - name: Install
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade "pip>=26.2.2"
           pip install -e ".[dev,discover,report]"
       - name: Ruff check
         run: ruff check bindsight tests scripts benchmarks companion
@@ -58,10 +59,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+          check-latest: true
           cache: "pip"
       - name: Install
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade "pip>=26.2.2"
           pip install -e ".[dev,discover,report]"
       # The Snakemake front-end is now exercised in CI. It runs offline via
       # BINDSIGHT_CACHE_DIR and adds ~15 s. Linux only: Snakemake's Windows
@@ -96,11 +98,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.11.18"
+          check-latest: true
           cache: "pip"
       - name: Install exactly what the release records
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade "pip>=26.2.2"
           pip install -c envs/constraints.txt -e ".[dev,discover,report]"
       - name: The installed versions are the recorded ones
         run: python scripts/check_pinned_environment.py
@@ -131,13 +134,23 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.11.18"
+          check-latest: true
       - name: Install build deps
         run: pip install build twine
       - name: Build
         run: python -m build
       - name: Twine check
         run: twine check dist/*
+      - name: Exercise the installed wheel outside the source checkout
+        run: |
+          python -m venv "$RUNNER_TEMP/release-wheel"
+          PYTHON="$RUNNER_TEMP/release-wheel/bin/python"
+          "$PYTHON" -m pip install --upgrade "pip>=26.2.2"
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          "$PYTHON" -m pip install -c envs/constraints.txt "${WHEEL}[discover,report]" "httpx2>=2,<3" packaging
+          VERSION=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          "$PYTHON" -I scripts/check_release_install.py --expected-version "$VERSION"
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -152,7 +165,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.11.18"
+          check-latest: true
       - name: Install the setup driver
         run: python -m pip install -e . "psutil>=5.9,<8"
       - name: Resolve and import both actual scientific environments
@@ -169,6 +183,8 @@ jobs:
   companion:
     name: Companion (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
+    env:
+      UV_PYTHON_PREFERENCE: only-managed
     strategy:
       fail-fast: false
       matrix:
@@ -179,11 +195,39 @@ jobs:
           - {os: ubuntu-22.04, platform: linux-x64}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - name: Read the audited runtime pins for this platform
+        id: runtime-pins
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          node <<'JS'
+          const fs = require('node:fs');
+          const pins = JSON.parse(fs.readFileSync('companion/pins.json', 'utf8'));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, [
+            `uv=${pins.uv_version}`,
+            `python=${pins.python_version}`,
+            `checksum=${pins.artifacts[process.env.PLATFORM].sha256}`,
+            '',
+          ].join('\n'));
+          JS
+      # setup-python does not distribute security-only Python 3.12 releases
+      # on every OS. Build with the same patched runtime the companion installs.
+      - name: Install the verified installer and patched build Python
+        id: build-runtime
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          python-version: "3.12"
+          version: ${{ steps.runtime-pins.outputs.uv }}
+          checksum: ${{ steps.runtime-pins.outputs.checksum }}
+          python-version: ${{ steps.runtime-pins.outputs.python }}
+          activate-environment: true
+          venv-path: ${{ runner.temp }}/companion-build
+          no-project: true
+          enable-cache: false
+      - name: Verify the actual build interpreter
+        run: python -c "import json, platform; expected = json.load(open('companion/pins.json'))['python_version']; actual = platform.python_version(); print('Build Python:', actual); assert actual == expected, (actual, expected)"
       - name: Install the pinned packaging tool
-        run: python -m pip install pyinstaller==6.16.0
+        run: uv pip install --python "${{ steps.build-runtime.outputs.venv }}" -r companion/requirements-build.txt
       - name: Package the companion for this tested source
         run: python companion/build.py --revision ${{ github.sha }} --output companion-dist
       - name: Upload the companion and its build record

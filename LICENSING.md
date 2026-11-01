@@ -2,7 +2,9 @@
 
 > **Read this before any commercial use.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This document is the single source of truth for what is and isn't commercially safe.
 >
-> Last reviewed: 2026-09-20 — every row re-checked on this date against the source it names: the GitHub licence API and the `LICENSE` file for each code row, the publisher's own terms page for each data row. Eight rows changed as a result. Human Protein Atlas data is CC BY 4.0, not CC BY-SA 3.0. The AlphaFold2 model parameters are CC BY 4.0 with no non-commercial clause, and the AF2-IG row now names the real basis of its restriction, PyRosetta's non-commercial terms, rather than the weights. The SURFY site states no licence and the article it accompanies is CC BY-NC-ND 4.0, so that row no longer says CC BY. recount3 states no reuse terms of its own. The RFdiffusion weights row cites the `LICENSE` file, which covers code and weights, rather than an announcement. The ColabFold MSA server row credits the ColabFold team and its fair-use policy, which is how the project states it. The pydeseq2 row follows the repository to `scverse`. A row for an Open Targets Python client was deleted: this package has no such dependency. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
+> Last reviewed: 2026-11-01 — scoped review for release 0.3.7. The [2026-09-29 tool-registry change](https://github.com/mikhaeelatefrizk/bindsight/commit/3b08a00c273ba9e4b22deb633242cf29e8f8a4ce) routes Boltz through Bindsight's precision shim; it changes no upstream tool or model pins. Re-checked the affected Boltz 2.0.3 code licence and the upstream statement covering its model weights, and checked the licences for the uv 0.13.6 bootstrap now used by the companion and GPU/Kaggle installers. The version-specific sources are linked below. Other rows retain their previous review; this date does not claim a new review of all data providers or transitive dependencies.
+>
+> Previous full inventory review: 2026-09-20 — every row re-checked on this date against the source it names: the GitHub licence API and the `LICENSE` file for each code row, the publisher's own terms page for each data row. Eight rows changed as a result. Human Protein Atlas data is CC BY 4.0, not CC BY-SA 3.0. The AlphaFold2 model parameters are CC BY 4.0 with no non-commercial clause, and the AF2-IG row now names the real basis of its restriction, PyRosetta's non-commercial terms, rather than the weights. The SURFY site states no licence and the article it accompanies is CC BY-NC-ND 4.0, so that row no longer says CC BY. recount3 states no reuse terms of its own. The RFdiffusion weights row cites the `LICENSE` file, which covers code and weights, rather than an announcement. The ColabFold MSA server row credits the ColabFold team and its fair-use policy, which is how the project states it. The pydeseq2 row follows the repository to `scverse`. A row for an Open Targets Python client was deleted: this package has no such dependency. **Verify the upstream `LICENSE` file** before relying on this document for legal decisions — these projects update.
 
 ---
 
@@ -37,7 +39,7 @@ The default `bindsight` configuration uses components whose stated licences perm
 | [RFdiffusion](https://github.com/RosettaCommons/RFdiffusion) (code) | BSD-3-Clause | ✅ Yes |
 | [RFdiffusion weights](https://github.com/RosettaCommons/RFdiffusion#download-the-models) | BSD-3-Clause (the LICENSE file states it covers code and model weights) | ✅ Yes (verify the LICENSE in your weights mirror) |
 | [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) | MIT | ✅ Yes |
-| [Boltz-2](https://github.com/jwohlwend/boltz) (code + weights) | MIT | ✅ Yes |
+| [Boltz-2 2.0.3](https://github.com/jwohlwend/boltz/tree/v2.0.3) (code + weights) | MIT ([code licence](https://github.com/jwohlwend/boltz/blob/v2.0.3/LICENSE); [code and weights statement](https://github.com/jwohlwend/boltz/blob/v2.0.3/README.md#license)) | ✅ Yes (retain the MIT copyright and permission notice when redistributing) |
 | [Chai-1r](https://github.com/chaidiscovery/chai-lab) | Apache-2.0 | ✅ Yes |
 | [BoltzGen](https://github.com/HannesStark/boltzgen) (code + weights) | MIT | ✅ Yes |
 | [BindCraft](https://github.com/martinpacesa/BindCraft) | MIT | ✅ Yes |
@@ -47,6 +49,14 @@ The default `bindsight` configuration uses components whose stated licences perm
 | [NGL Viewer](https://github.com/nglviewer/ngl) | MIT | ✅ Yes |
 | [ColabFold](https://github.com/sokrypton/ColabFold) (code) | MIT | ✅ Yes |
 | [MMseqs2](https://github.com/soedinglab/MMseqs2) | MIT | ✅ Yes |
+
+### Installer bootstrap
+
+| Component | License | Commercial use |
+|---|---|---|
+| [uv 0.13.6](https://github.com/astral-sh/uv/blob/0.13.6/README.md#license) | MIT OR Apache-2.0, at the user's option ([MIT](https://github.com/astral-sh/uv/blob/0.13.6/LICENSE-MIT), [Apache-2.0](https://github.com/astral-sh/uv/blob/0.13.6/LICENSE-APACHE)) | ✅ Yes, subject to the chosen licence's notice and redistribution requirements |
+
+The companion and GPU/Kaggle installers download an official uv archive during setup and verify its pinned size and SHA-256 before extracting the executable. The uv binary is not bundled in Bindsight's Python package or companion executable. If redistributing an installed workspace or image containing uv, include the applicable licence and copyright notices and account for its third-party components; the code licence above is not an audit of every dependency in the binary. Downloading Python and scientific packages through uv does not change their separate licence terms.
 
 ---
 

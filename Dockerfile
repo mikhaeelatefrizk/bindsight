@@ -15,11 +15,11 @@
 # deployment that is now retired; it drifted because it was maintained
 # somewhere this repository could not see.
 #
-# Pinned by digest, not by tag: `python:3.11.9-slim-bookworm` is republished
+# Pinned by digest, not by tag: `python:3.11.18-slim-bookworm` is republished
 # whenever its base is patched, so the tag alone does not identify an image and
 # a rebuild in a year would not be the same environment. The tag is kept
 # alongside for readability only — the digest is what Docker resolves.
-FROM python:3.11.9-slim-bookworm@sha256:8fb099199b9f2d70342674bd9dbccd3ed03a258f26bbd1d556822c6dfc60c317
+FROM python:3.11.18-slim-bookworm@sha256:94a8fee35252d06ab75856f15f12c7bae67b10e8a6da93c7fded82b2610926cd
 
 # ghcr.io reads this label to connect the image's package to the repository
 # that built it. The package predates the current repository object (the
@@ -29,7 +29,7 @@ LABEL org.opencontainers.image.source="https://github.com/mikhaeelatefrizk/binds
 # git: VCS-aware pip + the design tools' runtime clone; build-essential: wheels
 # that need a compiler on slim.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git build-essential \
+    && apt-get install -y --no-install-recommends ca-certificates git build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

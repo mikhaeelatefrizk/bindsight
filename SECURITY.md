@@ -59,6 +59,34 @@ and is recorded in that release's changelog entry, tag and release notes.
 
 ## Supply-chain notes
 
+### November 2026 certificate incident maintenance
+
+Version 0.3.7 updates the publishing action for upstream
+[GHSA-5xjx-3w67-w9x9](https://github.com/pypa/gh-action-pypi-publish/security/advisories/GHSA-5xjx-3w67-w9x9)
+and raises the runtime certificate-bundle floor to certifi 2026.10.19.
+The desktop setup uses verified uv 0.13.6 and Python 3.12.16; the CPU container
+uses a new Python 3.11.18 image digest and refreshed system certificates.
+GPU installers use the same verified uv release instead of network operations
+through the legacy environment's pip. Scientific package pins are unchanged.
+
+GPU setup and generated Kaggle jobs deliberately ignore inherited uv/pip settings
+and remove `SSL_CERT_FILE`, `SSL_CERT_DIR`, and `CURL_CA_BUNDLE` overrides.
+Networks that require a private certificate authority through those variables
+may therefore fail during setup. Custom certificate configuration is not currently
+supported by these installers; use a connection that can validate the public
+download endpoints without overriding certificate checks.
+
+Updating this repository does not patch an existing local environment. Download
+the new matching companion/source release, or update an existing Python
+installation using the [Python security team's instructions](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576).
+Those instructions cover patched Python, pip 26.2.2 or newer, uv 0.13.6 or newer,
+and certifi 2026.10.19 or newer, including a hash-verified bootstrap for old pip.
+Rebuild containers without old cached layers. The generated GPU workflow still
+needs Python 3.9 for its pinned RFdiffusion dependencies; Python 3.9 is end-of-life.
+Using a patched external installer protects package downloads but does not make
+that scientific interpreter a maintained Python release. No compromise of this
+project was established by the maintenance investigation.
+
 - Default pipeline code is MIT / Apache / BSD and its data sources CC0 / CC BY,
   except the SURFY surfaceome list, whose source states no terms — see
   [LICENSING.md](LICENSING.md) for the full per-dependency inventory.

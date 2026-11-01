@@ -28,6 +28,15 @@ from bindsight.report.web.gpu import (
 )
 from bindsight.report.web.workspace import write_json
 from bindsight.runners import tools
+from bindsight.runners.installer_security import (
+    CERTIFI_REQUIREMENT,
+    UV_ARCHIVE_BYTES,
+    UV_ARCHIVE_SHA256,
+    UV_ARCHIVE_URL,
+    extract_verified_uv,
+    package_environment,
+    uv_install_command,
+)
 from bindsight.runners.kaggle_kernel import _SE3_EXTRA_PIP
 
 LOG = logging.getLogger(__name__)
@@ -186,7 +195,7 @@ def install(config: dict[str, Any], job_directory: Path, *, check_recipe: bool =
             )
     root = Path(config["gpu_root"])
     root.mkdir(parents=True, exist_ok=True)
-    env = execution_environment(root, config["gpu_index"])
+    env = package_environment(execution_environment(root, config["gpu_index"]), root / "uv-cache")
     env.update(
         MAMBA_ROOT_PREFIX=str(root / "mamba"),
         PIP_CONFIG_FILE=os.devnull,
@@ -204,52 +213,63 @@ def install(config: dict[str, Any], job_directory: Path, *, check_recipe: bool =
     download(MICROMAMBA_URL, manager, MICROMAMBA_SHA256, maximum=100 * 2**20)
     manager.chmod(0o755)
 
+    phase("Verify the independent secure package installer")
+    installer_archive = root / "uv.tar.gz"
+    download(
+        UV_ARCHIVE_URL,
+        installer_archive,
+        UV_ARCHIVE_SHA256,
+        maximum=UV_ARCHIVE_BYTES,
+        minimum=UV_ARCHIVE_BYTES,
+    )
+    installer = extract_verified_uv(installer_archive.read_bytes(), root / "uv")
+
     def mamba(*args: str) -> None:
         command([str(manager), *args], env)
 
     def pip(environment: str, *args: str) -> None:
         command(
-            [
-                str(root / environment / "bin/python"),
-                "-m",
-                "pip",
-                "install",
-                "--no-input",
-                "-c",
-                str(root / (environment + ".constraints.txt")),
-                *args,
-            ],
+            uv_install_command(
+                installer,
+                root / environment / "bin/python",
+                ["-c", str(root / (environment + ".constraints.txt")), *args],
+            ),
             env,
         )
 
     (root / "se3.constraints.txt").write_text(
-        "torch==1.12.1+cu113\ndgl==1.0.2+cu113\nnumpy==1.23.5\ne3nn==0.3.3\n",
+        "torch==1.12.1+cu113\ndgl==1.0.2+cu113\nnumpy==1.23.5\ne3nn==0.3.3\n"
+        + CERTIFI_REQUIREMENT
+        + "\n",
         encoding="ascii",
         newline="\n",
     )
     # Boltz's required trifast>=0.1.11 needs torch>=2.5.1; later trifast
     # releases require newer torch. Resolve the compatible reviewed pair together.
     (root / "boltz.constraints.txt").write_text(
-        "torch==2.5.1+cu118\nboltz==2.0.3\nnumpy==1.26.4\ntrifast==0.1.11\n",
+        "torch==2.5.1+cu118\nboltz==2.0.3\nnumpy==1.26.4\ntrifast==0.1.11\n"
+        + CERTIFI_REQUIREMENT
+        + "\n",
         encoding="ascii",
         newline="\n",
     )
 
     phase("Prepare private Python environments")
-    for name, version in (("se3", "3.9"), ("boltz", "3.11")):
-        if not (root / name / "bin/python").is_file():
-            mamba(
-                "create",
-                "-y",
-                "-p",
-                str(root / name),
-                "--override-channels",
-                "-c",
-                "conda-forge",
-                f"python={version}",
-                "pip",
-                "git",
-            )
+    for name, version in (("se3", "3.9"), ("boltz", "3.11.18")):
+        # A prior setup may contain the pre-advisory interpreter. Updating the
+        # receipt alone must not leave that interpreter in place on a retry.
+        mamba(
+            "install" if (root / name / "bin/python").is_file() else "create",
+            "-y",
+            "-p",
+            str(root / name),
+            "--override-channels",
+            "-c",
+            "conda-forge",
+            f"python={version}",
+            "git",
+        )
+        pip(name, CERTIFI_REQUIREMENT)
     # Use the managed git; no system administrator or Git installation is required.
     git = str(root / "boltz/bin/git")
     # pip's fixed upstream VCS requirements also invoke git through PATH.
@@ -335,7 +355,14 @@ def install(config: dict[str, Any], job_directory: Path, *, check_recipe: bool =
     freezes = {}
     for name in ("se3", "boltz"):
         result = subprocess.run(
-            [str(root / name / "bin/python"), "-m", "pip", "freeze"],
+            [
+                str(installer),
+                "--no-config",
+                "pip",
+                "freeze",
+                "--python",
+                str(root / name / "bin/python"),
+            ],
             env=env,
             capture_output=True,
             text=True,

@@ -2,7 +2,7 @@
 
 The companion is a small standalone Tk desktop application. A packaged build
 needs no existing Python. Nothing is downloaded on import or before **Set up
-Bindsight** is approved. Setup installs a private managed Python 3.12.12, then
+Bindsight** is approved. Setup installs a private managed Python 3.12.16, then
 the verified source release's constrained `discover,report` CPU dependencies.
 The editable source installation keeps the scientific evidence and input data
 available to the local workbench. GPU dependencies are a separate workflow.
@@ -47,10 +47,14 @@ performed on the owner's machine during development validation.
 
 ## Verified downloads and scope
 
-- `pins.json` records the fixed official Astral uv 0.12.19 artifacts, exact sizes
+- `pins.json` records the fixed official Astral uv 0.13.6 artifacts, exact sizes
   and SHA256 hashes for Windows x64, Linux x64, and macOS x64/arm64. Primary source:
-  [official uv release](https://github.com/astral-sh/uv/releases/tag/0.12.19) and
-  [official release API](https://api.github.com/repos/astral-sh/uv/releases/tags/0.12.19).
+  [official uv release](https://github.com/astral-sh/uv/releases/tag/0.13.6) and
+  [official release API](https://api.github.com/repos/astral-sh/uv/releases/tags/0.13.6).
+- The bootstrap and managed Python include the October 2026 certificate-incident
+  mitigations. All four uv archives were downloaded and matched both the release
+  API digests and upstream checksum files before these pins were updated.
+  [Python security announcement](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576).
 - Managed Python is installed by that verified uv binary, using its bundled
   download metadata. Private cache/runtime/temp locations are passed explicitly;
   system Python, global PATH and Python registry discovery are not changed.
@@ -73,17 +77,20 @@ performed on the owner's machine during development validation.
 
 ## Build and validation
 
-Build on each target OS with Python 3.12 and `requirements-build.txt` installed:
+Build on each target OS with Python 3.12 and `requirements-build.txt` installed.
+This file is the single PyInstaller version pin used by both local builds and CI;
+the build refuses a missing or different installed version before packaging:
 
 ```text
+python -m pip install -r companion/requirements-build.txt
 python companion/build.py --revision FULL_CHECKED_OUT_GIT_SHA --output companion-dist
 ```
 
 The source must be committed and match that revision. `--allow-dirty` is only
 for local development smoke builds, records that fact, and must never be published.
 The build checks the packaged executable with `--self-test` before emitting only
-the artifact and `build.json` (revision, platform, filename, bytes, SHA256, and
-self-test result). macOS archives preserve the app bundle with `ditto`; Linux's
+the artifact and `build.json` (revision, PyInstaller version, platform, filename,
+bytes, SHA256, and self-test result). macOS archives preserve the app bundle with `ditto`; Linux's
 ZIP stores executable mode 0755. Distribution files are:
 
 ```text

@@ -1,0 +1,60 @@
+{
+  "checked_on": "2026-11-01",
+  "scope": "Bootstrap artifact identity and integrity, not installed runtime or scientific validation",
+  "advisory": "https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576",
+  "uv": {
+    "version": "0.13.6",
+    "managed_python_version": "3.12.16",
+    "release_metadata": "https://api.github.com/repos/astral-sh/uv/releases/tags/0.13.6",
+    "assets": [
+      {
+        "name": "uv-aarch64-apple-darwin.tar.gz",
+        "bytes": 14235670,
+        "sha256": "60fbd5c8a1ed681845eea28d9d622fcde03c51e91a43465b64a1e17db1ed3472",
+        "source": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-aarch64-apple-darwin.tar.gz",
+        "download_source": "https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-aarch64-apple-darwin.tar.gz",
+        "downloaded_and_hashed": true,
+        "published_checksum_matches": true,
+        "companion_extraction_passed": true
+      },
+      {
+        "name": "uv-x86_64-apple-darwin.tar.gz",
+        "bytes": 17004934,
+        "sha256": "63ba17fdda55ad1a230d4b37fc6017ffa10c23688c83818bd3bfdf914c652a02",
+        "source": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-apple-darwin.tar.gz",
+        "download_source": "https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-x86_64-apple-darwin.tar.gz",
+        "downloaded_and_hashed": true,
+        "published_checksum_matches": true,
+        "companion_extraction_passed": true
+      },
+      {
+        "name": "uv-x86_64-pc-windows-msvc.zip",
+        "bytes": 15239500,
+        "sha256": "a2a8820d5eea32f08ef467ef3b7f66883a9b076d5737a2fc2fbb5f458d1bb50f",
+        "source": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-pc-windows-msvc.zip",
+        "download_source": "https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-x86_64-pc-windows-msvc.zip",
+        "downloaded_and_hashed": true,
+        "published_checksum_matches": true,
+        "companion_extraction_passed": true
+      },
+      {
+        "name": "uv-x86_64-unknown-linux-gnu.tar.gz",
+        "bytes": 16799024,
+        "sha256": "f29c3e94ffabd7e6f3ba521dba169a9b7ec12100bf3257087f0f24f6123f3645",
+        "source": "https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
+        "download_source": "https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz",
+        "downloaded_and_hashed": true,
+        "published_checksum_matches": true,
+        "companion_extraction_passed": true
+      }
+    ]
+  },
+  "docker": {
+    "image": "python:3.11.18-slim-bookworm",
+    "index_digest": "sha256:94a8fee35252d06ab75856f15f12c7bae67b10e8a6da93c7fded82b2610926cd",
+    "registry_url": "https://registry-1.docker.io/v2/library/python/manifests/3.11.18-slim-bookworm",
+    "registry_digest_header_matches_downloaded_index": true,
+    "upstream_source": "https://github.com/docker-library/python/blob/83054588043b3a7ac1ce8324c9242164b632beb9/3.11/slim-bookworm/Dockerfile",
+    "local_container_execution": false
+  }
+}

@@ -426,17 +426,25 @@ def test_cpu_recipe_check_never_writes_gpu_ready_receipt(tmp_path, monkeypatch):
             environment = Path(argv[argv.index("-p") + 1])
             (environment / "bin").mkdir(parents=True)
             (environment / "bin/python").touch()
-        if "-m" in argv and "pip" in argv:
-            assert env["PATH"].split(gpu_setup.os.pathsep)[0] == str(root / "boltz/bin")
+        if "pip" in argv and "install" in argv:
+            assert argv[0] == str(root / "uv")
+            assert "--no-config" in argv
+            target = Path(argv[argv.index("--python") + 1])
+            assert target in {root / "se3/bin/python", root / "boltz/bin/python"}
+            assert gpu_setup.CERTIFI_REQUIREMENT in argv
 
     def fake_download(url, destination, expected, **kwargs):
-        assert url == gpu.MICROMAMBA_URL  # No model downloads in this engineering mode.
+        assert url in {gpu.MICROMAMBA_URL, gpu_setup.UV_ARCHIVE_URL}
+        if url == gpu_setup.UV_ARCHIVE_URL:
+            assert expected == gpu_setup.UV_ARCHIVE_SHA256
+            assert kwargs["minimum"] == kwargs["maximum"] == gpu_setup.UV_ARCHIVE_BYTES
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(b"ARTIFICIAL TEST EXECUTABLE")
         return "a" * 64
 
     monkeypatch.setattr(gpu_setup, "command", fake_command)
     monkeypatch.setattr(gpu_setup, "download", fake_download)
+    monkeypatch.setattr(gpu_setup, "extract_verified_uv", lambda archive, destination: destination)
     monkeypatch.setattr(
         gpu_setup,
         "smoke",
