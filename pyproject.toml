@@ -160,7 +160,7 @@ dev = [
     # a developer machine sat on 0.15.17, and the two disagreed about
     # bindsight/design/protocol.py -- which is how a lint warning reached
     # CI that could not be reproduced locally at all.
-    "ruff>=0.16,<0.17",
+    "ruff>=0.16,<0.18",
     "mypy>=2.1,<3",
     "types-requests",
     "types-pyyaml",
