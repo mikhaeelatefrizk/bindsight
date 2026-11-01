@@ -311,7 +311,11 @@ def smoke(
             + "assert Path(protein_mpnn_utils.__file__).resolve() == "
             + f"Path({str(root / 'tools/ProteinMPNN/protein_mpnn_utils.py')!r}).resolve(); ",
         )
-    programs["boltz"] = (root / "boltz/bin/python", "import boltz.main; ")
+    programs["boltz"] = (
+        root / "boltz/bin/python",
+        "import boltz.main; from bindsight.runners.boltz_checkpoint import _verify_runtime; "
+        "_verify_runtime(boltz.main, torch); ",
+    )
     result = {}
     for name, (python, imports) in programs.items():
         expected_torch = pins.SE3_TORCH if name == "se3" else pins.BOLTZ_TORCH
@@ -368,6 +372,7 @@ def smoke(
             "'numpy':version('numpy'),"
             "'loaded_curand_sha256':curand_hashes,"
             "'distributed_dgl_supported':False,"
+            "'checkpoint_loader_checked':" + repr(name == "boltz") + ","
             "'boltz':version('boltz') if " + repr(name == "boltz") + " else None,"
             "'trifast':version('trifast') if " + repr(name == "boltz") + " else None}))"
         )

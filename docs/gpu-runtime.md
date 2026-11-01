@@ -96,6 +96,13 @@ byte-identical to the original wheel, as does its licence. This preserves Boltz
 implementation bytes; it does not establish identical numerical behavior under
 the changed dependencies. The receipt records both wheel identities and the patch.
 
+The published checkpoints contain OmegaConf configuration objects as well as
+tensors. Newer PyTorch restricts these by default. A checkpoint-specific wrapper
+authenticates the exact file handle, allows only the fixed configuration types
+needed by the publisher's checkpoints during that load, and explicitly retains
+`weights_only=True`. It does not extend those permissions to arbitrary checkpoint
+files or other model loads, and restores the original loader after the CLI exits.
+
 Both RFdiffusion checkpoint downloads must match pre-established SHA256 pins.
 Boltz's confidence checkpoint, affinity checkpoint and CCD molecule archive
 must match the publisher's exact sizes and SHA256 values at the immutable

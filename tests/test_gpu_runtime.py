@@ -306,13 +306,16 @@ def test_source_identity_matches_wheel_code_and_ignores_documentation(tmp_path):
     assert second["sha256"] != first["sha256"]
 
 
-@pytest.mark.parametrize("helper", ["boltz_runtime_wheel.py", "archive_bounds.py"])
+@pytest.mark.parametrize(
+    "helper", ["boltz_runtime_wheel.py", "boltz_checkpoint.py", "archive_bounds.py"]
+)
 def test_recipe_fingerprint_changes_with_metadata_helper(monkeypatch, helper):
     first = pins.recipe()
     assert {
         "archive_bounds.py",
         "boltz_runtime_wheel.py",
         "boltz_assets.py",
+        "boltz_checkpoint.py",
         "boltz_msa.py",
         "job_exec.py",
         "tools.py",

@@ -2,6 +2,7 @@
 
 import hashlib
 import sys
+from contextlib import contextmanager, nullcontext
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -59,10 +60,13 @@ def test_precision_receipt_names_actual_distribution(monkeypatch, capsys, tmp_pa
     monkeypatch.setattr(boltz_compat, "version", lambda _: RUNTIME_VERSION)
     monkeypatch.setattr(boltz_compat, "configure_precision", lambda *a, **kw: "32")
     monkeypatch.setattr(boltz_compat, "configure_msa", configure_msa)
+    checkpoint_context = Mock(return_value=nullcontext())
+    monkeypatch.setattr(boltz_compat, "verified_checkpoint_loading", checkpoint_context)
     assert boltz_compat.main(["predict", "input.yaml"]) == 0
     configure_msa.assert_called_once_with(module)
     assert f"Boltz {RUNTIME_VERSION} precision=32" in capsys.readouterr().out
     module.cli.assert_called_once_with(args=["predict", "input.yaml"])
+    checkpoint_context.assert_called_once_with(module, sys.modules["torch"])
 
 
 def test_actual_cli_download_hook_refuses_changed_cache_before_prediction(monkeypatch, tmp_path):
@@ -84,6 +88,7 @@ def test_actual_cli_download_hook_refuses_changed_cache_before_prediction(monkey
     monkeypatch.setattr(boltz_compat, "version", lambda _: RUNTIME_VERSION)
     monkeypatch.setattr(boltz_compat, "configure_precision", lambda *a, **kw: "32")
     monkeypatch.setattr(boltz_compat, "configure_msa", configure_msa)
+    monkeypatch.setattr(boltz_compat, "verified_checkpoint_loading", lambda *args: nullcontext())
     monkeypatch.setattr(boltz_compat, "prepare_boltz_assets", verified_download)
     with pytest.raises(ValueError, match="SHA256 mismatch"):
         boltz_compat.main(["predict", "input.yaml"])
@@ -91,3 +96,34 @@ def test_actual_cli_download_hook_refuses_changed_cache_before_prediction(monkey
     verified_download.assert_called_once_with(cache)
     original_download.assert_not_called()
     prediction.assert_not_called()
+
+
+def test_checkpoint_guard_encloses_cli_and_cleans_up_on_failure(monkeypatch, tmp_path):
+    module = _module(tmp_path / "main.py")
+    events = []
+
+    @contextmanager
+    def guard(received_module, received_torch):
+        assert received_module is module
+        assert received_torch is sys.modules["torch"]
+        events.append("enter")
+        try:
+            yield
+        finally:
+            events.append("exit")
+
+    def cli(**kwargs):
+        assert events == ["enter"]
+        events.append("cli")
+        raise RuntimeError("prediction failed")
+
+    module.cli = cli
+    monkeypatch.setitem(sys.modules, "torch", _torch())
+    monkeypatch.setattr(boltz_compat, "import_module", lambda _: module)
+    monkeypatch.setattr(boltz_compat, "version", lambda _: RUNTIME_VERSION)
+    monkeypatch.setattr(boltz_compat, "configure_precision", lambda *a, **kw: "32")
+    monkeypatch.setattr(boltz_compat, "configure_msa", lambda *a: None)
+    monkeypatch.setattr(boltz_compat, "verified_checkpoint_loading", guard)
+    with pytest.raises(RuntimeError, match="prediction failed"):
+        boltz_compat.main(["predict", "input.yaml"])
+    assert events == ["enter", "cli", "exit"]

@@ -34,6 +34,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Verify RFdiffusion checkpoints and Boltz model/molecule assets against fixed
   SHA256 values. Boltz assets use an immutable publisher revision, bounded safe
   extraction and cache verification again before prediction.
+- Load the authenticated Boltz checkpoints with PyTorch's restricted loader and
+  an explicit, scoped allowlist for their configuration data. Preserve the
+  model's bytes and reject unverified checkpoints instead of disabling
+  `weights_only` to work around the newer PyTorch default.
 - Refuse modified scientific tool checkouts and stale runtime receipts. Bind
   readiness to the installed Bindsight implementation and complete recipe;
   rebuild owned obsolete environments without removing scientific outputs.

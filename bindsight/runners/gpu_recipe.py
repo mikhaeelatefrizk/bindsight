@@ -101,6 +101,7 @@ def recipe() -> dict[str, Any]:
             "dgl": "Local graph operations only; distributed DGL/RPC servers are unsupported",
             "unpatched_advisory": "GHSA-3x5x-fw77-g54c",
             "e3nn_loader": "Verified constants; scoped slice allowlist; weights_only remains enabled",
+            "boltz_loader": "Publisher-pinned checkpoints; same authenticated handle; scoped fixed globals; weights_only=True",
         },
         "checkpoint_expected_sha256": tools.RFDIFF_WEIGHT_SHA256,
         "minimum_memory_mib": MIN_MEMORY_MIB,
@@ -117,6 +118,7 @@ def recipe() -> dict[str, Any]:
                 for name in (
                     "boltz_runtime_wheel.py",
                     "boltz_assets.py",
+                    "boltz_checkpoint.py",
                     "boltz_msa.py",
                     "job_exec.py",
                     "tools.py",

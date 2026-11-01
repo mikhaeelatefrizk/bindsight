@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from bindsight.runners.boltz_assets import prepare_boltz_assets
+from bindsight.runners.boltz_checkpoint import verified_checkpoint_loading
 from bindsight.runners.boltz_msa import MSABoundaryError, configure_msa
 from bindsight.runners.boltz_runtime_wheel import RUNTIME_VERSION, UPSTREAM_MAIN_SHA256
 from bindsight.validate.boltz2 import PINNED_BOLTZ2_VERSION
@@ -108,7 +109,8 @@ def _predict(argv: list[str] | None) -> int:
 
     setattr(boltz_main, "download_boltz2", verified_assets)  # noqa: B010 - dynamic module API
     print(f"bindsight: Boltz {installed} precision={precision}", flush=True)
-    boltz_main.cli(args=sys.argv[1:] if argv is None else argv)
+    with verified_checkpoint_loading(boltz_main, torch):
+        boltz_main.cli(args=sys.argv[1:] if argv is None else argv)
     return 0
 
 
