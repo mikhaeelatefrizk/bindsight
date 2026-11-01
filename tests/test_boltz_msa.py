@@ -94,6 +94,7 @@ def make_tar(members):
         for name, kind, payload in members:
             item = tarfile.TarInfo(name)
             item.type = kind
+            item.mode = 0o755 if kind == tarfile.DIRTYPE else 0o644
             item.linkname = "../../outside"
             item.size = len(payload) if kind == tarfile.REGTYPE else 0
             archive.addfile(item, io.BytesIO(payload) if item.size else None)

@@ -305,6 +305,8 @@ def _job_termination() -> Iterator[None]:
 
 @cache
 def _windows_pipe_api() -> Any:
+    if sys.platform != "win32":
+        raise RuntimeError("Windows pipe inspection is only available on Windows")
     import ctypes
     from ctypes import wintypes
 
@@ -323,7 +325,7 @@ def _windows_pipe_api() -> Any:
 
 def _pipe_read(fd: int) -> bytes | None:
     """Nonblocking pipe read, including Windows/Python 3.11 anonymous pipes."""
-    if os.name == "nt":
+    if sys.platform == "win32":
         import ctypes
         import msvcrt
         from ctypes import wintypes
@@ -391,6 +393,9 @@ def _stream_command(
     stop = threading.Event()
     failures: list[Exception] = []
     console_lock = threading.Lock()
+    creationflags = 0
+    if sys.platform == "win32":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
     process = subprocess.Popen(
         cmd,
         cwd=cwd,
@@ -399,7 +404,7 @@ def _stream_command(
         bufsize=0,
         env={**os.environ, "PYTHONUNBUFFERED": "1"},
         start_new_session=os.name != "nt",
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+        creationflags=creationflags,
     )
     threads = []
 
