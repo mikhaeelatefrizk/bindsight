@@ -59,7 +59,37 @@ and is recorded in that release's changelog entry, tag and release notes.
 
 ## Supply-chain notes
 
-### 0.3.8: supported-Python GPU runtime (2026-11-01)
+### 0.3.9: remove the unused DGL distributed Python implementation
+
+The managed runtime builds `dgl==1.0.2+cu118.bindsight.rpcoff1` from the
+size- and SHA256-authenticated upstream wheel. It removes 28 distributed Python
+modules, including the RPC server, client and vulnerable network deserializer
+covered by [GHSA-3x5x-fw77-g54c](https://github.com/advisories/GHSA-3x5x-fw77-g54c).
+Two disabled compatibility classes keep imports used by the unchanged local
+data loader working; attempting to construct them raises an explicit error.
+The setup checks installed files before importing DGL and rejects residual or
+modified distributed code. A changed recipe rebuilds the owned scientific
+environments while retaining research outputs.
+
+All 268 non-distributed Python implementation files and all 12 native libraries
+remain byte-identical. The remaining Python change is the distribution version
+label; wheel metadata and its file record are regenerated, with the upstream
+licence retained. This removes the specific vulnerable distributed Python
+implementation, not every native RPC symbol or unrelated local-file loader.
+The upstream advisory still lists no patched release, and a scanner matching
+only the upstream version may continue to report it. The downstream artifact
+and its installed-file checks establish the scope of this remediation.
+
+Colab and Modal accept an explicitly selected candidate wheel with a recorded
+size, SHA256 and internal package identity. Published runs continue to use the
+exact requested release. Modal verifies the wheel before installing it and
+disables automatic local-source mounting so that the installed wheel supplies
+the remote entry point. Hosted result archives retain selected runtime and
+model identities alongside the original scientific outputs. These receipts
+do not by themselves establish completed execution or scientific validity;
+see [validation status](docs/validation-status.md).
+
+### 0.3.8: supported-Python GPU runtime — historical record (2026-11-01)
 
 New managed GPU environments use Python 3.11.18 instead of the historical
 Python 3.9 runtime. One provisioner serves local Linux/WSL, Kaggle, Colab and
@@ -119,9 +149,9 @@ loader and constants before scoping a `slice` allowlist around its restricted
 load. Neither adapter globally disables safe loading. These identity and
 compatibility checks do not establish numerical equivalence between runtimes.
 
-**Remaining known advisory:** DGL
+**Advisory remaining in 0.3.8:** DGL
 [GHSA-3x5x-fw77-g54c](https://github.com/advisories/GHSA-3x5x-fw77-g54c)
-covers the installed 1.0.2 library and lists no patched release. It concerns
+covers that release's installed 1.0.2 library and lists no patched release. It concerns
 pickle deserialization in distributed RPC services. Static review of the
 supported Bindsight workflow and pinned RFdiffusion/SE3 source found local graph
 operations and no calls to distributed server/RPC entry points. DGL nevertheless

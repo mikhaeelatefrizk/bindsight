@@ -2179,6 +2179,7 @@ def _read_colab_archive(
 ) -> tuple[list[dict[str, Any]], list[Path]]:
     """Validate a complete downloaded job before extracting regular validation files."""
     import base64
+    import hashlib
     import math
     import re
     import shutil
@@ -2192,6 +2193,15 @@ def _read_colab_archive(
     folded: set[str] = set()
     path_spellings: dict[str, str] = {}
     required_directories: set[str] = set()
+    runtime_files = {
+        "backend-status.json",
+        "provision-receipt.json",
+        "hardware.json",
+        "model-weights.json",
+        "se3-final-freeze.txt",
+        "boltz-final-freeze.txt",
+        "manifest.json",
+    }
     total = 0
     with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
         for member in tf:
@@ -2212,11 +2222,28 @@ def _read_colab_archive(
                 or not (member.isfile() or member.isdir())
                 or member.sparse is not None
                 or parts[0]
-                not in {"design", "validate", "evidence", "metrics.jsonl", "prescreen.txt"}
+                not in {
+                    "design",
+                    "validate",
+                    "evidence",
+                    "runtime",
+                    "metrics.jsonl",
+                    "prescreen.txt",
+                }
                 or (parts[0] in {"metrics.jsonl", "prescreen.txt"} and len(parts) != 1)
                 or name.casefold() in folded
             ):
                 raise ValueError(f"Unsafe or duplicate archive member: {name}")
+            if parts[0] == "runtime" and not (
+                (len(parts) == 1 and member.isdir())
+                or (
+                    len(parts) == 2
+                    and parts[1] in runtime_files
+                    and member.isfile()
+                    and 0 <= member.size <= 16 * 1024**2
+                )
+            ):
+                raise ValueError(f"Unsafe or oversized hosted runtime evidence: {name}")
             folded.add(name.casefold())
             for length in range(1, len(parts) + 1):
                 prefix = "/".join(parts[:length])
@@ -2242,7 +2269,77 @@ def _read_colab_archive(
                 raise ValueError(f"Result metadata is too large: {name}")
             stream = tf.extractfile(member)
             assert stream is not None
-            return stream.read()
+            with stream:
+                return stream.read()
+
+        if any(name == "runtime" or name.startswith("runtime/") for name in members):
+            # This is a completion/integrity boundary, not a signature or proof
+            # that cloud execution occurred. Preserve the original receipts in
+            # the retained archive; never extract them as validation outputs.
+            def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise ValueError("Duplicate JSON key in hosted runtime evidence")
+                    result[key] = value
+                return result
+
+            manifest = json.loads(read("runtime/manifest.json"), object_pairs_hook=unique_object)
+            if (
+                not isinstance(manifest, dict)
+                or manifest.get("schema") != "bindsight-hosted-evidence/1"
+                or not isinstance(manifest.get("files"), list)
+            ):
+                raise ValueError("Invalid hosted runtime evidence manifest")
+            present = {
+                name.removeprefix("runtime/")
+                for name, member in members.items()
+                if name.startswith("runtime/") and member.isfile()
+            }
+            required_runtime = runtime_files - {"se3-final-freeze.txt"}
+            if (
+                expected.get("extra_params", {}).get("mode", "design_and_validate")
+                != "validate_only"
+            ):
+                required_runtime.add("se3-final-freeze.txt")
+            if not required_runtime <= present:
+                raise ValueError("Hosted runtime evidence is incomplete")
+            recorded = set()
+            for entry in manifest["files"]:
+                if (
+                    not isinstance(entry, dict)
+                    or set(entry) != {"path", "bytes", "sha256"}
+                    or not isinstance(entry["path"], str)
+                    or entry["path"] not in runtime_files - {"manifest.json"}
+                    or entry["path"] in recorded
+                    or type(entry["bytes"]) is not int
+                    or not 0 <= entry["bytes"] <= 16 * 1024**2
+                    or not isinstance(entry["sha256"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", entry["sha256"])
+                ):
+                    raise ValueError("Invalid or duplicate hosted runtime manifest entry")
+                data = read("runtime/" + entry["path"])
+                if (
+                    len(data) != entry["bytes"]
+                    or hashlib.sha256(data).hexdigest() != entry["sha256"]
+                ):
+                    raise ValueError("Hosted runtime evidence does not match its manifest")
+                recorded.add(entry["path"])
+            if recorded != present - {"manifest.json"}:
+                raise ValueError("Hosted runtime manifest does not cover its exact file set")
+            status = json.loads(
+                read("runtime/backend-status.json"), object_pairs_hook=unique_object
+            )
+            if (
+                not isinstance(status, dict)
+                or status.get("schema") != "bindsight-hosted-run/1"
+                or not isinstance(status.get("backend"), str)
+                or status.get("backend") not in {"colab", "modal"}
+                or status.get("outcome") != "completed"
+                or type(status.get("returncode")) is not int
+                or status["returncode"] != 0
+            ):
+                raise ValueError("Hosted runtime does not record a completed successful job")
 
         if json.loads(read("evidence/spec.json")) != expected:
             raise ValueError("Executed spec does not match the saved Colab job inputs")

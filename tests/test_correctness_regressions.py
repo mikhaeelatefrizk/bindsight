@@ -1932,11 +1932,12 @@ class TestTheWheelIsNotSilentlyDiscarded:
     against a branch whose fixes existed only locally, producing pre-fix output.
     """
 
-    def test_modal_does_not_accept_the_wheel(self) -> None:
-        """The anchor. If Modal gains the parameter, these tests change with it."""
+    def test_hosted_runners_accept_the_wheel(self) -> None:
+        """Candidate provenance must reach each hosted constructor explicitly."""
         from bindsight.plugins import runner_accepts
 
-        assert not runner_accepts("modal", "bindsight_wheel")
+        assert runner_accepts("modal", "bindsight_wheel")
+        assert runner_accepts("colab", "bindsight_wheel")
         assert runner_accepts("kaggle", "bindsight_wheel")
 
     def test_dropping_it_is_logged(self, caplog: pytest.LogCaptureFixture) -> None:
@@ -1944,7 +1945,7 @@ class TestTheWheelIsNotSilentlyDiscarded:
 
         with caplog.at_level("WARNING", logger="bindsight.plugins"):
             get_runner(
-                "modal",
+                "mock",
                 designer="rfdiff_mpnn",
                 n_units_per_target=1,
                 bindsight_wheel="/tmp/x.whl",
@@ -1981,10 +1982,7 @@ class TestTheWheelIsNotSilentlyDiscarded:
         modal = _bindsight_source("modal", wheel, is_mock=False)
 
         assert kaggle == "working-tree wheel bindsight-0.2.2-py3-none-any.whl"
-        from bindsight import __version__
-
-        assert f"published PyPI release bindsight=={__version__}" in modal
-        assert "not attributable to the tree that launched them" in modal
+        assert modal == "working-tree wheel bindsight-0.2.2-py3-none-any.whl"
 
     def test_no_wheel_uses_published_release_and_mock_remains_explicit(self) -> None:
         from bindsight import __version__

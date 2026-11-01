@@ -14,9 +14,10 @@ the tarball; ``fetch`` returns it), matching the Designer ``submit→fetch``
 contract.
 
 The initial image installs the caller's exact published Bindsight version from
-PyPI using pip. Its remote function independently verifies that release wheel,
+PyPI after verifying its digest, size and metadata. Its remote function rechecks that wheel,
 uses the same managed GPU provisioner as the other backends, then executes the
-job with the provisioned interpreter. Unpublished local changes are not sent.
+job with the provisioned interpreter. An explicit ``bindsight_wheel`` transports a hash-checked candidate instead.
+Automatic Modal source mounting is disabled so it cannot replace installed code.
 No end-to-end Modal GPU run is established by the CPU tests.
 """
 
@@ -29,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from bindsight.cost import estimate
+from bindsight.runners.hosted_source import candidate_source
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
 from bindsight.runners.release_bootstrap import published_version
 
@@ -56,7 +58,7 @@ _MODAL_GPU = {
     "A100-80GB": "A100-80GB",
     "T4": "T4",
     "L4": "L4",
-    "A10G": "A10G",
+    "A10G": "A10",
     "H100": "H100",
 }
 
@@ -76,6 +78,65 @@ def _require_modal() -> Any:
     return modal
 
 
+def _run_remote(
+    spec_json: str, files: dict[str, bytes], source: dict[str, Any] | None = None
+) -> bytes:
+    """Module-level Modal entry point loaded from the selected installed wheel."""
+    import json as _json
+    import tempfile
+    from pathlib import Path as _P
+    from pathlib import PurePosixPath
+
+    from bindsight import __version__
+    from bindsight.runners.gpu_runtime import provision
+    from bindsight.runners.hosted_job import run_hosted_job
+    from bindsight.runners.hosted_source import verify_candidate
+    from bindsight.runners.release_bootstrap import download_release_wheel
+
+    work = _P(tempfile.mkdtemp(prefix="bindsight_modal_"))
+    _ATEXIT_CLEANUP(work)
+    if len(spec_json.encode("utf-8")) > 2 * 1024 * 1024:
+        raise ValueError("The job specification exceeds its size limit.")
+    if len(files) > 1024 or sum(len(data) for data in files.values()) > MAX_PAYLOAD_BYTES:
+        raise ValueError("The job payload exceeds its size limit.")
+    spec_dir = work / "spec"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
+    for name, data in files.items():
+        destination = spec_dir / name
+        if (
+            not name
+            or "\\" in name
+            or ".." in PurePosixPath(name).parts
+            or not destination.resolve().is_relative_to(spec_dir.resolve())
+            or destination.resolve() in {spec_dir.resolve(), (spec_dir / "spec.json").resolve()}
+        ):
+            raise ValueError(f"payload entry escapes the spec directory: {name}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+    spec = _json.loads(spec_json)
+    mode = spec.get("extra_params", {}).get("mode", "design_and_validate")
+    if mode not in {"design_and_validate", "validate_only"}:
+        raise ValueError("Unsupported GPU job mode.")
+    if source is not None:
+        wheel = _P("/opt/bindsight-candidate") / source["filename"]
+        verify_candidate(wheel, source)
+    else:
+        wheel = download_release_wheel(published_version(__version__), _P("/opt/bindsight-release"))
+    receipt = provision(work / "runtime", source=wheel, mode=mode, gpu_index=0)
+    tarball = work / "results.tar.gz"
+    run_hosted_job(
+        backend="modal",
+        root=work / "runtime",
+        receipt=receipt,
+        source=wheel,
+        source_kind="candidate-wheel" if source is not None else "published-wheel",
+        spec=spec_dir / "spec.json",
+        output=tarball,
+    )
+    return tarball.read_bytes()
+
+
 class ModalRunner:
     """Serverless-GPU runner that executes the design+validation job on Modal."""
 
@@ -89,6 +150,7 @@ class ModalRunner:
         gpu_type: str = "A100-40GB",
         app_name: str = "bindsight",
         timeout_s: int = 3600,
+        bindsight_wheel: Path | None = None,
     ) -> None:
         if gpu_type not in _MODAL_GPU:
             raise ValueError(
@@ -99,6 +161,8 @@ class ModalRunner:
         self.gpu_type = gpu_type
         self.app_name = app_name
         self.timeout_s = timeout_s
+        self.bindsight_wheel = Path(bindsight_wheel) if bindsight_wheel is not None else None
+        self._source = candidate_source(self.bindsight_wheel) if self.bindsight_wheel else None
 
     def estimate_cost(self, spec_size: int) -> CostEstimate:
         """Estimate cost for ``spec_size`` design trajectories on Modal."""
@@ -112,88 +176,64 @@ class ModalRunner:
 
     def _build_app(self) -> tuple[Any, Any]:
         """Define the Modal app + GPU function lazily."""
+        import inspect
+        import shlex
+
         from bindsight import __version__
 
-        release_version = published_version(__version__)
         modal = _require_modal()
         image = (
-            # Modal supplies the GPU driver; the canonical provisioner owns
-            # the matching scientific Python, CUDA libraries and tool pins.
             modal.Image.debian_slim(python_version="3.11")
             .apt_install("git", "build-essential", "ca-certificates")
-            .pip_install("certifi>=2026.10.19", "psutil>=5.9,<8", f"bindsight=={release_version}")
+            .pip_install("certifi>=2026.10.19", "psutil>=5.9,<8")
         )
+        if self.bindsight_wheel is None:
+            from bindsight.runners import release_bootstrap
+
+            version = published_version(__version__)
+            remote_path = f"/opt/bindsight-release/bindsight-{version}-py3-none-any.whl"
+            bootstrap = inspect.getsource(release_bootstrap) + (
+                "\ndownload_release_wheel(" + repr(version) + ", Path('/opt/bindsight-release'))\n"
+            )
+            image = image.run_commands(
+                "python -c " + shlex.quote(bootstrap),
+                "python -m pip install --no-input " + shlex.quote(remote_path),
+            )
+        else:
+            import tempfile
+
+            from bindsight.runners import hosted_source
+
+            assert self._source is not None
+            # Snapshot exact validated bytes before Modal's deferred image upload.
+            directory = Path(tempfile.mkdtemp(prefix="bindsight_modal_source_"))
+            _ATEXIT_CLEANUP(directory)
+            wheel = hosted_source.write_candidate(
+                self.bindsight_wheel.read_bytes(), self._source, directory
+            )
+            remote_path = "/opt/bindsight-candidate/" + wheel.name
+            bootstrap = inspect.getsource(hosted_source) + (
+                "\nverify_candidate(Path(" + repr(remote_path) + "), " + repr(self._source) + ")\n"
+            )
+            image = image.add_local_file(str(wheel), remote_path, copy=True).run_commands(
+                "python -c " + shlex.quote(bootstrap),
+                "python -m pip install --no-input " + shlex.quote(remote_path),
+            )
+        # No local package automount: imported code comes from the installed
+        # published release or verified candidate, including this entry point.
         app = modal.App(self.app_name)
         gpu = _MODAL_GPU[self.gpu_type]
 
-        @app.function(gpu=gpu, image=image, timeout=self.timeout_s)  # type: ignore[untyped-decorator]
-        def _run_remote(spec_json: str, files: dict[str, bytes]) -> bytes:
-            import json as _json
-            import os
-            import subprocess
-            import tempfile
-            from pathlib import Path as _P
-            from pathlib import PurePosixPath
+        run_remote = app.function(
+            gpu=gpu,
+            image=image,
+            timeout=self.timeout_s,
+            include_source=False,
+            cpu=4,
+            memory=16384,
+        )(_run_remote)
 
-            from bindsight.runners.gpu_runtime import provision
-            from bindsight.runners.release_bootstrap import download_release_wheel
-
-            work = _P(tempfile.mkdtemp(prefix="bindsight_modal_"))
-            _ATEXIT_CLEANUP(work)
-            if len(spec_json.encode("utf-8")) > 2 * 1024 * 1024:
-                raise ValueError("The job specification exceeds its size limit.")
-            if len(files) > 1024 or sum(len(data) for data in files.values()) > MAX_PAYLOAD_BYTES:
-                raise ValueError("The job payload exceeds its size limit.")
-            spec_dir = work / "spec"
-            spec_dir.mkdir(parents=True, exist_ok=True)
-            (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
-            for name, data in files.items():
-                destination = spec_dir / name
-                if (
-                    not name
-                    or "\\" in name
-                    or ".." in PurePosixPath(name).parts
-                    or not destination.resolve().is_relative_to(spec_dir.resolve())
-                    or destination.resolve()
-                    in {spec_dir.resolve(), (spec_dir / "spec.json").resolve()}
-                ):
-                    raise ValueError(f"payload entry escapes the spec directory: {name}")
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(data)
-            spec = _json.loads(spec_json)
-            mode = spec.get("extra_params", {}).get("mode", "design_and_validate")
-            if mode not in {"design_and_validate", "validate_only"}:
-                raise ValueError("Unsupported GPU job mode.")
-            wheel = download_release_wheel(release_version, work / "release")
-            receipt = provision(work / "runtime", source=wheel, mode=mode, gpu_index=0)
-            environment = dict(os.environ)
-            for key in (
-                "PYTHONPATH",
-                "PYTHONHOME",
-                "PYTHONSTARTUP",
-                "PYTHONUSERBASE",
-                "BINDSIGHT_BOLTZ_BIN",
-                "BINDSIGHT_LOCAL_IMAGE",
-                "BINDSIGHT_DESIGN_PYTHON",
-            ):
-                environment.pop(key, None)
-            environment.update(receipt["execution_environment"])
-            tarball = work / "results.tar.gz"
-            subprocess.run(
-                [
-                    receipt["boltz_python"],
-                    "-I",
-                    "-m",
-                    "bindsight.runners.job_exec",
-                    str(spec_dir / "spec.json"),
-                    str(tarball),
-                ],
-                env=environment,
-                check=True,
-            )
-            return tarball.read_bytes()
-
-        return app, _run_remote
+        return app, run_remote
 
     def submit(self, spec_path: Path, *, results_dir: Path) -> JobHandle:
         """Run the job on Modal (synchronously) and cache the tarball locally."""
@@ -217,8 +257,13 @@ class ModalRunner:
         app, run_remote = self._build_app()
         LOG.info("modal submit: running job on %s (gpu=%s)", self.app_name, self.gpu_type)
         with app.run():
-            data: bytes = run_remote.remote(spec_json, files)
+            data: bytes = run_remote.remote(spec_json, files, self._source)
         tarball.write_bytes(data)
+        from bindsight.runners.hosted_job import archive_status
+
+        status = archive_status(tarball)
+        if status.get("outcome") != "completed" or status.get("returncode") != 0:
+            raise RuntimeError(f"Modal job did not complete; evidence retained at {tarball}")
         _RESULTS[handle_id] = tarball
         return JobHandle(
             backend=self.name,

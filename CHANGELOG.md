@@ -6,6 +6,35 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.9] - Unreleased
+
+### Security
+
+- Remove the unused distributed Python RPC implementation from the authenticated
+  DGL wheel, addressing the code path in GHSA-3x5x-fw77-g54c. Preserve all local
+  graph implementation files and native libraries, retain upstream licences,
+  and use an explicit downstream version with reproducible wheel checksums.
+- Reject residual or altered distributed DGL code before every managed design
+  invocation, including reused environments. Rebuild changed owned environments
+  while preserving research outputs. Native RPC symbols and unrelated local
+  loaders remain; this is a scoped remediation rather than a general security
+  guarantee.
+
+### Hosted execution and result integrity
+
+- Repair Modal's entry point for the real 1.6.3 client and disable local-source
+  mounting so the selected installed wheel supplies remote code. Verify the
+  published wheel before installation; permit an explicitly authenticated
+  candidate wheel for pre-release Colab and Modal qualification.
+- Retain selected runtime, model, package and GPU evidence alongside unchanged
+  scientific archive members. Keep failed and incomplete diagnostics available,
+  without reporting them as a successful scientific run.
+- Import hosted downloads only after their runtime manifest and completion
+  status agree. Keep existing historical archives supported, preserve original
+  downloads, and never extract runtime receipts as scientific predictions.
+- Exercise actual Modal client construction in Linux CI without cloud compute.
+  Full hosted qualification and publication remain release gates.
+
 ## [0.3.8] - 2026-11-01
 
 ### Security

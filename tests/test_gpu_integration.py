@@ -210,6 +210,9 @@ def test_modal_revalidation_preserves_nested_binders(tmp_path, monkeypatch) -> N
         def pip_install(self, *args):
             return self
 
+        def run_commands(self, *args):
+            return self
+
     class App:
         def __init__(self, name):
             pass
@@ -255,19 +258,34 @@ def test_modal_revalidation_preserves_nested_binders(tmp_path, monkeypatch) -> N
             "execution_environment": {"BINDSIGHT_TOOLS_ROOT": "/managed/tools"},
         }
 
-    def run(argv, *, env, check):
-        assert argv[:4] == ["/managed/boltz/python", "-I", "-m", "bindsight.runners.job_exec"]
-        staged = Path(argv[4]).parent
+    def run_hosted_job(*, backend, root, receipt, source, source_kind, spec, output):
+        from bindsight.runners.hosted_job import execution_environment
+
+        assert backend == "modal"
+        assert source == wheel
+        assert source_kind == "published-wheel"
+        staged = spec.parent
         assert (staged / "design/binder.fasta").read_text() == ">binder\nAGGV\n"
         assert (staged / "target.pdb").read_text() == "target"
+        env = execution_environment(receipt)
         assert env["BINDSIGHT_TOOLS_ROOT"] == "/managed/tools"
         assert "PATH" in env
         assert "PYTHONPATH" not in env
-        assert check
-        Path(argv[5]).write_bytes(b"test result")
+        import io
+        import tarfile
+
+        status = json.dumps(
+            {"schema": "bindsight-hosted-run/1", "outcome": "completed", "returncode": 0}
+        ).encode()
+        with tarfile.open(output, "w:gz") as archive:
+            member = tarfile.TarInfo("runtime/backend-status.json")
+            member.size = len(status)
+            archive.addfile(member, io.BytesIO(status))
 
     monkeypatch.setattr(gpu_runtime, "provision", provision)
-    monkeypatch.setattr("subprocess.run", run)
+    monkeypatch.setattr("bindsight.runners.hosted_job.run_hosted_job", run_hosted_job)
     runner = modal_runner.ModalRunner()
     handle = runner.submit(spec_path, results_dir=tmp_path / "results")
-    assert runner.fetch(handle).read_bytes() == b"test result"
+    from bindsight.runners.hosted_job import archive_status
+
+    assert archive_status(runner.fetch(handle))["outcome"] == "completed"

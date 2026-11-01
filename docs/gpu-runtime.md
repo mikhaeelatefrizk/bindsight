@@ -1,13 +1,13 @@
 # Managed GPU runtime
 
-The 0.3.8 runtime replaces the historical RFdiffusion Python 3.9 setup with
+The managed runtime replaces the historical RFdiffusion Python 3.9 setup with
 private Python 3.11.18 environments. Local Linux/WSL, Kaggle, generated Colab
 notebooks and Modal call the same provisioner in
 [`gpu_runtime.py`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/bindsight/runners/gpu_runtime.py).
 The recorded controls live in
 [`gpu_recipe.py`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/bindsight/runners/gpu_recipe.py).
 
-**Validation status:** on 2026-11-01, the current recipe completed one
+**Recorded 0.3.8 validation:** on 2026-11-01, that release's recipe completed one
 RFdiffusion backbone, two ProteinMPNN sequences and two Boltz predictions on
 a Kaggle Tesla T4. The independent artifact verifier passed all eight checks for
 the frozen protocol, transported evidence, runtime and model identities,
@@ -31,7 +31,7 @@ These dated attempts and component tests are not substituted for the completed r
 | --- | --- |
 | Scientific Python | 3.11.18, private design and prediction environments |
 | PyTorch | 2.14.1+cu126, official wheel URL and SHA256 |
-| Local DGL graph library | 1.0.2+cu118, official wheel URL and SHA256 |
+| Local DGL graph library | 1.0.2+cu118.bindsight.rpcoff1, authenticated upstream wheel with distributed Python RPC removed |
 | Design NumPy / e3nn | 1.23.5 / 0.3.3 |
 | Hydra | 1.3.8 |
 | Prediction NumPy | 1.26.4 |
@@ -82,9 +82,13 @@ requires a Linux main thread with no existing alarm timer; an unsupported
 execution context fails explicitly. It does not replace an MSA with an empty
 alignment or change successful server responses.
 
-Generated Colab notebooks use the exact published version
-in a private driver. Modal's initial image installs that version through pip,
-then verifies the wheel used to provision its scientific environments. The
+Generated Colab notebooks use the exact published version in a private driver.
+Modal verifies that release wheel before installing it in its initial image.
+Both runners also accept an explicit `bindsight_wheel` through their Python
+interfaces for qualification of unpublished candidates; size, SHA256 and
+internal package metadata are checked before installation. The candidate is
+never selected implicitly from a working directory. Modal disables automatic
+source mounting so that remote imports use the selected installed wheel. The
 shared release downloader checks the official HTTPS source, release metadata,
 wheel size, SHA256 and internal package version. It does not follow moving Git
 branches. Inherited package-index, certificate and Python-startup overrides are
@@ -142,12 +146,13 @@ freezes and retained dated advisory results for the same versions, with source
 package and database exclusions explicit. No new advisory query is claimed by
 the freeze comparison. See the [dated audit scope](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01).
 These records are not a comprehensive audit of all installed code.
-DGL's distributed RPC deserialization advisory remains unpatched. Static review
-of the supported Bindsight workflow and pinned RFdiffusion/SE3 source found local
-graph operations and no calls to distributed server/RPC entry points. DGL still
-imports and retains the vulnerable RPC code. DistDGL/RPC use is unsupported;
-the source review is not a runtime network-isolation guarantee or a complete
-security audit.
+Upstream DGL still has no release listed as fixing its distributed RPC
+deserialization advisory. Bindsight's downstream wheel physically removes the
+28 distributed Python modules and replaces the package initializer with two
+disabled import-compatibility classes. Installed-file checks reject residual
+distributed code before import. Local graph implementation files and native
+libraries remain unchanged; native RPC symbols and unrelated local-file loaders
+remain. See [the remediation's exact scope](https://github.com/mikhaeelatefrizk/bindsight/blob/main/SECURITY.md).
 
 The NVIDIA CUDA libraries have proprietary licence terms separate from the
 permissive Python packages. See the scoped

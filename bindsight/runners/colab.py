@@ -1,24 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Mikhaeel Atef Rizk Wahba
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Colab GPU runner.
+"""Generate a portable Colab notebook and collect its downloaded result archive.
 
-Colab is a free-or-cheap GPU on-ramp. bindsight doesn't have a way to *launch*
-a Colab notebook from the CLI (Google's API doesn't permit it for free-tier
-users), so the workflow is:
+``submit()`` writes a self-contained notebook with the job specification and,
+when explicitly selected, an integrity-checked candidate wheel. Open it in
+Colab, select a compatible GPU, and run its cells. Download the original
+``<handle>.tar.gz`` to the local results directory; ``poll()`` and ``fetch()``
+look for that exact file. The CLI's generated design notebooks additionally
+retain matching ``.spec.json`` files for safe import by ``bindsight validate``.
 
-1. ``submit()`` writes a self-contained ``.ipynb`` to disk and prints the
-   command for the user to open it in Colab.
-2. The notebook installs deps, runs the GPU step, tarballs results, writes
-   them to a known location (Google Drive folder, or anywhere the user can
-   download from).
-3. ``poll()`` checks whether ``results.tar.gz`` has appeared in the local
-   results directory (the user downloads it from Drive after the notebook
-   finishes).
-4. ``fetch()`` returns the local path once it's there.
-
-This is intentionally simple. v0.2 may add Drive API auto-fetch via OAuth;
-v0.0.x explicitly favors "user clicks two buttons in Colab" over "wire
-OAuth and fight rate limits".
+This runner uses a manual notebook handoff. The separate official Colab CLI
+supports Linux/macOS; this module does not depend on it or launch cloud jobs.
 """
 
 from __future__ import annotations
@@ -55,11 +47,13 @@ class ColabRunner:
         designer: str = "rfdiff_mpnn",
         n_units_per_target: int = 50,
         gpu_type: str = "T4",
+        bindsight_wheel: Path | None = None,
     ) -> None:
         self.notebooks_dir = Path(notebooks_dir) if notebooks_dir else None
         self.designer = designer
         self.n_units_per_target = n_units_per_target
         self.gpu_type = gpu_type
+        self.bindsight_wheel = Path(bindsight_wheel) if bindsight_wheel is not None else None
 
     def estimate_cost(self, spec_size: int) -> CostEstimate:
         """Estimate cost for ``spec_size`` design trajectories."""
@@ -154,5 +148,6 @@ class ColabRunner:
             designer=self.designer,
             gpu_type=self.gpu_type,
             spec=spec,
+            bindsight_wheel=self.bindsight_wheel,
         )
         return _json.dumps(notebook, indent=1)

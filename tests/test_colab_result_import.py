@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import json
 import tarfile
@@ -100,6 +101,173 @@ def test_documented_cli_handoff_and_idempotent_validation(tmp_path):
         assert (
             run / "validate" / binder / "complex.pdb"
         ).read_bytes() == b"ATOM predicted fixture\n"
+
+
+def hosted_files(*, backend: str = "colab", outcome: str = "completed") -> dict[str, bytes]:
+    """Construct the selected receipt set, with the real wrapper manifest writer."""
+    status = {
+        "schema": "bindsight-hosted-run/1",
+        "backend": backend,
+        "outcome": outcome,
+        "returncode": 0,
+    }
+    files = {
+        "backend-status.json": json.dumps(status).encode(),
+        "provision-receipt.json": b"{}",
+        "hardware.json": b"{}",
+        "model-weights.json": b"{}",
+        "se3-final-freeze.txt": b"torch==2.14.1+cu126\n",
+        "boltz-final-freeze.txt": b"torch==2.14.1+cu126\n",
+    }
+    manifest = {
+        "schema": "bindsight-hosted-evidence/1",
+        "files": [
+            {"path": name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+            for name, data in sorted(files.items())
+        ],
+    }
+    return {"runtime/" + name: data for name, data in files.items()} | {
+        "runtime/manifest.json": json.dumps(manifest).encode()
+    }
+
+
+@pytest.mark.parametrize("backend", ["colab", "modal"])
+def test_real_hosted_packer_to_production_validate_preserves_science(tmp_path, backend):
+    from bindsight.runners.hosted_job import _pack, _receipt_manifest
+
+    run, specs = make_jobs(tmp_path)
+    scientific_files, binder = result_files(specs[0])
+    original = write_archive(specs[0], scientific_files)
+    scientific = tmp_path / "science.tar.gz"
+    original.replace(scientific)
+    receipts = tmp_path / "runtime"
+    receipts.mkdir()
+    for name, data in hosted_files(backend=backend).items():
+        if name != "runtime/manifest.json":
+            (receipts / Path(name).name).write_bytes(data)
+    _receipt_manifest(receipts)
+    _pack(scientific, receipts, original, tmp_path / "unused-work")
+    original_bytes = original.read_bytes()
+    result = CliRunner().invoke(cli.main, ["validate", str(run)])
+    assert result.exit_code == 0, result.output + str(result.exception)
+    frame = pd.read_parquet(run / "validate/validated.parquet")
+    assert frame.iloc[0].binder_id == binder
+    assert frame.iloc[0].iptm == 0.8
+    assert (run / f"validate/{binder}/complex.pdb").read_bytes() == scientific_files[
+        f"validate/{binder}/complex.pdb"
+    ]
+    assert original.read_bytes() == original_bytes
+    assert not (run / "runtime").exists()
+    assert not (run / "validate/runtime").exists()
+    retained = next((run / "design/_targets").glob("*.tar.gz"))
+    assert retained.read_bytes() == original_bytes
+
+
+@pytest.mark.parametrize("outcome", ["failed", "incomplete", "running"])
+def test_hosted_noncompletion_refused_despite_valid_scientific_metrics(tmp_path, outcome):
+    run, specs = make_jobs(tmp_path)
+    files, _ = result_files(specs[0])
+    files.update(hosted_files(outcome=outcome))
+    write_archive(specs[0], files)
+    with pytest.raises(ClickException, match="completed successful"):
+        cli._finalize_validate(run)
+    assert_not_imported(run)
+
+
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "digest",
+        "size",
+        "missing",
+        "unlisted",
+        "duplicate",
+        "unsafe_path",
+        "status_returncode",
+        "status_bool",
+        "backend",
+        "backend_type",
+        "status_schema",
+        "manifest_schema",
+        "duplicate_json_key",
+    ],
+)
+def test_hosted_manifest_and_completion_tampering_refused(tmp_path, problem):
+    run, specs = make_jobs(tmp_path)
+    files, _ = result_files(specs[0])
+    runtime = hosted_files()
+    manifest = json.loads(runtime["runtime/manifest.json"])
+    if problem == "digest":
+        runtime["runtime/hardware.json"] = b'{"tampered":true}'
+    elif problem == "size":
+        manifest["files"][0]["bytes"] += 1
+    elif problem == "missing":
+        runtime.pop("runtime/model-weights.json")
+    elif problem == "unlisted":
+        manifest["files"].pop()
+    elif problem == "duplicate":
+        manifest["files"].append(manifest["files"][0])
+    elif problem == "unsafe_path":
+        manifest["files"][0]["path"] = "../validate/replacement"
+    elif problem == "manifest_schema":
+        manifest["schema"] = "unknown"
+    else:
+        status = json.loads(runtime["runtime/backend-status.json"])
+        if problem == "status_returncode":
+            status["returncode"] = 1
+        elif problem == "status_bool":
+            status["returncode"] = False
+        elif problem == "backend":
+            status["backend"] = "unknown"
+        elif problem == "backend_type":
+            status["backend"] = []
+        elif problem == "status_schema":
+            status["schema"] = "unknown"
+        data = json.dumps(status).encode()
+        if problem == "duplicate_json_key":
+            data = data[:-1] + b', "outcome":"completed"}'
+        runtime["runtime/backend-status.json"] = data
+        for entry in manifest["files"]:
+            if entry["path"] == "backend-status.json":
+                entry.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+    runtime["runtime/manifest.json"] = json.dumps(manifest).encode()
+    files.update(runtime)
+    write_archive(specs[0], files)
+    with pytest.raises(ClickException, match=r"[Hh]osted|runtime"):
+        cli._finalize_validate(run)
+    assert_not_imported(run)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "runtime/extra.json",
+        "runtime/validate/binder/file",
+        "runtime/../validate/file",
+        "runtime/provision-receipt.json/nested",
+        "runtime/HARDWARE.json",
+    ],
+)
+def test_runtime_cannot_smuggle_unselected_or_scientific_outputs(tmp_path, name):
+    run, specs = make_jobs(tmp_path)
+    files, _ = result_files(specs[0])
+    files.update(hosted_files())
+    files[name] = b"unselected evidence"
+    write_archive(specs[0], files)
+    with pytest.raises(ClickException, match=r"Unsafe|runtime|duplicate"):
+        cli._finalize_validate(run)
+    assert_not_imported(run)
+
+
+def test_runtime_member_above_individual_limit_refused(tmp_path):
+    run, specs = make_jobs(tmp_path)
+    files, _ = result_files(specs[0])
+    files.update(hosted_files())
+    files["runtime/hardware.json"] = b"x" * (16 * 1024**2 + 1)
+    write_archive(specs[0], files)
+    with pytest.raises(ClickException, match="oversized hosted"):
+        cli._finalize_validate(run)
+    assert_not_imported(run)
 
 
 @pytest.mark.parametrize(
