@@ -1,0 +1,22 @@
+{
+  "scope": "Source-supported trajectory invariant only for retained failed attempt4939383; full GPU acceptance remains false",
+  "full_gpu_acceptance": false,
+  "trajectory_invariant": "passed",
+  "result": {
+    "frames_per_trajectory": 50,
+    "nonfinal_rigid_frames": 49,
+    "frame_order": "t1 first; t50 last, after upstream stack reversal",
+    "nonfinal_target_pair_delta_max_angstrom": 1.4210854715202004e-14,
+    "nonfinal_pair_delta_limit_angstrom": 0.0034651016151377545,
+    "final_rf_equals_xt_and_px0_frame0": true,
+    "xt_sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+    "px0_sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+    "final_target_geometry": {
+      "aligned_ca_rmsd_angstrom": 0.20976309589998945,
+      "max_aligned_ca_displacement_angstrom": 0.8395315527626157,
+      "pair_distance_max_delta_angstrom": 1.0310985630962648,
+      "rotation_determinant": 1.0000000000000002,
+      "scope": "Final upstream model prediction; diagnostic only, not a calibrated quality gate"
+    }
+  }
+}

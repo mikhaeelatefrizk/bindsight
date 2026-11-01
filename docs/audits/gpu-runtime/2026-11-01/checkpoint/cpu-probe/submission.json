@@ -1,0 +1,10 @@
+{
+  "kernel": "Private CPU-only Kaggle diagnostic; identifier omitted",
+  "private_requested": true,
+  "gpu_requested": false,
+  "session_timeout_seconds": 2400,
+  "submitted_utc": "2026-11-01T19:00:19.232433+00:00",
+  "url": null,
+  "version_number": 3,
+  "source_sha256": "20a83d6839d1d412af864df4489951b0dde399b8079ab845e7beb2678ea0a169"
+}

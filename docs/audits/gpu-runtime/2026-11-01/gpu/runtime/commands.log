@@ -1,0 +1,775 @@
+
+========== check requested T4 hardware ==========
+[disk @ check requested T4 hardware] / 1048.8/8156.9 GiB free | /kaggle/working 19.5/19.5 GiB free | /kaggle/temp 1048.8/8156.9 GiB free | /opt 1048.8/8156.9 GiB free | /tmp 1048.8/8156.9 GiB free
+[gpu @ check requested T4 hardware] {'devices': [{'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}, {'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}], 'observed_unix_time': 1793560079.4373105} | peak so far 0 MiB
+[heartbeat] {"current_command": null, "elapsed_seconds": 0.0, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560079.4412358}, "last_output_seconds_ago": 0.0, "peak_device_memory_mib": 0, "phase": "check requested T4 hardware", "processes": {"active_pid": null, "processes": []}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560079.3734148}
+
+========== verify installer and create the private driver ==========
+[disk @ verify installer and create the private driver] / 1048.8/8156.9 GiB free | /kaggle/working 19.5/19.5 GiB free | /kaggle/temp 1048.8/8156.9 GiB free | /opt 1048.8/8156.9 GiB free | /tmp 1048.8/8156.9 GiB free
+[gpu @ verify installer and create the private driver] {'devices': [{'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}, {'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}], 'observed_unix_time': 1793560079.5153692} | peak so far 0 MiB
+
++ /GPU_JOB/uv --no-config python install 3.11.18 --no-bin
+Downloading cpython-3.11.18-linux-x86_64-gnu (download) (29.2MiB)
+ Downloaded cpython-3.11.18-linux-x86_64-gnu (download)
+Installed Python 3.11.18 in 1.13s
+ + cpython-3.11.18-linux-x86_64-gnu
+
++ /GPU_JOB/uv --no-config venv --python 3.11.18 --managed-python /GPU_JOB/driver
+Using CPython 3.11.18
+Creating virtual environment at: /GPU_JOB/driver
+Activate with: source /GPU_JOB/driver/bin/activate
+
++ /GPU_JOB/uv --no-config pip install --python /GPU_JOB/driver/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match /GPU_JOB/bindsight-0.3.8-py3-none-any.whl 'psutil>=5.9,<8' 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/driver
+Resolved 22 packages in 341ms
+Downloading pydantic-core (2.1MiB)
+Downloading pygments (1.2MiB)
+ Downloaded pydantic-core
+ Downloaded pygments
+Prepared 22 packages in 135ms
+Installed 22 packages in 33ms
+ + annotated-types==0.8.0
+ + bindsight==0.3.8 (from file:///GPU_JOB/bindsight-0.3.8-py3-none-any.whl)
+ + certifi==2026.10.23
+ + charset-normalizer==3.5.2
+ + click==8.5.0
+ + idna==3.20
+ + jinja2==3.1.6
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.4
+ + mdurl==0.1.2
+ + platformdirs==4.14.3
+ + psutil==7.2.2
+ + pydantic==2.14.2
+ + pydantic-core==2.50.2
+ + pygments==2.21.0
+ + pyyaml==6.0.3
+ + requests==2.34.2
+ + rich==15.0.0
+ + tenacity==9.2.1
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + urllib3==2.8.0
+
+========== provision the canonical scientific runtime ==========
+[disk @ provision the canonical scientific runtime] / 1048.6/8156.9 GiB free | /kaggle/working 19.5/19.5 GiB free | /kaggle/temp 1048.6/8156.9 GiB free | /opt 1048.6/8156.9 GiB free | /tmp 1048.6/8156.9 GiB free
+[gpu @ provision the canonical scientific runtime] {'devices': [{'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}, {'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}], 'observed_unix_time': 1793560082.8765337} | peak so far 0 MiB
+
++ /GPU_JOB/driver/bin/python -I -m bindsight.runners.gpu_runtime --root /GPU_JOB/runtime --source /GPU_JOB/bindsight-0.3.8-py3-none-any.whl --mode design_and_validate --receipt /kaggle/working/<GPU_JOB_ID>-runtime-evidence/runtime-receipt.json
+2026-11-01 19:08:03,912 __main__: Download the pinned environment manager
+2026-11-01 19:08:04,445 __main__: Downloaded micromamba: 17038288 bytes, SHA256 ffc3cb8d52d4d6b354bdbb979c407719c485392b74e462cbd50811aa88e58f85; expected pin ffc3cb8d52d4d6b354bdbb979c407719c485392b74e462cbd50811aa88e58f85
+2026-11-01 19:08:04,447 __main__: Verify the independent secure package installer
+2026-11-01 19:08:04,505 __main__: Installer download unavailable from https://releases.astral.sh/github/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz: HTTP Error 403: Forbidden
+2026-11-01 19:08:05,151 __main__: Verified independent package installer from https://github.com/astral-sh/uv/releases/download/0.13.6/uv-x86_64-unknown-linux-gnu.tar.gz
+2026-11-01 19:08:05,154 __main__: Prepare private Python environments
+2026-11-01 19:08:05,154 __main__: Running /GPU_JOB/runtime/uv --no-config python install 3.11.18 --no-bin
+Downloading cpython-3.11.18-linux-x86_64-gnu (download) (29.2MiB)
+ Downloaded cpython-3.11.18-linux-x86_64-gnu (download)
+Installed Python 3.11.18 in 1.06s
+ + cpython-3.11.18-linux-x86_64-gnu
+2026-11-01 19:08:06,271 __main__: Running /GPU_JOB/runtime/uv --no-config venv --managed-python --python 3.11.18 /GPU_JOB/runtime/se3
+Using CPython 3.11.18
+Creating virtual environment at: /GPU_JOB/runtime/se3
+Activate with: source /GPU_JOB/runtime/se3/bin/activate
+2026-11-01 19:08:06,487 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/se3/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/se3.constraints.txt 'certifi>=2026.10.19' 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/se3
+Resolved 1 package in 95ms
+Prepared 1 package in 29ms
+Installed 1 package in 1ms
+ + certifi==2026.10.23
+2026-11-01 19:08:06,802 __main__: Running /GPU_JOB/runtime/uv --no-config python install 3.11.18 --no-bin
+Python 3.11.18 is already installed
+2026-11-01 19:08:06,866 __main__: Running /GPU_JOB/runtime/uv --no-config venv --managed-python --python 3.11.18 /GPU_JOB/runtime/boltz
+Using CPython 3.11.18
+Creating virtual environment at: /GPU_JOB/runtime/boltz
+Activate with: source /GPU_JOB/runtime/boltz/bin/activate
+2026-11-01 19:08:06,882 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/boltz/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/boltz.constraints.txt 'certifi>=2026.10.19' 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/boltz
+Resolved 1 package in 1ms
+Installed 1 package in 1ms
+ + certifi==2026.10.23
+2026-11-01 19:08:07,097 __main__: Running /GPU_JOB/runtime/micromamba create -y -p /GPU_JOB/runtime/git --override-channels -c conda-forge git
+Transaction
+  Prefix: /GPU_JOB/runtime/git
+  Updating specs:
+   - git
+  Package                 Version  Build             Channel          Size
+────────────────────────────────────────────────────────────────────────────
+  Install:
+────────────────────────────────────────────────────────────────────────────
+  + _openmp_mutex             4.5  20_gnu            conda-forge      29kB
+  + bzip2                   1.0.8  hda65f42_10       conda-forge     258kB
+  + c-ares                 1.34.9  hebe6cf0_0        conda-forge     234kB
+  + ca-certificates    2026.10.23  hbd8a1cb_0        conda-forge     130kB
+  + git                    2.56.0  pl5440h3795e67_0  conda-forge      12MB
+  + icu                      79.1  py314hb486520_0   conda-forge      15MB
+  + keyutils                1.6.3  h7cc23a3_1        conda-forge     135kB
+  + krb5                   1.22.2  hbc21106_2        conda-forge       1MB
+  + libcurl                8.23.0  ha042cf0_0        conda-forge     506kB
+  + libedit          3.1.20260512  pl5321h373387f_0  conda-forge     136kB
+  + libev                    4.33  h280c20c_3        conda-forge      43kB
+  + libexpat                2.9.0  hd2095e1_0        conda-forge      79kB
+  + libgcc                 16.2.0  ha9f2e26_7        conda-forge       1MB
+  + libgomp                16.2.0  he0feb66_7        conda-forge     641kB
+  + libiconv                 1.18  h0cb94f2_3        conda-forge     789kB
+  + libnghttp2             1.70.0  hc5e5977_0        conda-forge     833kB
+  + libpsl                 0.23.1  h7fe8442_2        conda-forge      73kB
+  + libssh2                1.11.1  h6154650_1        conda-forge     306kB
+  + libstdcxx              16.2.0  h934c35e_7        conda-forge       7MB
+  + libxcrypt              4.4.38  h280c20c_0        conda-forge     102kB
+  + libzlib                 1.3.2  h25fd6f3_3        conda-forge      64kB
+  + ncurses                   6.6  hdb14827_1        conda-forge     911kB
+  + openssl                 3.6.5  h781a0a9_0        conda-forge       3MB
+  + pcre2                   10.47  h8b3dc9c_1        conda-forge       1MB
+  + perl                   5.44.0  1_h7cc23a3_perl5  conda-forge      11MB
+  + zstd                    1.5.7  hb78ec9c_7        conda-forge     601kB
+  Summary:
+  Install: 26 packages
+  Total download: 57MB
+────────────────────────────────────────────────────────────────────────────
+Transaction starting
+Linking libzlib-1.3.2-h25fd6f3_3
+Linking libgomp-16.2.0-he0feb66_7
+Linking zstd-1.5.7-hb78ec9c_7
+Linking _openmp_mutex-4.5-20_gnu
+Linking libgcc-16.2.0-ha9f2e26_7
+Linking ncurses-6.6-hdb14827_1
+Linking libev-4.33-h280c20c_3
+Linking keyutils-1.6.3-h7cc23a3_1
+Linking c-ares-1.34.9-hebe6cf0_0
+Linking libstdcxx-16.2.0-h934c35e_7
+Linking bzip2-1.0.8-hda65f42_10
+Linking libxcrypt-4.4.38-h280c20c_0
+Linking libiconv-1.18-h0cb94f2_3
+Linking libexpat-2.9.0-hd2095e1_0
+Linking libedit-3.1.20260512-pl5321h373387f_0
+Linking icu-79.1-py314hb486520_0
+Linking pcre2-10.47-h8b3dc9c_1
+Linking perl-5.44.0-1_h7cc23a3_perl5
+Linking libpsl-0.23.1-h7fe8442_2
+Linking ca-certificates-2026.10.23-hbd8a1cb_0
+Linking openssl-3.6.5-h781a0a9_0
+Linking libssh2-1.11.1-h6154650_1
+Linking libnghttp2-1.70.0-hc5e5977_0
+Linking krb5-1.22.2-hbc21106_2
+Linking libcurl-8.23.0-ha042cf0_0
+Linking git-2.56.0-pl5440h3795e67_0
+Transaction finished
+To activate this environment, use:
+    micromamba activate /GPU_JOB/runtime/git
+Or to execute a single command in this environment, use:
+    micromamba run -p /GPU_JOB/runtime/git mycommand
+2026-11-01 19:08:29,276 __main__: Fetch the recorded design-tool revisions
+2026-11-01 19:08:29,276 __main__: Running /GPU_JOB/runtime/git/bin/git clone --quiet https://github.com/RosettaCommons/RFdiffusion /GPU_JOB/runtime/tools/RFdiffusion
+[heartbeat] {"current_command": null, "elapsed_seconds": 30.1, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560109.4992795}, "last_output_seconds_ago": 0.2, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 1.67, "name": "python", "pid": 80, "rss_bytes": 51605504, "status": "sleeping"}, {"cpu_seconds": 0.0, "name": "git", "pid": 230, "rss_bytes": 9777152, "status": "sleeping"}, {"cpu_seconds": 0.0, "name": "git", "pid": 231, "rss_bytes": 6459392, "status": "sleeping"}, {"cpu_seconds": 0.01, "name": "git-remote-https", "pid": 232, "rss_bytes": 16855040, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560109.4565306}
+2026-11-01 19:08:31,430 __main__: Running /GPU_JOB/runtime/git/bin/git -C /GPU_JOB/runtime/tools/RFdiffusion checkout --detach 2d0c003df46b9db41d119321f15403dec3716cd9
+HEAD is now at 2d0c003 Adding files for the soon-to-be-released RFdiffusion video tutorial (#452)
+2026-11-01 19:08:31,547 __main__: Running /GPU_JOB/runtime/git/bin/git clone --quiet https://github.com/dauparas/ProteinMPNN /GPU_JOB/runtime/tools/ProteinMPNN
+2026-11-01 19:08:37,287 __main__: Running /GPU_JOB/runtime/git/bin/git -C /GPU_JOB/runtime/tools/ProteinMPNN checkout --detach 8907e6671bfbfc92303b5f79c4b5e6ce47cdef57
+HEAD is now at 8907e66 updating solubleMPNN weights trained with a larger set of excluded membrane proteins
+2026-11-01 19:08:37,298 __main__: Install the isolated RFdiffusion and ProteinMPNN environment
+2026-11-01 19:08:37,298 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/se3/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/se3.constraints.txt 'https://download.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl' 'https://data.dgl.ai/wheels/cu118/dgl-1.0.2%2Bcu118-cp311-cp311-manylinux1_x86_64.whl' hydra-core==1.3.8 pyrsistent omegaconf==2.3.0 icecream scipy==1.13.1 numpy==1.23.5 opt_einsum==3.4.0 opt_einsum_fx==0.1.4 decorator==5.1.1 e3nn==0.3.3 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/se3
+Resolved 54 packages in 2.81s
+   Building antlr4-python3-runtime==4.9.3
+Downloading triton (236.5MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (22.6MiB)
+Downloading nvidia-cublas-cu12 (374.9MiB)
+Downloading nvidia-cufile-cu12 (1.1MiB)
+Downloading nvidia-curand-cu12 (53.7MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading numpy (16.3MiB)
+Downloading nvidia-cufft-cu12 (190.9MiB)
+Downloading nvidia-nccl-cu12 (276.3MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-cusparse-cu12 (206.5MiB)
+Downloading sympy (6.0MiB)
+Downloading nvidia-nvjitlink-cu12 (37.9MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+Downloading nvidia-cuda-cupti-cu12 (8.5MiB)
+Downloading scipy (36.8MiB)
+Downloading nvidia-cusolver-cu12 (150.9MiB)
+Downloading cuda-bindings (7.3MiB)
+Downloading pygments (1.2MiB)
+Downloading networkx (2.0MiB)
+Downloading torch (828.9MiB)
+ Downloaded nvidia-cufile-cu12
+      Built antlr4-python3-runtime==4.9.3
+ Downloaded pygments
+Downloading dgl (253.3MiB)
+ Downloaded networkx
+ Downloaded sympy
+ Downloaded cuda-bindings
+ Downloaded nvidia-cuda-cupti-cu12
+ Downloaded numpy
+ Downloaded nvidia-cuda-nvrtc-cu12
+ Downloaded scipy
+ Downloaded nvidia-nvjitlink-cu12
+ Downloaded nvidia-curand-cu12
+ Downloaded dgl
+[heartbeat] {"current_command": null, "elapsed_seconds": 60.2, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560139.623329}, "last_output_seconds_ago": 2.7, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 1.73, "name": "python", "pid": 80, "rss_bytes": 51605504, "status": "sleeping"}, {"cpu_seconds": 41.699999999999996, "name": "uv", "pid": 266, "rss_bytes": 94072832, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560139.5705445}
+ Downloaded nvidia-nvshmem-cu12
+ Downloaded nvidia-cusolver-cu12
+ Downloaded nvidia-cufft-cu12
+ Downloaded nvidia-cusparse-cu12
+ Downloaded torch
+ Downloaded triton
+ Downloaded nvidia-cusparselt-cu12
+ Downloaded nvidia-nccl-cu12
+ Downloaded nvidia-cublas-cu12
+ Downloaded nvidia-cudnn-cu12
+Prepared 52 packages in 39.21s
+Installed 53 packages in 308ms
+ + antlr4-python3-runtime==4.9.3
+ + asttokens==3.0.2
+ + charset-normalizer==3.5.2
+ + colorama==0.4.6
+ + cuda-bindings==12.9.10
+ + cuda-pathfinder==1.8.5
+ + cuda-toolkit==12.6.3
+ + decorator==5.1.1
+ + dgl==1.0.2+cu118 (from https://data.dgl.ai/wheels/cu118/dgl-1.0.2%2Bcu118-cp311-cp311-manylinux1_x86_64.whl
+ + e3nn==0.3.3
+ + executing==2.3.0
+ + filelock==4.2.6
+ + fsspec==2026.9.0
+ + hydra-core==1.3.8
+ + icecream==2.2.0
+ + idna==3.20
+ + jinja2==3.1.6
+ + markupsafe==3.0.4
+ + mpmath==1.3.0
+ + networkx==3.6.1
+ + numpy==1.23.5
+ + nvidia-cublas-cu12==12.6.4.1
+ + nvidia-cuda-cupti-cu12==12.6.80
+ + nvidia-cuda-nvrtc-cu12==12.6.85
+ + nvidia-cuda-runtime-cu12==12.6.77
+ + nvidia-cudnn-cu12==9.10.2.21
+ + nvidia-cufft-cu12==11.3.0.4
+ + nvidia-cufile-cu12==1.11.1.6
+ + nvidia-curand-cu12==10.3.7.77
+ + nvidia-cusolver-cu12==11.7.1.2
+ + nvidia-cusparse-cu12==12.5.4.2
+ + nvidia-cusparselt-cu12==0.7.1
+ + nvidia-nccl-cu12==2.29.3
+ + nvidia-nvjitlink-cu12==12.9.86
+ + nvidia-nvshmem-cu12==3.4.5
+ + nvidia-nvtx-cu12==12.6.77
+ + omegaconf==2.3.0
+ + opt-einsum==3.4.0
+ + opt-einsum-fx==0.1.4
+ + packaging==26.3
+ + psutil==7.2.2
+ + pygments==2.21.0
+ + pyrsistent==0.20.0
+ + pyyaml==6.0.3
+ + requests==2.34.2
+ + scipy==1.13.1
+ + setuptools==84.2.1
+ + sympy==1.14.0
+ + torch==2.14.1+cu126 (from https://download.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl
+ + tqdm==4.70.1
+ + triton==3.8.0
+ + typing-extensions==4.16.0
+ + urllib3==2.8.0
+2026-11-01 19:09:19,718 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/se3/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/se3.constraints.txt --target /GPU_JOB/runtime/cuda11 --no-deps nvidia-cuda-runtime-cu11==11.8.89 nvidia-cusparse-cu11==11.7.5.86 nvidia-cublas-cu11==11.11.3.6 'certifi>=2026.10.19'
+Using CPython 3.11.18 interpreter at: /GPU_JOB/runtime/se3/bin/python
+Resolved 4 packages in 119ms
+Downloading nvidia-cublas-cu11 (398.5MiB)
+Downloading nvidia-cusparse-cu11 (194.7MiB)
+ Downloaded nvidia-cusparse-cu11
+ Downloaded nvidia-cublas-cu11
+Prepared 3 packages in 6.35s
+Installed 4 packages in 4.86s
+ + certifi==2026.10.23
+ + nvidia-cublas-cu11==11.11.3.6
+ + nvidia-cuda-runtime-cu11==11.8.89
+ + nvidia-cusparse-cu11==11.7.5.86
+[heartbeat] {"current_command": null, "elapsed_seconds": 92.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560171.6936455}, "last_output_seconds_ago": 0.6, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 2.3800000000000003, "name": "python", "pid": 80, "rss_bytes": 51605504, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560171.6497884}
+2026-11-01 19:09:33,760 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/se3/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/se3.constraints.txt --no-deps /GPU_JOB/runtime/tools/RFdiffusion/env/SE3Transformer 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/se3
+Resolved 2 packages in 565ms
+   Building se3-transformer @ file:///GPU_JOB/runtime/tools/RFdiffusion/env/SE3Transformer
+      Built se3-transformer @ file:///GPU_JOB/runtime/tools/RFdiffusion/env/SE3Transformer
+Prepared 1 package in 279ms
+Installed 1 package in 1ms
+ + se3-transformer==1.0.0 (from file:///GPU_JOB/runtime/tools/RFdiffusion/env/SE3Transformer)
+2026-11-01 19:09:35,378 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/se3/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/se3.constraints.txt --no-deps -e /GPU_JOB/runtime/tools/RFdiffusion 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/se3
+Resolved 2 packages in 563ms
+   Building rfdiffusion @ file:///GPU_JOB/runtime/tools/RFdiffusion
+      Built rfdiffusion @ file:///GPU_JOB/runtime/tools/RFdiffusion
+Prepared 1 package in 232ms
+Installed 1 package in 1ms
+ + rfdiffusion==1.1.0 (from file:///GPU_JOB/runtime/tools/RFdiffusion)
+2026-11-01 19:09:36,312 __main__: Download design checkpoints and record their exact hashes
+[heartbeat] {"current_command": null, "elapsed_seconds": 122.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560201.7517433}, "last_output_seconds_ago": 25.4, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 5.82, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560201.7082434}
+[heartbeat] {"current_command": null, "elapsed_seconds": 152.4, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560231.8127332}, "last_output_seconds_ago": 55.5, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 7.18, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560231.7663856}
+2026-11-01 19:10:34,934 __main__: Downloaded Base_ckpt.pt: 483616107 bytes, SHA256 0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca; expected pin 0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca
+[heartbeat] {"current_command": null, "elapsed_seconds": 184.2, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560263.5766294}, "last_output_seconds_ago": 28.6, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 8.31, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560263.5321822}
+[heartbeat] {"current_command": null, "elapsed_seconds": 214.2, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560293.635557}, "last_output_seconds_ago": 58.7, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 8.85, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560293.5916243}
+[heartbeat] {"current_command": null, "elapsed_seconds": 244.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560323.695202}, "last_output_seconds_ago": 88.7, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 9.36, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560323.650781}
+2026-11-01 19:12:25,834 __main__: Downloaded Complex_base_ckpt.pt: 483619179 bytes, SHA256 76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc; expected pin 76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc
+2026-11-01 19:12:25,835 __main__: Install the isolated Boltz prediction environment
+2026-11-01 19:12:25,934 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/boltz/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/boltz.constraints.txt 'https://download.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl' /GPU_JOB/runtime/patched-wheels/boltz-2.0.3+bindsight.1-py3-none-any.whl trifast==0.1.11 numpy==1.26.4 'biopython>=1.88,<2' 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/boltz
+Resolved 93 packages in 991ms
+   Building ihm==2.12
+   Building fairscale==0.4.13
+   Building modelcif==1.2
+Downloading aiohttp (1.8MiB)
+Downloading wandb (15.4MiB)
+Downloading scikit-learn (12.9MiB)
+Downloading biopython (3.1MiB)
+Downloading rdkit (30.4MiB)
+Downloading pandas (10.6MiB)
+Downloading llvmlite (40.4MiB)
+Downloading numba (3.6MiB)
+Downloading gemmi (3.0MiB)
+Downloading numpy (17.4MiB)
+Downloading pillow (6.8MiB)
+      Built modelcif==1.2
+ Downloaded aiohttp
+      Built fairscale==0.4.13
+ Downloaded biopython
+ Downloaded gemmi
+ Downloaded numba
+ Downloaded pillow
+ Downloaded pandas
+ Downloaded scikit-learn
+ Downloaded wandb
+ Downloaded numpy
+ Downloaded rdkit
+ Downloaded llvmlite
+      Built ihm==2.12
+Prepared 53 packages in 6.70s
+[heartbeat] {"current_command": null, "elapsed_seconds": 274.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560353.7740674}, "last_output_seconds_ago": 0.1, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 10.469999999999999, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}, {"cpu_seconds": 5.62, "name": "uv", "pid": 485, "rss_bytes": 137793536, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560353.7103326}
+Installed 92 packages in 376ms
+ + aiohappyeyeballs==2.7.1
+ + aiohttp==3.14.5
+ + aiosignal==1.4.0
+ + antlr4-python3-runtime==4.9.3
+ + attrs==26.1.0
+ + biopython==1.88
+ + boltz==2.0.3+bindsight.1 (from file:///GPU_JOB/runtime/patched-wheels/boltz-2.0.3+bindsight.1-py3-none-any.whl)
+ + charset-normalizer==3.5.2
+ + chembl-structure-pipeline==1.2.2
+ + click==8.1.7
+ + cloudpickle==3.1.2
+ + cuda-bindings==12.9.10
+ + cuda-pathfinder==1.8.5
+ + cuda-toolkit==12.6.3
+ + dm-tree==0.1.8
+ + docker-pycreds==0.4.0
+ + einops==0.8.0
+ + einx==0.3.0
+ + fairscale==0.4.13
+ + filelock==4.2.6
+ + frozendict==2.5.1
+ + frozenlist==1.8.0
+ + fsspec==2026.9.0
+ + gemmi==0.6.5
+ + gitdb==4.0.12
+ + gitpython==3.2.1
+ + hydra-core==1.3.8
+ + idna==3.20
+ + ihm==2.12
+ + jaxtyping==0.3.11
+ + jinja2==3.1.6
+ + joblib==1.6.0
+ + lightning-utilities==0.15.3
+ + llvmlite==0.44.0
+ + markupsafe==3.0.4
+ + mashumaro==3.14
+ + modelcif==1.2
+ + mpmath==1.3.0
+ + msgpack==1.2.4
+ + multidict==7.2.1
+ + networkx==3.6.1
+ + numba==0.61.0
+ + numpy==1.26.4
+ + nvidia-cublas-cu12==12.6.4.1
+ + nvidia-cuda-cupti-cu12==12.6.80
+ + nvidia-cuda-nvrtc-cu12==12.6.85
+ + nvidia-cuda-runtime-cu12==12.6.77
+ + nvidia-cudnn-cu12==9.10.2.21
+ + nvidia-cufft-cu12==11.3.0.4
+ + nvidia-cufile-cu12==1.11.1.6
+ + nvidia-curand-cu12==10.3.7.77
+ + nvidia-cusolver-cu12==11.7.1.2
+ + nvidia-cusparse-cu12==12.5.4.2
+ + nvidia-cusparselt-cu12==0.7.1
+ + nvidia-nccl-cu12==2.29.3
+ + nvidia-nvjitlink-cu12==12.9.86
+ + nvidia-nvshmem-cu12==3.4.5
+ + nvidia-nvtx-cu12==12.6.77
+ + omegaconf==2.3.1
+ + packaging==26.3
+ + pandas==3.0.6
+ + pillow==13.0.0
+ + platformdirs==4.14.3
+ + propcache==0.5.4
+ + protobuf==5.29.6
+ + psutil==7.2.2
+ + python-dateutil==4.0.0
+ + pytorch-lightning==2.6.6
+ + pyyaml==6.0.2
+ + rdkit==2026.9.1
+ + requests==2.34.2
+ + scikit-learn==1.6.1
+ + scipy==1.13.1
+ + sentry-sdk==2.73.0
+ + setproctitle==1.3.8
+ + setuptools==84.2.1
+ + six==1.17.0
+ + smmap==5.0.3
+ + sympy==1.14.0
+ + threadpoolctl==3.7.0
+ + torch==2.14.1+cu126 (from https://download.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl
+ + torchmetrics==1.9.0
+ + tqdm==4.70.1
+ + trifast==0.1.11
+ + triton==3.8.0
+ + types-requests==2.33.0.20261030
+ + typing-extensions==4.16.0
+ + tzdata==2026.6
+ + urllib3==2.8.0
+ + wadler-lindig==0.1.8
+ + wandb==0.18.7
+ + yarl==1.25.1
+2026-11-01 19:12:34,080 __main__: Running /GPU_JOB/runtime/uv --no-config pip install --python /GPU_JOB/runtime/boltz/bin/python --index-url https://pypi.org/simple --index-strategy unsafe-best-match -c /GPU_JOB/runtime/boltz.constraints.txt /GPU_JOB/bindsight-0.3.8-py3-none-any.whl 'certifi>=2026.10.19'
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/boltz
+Resolved 21 packages in 336ms
+Downloading pydantic-core (2.1MiB)
+ Downloaded pydantic-core
+Prepared 9 packages in 67ms
+Installed 10 packages in 13ms
+ + annotated-types==0.8.0
+ + bindsight==0.3.8 (from file:///GPU_JOB/bindsight-0.3.8-py3-none-any.whl)
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + pydantic==2.14.2
+ + pydantic-core==2.50.2
+ + pygments==2.21.0
+ + rich==15.0.0
+ + tenacity==9.2.1
+ + typing-inspection==0.4.4
+2026-11-01 19:12:34,546 __main__: Check both environments with real CUDA operations
+2026-11-01 19:12:45,614 __main__: se3 runtime check: {"python": "3.11.18", "executable": "/GPU_JOB/runtime/se3/bin/python", "torch": "2.14.1+cu126", "cuda": "12.6", "cuda_tested": true, "dgl_cuda_tested": true, "device": "Tesla T4", "capability": [7, 5], "dgl": "1.0.2+cu118", "numpy": "1.23.5", "loaded_curand_sha256": {"/GPU_JOB/runtime/se3/lib/python3.11/site-packages/nvidia/curand/lib/libcurand.so.10": "12411c1e921cd3cac4e0d2f58024a3e6bbb7cea584d5cd768ad908ec762c5545"}, "distributed_dgl_supported": false, "checkpoint_loader_checked": false, "boltz": null, "trifast": null}
+[heartbeat] {"current_command": null, "elapsed_seconds": 304.5, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560383.8684046}, "last_output_seconds_ago": 18.2, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 10.479999999999999, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}, {"cpu_seconds": 16.14, "name": "python", "pid": 616, "rss_bytes": 1152880640, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560383.8233466}
+2026-11-01 19:13:05,928 __main__: boltz runtime check: {"python": "3.11.18", "executable": "/GPU_JOB/runtime/boltz/bin/python", "torch": "2.14.1+cu126", "cuda": "12.6", "cuda_tested": true, "dgl_cuda_tested": false, "device": "Tesla T4", "capability": [7, 5], "dgl": null, "numpy": "1.26.4", "loaded_curand_sha256": {"/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/nvidia/curand/lib/libcurand.so.10": "12411c1e921cd3cac4e0d2f58024a3e6bbb7cea584d5cd768ad908ec762c5545"}, "distributed_dgl_supported": false, "checkpoint_loader_checked": true, "boltz": "2.0.3+bindsight.1", "trifast": "0.1.11"}
+2026-11-01 19:13:05,928 __main__: Verify publisher-pinned Boltz model and chemical-component assets
+2026-11-01 19:13:27,959 bindsight.runners.gpu_runtime: Downloaded boltz2_conf.ckpt: 2286561469 bytes, SHA256 090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1; expected pin 090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1
+[heartbeat] {"current_command": null, "elapsed_seconds": 334.5, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560414.0525248}, "last_output_seconds_ago": 5.9, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 24.77, "name": "python", "pid": 80, "rss_bytes": 56188928, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560413.8839905}
+2026-11-01 19:13:48,134 bindsight.runners.gpu_runtime: Downloaded boltz2_aff.ckpt: 2062139170 bytes, SHA256 dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e; expected pin dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e
+2026-11-01 19:13:59,079 bindsight.runners.gpu_runtime: Downloaded mols.tar: 1855662080 bytes, SHA256 39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7; expected pin 39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7
+[heartbeat] {"current_command": null, "elapsed_seconds": 371.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560450.6938338}, "last_output_seconds_ago": 11.6, "peak_device_memory_mib": 0, "phase": "provision the canonical scientific runtime", "processes": {"active_pid": 80, "processes": [{"cpu_seconds": 49.47, "name": "python", "pid": 80, "rss_bytes": 90411008, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560450.6484485}
+2026-11-01 19:14:20,029 __main__: Running /GPU_JOB/runtime/uv --no-config pip check --python /GPU_JOB/runtime/se3/bin/python
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/se3
+Checked 56 packages in 1ms
+All installed packages are compatible
+2026-11-01 19:14:20,071 __main__: Running /GPU_JOB/runtime/uv --no-config pip check --python /GPU_JOB/runtime/boltz/bin/python
+Using Python 3.11.18 environment at: /GPU_JOB/runtime/boltz
+Checked 103 packages in 2ms
+All installed packages are compatible
+2026-11-01 19:14:20,120 __main__: Environment setup completed; full scientific validation is separate
+
+========== materialise spec + target structure ==========
+[disk @ materialise spec + target structure] / 1029.9/8156.9 GiB free | /kaggle/working 19.5/19.5 GiB free | /kaggle/temp 1029.9/8156.9 GiB free | /opt 1029.9/8156.9 GiB free | /tmp 1029.9/8156.9 GiB free
+[gpu @ materialise spec + target structure] {'devices': [{'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}, {'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}], 'observed_unix_time': 1793560460.2450051} | peak so far 0 MiB
+
+========== run scientific executor ==========
+[disk @ run scientific executor] / 1029.9/8156.9 GiB free | /kaggle/working 19.5/19.5 GiB free | /kaggle/temp 1029.9/8156.9 GiB free | /opt 1029.9/8156.9 GiB free | /tmp 1029.9/8156.9 GiB free
+[gpu @ run scientific executor] {'devices': [{'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}, {'name': 'Tesla T4', 'utilization_percent': 0, 'memory_used_mib': 0, 'memory_total_mib': 15360}], 'observed_unix_time': 1793560460.2906697} | peak so far 0 MiB
+
++ /GPU_JOB/runtime/boltz/bin/python -I -m bindsight.runners.job_exec /GPU_JOB/spec/spec.json /GPU_JOB/<GPU_JOB_ID>.tar.gz
+job: mode=design_and_validate designer=rfdiff_mpnn validator=boltz2 target=P04626
+exec: /GPU_JOB/runtime/se3-python -c import sys; sys.version_info >= (3, 11) or sys.exit('RFdiffusion runtime requires Python 3.11 or newer'); import rfdiffusion, se3_transformer, torch, dgl, e3nn; print('design runtime', sys.version, 'torch', torch.__version__, 'dgl', dgl.__version__)
+design runtime 3.11.18 (main, Oct 26 2026, 14:05:07) [Clang 23.1.3 ] torch 2.14.1+cu126 dgl 1.0.2+cu118
+checkpoint Base_ckpt.pt: 483616107 bytes sha256=0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca
+checkpoint Complex_base_ckpt.pt: 483619179 bytes sha256=76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc
+designing against 1 extracellular range(s) of chain A: [(511, 652)]
+designing against 1 extracellular range(s) of chain A: [(511, 652)]
+exec: /GPU_JOB/runtime/se3-python /GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py inference.input_pdb=/GPU_JOB/work/target.pdb inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder inference.num_designs=1 contigmap.contigs=[A511-652/0 60-60] inference.deterministic=True inference.design_startnum=42
+/GPU_JOB/runtime/tools/RFdiffusion/rfdiffusion/util.py:253: UserWarning: Using torch.cross without specifying the dim arg is deprecated.
+Please either pass the dim explicitly or simply use torch.linalg.cross.
+The default value of dim will change to agree with that of linalg.cross in a future release. (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/native/Cross.cpp:63.)
+  Z = torch.cross(Xn, Yn)
+/GPU_JOB/runtime/se3/lib/python3.11/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/GPU_JOB/runtime/se3/lib/python3.11/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/GPU_JOB/runtime/tools/RFdiffusion/rfdiffusion/Track_module.py:236: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  @torch.cuda.amp.autocast(enabled=False)
+[2026-11-01 19:14:29,854][__main__][INFO] - Found GPU with device_name Tesla T4. Will run RFdiffusion on Tesla T4
+Reading models from /GPU_JOB/runtime/tools/RFdiffusion/rfdiffusion/inference/../../models
+[2026-11-01 19:14:29,855][rfdiffusion.inference.model_runners][INFO] - Reading checkpoint from /GPU_JOB/runtime/tools/RFdiffusion/rfdiffusion/inference/../../models/Base_ckpt.pt
+This is inf_conf.ckpt_path
+/GPU_JOB/runtime/tools/RFdiffusion/rfdiffusion/inference/../../models/Base_ckpt.pt
+Assembling -model, -diffuser and -preprocess configs from checkpoint
+USING MODEL CONFIG: self._conf[model][n_extra_block] = 4
+USING MODEL CONFIG: self._conf[model][n_main_block] = 32
+USING MODEL CONFIG: self._conf[model][n_ref_block] = 4
+USING MODEL CONFIG: self._conf[model][d_msa] = 256
+USING MODEL CONFIG: self._conf[model][d_msa_full] = 64
+USING MODEL CONFIG: self._conf[model][d_pair] = 128
+USING MODEL CONFIG: self._conf[model][d_templ] = 64
+USING MODEL CONFIG: self._conf[model][n_head_msa] = 8
+USING MODEL CONFIG: self._conf[model][n_head_pair] = 4
+USING MODEL CONFIG: self._conf[model][n_head_templ] = 4
+USING MODEL CONFIG: self._conf[model][d_hidden] = 32
+USING MODEL CONFIG: self._conf[model][d_hidden_templ] = 32
+USING MODEL CONFIG: self._conf[model][p_drop] = 0.15
+USING MODEL CONFIG: self._conf[model][SE3_param_full] = {'num_layers': 1, 'num_channels': 32, 'num_degrees': 2, 'n_heads': 4, 'div': 4, 'l0_in_features': 8, 'l0_out_features': 8, 'l1_in_features': 3, 'l1_out_features': 2, 'num_edge_features': 32}
+USING MODEL CONFIG: self._conf[model][SE3_param_topk] = {'num_layers': 1, 'num_channels': 32, 'num_degrees': 2, 'n_heads': 4, 'div': 4, 'l0_in_features': 64, 'l0_out_features': 64, 'l1_in_features': 3, 'l1_out_features': 2, 'num_edge_features': 64}
+USING MODEL CONFIG: self._conf[model][freeze_track_motif] = False
+USING MODEL CONFIG: self._conf[model][use_motif_timestep] = True
+USING MODEL CONFIG: self._conf[diffuser][T] = 50
+USING MODEL CONFIG: self._conf[diffuser][b_0] = 0.01
+USING MODEL CONFIG: self._conf[diffuser][b_T] = 0.07
+USING MODEL CONFIG: self._conf[diffuser][schedule_type] = linear
+USING MODEL CONFIG: self._conf[diffuser][so3_type] = igso3
+USING MODEL CONFIG: self._conf[diffuser][crd_scale] = 0.25
+USING MODEL CONFIG: self._conf[diffuser][so3_schedule_type] = linear
+USING MODEL CONFIG: self._conf[diffuser][min_b] = 1.5
+USING MODEL CONFIG: self._conf[diffuser][max_b] = 2.5
+USING MODEL CONFIG: self._conf[diffuser][min_sigma] = 0.02
+USING MODEL CONFIG: self._conf[diffuser][max_sigma] = 1.5
+USING MODEL CONFIG: self._conf[preprocess][sidechain_input] = False
+USING MODEL CONFIG: self._conf[preprocess][motif_sidechain_input] = True
+USING MODEL CONFIG: self._conf[preprocess][d_t1d] = 22
+USING MODEL CONFIG: self._conf[preprocess][d_t2d] = 44
+USING MODEL CONFIG: self._conf[preprocess][prob_self_cond] = 0.5
+USING MODEL CONFIG: self._conf[preprocess][str_self_cond] = True
+USING MODEL CONFIG: self._conf[preprocess][predict_previous] = False
+[2026-11-01 19:14:34,649][rfdiffusion.inference.model_runners][INFO] - Loading checkpoint.
+[2026-11-01 19:14:34,846][rfdiffusion.diffusion][INFO] - Calculating IGSO3.
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 404.1, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 793, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560483.549789}, "last_output_seconds_ago": 8.7, "peak_device_memory_mib": 793, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 3.06, "name": "python", "pid": 678, "rss_bytes": 39911424, "status": "sleeping"}, {"cpu_seconds": 16.89, "name": "python", "pid": 688, "rss_bytes": 1249091584, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560483.508738}
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 434.2, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 793, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560513.6138835}, "last_output_seconds_ago": 38.7, "peak_device_memory_mib": 793, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 3.39, "name": "python", "pid": 678, "rss_bytes": 39911424, "status": "sleeping"}, {"cpu_seconds": 46.94, "name": "python", "pid": 688, "rss_bytes": 1267703808, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560513.5729785}
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 464.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 793, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560543.680265}, "last_output_seconds_ago": 68.8, "peak_device_memory_mib": 793, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 3.73, "name": "python", "pid": 678, "rss_bytes": 39911424, "status": "sleeping"}, {"cpu_seconds": 77.02, "name": "python", "pid": 688, "rss_bytes": 1267208192, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560543.6394303}
+Successful diffuser __init__
+[2026-11-01 19:15:52,783][__main__][INFO] - Making design /GPU_JOB/work/rfdiff_out/binder_42
+[2026-11-01 19:15:52,791][rfdiffusion.inference.model_runners][INFO] - Using contig: ['A511-652/0 60-60']
+With this beta schedule (linear schedule, beta_0 = 0.04, beta_T = 0.28), alpha_bar_T = 0.00013696050154976547
+[2026-11-01 19:15:52,865][rfdiffusion.inference.model_runners][INFO] - Sequence init: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+/GPU_JOB/runtime/se3/lib/python3.11/site-packages/dgl/backend/pytorch/tensor.py:445: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  assert input.numel() == input.storage().size(), (
+[2026-11-01 19:16:00,221][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.38
+[2026-11-01 19:16:00,226][rfdiffusion.inference.model_runners][INFO] - Timestep 50, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:02,378][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:02,382][rfdiffusion.inference.model_runners][INFO] - Timestep 49, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:04,293][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:04,297][rfdiffusion.inference.model_runners][INFO] - Timestep 48, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:06,193][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:06,197][rfdiffusion.inference.model_runners][INFO] - Timestep 47, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:08,111][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:08,115][rfdiffusion.inference.model_runners][INFO] - Timestep 46, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:10,027][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:10,030][rfdiffusion.inference.model_runners][INFO] - Timestep 45, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:11,945][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:11,949][rfdiffusion.inference.model_runners][INFO] - Timestep 44, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 494.4, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 1551, "name": "Tesla T4", "utilization_percent": 89}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560573.7624192}, "last_output_seconds_ago": 1.8, "peak_device_memory_mib": 1551, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 4.0, "name": "python", "pid": 678, "rss_bytes": 39960576, "status": "sleeping"}, {"cpu_seconds": 104.86, "name": "python", "pid": 688, "rss_bytes": 2188337152, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560573.7194312}
+[2026-11-01 19:16:13,862][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:13,866][rfdiffusion.inference.model_runners][INFO] - Timestep 43, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:15,790][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:15,795][rfdiffusion.inference.model_runners][INFO] - Timestep 42, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:17,721][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:17,725][rfdiffusion.inference.model_runners][INFO] - Timestep 41, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:19,659][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:19,662][rfdiffusion.inference.model_runners][INFO] - Timestep 40, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:21,597][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:21,602][rfdiffusion.inference.model_runners][INFO] - Timestep 39, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:23,645][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:23,649][rfdiffusion.inference.model_runners][INFO] - Timestep 38, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:25,602][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:25,606][rfdiffusion.inference.model_runners][INFO] - Timestep 37, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:27,555][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:27,559][rfdiffusion.inference.model_runners][INFO] - Timestep 36, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:29,508][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:29,513][rfdiffusion.inference.model_runners][INFO] - Timestep 35, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:31,505][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:31,510][rfdiffusion.inference.model_runners][INFO] - Timestep 34, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:33,491][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:33,495][rfdiffusion.inference.model_runners][INFO] - Timestep 33, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:35,468][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:35,471][rfdiffusion.inference.model_runners][INFO] - Timestep 32, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:37,434][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:37,437][rfdiffusion.inference.model_runners][INFO] - Timestep 31, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:39,408][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:39,413][rfdiffusion.inference.model_runners][INFO] - Timestep 30, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:41,389][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:41,393][rfdiffusion.inference.model_runners][INFO] - Timestep 29, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:43,385][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:43,389][rfdiffusion.inference.model_runners][INFO] - Timestep 28, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 524.4, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3161, "name": "Tesla T4", "utilization_percent": 89}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560603.8330395}, "last_output_seconds_ago": 0.4, "peak_device_memory_mib": 3161, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 4.26, "name": "python", "pid": 678, "rss_bytes": 40001536, "status": "sleeping"}, {"cpu_seconds": 134.93, "name": "python", "pid": 688, "rss_bytes": 2188341248, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560603.7902265}
+[2026-11-01 19:16:45,373][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:45,377][rfdiffusion.inference.model_runners][INFO] - Timestep 27, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:47,363][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:47,367][rfdiffusion.inference.model_runners][INFO] - Timestep 26, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:49,364][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:49,367][rfdiffusion.inference.model_runners][INFO] - Timestep 25, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:51,364][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:16:51,367][rfdiffusion.inference.model_runners][INFO] - Timestep 24, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:53,372][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:53,375][rfdiffusion.inference.model_runners][INFO] - Timestep 23, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:55,376][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:55,380][rfdiffusion.inference.model_runners][INFO] - Timestep 22, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:57,398][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:57,402][rfdiffusion.inference.model_runners][INFO] - Timestep 21, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:16:59,407][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:16:59,411][rfdiffusion.inference.model_runners][INFO] - Timestep 20, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:01,444][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:17:01,448][rfdiffusion.inference.model_runners][INFO] - Timestep 19, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:03,477][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.26
+[2026-11-01 19:17:03,480][rfdiffusion.inference.model_runners][INFO] - Timestep 18, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:05,519][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:17:05,523][rfdiffusion.inference.model_runners][INFO] - Timestep 17, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:07,562][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:17:07,565][rfdiffusion.inference.model_runners][INFO] - Timestep 16, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:09,613][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:17:09,617][rfdiffusion.inference.model_runners][INFO] - Timestep 15, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:11,675][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:17:11,679][rfdiffusion.inference.model_runners][INFO] - Timestep 14, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:13,731][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.25
+[2026-11-01 19:17:13,735][rfdiffusion.inference.model_runners][INFO] - Timestep 13, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/RFdiffusion/scripts/run_inference.py", "inference.input_pdb=/GPU_JOB/work/target.pdb", "inference.output_prefix=/GPU_JOB/work/rfdiff_out/binder", "inference.num_designs=1", "contigmap.contigs=[A511-652/0 60-60]", "inference.deterministic=True", "inference.design_startnum=42"], "command_index": 2, "cwd": "/GPU_JOB/runtime/tools/RFdiffusion", "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:14:26.435678+00:00"}, "elapsed_seconds": 554.5, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3399, "name": "Tesla T4", "utilization_percent": 63}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560633.9037223}, "last_output_seconds_ago": 0.1, "peak_device_memory_mib": 3399, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 4.51, "name": "python", "pid": 678, "rss_bytes": 40054784, "status": "sleeping"}, {"cpu_seconds": 165.0, "name": "python", "pid": 688, "rss_bytes": 2188611584, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560633.862219}
+[2026-11-01 19:17:15,803][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:15,806][rfdiffusion.inference.model_runners][INFO] - Timestep 12, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:17,870][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:17,874][rfdiffusion.inference.model_runners][INFO] - Timestep 11, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:19,947][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:19,950][rfdiffusion.inference.model_runners][INFO] - Timestep 10, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:22,032][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:22,037][rfdiffusion.inference.model_runners][INFO] - Timestep 9, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:24,102][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:24,106][rfdiffusion.inference.model_runners][INFO] - Timestep 8, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:26,190][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:26,194][rfdiffusion.inference.model_runners][INFO] - Timestep 7, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:28,280][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:28,283][rfdiffusion.inference.model_runners][INFO] - Timestep 6, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:30,378][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:30,382][rfdiffusion.inference.model_runners][INFO] - Timestep 5, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:32,467][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.24
+[2026-11-01 19:17:32,471][rfdiffusion.inference.model_runners][INFO] - Timestep 4, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:34,553][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.23
+[2026-11-01 19:17:34,556][rfdiffusion.inference.model_runners][INFO] - Timestep 3, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:36,627][rfdiffusion.inference.utils][INFO] - Sampled motif RMSD: 0.23
+[2026-11-01 19:17:36,630][rfdiffusion.inference.model_runners][INFO] - Timestep 2, input to next step: ------------------------------------------------------------CHQLCARGHCWGPGPTQCVNCSQFLRGQECVEECRVLQGLPREYVNARHCLPCHPECQPQNGSVTCFGPEADQCVACAHYKDPPFCVARCPSGVKPDLSYMPIWKFPDEEGACQPCPINCTHSCVDLDDKGCPAEQRASPLT
+[2026-11-01 19:17:42,594][__main__][INFO] - Finished design in 1.83 minutes
+exec: /GPU_JOB/runtime/se3-python /GPU_JOB/runtime/tools/ProteinMPNN/protein_mpnn_run.py --pdb_path /GPU_JOB/work/rfdiff_out/binder_42.pdb --pdb_path_chains B --out_folder /GPU_JOB/work/mpnn_out/binder_42 --num_seq_per_target 2 --sampling_temp 0.1 --seed 42
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/se3-python", "/GPU_JOB/runtime/tools/ProteinMPNN/protein_mpnn_run.py", "--pdb_path", "/GPU_JOB/work/rfdiff_out/binder_42.pdb", "--pdb_path_chains", "B", "--out_folder", "/GPU_JOB/work/mpnn_out/binder_42", "--num_seq_per_target", "2", "--sampling_temp", "0.1", "--seed", "42"], "command_index": 3, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:43.522763+00:00"}, "elapsed_seconds": 584.6, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560663.9960554}, "last_output_seconds_ago": 0.4, "peak_device_memory_mib": 3399, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 4.78, "name": "python", "pid": 678, "rss_bytes": 40099840, "status": "sleeping"}, {"cpu_seconds": 0.44999999999999996, "name": "python", "pid": 797, "rss_bytes": 434245632, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560663.9550858}
+----------------------------------------
+chain_id_jsonl is NOT loaded
+----------------------------------------
+fixed_positions_jsonl is NOT loaded
+----------------------------------------
+pssm_jsonl is NOT loaded
+----------------------------------------
+omit_AA_jsonl is NOT loaded
+----------------------------------------
+bias_AA_jsonl is NOT loaded
+----------------------------------------
+tied_positions_jsonl is NOT loaded
+----------------------------------------
+bias by residue dictionary is not loaded, or not provided
+----------------------------------------
+----------------------------------------
+Number of edges: 48
+Training noise level: 0.2A
+Generating sequences for: binder_42
+2 sequences of length 202 generated in 1.826 seconds
+designer produced 2 designs
+designing against 1 extracellular range(s) of chain A: [(511, 652)]
+exec: /GPU_JOB/runtime/boltz/bin/python -m bindsight.runners.boltz_compat predict /GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml --out_dir /GPU_JOB/work/boltz_out/P04626_binder_42_seq0 --write_full_pae --use_msa_server --seed 2498828884
+bindsight: Boltz 2.0.3+bindsight.1 precision=32
+bindsight: verifying cached Boltz assets
+Seed set to 2498828884
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0", "--write_full_pae", "--use_msa_server", "--seed", "2498828884"], "command_index": 4, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:48.574613+00:00"}, "elapsed_seconds": 614.8, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560694.1823726}, "last_output_seconds_ago": 19.5, "peak_device_memory_mib": 3399, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 5.1000000000000005, "name": "python", "pid": 678, "rss_bytes": 40140800, "status": "sleeping"}, {"cpu_seconds": 24.979999999999997, "name": "python", "pid": 809, "rss_bytes": 1123115008, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560694.1375942}
+bindsight: cached Boltz assets verified
+Checking input data.
+Processing 1 inputs with 1 threads.
+  0%|          | 0/1 [00:00<?, ?it/s]
+  0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+Generating MSA for /GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml with 2 protein entities.
+bindsight: MSA phase begin timeout=1800s
+SUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+COMPLETE:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:00 remaining: 00:00][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:01 remaining: 00:00]
+  0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+SUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+COMPLETE:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:00 remaining: 00:00][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:02 remaining: 00:00]
+bindsight: MSA phase complete elapsed=3.341s
+100%|██████████| 1/1 [00:03<00:00,  3.66s/it]
+100%|██████████| 1/1 [00:03<00:00,  3.66s/it]
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+Running structure prediction for 1 input.
+bindsight: restricted checkpoint load begin (boltz2_conf.ckpt)
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0", "--write_full_pae", "--use_msa_server", "--seed", "2498828884"], "command_index": 4, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:48.574613+00:00"}, "elapsed_seconds": 644.9, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560724.2663743}, "last_output_seconds_ago": 4.5, "peak_device_memory_mib": 3399, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 5.33, "name": "python", "pid": 678, "rss_bytes": 40140800, "status": "sleeping"}, {"cpu_seconds": 51.8, "name": "python", "pid": 809, "rss_bytes": 3574321152, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560724.2200348}
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0", "--write_full_pae", "--use_msa_server", "--seed", "2498828884"], "command_index": 4, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:48.574613+00:00"}, "elapsed_seconds": 674.9, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560754.3372915}, "last_output_seconds_ago": 34.6, "peak_device_memory_mib": 3399, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 5.609999999999999, "name": "python", "pid": 678, "rss_bytes": 40140800, "status": "sleeping"}, {"cpu_seconds": 81.86, "name": "python", "pid": 809, "rss_bytes": 5260525568, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560754.2924325}
+bindsight: restricted checkpoint load complete (boltz2_conf.ckpt)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0", "--write_full_pae", "--use_msa_server", "--seed", "2498828884"], "command_index": 4, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:48.574613+00:00"}, "elapsed_seconds": 705.0, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 9795, "name": "Tesla T4", "utilization_percent": 100}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560784.4141831}, "last_output_seconds_ago": 27.5, "peak_device_memory_mib": 9795, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 5.8500000000000005, "name": "python", "pid": 678, "rss_bytes": 40140800, "status": "sleeping"}, {"cpu_seconds": 103.49, "name": "python", "pid": 809, "rss_bytes": 5560860672, "status": "running"}, {"cpu_seconds": 2.3, "name": "pt_data_worker", "pid": 857, "rss_bytes": 4894162944, "status": "sleeping"}, {"cpu_seconds": 0.0, "name": "pt_data_worker", "pid": 858, "rss_bytes": 4783267840, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560784.373049}
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq0", "--write_full_pae", "--use_msa_server", "--seed", "2498828884"], "command_index": 4, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:17:48.574613+00:00"}, "elapsed_seconds": 735.1, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 9837, "name": "Tesla T4", "utilization_percent": 96}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560814.4800613}, "last_output_seconds_ago": 57.6, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 6.09, "name": "python", "pid": 678, "rss_bytes": 40140800, "status": "sleeping"}, {"cpu_seconds": 133.53, "name": "python", "pid": 809, "rss_bytes": 5603885056, "status": "running"}, {"cpu_seconds": 2.3, "name": "pt_data_worker", "pid": 857, "rss_bytes": 4894162944, "status": "sleeping"}, {"cpu_seconds": 0.01, "name": "pt_data_worker", "pid": 858, "rss_bytes": 4783267840, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560814.4387407}
+Number of failed examples: 0
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:55 • 0:00:00 0.00it/s 
+exec: /GPU_JOB/runtime/boltz/bin/python -m bindsight.runners.boltz_compat predict /GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml --out_dir /GPU_JOB/work/boltz_out/P04626_binder_42_seq1 --write_full_pae --use_msa_server --seed 4169833151
+bindsight: Boltz 2.0.3+bindsight.1 precision=32
+bindsight: verifying cached Boltz assets
+Seed set to 4169833151
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 765.2, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560844.5882223}, "last_output_seconds_ago": 18.2, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 6.41, "name": "python", "pid": 678, "rss_bytes": 58900480, "status": "sleeping"}, {"cpu_seconds": 23.64, "name": "python", "pid": 915, "rss_bytes": 1117589504, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560844.5429919}
+bindsight: cached Boltz assets verified
+Checking input data.
+Processing 1 inputs with 1 threads.
+  0%|          | 0/1 [00:00<?, ?it/s]
+  0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+Generating MSA for /GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml with 2 protein entities.
+bindsight: MSA phase begin timeout=1800s
+SUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+PENDING:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][ASleeping for 10s. Reason: PENDING
+RUNNING:   0%|          | 0/300 [elapsed: 00:11 remaining: ?][A
+RUNNING:   3%|▎         | 10/300 [elapsed: 00:11 remaining: 05:29][ASleeping for 5s. Reason: RUNNING
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 795.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560874.6694684}, "last_output_seconds_ago": 2.5, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 6.640000000000001, "name": "python", "pid": 678, "rss_bytes": 58900480, "status": "sleeping"}, {"cpu_seconds": 39.800000000000004, "name": "python", "pid": 915, "rss_bytes": 1130020864, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560874.6255255}
+COMPLETE:   3%|▎         | 10/300 [elapsed: 00:16 remaining: 05:29][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:16 remaining: 00:00][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:17 remaining: 00:00]
+  0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+SUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][A
+PENDING:   0%|          | 0/300 [elapsed: 00:00 remaining: ?][ASleeping for 7s. Reason: PENDING
+RUNNING:   0%|          | 0/300 [elapsed: 00:08 remaining: ?][A
+RUNNING:   2%|▏         | 7/300 [elapsed: 00:08 remaining: 05:49][ASleeping for 5s. Reason: RUNNING
+RUNNING:   2%|▏         | 7/300 [elapsed: 00:13 remaining: 05:49][A
+RUNNING:   4%|▍         | 12/300 [elapsed: 00:13 remaining: 05:32][ASleeping for 10s. Reason: RUNNING
+COMPLETE:   4%|▍         | 12/300 [elapsed: 00:24 remaining: 05:32][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:24 remaining: 00:00][A
+COMPLETE: 100%|██████████| 300/300 [elapsed: 00:25 remaining: 00:00]
+bindsight: MSA phase complete elapsed=43.392s
+100%|██████████| 1/1 [00:43<00:00, 43.72s/it]
+100%|██████████| 1/1 [00:43<00:00, 43.72s/it]
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+Running structure prediction for 1 input.
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 825.3, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560904.746485}, "last_output_seconds_ago": 0.3, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 6.88, "name": "python", "pid": 678, "rss_bytes": 58900480, "status": "sleeping"}, {"cpu_seconds": 40.56, "name": "python", "pid": 915, "rss_bytes": 1141444608, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560904.7023778}
+bindsight: restricted checkpoint load begin (boltz2_conf.ckpt)
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 855.4, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 3, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560934.8272712}, "last_output_seconds_ago": 24.1, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 7.16, "name": "python", "pid": 678, "rss_bytes": 58900480, "status": "sleeping"}, {"cpu_seconds": 70.63, "name": "python", "pid": 915, "rss_bytes": 4415549440, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560934.7825093}
+bindsight: restricted checkpoint load complete (boltz2_conf.ckpt)
+💡 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 0, "phase": "running", "python_unbuffered": true, "returncode": null, "running": true, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 885.5, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 9717, "name": "Tesla T4", "utilization_percent": 100}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560964.9088502}, "last_output_seconds_ago": 17.7, "peak_device_memory_mib": 9837, "phase": "run scientific executor", "processes": {"active_pid": 678, "processes": [{"cpu_seconds": 7.4, "name": "python", "pid": 678, "rss_bytes": 58900480, "status": "sleeping"}, {"cpu_seconds": 98.47, "name": "python", "pid": 915, "rss_bytes": 5513543680, "status": "running"}, {"cpu_seconds": 2.3, "name": "pt_data_worker", "pid": 981, "rss_bytes": 4892008448, "status": "sleeping"}, {"cpu_seconds": 0.0, "name": "pt_data_worker", "pid": 982, "rss_bytes": 4782481408, "status": "sleeping"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560964.8684633}
+Number of failed examples: 0
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:34 • 0:00:00 0.00it/s 
+wrote /GPU_JOB/<GPU_JOB_ID>.tar.gz
+
++ /GPU_JOB/driver/bin/python -I -c 'from pathlib import Path; from bindsight.runners.gpu_runtime import collect_model_weights, write_json; import sys; write_json(Path(sys.argv[3]), collect_model_weights(Path(sys.argv[1]), Path(sys.argv[2])))' /GPU_JOB/runtime /GPU_JOB/work/evidence /kaggle/working/<GPU_JOB_ID>-runtime-evidence/model-weights.json
+[heartbeat] {"current_command": {"argv": ["/GPU_JOB/runtime/boltz/bin/python", "-m", "bindsight.runners.boltz_compat", "predict", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml", "--out_dir", "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1", "--write_full_pae", "--use_msa_server", "--seed", "4169833151"], "command_index": 5, "cwd": null, "elapsed_seconds": 169.12009933399986, "phase": "ok", "python_unbuffered": true, "returncode": 0, "running": false, "schema": "bindsight-current-command/1", "started_utc": "2026-11-01T19:20:20.784880+00:00"}, "elapsed_seconds": 915.6, "gpu": {"devices": [{"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}, {"memory_total_mib": 15360, "memory_used_mib": 0, "name": "Tesla T4", "utilization_percent": 0}], "observed_unix_time": 1793560994.9770527}, "last_output_seconds_ago": 1.3, "peak_device_memory_mib": 9837, "phase": "finalize runtime evidence", "processes": {"active_pid": 1022, "processes": [{"cpu_seconds": 0.49, "name": "python", "pid": 1022, "rss_bytes": 42622976, "status": "running"}]}, "schema": "bindsight-kaggle-progress/1", "unix_time": 1793560994.9333472}

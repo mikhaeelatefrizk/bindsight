@@ -1,0 +1,27 @@
+{
+  "schema": "bindsight-actual-gpu-interpretation-review/1",
+  "reviewed_at_utc": "2026-11-01T19:29:56.7260879Z",
+  "reviewer": "Claude subscription collaboration; Codex integrated and verified the conclusions",
+  "review_scope": "Publication interpretation of supplied measured results; reviewer had no tools and ran no additional inference or tests",
+  "actual_tested_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "actual_tested_wheel_sha256": "3e0ee56bcadb88e852ec20243b81b3a8a1226d857886872b4007da52517edea2",
+  "accepted_scope_controls": [
+    "State that the historical campaign was not rerun; 213 of 216 inspected historical files are byte-identical and three accompanying document version labels changed",
+    "RF fixed-target pair-distance invariant applies to 49 nonfinal frames; final px0 correspondence is checked separately and its displacement is diagnostic",
+    "Design and prediction use separate private environments; successful exercised CUDA paths do not establish arbitrary CUDA-library ABI compatibility",
+    "9837 MiB is the maximum sampled device-memory usage, not proof of true peak or larger-workload capacity; one device was used",
+    "The two ipTM/PAE measurements are software acceptance telemetry, not binding hits, screening evidence or a biological validation claim",
+    "Pinned checkpoint bytes identify the reviewed publisher artifacts; no signature or general supply-chain assurance is claimed; unrelated concurrent loads remain unsupported",
+    "Passing Boltz full-wheel identity uses an exact locally reproduced Linux artifact; the initial Windows-reference mismatch remains documented",
+    "Exact final-main CI, release distributions and live website identity remain separate publication gates",
+    "DGL RPC advisory remains unpatched; live Colab and Modal remain untested"
+  ],
+  "codex_clarifications": [
+    "CUDA 11 versus CUDA 12 is a major-version library coexistence arrangement, not a minor-version mismatch",
+    "The public release wheel is already built on Linux by the release workflow; no scientific source changes are needed for ZIP host-header reproduction",
+    "Runtime denotes the managed split design/prediction setup, not a claim that both share one environment",
+    "Independent PAE comparison uses rel_tol=1e-6 and abs_tol=1e-6, not an absolute-only threshold or exact equality; float32 versus float64 means differ by 1.43e-6 and 9.63e-8. CLI import separately preserves the original metric values exactly"
+  ],
+  "additional_scientific_runs": 0,
+  "publication_attestation": false
+}

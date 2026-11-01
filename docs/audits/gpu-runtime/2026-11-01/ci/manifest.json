@@ -1,0 +1,339 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T19:07:55.926169+00:00",
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "ci_run_url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404",
+  "status": "All 18 CI jobs and Docker passed; CPU runtime checkpoint preflight passed; full GPU completion not established",
+  "checkpoint_loader_preflight": true,
+  "corroborated_freezes": [
+    "ci/se3-freeze.txt",
+    "ci/boltz-freeze.txt"
+  ],
+  "prior_evidence_preserved": true,
+  "audit_summary": {
+    "ci-se3-audit": {
+      "records": 54,
+      "with_advisories": 0,
+      "skipped": [
+        "dgl==1.0.2"
+      ],
+      "fresh_query": false,
+      "reuse_basis_candidate": "493938376ffbbd554998c6b559a7c265827ffb73"
+    },
+    "ci-boltz-audit": {
+      "records": 101,
+      "with_advisories": 0,
+      "skipped": [],
+      "fresh_query": false,
+      "query_completed_at": "2026-11-01T18:37:36.027422+00:00",
+      "reuse_basis_candidate": "493938376ffbbd554998c6b559a7c265827ffb73"
+    },
+    "ci-cuda11-audit": {
+      "records": 4,
+      "with_advisories": 0,
+      "skipped": [],
+      "fresh_query": false,
+      "reuse_basis_candidate": "493938376ffbbd554998c6b559a7c265827ffb73"
+    },
+    "known_manual_advisory": "GHSA-3x5x-fw77-g54c remains applicable to DGL distributed RPC"
+  },
+  "files": [
+    {
+      "artifact": "ci/recipe-check.json",
+      "sha256": "8ed0baddacf259d24280a730fe3b1897c3596613d23a99adbd2a3a79a4d8e34a",
+      "bytes": 25363,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        }
+      ],
+      "purpose": "Actual CPU provisioning/import and checkpoint-loader preflight receipt",
+      "transformation": "JSON formatting and explicit CI path normalization only"
+    },
+    {
+      "artifact": "ci/se3-freeze.txt",
+      "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008",
+      "bytes": 1399,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/se3-freeze.txt",
+          "sha256": "c8d2433c63b47ac8d70456995297de468042094c62bbcac8062c56a40710213b"
+        }
+      ],
+      "purpose": "Exact installed package inventory from this CI run",
+      "transformation": "One receipt entry per line; CI paths normalized; evidence only"
+    },
+    {
+      "artifact": "ci/boltz-freeze.txt",
+      "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240",
+      "bytes": 2169,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/boltz-freeze.txt",
+          "sha256": "4bdaaa94e3ab74991da0d5d1bb0c0bc00ea62302b62a157b9f9c3f26dc0b35d7"
+        }
+      ],
+      "purpose": "Exact installed package inventory from this CI run",
+      "transformation": "One receipt entry per line; CI paths normalized; evidence only"
+    },
+    {
+      "artifact": "ci/auxiliary-cuda11-packages.json",
+      "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e",
+      "bytes": 147,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        }
+      ],
+      "purpose": "Actual separate auxiliary package versions",
+      "transformation": "Selected unchanged receipt values"
+    },
+    {
+      "artifact": "ci/run-summary.json",
+      "sha256": "c99cb6dfaf2a38cac2cdeed60c9528a71cc0d0f88232a60649cedff3032c5130",
+      "bytes": 6611,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-success-38fb37a.json",
+          "sha256": "c99cb6dfaf2a38cac2cdeed60c9528a71cc0d0f88232a60649cedff3032c5130"
+        }
+      ],
+      "purpose": "Complete job outcomes and verified checkout identity for this CI run and Docker",
+      "transformation": "Selected public API/log fields"
+    },
+    {
+      "artifact": "ci/linux-test-summary.txt",
+      "sha256": "ad66214af71e283ba5d50b9497fafee984ab5592d3e4468f6232da3121910198",
+      "bytes": 1689,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-linux-38fb37a.log",
+          "sha256": "1b9dade51de384585e1b8b9ac2e36460a4b1738ee45527fb3b981664ca8f1857"
+        }
+      ],
+      "purpose": "Actual Linux3.11 command, checkout, coverage, complete skip list and outcome",
+      "transformation": "Selected decoded log lines; timestamps removed"
+    },
+    {
+      "artifact": "ci/artifact-provenance.json",
+      "sha256": "3a037ef562edf75ff3149974a4b41351fca8c0155167afb2802204e25f855060",
+      "bytes": 689,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/gpu-recipe-import-check.zip",
+          "sha256": "48ed8e51516ad02423bc5331ea01dfa96f456400c9485c5b4f22fe599048f6c4"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        }
+      ],
+      "purpose": "Exact downloaded artifact identity before public transformations",
+      "transformation": "New record; temporary signed URL omitted"
+    },
+    {
+      "artifact": "security/ci-se3-audit.json",
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "bytes": 4819,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-se3-audit.json",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-se3-audit-requirements.txt",
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "bytes": 1113,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-se3-audit-requirements.txt",
+          "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.json",
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "bytes": 8769,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-boltz-audit.json",
+          "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-boltz-audit-requirements.txt",
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "bytes": 1960,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-boltz-audit-requirements.txt",
+          "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-boltz-audit-query.json",
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "bytes": 927,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-boltz-audit-query.json",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit.json",
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "bytes": 426,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-cuda11-audit.json",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit-requirements.txt",
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "bytes": 116,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-cuda11-audit-requirements.txt",
+          "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/manifest.json",
+          "sha256": "1d7f96aed63868e9a77109316e524c6d1d385d365043f9e17ecdc5c9758381be"
+        }
+      ],
+      "purpose": "Retained dated advisory evidence for exactly unchanged package versions; not a fresh query",
+      "transformation": "None; bytes identical to prior public evidence"
+    },
+    {
+      "artifact": "security/ci-se3-audit.scope.json",
+      "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e",
+      "bytes": 713,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-se3-audit.scope.json",
+          "sha256": "673e1b3726927dfbcbed3cc467296828215f49a56edc32c5cf9fb2e2f7e02cc2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        }
+      ],
+      "purpose": "Query scope, exclusions and explicit dated reuse basis",
+      "transformation": "Added current/prior candidate and reuse statement; exclusions unchanged"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.scope.json",
+      "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e",
+      "bytes": 697,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-boltz-audit.scope.json",
+          "sha256": "107f3000996c354bcc569afa3535827fd2309fcd65c72d010153e5f2d1ea01a3"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        }
+      ],
+      "purpose": "Query scope, exclusions and explicit dated reuse basis",
+      "transformation": "Added current/prior candidate and reuse statement; exclusions unchanged"
+    },
+    {
+      "artifact": "security/dependency-comparison.json",
+      "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866",
+      "bytes": 3021,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-38fb37a/recipe_check.json",
+          "sha256": "0bf0d5ad33e6d7c139f8cd129684ce67f0afc7446bcfc65f2655974e1ee17f58"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/dependency-comparison.json",
+          "sha256": "19f7e78ea2a354366663c06cf73388ee50b52f5ec0f49bb175fa663988231397"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-final-ci-4939383/security/ci-boltz-audit-query.json",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+        }
+      ],
+      "purpose": "Exact version equality and dated advisory reuse scope",
+      "transformation": "New measured comparison; no fresh query or numerical-equivalence claim"
+    },
+    {
+      "artifact": "SCOPE.txt",
+      "sha256": "ec2dd6ddb064a5caf37206933ae40e16d8069a9291af005ddf5b3f0ebc243da9",
+      "bytes": 1458,
+      "sources": [],
+      "purpose": "Interpretation, limitations and publication transformations",
+      "transformation": "New explanatory text"
+    }
+  ]
+}

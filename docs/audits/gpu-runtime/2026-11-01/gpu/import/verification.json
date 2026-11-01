@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "source_archive_sha256": "9a3a571ac7bf3f49ae7cb7eb2199add7d3999ca9d600ba003c6b2bb70ca0d8d3",
+  "submitted_spec_sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+  "binder_rows": 2,
+  "all_original_metric_fields_preserved": true,
+  "original_and_imported_archives_byte_identical": true,
+  "repeat_validation_passed": true,
+  "installed_wheel_isolated_execution": true,
+  "observed_implementation": {
+    "version": "0.3.8",
+    "cli_sha256": "b949772b7310caab38c7cad4cd03428451b18cdb4dcb55bc795090f02ddded39"
+  },
+  "commands": [
+    {
+      "operation": "bindsight validate",
+      "exit_code": 0
+    },
+    {
+      "operation": "bindsight validate",
+      "exit_code": 0
+    }
+  ],
+  "scope": "Actual production Kaggle archive through shared local downloaded-result importer; not live Colab execution."
+}

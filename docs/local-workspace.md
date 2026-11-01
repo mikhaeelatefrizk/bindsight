@@ -65,12 +65,13 @@ the remaining DGL RPC advisory are documented in the
 [managed runtime guide](gpu-runtime.md). Distributed DGL/RPC services are not a
 supported use of this environment.
 
-The 0.3.8 candidate has passed separate real T4 design and prediction component
-checks. The prediction environment uses Boltz `2.0.3+bindsight.1`, a
-dependency-metadata patch that leaves the upstream Boltz implementation files
-unchanged. The final updated full design-and-prediction run is still pending;
-installation/import tests and CUDA arithmetic alone do not establish scientific
-equivalence to the historical run. Colab and Modal live execution remain unverified.
+The 0.3.8 managed recipe completed one RFdiffusion backbone, two ProteinMPNN
+sequences and two Boltz predictions on a Kaggle Tesla T4; the [recorded smoke
+and independent checks](audits/gpu-runtime/2026-11-01/README.md) identify its exact code and inputs.
+Boltz `2.0.3+bindsight.1` changes dependency metadata while preserving the
+upstream implementation files. This computational run does not establish
+numerical equivalence to the historical campaign or support for every local
+GPU. Live Colab and Modal execution remains unverified.
 
 Select a completed discovery analysis, choose one to three eligible targets and set the number of backbones, seed and candidate-length range. **Run design and prediction** uses the existing RFdiffusion + ProteinMPNN, Boltz, ranking and report stages. Eligible targets need actual recorded structures and extracellular ranges. The child design run preserves its source discovery and records their relationship. A completed setup is an environment check, not an end-to-end scientific validation.
 

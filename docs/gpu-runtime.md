@@ -1,33 +1,39 @@
 # Managed GPU runtime
 
-The 0.3.8 candidate replaces the historical RFdiffusion Python 3.9 setup with
+The 0.3.8 runtime replaces the historical RFdiffusion Python 3.9 setup with
 private Python 3.11.18 environments. Local Linux/WSL, Kaggle, generated Colab
 notebooks and Modal call the same provisioner in
 [`gpu_runtime.py`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/bindsight/runners/gpu_runtime.py).
 The recorded controls live in
 [`gpu_recipe.py`](https://github.com/mikhaeelatefrizk/bindsight/blob/main/bindsight/runners/gpu_recipe.py).
 
-**Validation status:** a real T4 design-component probe passed CUDA operations,
-local DGL operations, imports and an SE3 rotation-equivariance check. That probe
-used Hydra 1.3.6; the final candidate requires the later 1.3.8 security fixes.
-A separate T4 prediction-component probe passed imports and CUDA operations
-with the final Boltz dependency patch below, including Hydra 1.3.8. It loaded
-no model weights and ran no predictions. A full-workflow attempt installed the
-final recipe, completed RFdiffusion and ProteinMPNN, and reached the first Boltz
-command before its hosted session ended. That attempt did not return a completed
-prediction archive; its buffered child output cannot establish the stopping
-cause. A full RFdiffusion → ProteinMPNN → Boltz run is still pending.
-No live Colab or Modal run is established by the wrapper tests.
+**Validation status:** on 2026-11-01, the current recipe completed one
+RFdiffusion backbone, two ProteinMPNN sequences and two Boltz predictions on
+a Kaggle Tesla T4. The independent artifact verifier passed all eight checks for
+the frozen protocol, transported evidence, runtime and model identities,
+recorded commands, RF trajectories, sequences, structures and finite metrics.
+The [evidence bundle](audits/gpu-runtime/2026-11-01/README.md) identifies the exact tested commit
+and wheel. This is a small computational smoke, not a numerical-equivalence or
+biological-efficacy study. No live Colab or Modal execution is established.
+
+Earlier evidence is retained separately: the design-component probe used
+Hydra 1.3.6, and the prediction-component probe used the corrected Boltz
+dependencies but loaded no weights and ran no predictions. The first full
+attempt ended without a completed archive or an established stopping cause.
+The next completed RFdiffusion, ProteinMPNN and hosted MSA, then failed at
+restricted checkpoint loading. A subsequent CPU test constructed both real
+Boltz models through the production loader while retaining `weights_only=True`.
+These dated attempts and component tests are not substituted for the completed run.
 
 ## Environment and source identity
 
-| Component | Candidate control |
+| Component | Runtime control |
 | --- | --- |
 | Scientific Python | 3.11.18, private design and prediction environments |
 | PyTorch | 2.14.1+cu126, official wheel URL and SHA256 |
 | Local DGL graph library | 1.0.2+cu118, official wheel URL and SHA256 |
 | Design NumPy / e3nn | 1.23.5 / 0.3.3 |
-| Hydra | 1.3.8 required for the final candidate |
+| Hydra | 1.3.8 |
 | Prediction NumPy | 1.26.4 |
 | RFdiffusion / ProteinMPNN | Existing source commits, unchanged |
 | Boltz implementation | Upstream 2.0.3, installed as metadata-patched `2.0.3+bindsight.1` |
@@ -96,12 +102,16 @@ byte-identical to the original wheel, as does its licence. This preserves Boltz
 implementation bytes; it does not establish identical numerical behavior under
 the changed dependencies. The receipt records both wheel identities and the patch.
 
-The published checkpoints contain OmegaConf configuration objects as well as
-tensors. Newer PyTorch restricts these by default. A checkpoint-specific wrapper
-authenticates the exact file handle, allows only the fixed configuration types
-needed by the publisher's checkpoints during that load, and explicitly retains
-`weights_only=True`. It does not extend those permissions to arbitrary checkpoint
-files or other model loads, and restores the original loader after the CLI exits.
+The publisher checkpoints contain OmegaConf configuration objects as well as
+tensors. The production wrapper hashes the same open file before and after
+loading, requires the measured metadata types for each pinned asset, and passes
+`weights_only=True` explicitly. The allowlist is active only during that
+authenticated loading call; the prior permissions and original class loader are
+restored on success or failure. PyTorch's allowlist is process-wide, so this
+adapter is limited to the single prediction driver and does not support unrelated
+concurrent loads. It rejects arbitrary checkpoints. Both actual Boltz models
+were constructed on CPU using this exact helper; this CPU result does not claim
+GPU prediction. See the [checkpoint evidence](audits/gpu-runtime/2026-11-01/README.md).
 
 Both RFdiffusion checkpoint downloads must match pre-established SHA256 pins.
 Boltz's confidence checkpoint, affinity checkpoint and CCD molecule archive
@@ -125,11 +135,13 @@ loading. Original licence notices remain applicable to the modified package.
 
 PyTorch and Hydra are updated for the advisories linked in
 [SECURITY.md](https://github.com/mikhaeelatefrizk/bindsight/blob/main/SECURITY.md).
-An advisory lookup of the 92 PyPI package versions in the actual T4 prediction
-probe's freeze reported no known vulnerabilities on 2026-11-01. The locally
-rebuilt Boltz wheel was excluded from that database lookup and checked separately
-for the metadata-only change. This is a scoped, dated result, not a complete
-security audit of all code or both scientific environments.
+The earlier T4 prediction-component probe's advisory lookup reported no known
+vulnerabilities in 92 queried PyPI versions on 2026-11-01; its local Boltz wheel
+was excluded and reviewed separately. Current CI records the complete measured
+freezes and retained dated advisory results for the same versions, with source
+package and database exclusions explicit. No new advisory query is claimed by
+the freeze comparison. See the [dated audit scope](audits/gpu-runtime/2026-11-01/README.md).
+These records are not a comprehensive audit of all installed code.
 DGL's distributed RPC deserialization advisory remains unpatched. Static review
 of the supported Bindsight workflow and pinned RFdiffusion/SE3 source found local
 graph operations and no calls to distributed server/RPC entry points. DGL still
@@ -148,6 +160,7 @@ an installation/import check, not a read-only preview or full model validation.
 Use a disposable owned setup directory for that check.
 
 The preserved historical campaign required 14,859 MiB peak GPU memory on a T4.
-A 2 GB MX450 cannot reproduce that workload. Even a completed full GPU run would
-establish computational execution, not experimental binding, specificity or
-therapeutic safety. See [validation status](validation-status.md).
+A 2 GB MX450 cannot reproduce that workload. That historical measurement is not
+the new smoke's memory usage. A completed run establishes computational
+execution, not experimental binding, specificity or therapeutic safety. See
+[validation status](validation-status.md).

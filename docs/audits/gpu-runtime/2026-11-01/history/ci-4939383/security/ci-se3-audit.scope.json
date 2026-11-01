@@ -1,0 +1,18 @@
+{
+  "measured_freeze": "../ci/se3-freeze.txt",
+  "packages": 54,
+  "excluded": [
+    {
+      "name": "rfdiffusion",
+      "source": "file:///CI_RUNTIME/tools/RFdiffusion",
+      "reason": "Editable source revision, not a PyPI distribution"
+    },
+    {
+      "name": "se3-transformer",
+      "source": "file:///CI_RUNTIME/tools/RFdiffusion/env/SE3Transformer",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ],
+  "receipt": "../ci/recipe-check.json",
+  "query_status": "Retained prior query; exact audited requirements unchanged"
+}

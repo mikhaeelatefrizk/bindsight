@@ -1,0 +1,16 @@
+{
+  "measured_freeze": "se3-freeze.txt",
+  "packages": 54,
+  "excluded": [
+    {
+      "name": "rfdiffusion",
+      "source": "file:///GPU_RUNTIME/tools/RFdiffusion",
+      "reason": "Editable source revision, not a PyPI distribution"
+    },
+    {
+      "name": "se3-transformer",
+      "source": "file:///GPU_RUNTIME/tools/RFdiffusion/env/SE3Transformer",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ]
+}

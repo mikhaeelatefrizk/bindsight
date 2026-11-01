@@ -1,0 +1,670 @@
+{
+  "schema": "bindsight-real-gpu-smoke-verification/1",
+  "checked_at_utc": "2026-11-01T19:26:59.586113+00:00",
+  "results": "/WORKSPACE\\work\\gpu-modernization\\production-checkpoint-smoke-38fb37a\\extracted-v1",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "frozen_protocol_and_target",
+      "status": "passed",
+      "detail": {
+        "seed": 42,
+        "spec_sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+        "target_sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+        "target_residues": 142,
+        "binder_residues": 60,
+        "trajectories": 1,
+        "designs": 2,
+        "diffusion_samples": 1
+      }
+    },
+    {
+      "name": "transported_evidence_integrity",
+      "status": "passed",
+      "detail": {
+        "verified_raw_files": 26,
+        "manifest_sha256": "788fb808999537a388ae658f46976c476e513b647d963cc31424372fb059a561"
+      }
+    },
+    {
+      "name": "actual_supported_cuda_runtime",
+      "status": "passed",
+      "detail": {
+        "source_wheel_sha256": "3e0ee56bcadb88e852ec20243b81b3a8a1226d857886872b4007da52517edea2",
+        "checks": {
+          "se3": {
+            "python": "3.11.18",
+            "executable": "/GPU_JOB/runtime/se3/bin/python",
+            "torch": "2.14.1+cu126",
+            "cuda": "12.6",
+            "cuda_tested": true,
+            "dgl_cuda_tested": true,
+            "device": "Tesla T4",
+            "capability": [
+              7,
+              5
+            ],
+            "dgl": "1.0.2+cu118",
+            "numpy": "1.23.5",
+            "loaded_curand_sha256": {
+              "/GPU_JOB/runtime/se3/lib/python3.11/site-packages/nvidia/curand/lib/libcurand.so.10": "12411c1e921cd3cac4e0d2f58024a3e6bbb7cea584d5cd768ad908ec762c5545"
+            },
+            "distributed_dgl_supported": false,
+            "checkpoint_loader_checked": false,
+            "boltz": null,
+            "trifast": null
+          },
+          "boltz": {
+            "python": "3.11.18",
+            "executable": "/GPU_JOB/runtime/boltz/bin/python",
+            "torch": "2.14.1+cu126",
+            "cuda": "12.6",
+            "cuda_tested": true,
+            "dgl_cuda_tested": false,
+            "device": "Tesla T4",
+            "capability": [
+              7,
+              5
+            ],
+            "dgl": null,
+            "numpy": "1.26.4",
+            "loaded_curand_sha256": {
+              "/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/nvidia/curand/lib/libcurand.so.10": "12411c1e921cd3cac4e0d2f58024a3e6bbb7cea584d5cd768ad908ec762c5545"
+            },
+            "distributed_dgl_supported": false,
+            "checkpoint_loader_checked": true,
+            "boltz": "2.0.3+bindsight.1",
+            "trifast": "0.1.11"
+          }
+        },
+        "hardware_log_sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7",
+        "boltz_patch_proof": {
+          "upstream_sha256": "5851dd10c7819d4c011534a4e5c9cc495d95e42e0e1336617a1e9e78d6c4cf12",
+          "patched_sha256": "719ef0012c18319efb04680e86e5e2e0a913fcb905ad8817ac802e2a5b5262f1",
+          "unchanged_package_files": 106
+        },
+        "boltz_assets": {
+          "schema": "bindsight-boltz-assets/1",
+          "publisher_revision": "6fdef46d763fee7fbb83ca5501ccceff43b85607",
+          "assets": {
+            "boltz2_conf.ckpt": {
+              "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/boltz2_conf.ckpt",
+              "bytes": 2286561469,
+              "sha256": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+              "pin_match": true
+            },
+            "boltz2_aff.ckpt": {
+              "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/boltz2_aff.ckpt",
+              "bytes": 2062139170,
+              "sha256": "dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e",
+              "pin_match": true
+            },
+            "mols.tar": {
+              "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/mols.tar",
+              "bytes": 1855662080,
+              "sha256": "39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7",
+              "pin_match": true
+            }
+          },
+          "molecules": {
+            "files": 45227,
+            "bytes": 1820698819,
+            "inventory_sha256": "326babf412c56059e079e0fb4a7de37e0e318f5d376b7d067d15f63a5f114a62",
+            "verified_against_authenticated_archive": true,
+            "canonical_files": {
+              "GLU.pkl": {
+                "sha256": "5ffee2c2a291e7dd9537e47da745086a2806e0054a08e7d8a4e6de6876d9321c",
+                "bytes": 10689
+              },
+              "ASN.pkl": {
+                "sha256": "842794255f93b21292d4bbb2b0da8ef9f00470b754c10a4b1f3a97da175ede54",
+                "bytes": 9798
+              },
+              "GLN.pkl": {
+                "sha256": "6d3f7b214783f4618e882e9ad5eac823065d4b783d15c8d2e396dd6bf1c01605",
+                "bytes": 10689
+              },
+              "HIS.pkl": {
+                "sha256": "b41c77e00e94cd23058f9c77866f4ea9cb83537012717530cee9a40b8d6475df",
+                "bytes": 11685
+              },
+              "VAL.pkl": {
+                "sha256": "4f25210694b98a64cbcef225b036d8ef1a1e8d66054359eceeb3562ffc02bc85",
+                "bytes": 9095
+              },
+              "SER.pkl": {
+                "sha256": "14195904d6e2daff524fb57c4919b8eb4ea407178458189ea896f2d39746c5b5",
+                "bytes": 8266
+              },
+              "ARG.pkl": {
+                "sha256": "f5b6709c78c45aded92301387af6a47a5b41ebf99ba0b7e3ca6fac10875b483a",
+                "bytes": 12646
+              },
+              "ALA.pkl": {
+                "sha256": "00c247b6c8e5e3c2d248ab59560219bb35fe801ba8a8b52a5d76dc198a8d984b",
+                "bytes": 7605
+              },
+              "LYS.pkl": {
+                "sha256": "1dcd1968a1e9288ded8cd28ad5395ce01d7b46169a7114a22303690a1daf0e75",
+                "bytes": 10780
+              },
+              "PRO.pkl": {
+                "sha256": "2629e05d5381616322bc7c5ec4f05eea882398fd236873e4c79d19a6d69baebb",
+                "bytes": 9062
+              },
+              "LEU.pkl": {
+                "sha256": "b56d50e78cd2edce0850472d7af9e45a9eac87f5a5897b3ad2574194ee843f88",
+                "bytes": 9934
+              },
+              "ASP.pkl": {
+                "sha256": "366917880f9a8fb0f510790f49d1c123eae566c4d212253d0722c7be59202415",
+                "bytes": 9798
+              },
+              "UNK.pkl": {
+                "sha256": "c8ab424930c66da4635ec039a3b27da042754f9477e7868f235997bbb991c60f",
+                "bytes": 8298
+              },
+              "GLY.pkl": {
+                "sha256": "6b301ceb14bc07fcda588364a190805473258a67819e0a6fe7b92b00c515b8f2",
+                "bytes": 6754
+              },
+              "PHE.pkl": {
+                "sha256": "d308f4d9a70c156a95bd0e8361b1fa2181bbdb22d32c55753cc528a8b8fce6f3",
+                "bytes": 12752
+              },
+              "TYR.pkl": {
+                "sha256": "93dcb841be8edb3cc25b00baa6fdac66df58a2436912eee079900b7f675655a9",
+                "bytes": 13819
+              },
+              "MET.pkl": {
+                "sha256": "99140e3ba316e237891731deea085ac8bb16d91a2720cc4e5d0420c0242d0df6",
+                "bytes": 9855
+              },
+              "THR.pkl": {
+                "sha256": "53fe1335ca71705d8095fb62a4ef7b63b7af975325fecfe364f2feb4da5713e5",
+                "bytes": 9112
+              },
+              "TRP.pkl": {
+                "sha256": "03e700fd6cdc4809000e23679b90c7b5f0269dd5dad7b53591ce1c9f6cf4e0c0",
+                "bytes": 16097
+              },
+              "ILE.pkl": {
+                "sha256": "613fd4278b8a09ee821bdbc9d6fb81dce9b7346915fe268c4d3c01e2cd8cce2a",
+                "bytes": 9981
+              },
+              "CYS.pkl": {
+                "sha256": "3f69156437a2ad239121ed999cd3271f66fb641e5db1ad63a635ea430c97da8e",
+                "bytes": 8266
+              }
+            }
+          }
+        },
+        "loaded_curand_sha256": {
+          "/GPU_JOB/runtime/se3/lib/python3.11/site-packages/nvidia/curand/lib/libcurand.so.10": "12411c1e921cd3cac4e0d2f58024a3e6bbb7cea584d5cd768ad908ec762c5545"
+        }
+      }
+    },
+    {
+      "name": "model_weight_identity",
+      "status": "passed",
+      "detail": {
+        "rfdiffusion": {
+          "Base_ckpt.pt": {
+            "name": "Base_ckpt.pt",
+            "bytes": 483616107,
+            "sha256": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+            "expected_sha256": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+            "pin_match": true
+          },
+          "Complex_base_ckpt.pt": {
+            "name": "Complex_base_ckpt.pt",
+            "bytes": 483619179,
+            "sha256": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
+            "expected_sha256": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
+            "pin_match": true
+          }
+        },
+        "additional_model_weights": [
+          {
+            "name": "Base_ckpt.pt",
+            "relative_path": "tools/RFdiffusion/models/Base_ckpt.pt",
+            "sha256": "0fcf7d7c32b4848030aca3a051e6768de194616f96ba6c38186351a33bfc6eca",
+            "bytes": 483616107,
+            "role": "rfdiffusion",
+            "present": true,
+            "used": true,
+            "usage_evidence": "successful RFdiffusion log names this checkpoint"
+          },
+          {
+            "name": "Complex_base_ckpt.pt",
+            "relative_path": "tools/RFdiffusion/models/Complex_base_ckpt.pt",
+            "sha256": "76e4e260aefee3b582bd76b77ab95d2592e64f00c51bf344968ab9239f3250bc",
+            "bytes": 483619179,
+            "role": "rfdiffusion",
+            "present": true,
+            "used": false,
+            "usage_evidence": "cached presence only"
+          },
+          {
+            "name": "v_48_020.pt",
+            "relative_path": "tools/ProteinMPNN/vanilla_model_weights/v_48_020.pt",
+            "sha256": "c9cb4a671d79604111231f8dbfc7c590e06f1197453b7a6854ac6661a642f5bd",
+            "bytes": 6681301,
+            "role": "proteinmpnn",
+            "present": true,
+            "used": true,
+            "usage_evidence": "successful default-model command and native FASTA model_name header"
+          },
+          {
+            "name": "boltz2_conf.ckpt",
+            "relative_path": "boltz-cache/boltz2_conf.ckpt",
+            "sha256": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+            "bytes": 2286561469,
+            "role": "boltz",
+            "present": true,
+            "used": true,
+            "usage_evidence": "successful default Boltz-2 prediction command"
+          },
+          {
+            "name": "boltz2_aff.ckpt",
+            "relative_path": "boltz-cache/boltz2_aff.ckpt",
+            "sha256": "dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e",
+            "bytes": 2062139170,
+            "role": "boltz",
+            "present": true,
+            "used": false,
+            "usage_evidence": "downloaded by upstream; protein structure workflow does not request affinity"
+          },
+          {
+            "name": "mols.tar",
+            "relative_path": "boltz-cache/mols.tar",
+            "sha256": "39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7",
+            "bytes": 1855662080,
+            "role": "auxiliary",
+            "present": true,
+            "used": false,
+            "usage_evidence": "download archive; extracted CCD files are used"
+          },
+          {
+            "name": "ALA.pkl",
+            "relative_path": "boltz-cache/mols/ALA.pkl",
+            "sha256": "00c247b6c8e5e3c2d248ab59560219bb35fe801ba8a8b52a5d76dc198a8d984b",
+            "bytes": 7605,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "ARG.pkl",
+            "relative_path": "boltz-cache/mols/ARG.pkl",
+            "sha256": "f5b6709c78c45aded92301387af6a47a5b41ebf99ba0b7e3ca6fac10875b483a",
+            "bytes": 12646,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "ASN.pkl",
+            "relative_path": "boltz-cache/mols/ASN.pkl",
+            "sha256": "842794255f93b21292d4bbb2b0da8ef9f00470b754c10a4b1f3a97da175ede54",
+            "bytes": 9798,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "ASP.pkl",
+            "relative_path": "boltz-cache/mols/ASP.pkl",
+            "sha256": "366917880f9a8fb0f510790f49d1c123eae566c4d212253d0722c7be59202415",
+            "bytes": 9798,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "CYS.pkl",
+            "relative_path": "boltz-cache/mols/CYS.pkl",
+            "sha256": "3f69156437a2ad239121ed999cd3271f66fb641e5db1ad63a635ea430c97da8e",
+            "bytes": 8266,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "GLN.pkl",
+            "relative_path": "boltz-cache/mols/GLN.pkl",
+            "sha256": "6d3f7b214783f4618e882e9ad5eac823065d4b783d15c8d2e396dd6bf1c01605",
+            "bytes": 10689,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "GLU.pkl",
+            "relative_path": "boltz-cache/mols/GLU.pkl",
+            "sha256": "5ffee2c2a291e7dd9537e47da745086a2806e0054a08e7d8a4e6de6876d9321c",
+            "bytes": 10689,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "GLY.pkl",
+            "relative_path": "boltz-cache/mols/GLY.pkl",
+            "sha256": "6b301ceb14bc07fcda588364a190805473258a67819e0a6fe7b92b00c515b8f2",
+            "bytes": 6754,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "HIS.pkl",
+            "relative_path": "boltz-cache/mols/HIS.pkl",
+            "sha256": "b41c77e00e94cd23058f9c77866f4ea9cb83537012717530cee9a40b8d6475df",
+            "bytes": 11685,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "ILE.pkl",
+            "relative_path": "boltz-cache/mols/ILE.pkl",
+            "sha256": "613fd4278b8a09ee821bdbc9d6fb81dce9b7346915fe268c4d3c01e2cd8cce2a",
+            "bytes": 9981,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "LEU.pkl",
+            "relative_path": "boltz-cache/mols/LEU.pkl",
+            "sha256": "b56d50e78cd2edce0850472d7af9e45a9eac87f5a5897b3ad2574194ee843f88",
+            "bytes": 9934,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "LYS.pkl",
+            "relative_path": "boltz-cache/mols/LYS.pkl",
+            "sha256": "1dcd1968a1e9288ded8cd28ad5395ce01d7b46169a7114a22303690a1daf0e75",
+            "bytes": 10780,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "MET.pkl",
+            "relative_path": "boltz-cache/mols/MET.pkl",
+            "sha256": "99140e3ba316e237891731deea085ac8bb16d91a2720cc4e5d0420c0242d0df6",
+            "bytes": 9855,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "PHE.pkl",
+            "relative_path": "boltz-cache/mols/PHE.pkl",
+            "sha256": "d308f4d9a70c156a95bd0e8361b1fa2181bbdb22d32c55753cc528a8b8fce6f3",
+            "bytes": 12752,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "PRO.pkl",
+            "relative_path": "boltz-cache/mols/PRO.pkl",
+            "sha256": "2629e05d5381616322bc7c5ec4f05eea882398fd236873e4c79d19a6d69baebb",
+            "bytes": 9062,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "SER.pkl",
+            "relative_path": "boltz-cache/mols/SER.pkl",
+            "sha256": "14195904d6e2daff524fb57c4919b8eb4ea407178458189ea896f2d39746c5b5",
+            "bytes": 8266,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "THR.pkl",
+            "relative_path": "boltz-cache/mols/THR.pkl",
+            "sha256": "53fe1335ca71705d8095fb62a4ef7b63b7af975325fecfe364f2feb4da5713e5",
+            "bytes": 9112,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "TRP.pkl",
+            "relative_path": "boltz-cache/mols/TRP.pkl",
+            "sha256": "03e700fd6cdc4809000e23679b90c7b5f0269dd5dad7b53591ce1c9f6cf4e0c0",
+            "bytes": 16097,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "TYR.pkl",
+            "relative_path": "boltz-cache/mols/TYR.pkl",
+            "sha256": "93dcb841be8edb3cc25b00baa6fdac66df58a2436912eee079900b7f675655a9",
+            "bytes": 13819,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "VAL.pkl",
+            "relative_path": "boltz-cache/mols/VAL.pkl",
+            "sha256": "4f25210694b98a64cbcef225b036d8ef1a1e8d66054359eceeb3562ffc02bc85",
+            "bytes": 9095,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          },
+          {
+            "name": "UNK.pkl",
+            "relative_path": "boltz-cache/mols/UNK.pkl",
+            "sha256": "c8ab424930c66da4635ec039a3b27da042754f9477e7868f235997bbb991c60f",
+            "bytes": 8298,
+            "role": "auxiliary",
+            "present": true,
+            "used": true,
+            "usage_evidence": "Boltz 2.0.3 load_canonicals allowlist"
+          }
+        ],
+        "note": "Supplemental hashes identify recorded model files; used/present semantics remain those of the runtime receipt."
+      }
+    },
+    {
+      "name": "observed_model_protocol_and_precision",
+      "status": "passed",
+      "detail": {
+        "recorded_commands": 5,
+        "model_commands": 4,
+        "design_preflight": [
+          {
+            "argv": [
+              "/GPU_JOB/runtime/se3-python",
+              "-c",
+              "import sys; sys.version_info >= (3, 11) or sys.exit('RFdiffusion runtime requires Python 3.11 or newer'); import rfdiffusion, se3_transformer, torch, dgl, e3nn; print('design runtime', sys.version, 'torch', torch.__version__, 'dgl', dgl.__version__)"
+            ],
+            "cwd": null,
+            "started_utc": "2026-11-01T19:14:20.539027+00:00",
+            "duration_seconds": 3.2728825290000714,
+            "timeout_seconds": 21600.0,
+            "outcome": "ok",
+            "returncode": 0,
+            "stdout": {
+              "text": "design runtime 3.11.18 (main, Oct 26 2026, 14:05:07) [Clang 23.1.3 ] torch 2.14.1+cu126 dgl 1.0.2+cu118\n",
+              "redacted_bytes": 104,
+              "observed_bytes": 104,
+              "suppressed_oversized_lines": 0,
+              "truncated": false
+            },
+            "stderr": {
+              "text": "",
+              "redacted_bytes": 0,
+              "observed_bytes": 0,
+              "suppressed_oversized_lines": 0,
+              "truncated": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rfdiffusion_target_and_chain_mapping",
+      "status": "passed",
+      "detail": {
+        "target_chain": "A",
+        "binder_chain": "B",
+        "target_pair_distance_max_delta_angstrom": 1.0310985630962648,
+        "trajectory": {
+          "frames_per_trajectory": 50,
+          "nonfinal_rigid_frames": 49,
+          "frame_order": "t1 first; t50 last, after upstream stack reversal",
+          "nonfinal_target_pair_delta_max_angstrom": 1.4210854715202004e-14,
+          "nonfinal_pair_delta_limit_angstrom": 0.0034651016151377545,
+          "final_rf_equals_xt_and_px0_frame0": true,
+          "xt_sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+          "px0_sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+          "final_target_geometry": {
+            "aligned_ca_rmsd_angstrom": 0.20976309589998945,
+            "max_aligned_ca_displacement_angstrom": 0.8395315527626157,
+            "pair_distance_max_delta_angstrom": 1.0310985630962648,
+            "rotation_determinant": 1.0000000000000002,
+            "scope": "Final upstream model prediction; diagnostic only, not a calibrated quality gate"
+          }
+        },
+        "pdb_sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64",
+        "trb_sha256": "a6c8aa63dcab8152235b0085080e2ba1481b5e89366b8bbd1791f5461ddac10b",
+        "trb_inspection": "hashed only; not unpickled"
+      }
+    },
+    {
+      "name": "proteinmpnn_sequences_and_fixed_context",
+      "status": "passed",
+      "detail": {
+        "n_designs": 2,
+        "sequence_sha256": {
+          "P04626_binder_42_seq0": "3f6eda766328527d480b402b31b26c5c5fd568ced406de5c19534d8fb528f2c7",
+          "P04626_binder_42_seq1": "d7e2220ef491d20aa219c26d6fc1a33fc1340c33d2c0c343705b99e53dc7955f"
+        }
+      }
+    },
+    {
+      "name": "actual_boltz_complexes_and_finite_metrics",
+      "status": "passed",
+      "detail": {
+        "P04626_binder_42_seq0": {
+          "iptm": 0.13893479108810425,
+          "independent_pae_interaction": 25.852463249085655,
+          "plddt_shape": [
+            202
+          ],
+          "plddt_min": 0.3754095435142517,
+          "plddt_max": 0.9671199321746826,
+          "complex_sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed",
+          "processed_token_chain_order": [
+            "T:142",
+            "B:60"
+          ],
+          "observed_structure_chain_order": [
+            "T",
+            "B"
+          ]
+        },
+        "P04626_binder_42_seq1": {
+          "iptm": 0.6379746794700623,
+          "independent_pae_interaction": 14.255961321832988,
+          "plddt_shape": [
+            202
+          ],
+          "plddt_min": 0.4957759380340576,
+          "plddt_max": 0.9678025245666504,
+          "complex_sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96",
+          "processed_token_chain_order": [
+            "T:142",
+            "B:60"
+          ],
+          "observed_structure_chain_order": [
+            "T",
+            "B"
+          ]
+        }
+      }
+    }
+  ],
+  "summary": {
+    "predictions": {
+      "P04626_binder_42_seq0": {
+        "iptm": 0.13893479108810425,
+        "independent_pae_interaction": 25.852463249085655,
+        "plddt_shape": [
+          202
+        ],
+        "plddt_min": 0.3754095435142517,
+        "plddt_max": 0.9671199321746826,
+        "complex_sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed",
+        "processed_token_chain_order": [
+          "T:142",
+          "B:60"
+        ],
+        "observed_structure_chain_order": [
+          "T",
+          "B"
+        ]
+      },
+      "P04626_binder_42_seq1": {
+        "iptm": 0.6379746794700623,
+        "independent_pae_interaction": 14.255961321832988,
+        "plddt_shape": [
+          202
+        ],
+        "plddt_min": 0.4957759380340576,
+        "plddt_max": 0.9678025245666504,
+        "complex_sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96",
+        "processed_token_chain_order": [
+          "T:142",
+          "B:60"
+        ],
+        "observed_structure_chain_order": [
+          "T",
+          "B"
+        ]
+      }
+    },
+    "passed": 8,
+    "failed": 0,
+    "incomplete": 0
+  },
+  "limits": [
+    "Software/GPU execution check only; no biological binding or numerical-equivalence claim.",
+    "TRB files are hashed and never deserialized.",
+    "A 142+60-residue run does not establish capacity for larger targets or other GPUs."
+  ]
+}

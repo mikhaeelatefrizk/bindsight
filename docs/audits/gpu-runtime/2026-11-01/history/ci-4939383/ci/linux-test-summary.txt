@@ -1,0 +1,16 @@
+HEAD is now at 831e8bc Merge 493938376ffbbd554998c6b559a7c265827ffb73 into 1b2c255d5b35a841aedabe60fb9fdec187d12804
+##[group]Run pytest -m "not gpu and not slow" --maxfail=5 -q --cov-fail-under=75
+_______________ coverage: platform linux, python 3.11.18-final-0 _______________
+Required test coverage of 75% reached. Total coverage: 84.61%
+SKIPPED [1] tests/test_colab_result_import.py:421: Windows junction regression
+SKIPPED [1] tests/test_docs_claims.py:1098: paper/validation/manuscript.md does not discuss the designer benchmark
+SKIPPED [1] tests/test_docs_claims.py:1150: dated historical entries, not a current claim
+SKIPPED [1] tests/test_docs_claims.py:1164: README.md names the metric without stating its rate
+SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/README.md names the metric without stating its rate
+SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/designer_benchmark/README.md names the metric without stating its rate
+SKIPPED [1] tests/test_docs_claims.py:1164: benchmarks/designer_benchmark/RUN_FREE_GPU.md names the metric without stating its rate
+SKIPPED [1] tests/test_docs_claims.py:1164: docs/what-is-bindsight.md names the metric without stating its rate
+SKIPPED [1] tests/test_embeddings.py:59: could not import 'torch': No module named 'torch'
+SKIPPED [1] tests/test_licensing_review.py:56: needs a full clone to read the tool registry's history
+SKIPPED [1] tests/test_packaging_pins.py:409: wheel build unavailable here: d environment and sources, then see https://build.pypa.io/en/stable/how-to/troubleshooting.html#debug-a-failed-build for help debugging a failed build
+2893 passed, 11 skipped, 2 deselected, 14 warnings in 100.02s (0:01:40)

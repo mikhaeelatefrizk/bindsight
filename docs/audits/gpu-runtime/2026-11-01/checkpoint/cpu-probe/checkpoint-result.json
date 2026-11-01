@@ -1,0 +1,2171 @@
+{
+  "schema": "bindsight-production-checkpoint-probe/1",
+  "passed": true,
+  "python": "3.11.18",
+  "versions": {
+    "torch": "2.14.1+cu126",
+    "boltz": "2.0.3+bindsight.1",
+    "omegaconf": "2.3.1",
+    "hydra-core": "1.3.8",
+    "pytorch-lightning": "2.6.6",
+    "numpy": "1.26.4"
+  },
+  "helper_overlay": {
+    "commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+    "path": "bindsight/runners/boltz_checkpoint.py",
+    "sha256": "23367a3e5c4cb083472d450d390077d48d43061357377318c0e5265a4801aff3",
+    "bytes": 9263
+  },
+  "base_wheel_sha256": "a2cf2d8b8d726a66b802114f1799a9bc9888a93e05a3c9fe40a2e577f608c53d",
+  "publisher_revision": "6fdef46d763fee7fbb83ca5501ccceff43b85607",
+  "gpu_used": false,
+  "predictions_run": 0,
+  "checkpoints": {
+    "boltz2_conf.ckpt": {
+      "expected_sha256": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+      "expected_bytes": 2286561469,
+      "model_construction_succeeded": true,
+      "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/boltz2_conf.ckpt",
+      "sha256": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+      "bytes": 2286561469,
+      "authenticated": true,
+      "safe_globals_before_load": [
+        {
+          "qualified_name": "builtins.ArithmeticError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AssertionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AttributeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseException",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BlockingIOError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BrokenPipeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BufferError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BytesWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ChildProcessError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionAbortedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionRefusedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionResetError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.DeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EOFError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EncodingWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Exception",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileExistsError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FloatingPointError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FutureWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.GeneratorExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndentationError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndexError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.InterruptedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IsADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyboardInterrupt",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.LookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.MemoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ModuleNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NameError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotImplementedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OSError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OverflowError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PendingDeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PermissionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ProcessLookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RecursionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ReferenceError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ResourceWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopAsyncIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TabError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TimeoutError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TypeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnboundLocalError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeDecodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeEncodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeTranslateError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UserWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ValueError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Warning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ZeroDivisionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch._dynamo.decorators._DimRange",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.device_mesh.DeviceMesh",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.DTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.DTensorSpec",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.ShardOrderEntry",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.TensorMeta",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Partial",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Replicate",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Shard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types._StridedShard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.FrameSummary",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.StackSummary",
+          "alias": null
+        }
+      ],
+      "unsafe_globals_after_clear": [
+        "builtins.dict",
+        "builtins.int",
+        "builtins.list",
+        "collections.defaultdict",
+        "omegaconf.base.ContainerMetadata",
+        "omegaconf.base.Metadata",
+        "omegaconf.dictconfig.DictConfig",
+        "omegaconf.listconfig.ListConfig",
+        "omegaconf.nodes.AnyNode",
+        "typing.Any"
+      ],
+      "upstream_model_load_kwargs": {
+        "strict": true,
+        "map_location": "cpu",
+        "diffusion_process_args": {
+          "gamma_0": 0.8,
+          "gamma_min": 1.0,
+          "noise_scale": 1.003,
+          "rho": 7,
+          "step_scale": 1.5,
+          "sigma_min": 0.0001,
+          "sigma_max": 160.0,
+          "sigma_data": 16.0,
+          "P_mean": -1.2,
+          "P_std": 1.5,
+          "coordinate_augmentation": true,
+          "alignment_reverse_diff": true,
+          "synchronize_sigmas": true
+        },
+        "ema": false,
+        "pairformer_args": {
+          "num_blocks": 64,
+          "num_heads": 16,
+          "dropout": 0.0,
+          "activation_checkpointing": false,
+          "offload_to_cpu": false,
+          "v2": true
+        },
+        "msa_args": {
+          "msa_s": 64,
+          "msa_blocks": 4,
+          "msa_dropout": 0.0,
+          "z_dropout": 0.0,
+          "use_paired_feature": true,
+          "pairwise_head_width": 32,
+          "pairwise_num_heads": 4,
+          "activation_checkpointing": false,
+          "offload_to_cpu": false,
+          "subsample_msa": true,
+          "num_subsampled_msa": 1024
+        },
+        "predict_args": {
+          "recycling_steps": 3,
+          "sampling_steps": 200,
+          "diffusion_samples": 1,
+          "max_parallel_samples": 1,
+          "write_confidence_summary": true,
+          "write_full_pae": true,
+          "write_full_pde": false
+        },
+        "steering_args": {
+          "fk_steering": false,
+          "num_particles": 8,
+          "fk_lambda": 4.0,
+          "fk_resampling_interval": 3,
+          "guidance_update": false,
+          "num_gd_steps": 20
+        },
+        "use_trifast": true
+      },
+      "model_class": "boltz.model.models.boltz2.Boltz2",
+      "model_eval_mode": true,
+      "state_dict_tensors": 5102,
+      "total_tensor_elements": 521047871,
+      "tensor_dtypes": [
+        "torch.float32"
+      ],
+      "class_descriptor_restored": true,
+      "safe_globals_after_load": [
+        {
+          "qualified_name": "builtins.ArithmeticError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AssertionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AttributeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseException",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BlockingIOError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BrokenPipeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BufferError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BytesWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ChildProcessError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionAbortedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionRefusedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionResetError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.DeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EOFError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EncodingWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Exception",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileExistsError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FloatingPointError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FutureWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.GeneratorExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndentationError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndexError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.InterruptedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IsADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyboardInterrupt",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.LookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.MemoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ModuleNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NameError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotImplementedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OSError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OverflowError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PendingDeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PermissionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ProcessLookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RecursionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ReferenceError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ResourceWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopAsyncIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TabError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TimeoutError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TypeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnboundLocalError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeDecodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeEncodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeTranslateError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UserWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ValueError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Warning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ZeroDivisionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch._dynamo.decorators._DimRange",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.device_mesh.DeviceMesh",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.DTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.DTensorSpec",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.ShardOrderEntry",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.TensorMeta",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Partial",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Replicate",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Shard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types._StridedShard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.FrameSummary",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.StackSummary",
+          "alias": null
+        }
+      ],
+      "registry_identity_set_restored": true,
+      "global_torch_loader_unchanged": true,
+      "sha256_after_model_construction": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+      "elapsed_seconds": 107.24841042999998,
+      "peak_rss_kib": 5411636
+    },
+    "boltz2_aff.ckpt": {
+      "expected_sha256": "dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e",
+      "expected_bytes": 2062139170,
+      "model_construction_succeeded": true,
+      "url": "https://huggingface.co/boltz-community/boltz-2/resolve/6fdef46d763fee7fbb83ca5501ccceff43b85607/boltz2_aff.ckpt",
+      "sha256": "dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e",
+      "bytes": 2062139170,
+      "authenticated": true,
+      "safe_globals_before_load": [
+        {
+          "qualified_name": "builtins.ArithmeticError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AssertionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AttributeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseException",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BlockingIOError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BrokenPipeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BufferError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BytesWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ChildProcessError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionAbortedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionRefusedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionResetError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.DeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EOFError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EncodingWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Exception",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileExistsError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FloatingPointError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FutureWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.GeneratorExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndentationError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndexError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.InterruptedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IsADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyboardInterrupt",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.LookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.MemoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ModuleNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NameError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotImplementedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OSError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OverflowError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PendingDeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PermissionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ProcessLookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RecursionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ReferenceError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ResourceWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopAsyncIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TabError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TimeoutError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TypeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnboundLocalError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeDecodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeEncodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeTranslateError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UserWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ValueError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Warning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ZeroDivisionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch._dynamo.decorators._DimRange",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.device_mesh.DeviceMesh",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.DTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.DTensorSpec",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.ShardOrderEntry",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.TensorMeta",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Partial",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Replicate",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Shard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types._StridedShard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.FrameSummary",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.StackSummary",
+          "alias": null
+        }
+      ],
+      "unsafe_globals_after_clear": [
+        "builtins.dict",
+        "collections.defaultdict",
+        "omegaconf.base.ContainerMetadata",
+        "omegaconf.base.Metadata",
+        "omegaconf.dictconfig.DictConfig",
+        "omegaconf.nodes.AnyNode",
+        "typing.Any"
+      ],
+      "upstream_model_load_kwargs": {
+        "strict": true,
+        "map_location": "cpu",
+        "diffusion_process_args": {
+          "gamma_0": 0.8,
+          "gamma_min": 1.0,
+          "noise_scale": 1.003,
+          "rho": 7,
+          "step_scale": 1.5,
+          "sigma_min": 0.0001,
+          "sigma_max": 160.0,
+          "sigma_data": 16.0,
+          "P_mean": -1.2,
+          "P_std": 1.5,
+          "coordinate_augmentation": true,
+          "alignment_reverse_diff": true,
+          "synchronize_sigmas": true
+        },
+        "ema": false,
+        "pairformer_args": {
+          "num_blocks": 64,
+          "num_heads": 16,
+          "dropout": 0.0,
+          "activation_checkpointing": false,
+          "offload_to_cpu": false,
+          "v2": true
+        },
+        "msa_args": {
+          "msa_s": 64,
+          "msa_blocks": 4,
+          "msa_dropout": 0.0,
+          "z_dropout": 0.0,
+          "use_paired_feature": true,
+          "pairwise_head_width": 32,
+          "pairwise_num_heads": 4,
+          "activation_checkpointing": false,
+          "offload_to_cpu": false,
+          "subsample_msa": true,
+          "num_subsampled_msa": 1024
+        },
+        "predict_args": {
+          "recycling_steps": 5,
+          "sampling_steps": 200,
+          "diffusion_samples": 3,
+          "max_parallel_samples": 1,
+          "write_confidence_summary": false,
+          "write_full_pae": false,
+          "write_full_pde": false
+        },
+        "steering_args": {
+          "fk_steering": false,
+          "guidance_update": false
+        },
+        "affinity_mw_correction": false
+      },
+      "model_class": "boltz.model.models.boltz2.Boltz2",
+      "model_eval_mode": true,
+      "state_dict_tensors": 5539,
+      "total_tensor_elements": 529378245,
+      "tensor_dtypes": [
+        "torch.float32"
+      ],
+      "class_descriptor_restored": true,
+      "safe_globals_after_load": [
+        {
+          "qualified_name": "builtins.ArithmeticError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AssertionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.AttributeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseException",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BaseExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BlockingIOError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BrokenPipeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BufferError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.BytesWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ChildProcessError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionAbortedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionRefusedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ConnectionResetError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.DeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EOFError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.EncodingWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Exception",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ExceptionGroup",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileExistsError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FileNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FloatingPointError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.FutureWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.GeneratorExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ImportWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndentationError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IndexError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.InterruptedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.IsADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.KeyboardInterrupt",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.LookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.MemoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ModuleNotFoundError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NameError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotADirectoryError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.NotImplementedError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OSError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.OverflowError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PendingDeprecationWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.PermissionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ProcessLookupError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RecursionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ReferenceError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ResourceWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.RuntimeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopAsyncIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.StopIteration",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SyntaxWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.SystemExit",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TabError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TimeoutError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.TypeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnboundLocalError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeDecodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeEncodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeTranslateError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UnicodeWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.UserWarning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ValueError",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.Warning",
+          "alias": null
+        },
+        {
+          "qualified_name": "builtins.ZeroDivisionError",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch._dynamo.decorators._DimRange",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.device_mesh.DeviceMesh",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.DTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.DTensorSpec",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.ShardOrderEntry",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor._dtensor_spec.TensorMeta",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Partial",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Replicate",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types.Shard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.distributed.tensor.placement_types._StridedShard",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+          "alias": null
+        },
+        {
+          "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.FrameSummary",
+          "alias": null
+        },
+        {
+          "qualified_name": "traceback.StackSummary",
+          "alias": null
+        }
+      ],
+      "registry_identity_set_restored": true,
+      "global_torch_loader_unchanged": true,
+      "sha256_after_model_construction": "dcc5cd3722b1c9eaa34267e4ae32f55cbbf1963f4c19319381ccfa30fdd2ca9e",
+      "elapsed_seconds": 77.01553980200003,
+      "peak_rss_kib": 5411636
+    }
+  },
+  "safe_globals_after_torch_import": [
+    {
+      "qualified_name": "builtins.ArithmeticError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.AssertionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.AttributeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BaseException",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BaseExceptionGroup",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BlockingIOError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BrokenPipeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BufferError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BytesWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ChildProcessError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionAbortedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionRefusedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionResetError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.DeprecationWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.EOFError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.EncodingWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.Exception",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ExceptionGroup",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FileExistsError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FileNotFoundError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FloatingPointError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FutureWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.GeneratorExit",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ImportError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ImportWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IndentationError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IndexError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.InterruptedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IsADirectoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.KeyError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.KeyboardInterrupt",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.LookupError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.MemoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ModuleNotFoundError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NameError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NotADirectoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NotImplementedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.OSError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.OverflowError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.PendingDeprecationWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.PermissionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ProcessLookupError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RecursionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ReferenceError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ResourceWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RuntimeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RuntimeWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.StopAsyncIteration",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.StopIteration",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SyntaxError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SyntaxWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SystemError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SystemExit",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TabError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TimeoutError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TypeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnboundLocalError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeDecodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeEncodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeTranslateError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UserWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ValueError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.Warning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ZeroDivisionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+      "alias": null
+    },
+    {
+      "qualified_name": "traceback.FrameSummary",
+      "alias": null
+    },
+    {
+      "qualified_name": "traceback.StackSummary",
+      "alias": null
+    }
+  ],
+  "safe_globals_after_boltz_import": [
+    {
+      "qualified_name": "builtins.ArithmeticError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.AssertionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.AttributeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BaseException",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BaseExceptionGroup",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BlockingIOError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BrokenPipeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BufferError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.BytesWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ChildProcessError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionAbortedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionRefusedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ConnectionResetError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.DeprecationWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.EOFError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.EncodingWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.Exception",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ExceptionGroup",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FileExistsError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FileNotFoundError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FloatingPointError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.FutureWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.GeneratorExit",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ImportError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ImportWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IndentationError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IndexError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.InterruptedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.IsADirectoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.KeyError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.KeyboardInterrupt",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.LookupError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.MemoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ModuleNotFoundError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NameError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NotADirectoryError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.NotImplementedError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.OSError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.OverflowError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.PendingDeprecationWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.PermissionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ProcessLookupError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RecursionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ReferenceError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ResourceWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RuntimeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.RuntimeWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.StopAsyncIteration",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.StopIteration",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SyntaxError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SyntaxWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SystemError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.SystemExit",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TabError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TimeoutError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.TypeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnboundLocalError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeDecodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeEncodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeTranslateError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UnicodeWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.UserWarning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ValueError",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.Warning",
+      "alias": null
+    },
+    {
+      "qualified_name": "builtins.ZeroDivisionError",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch._dynamo.decorators._DimRange",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed._mesh_layout._FlatLayout",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed._mesh_layout._MeshLayout",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.device_mesh.DeviceMesh",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor.DTensor",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor._dtensor_spec.DTensorSpec",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor._dtensor_spec.ShardOrderEntry",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor._dtensor_spec.TensorMeta",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor.placement_types.Partial",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor.placement_types.Replicate",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor.placement_types.Shard",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.distributed.tensor.placement_types._StridedShard",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.nested._internal.nested_tensor.NestedTensor",
+      "alias": null
+    },
+    {
+      "qualified_name": "torch.nested._internal.nested_tensor._rebuild_njt",
+      "alias": null
+    },
+    {
+      "qualified_name": "traceback.FrameSummary",
+      "alias": null
+    },
+    {
+      "qualified_name": "traceback.StackSummary",
+      "alias": null
+    }
+  ],
+  "scope": "Exact production context + actual Boltz2.load_from_checkpoint/Lightning construction, no prediction",
+  "kwargs_basis": "Verified upstream Boltz2 main load sites; CONF uses actual GPU use_trifast=True and full-PAE-output flag without executing a forward pass",
+  "production_source_and_descriptor_guards_passed": true
+}

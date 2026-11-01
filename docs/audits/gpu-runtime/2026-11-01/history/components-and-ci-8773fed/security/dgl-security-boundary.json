@@ -1,0 +1,515 @@
+{
+  "schema": "bindsight-dgl-security-boundary/1",
+  "reviewed_at": "2026-11-01T15:44:57.136719+00:00",
+  "review_type": "read-only static source inspection; no DGL/native code execution and no new GPU job",
+  "bindsight_commit": "8773fed9baf6d75c0ec35ba5f1df9223e20c5efe",
+  "sources": [
+    {
+      "kind": "dgl-wheel",
+      "url": "https://data.dgl.ai/wheels/cu118/dgl-1.0.2%2Bcu118-cp311-cp311-manylinux1_x86_64.whl",
+      "bytes": 265620048,
+      "sha256": "84c6c705a01692a7c36038581a54c1b04a6cd3ce86d20f1607695aa61d9edd3b",
+      "expected_sha256_matched": true
+    },
+    {
+      "kind": "rfdiffusion-source",
+      "url": "https://codeload.github.com/RosettaCommons/RFdiffusion/zip/2d0c003df46b9db41d119321f15403dec3716cd9",
+      "commit": "2d0c003df46b9db41d119321f15403dec3716cd9",
+      "bytes": 11782338,
+      "sha256": "2f105f3f68f3033f2356242799d0dc465a19db8295f962a0ea6b216010f08193"
+    },
+    {
+      "kind": "advisory",
+      "url": "https://api.github.com/advisories/GHSA-3x5x-fw77-g54c",
+      "sha256": "7c04d140d1d865e4d128efe4feaa9c6cbf36be099577707e034da1d945ceac3c",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "pip",
+            "name": "dgl"
+          },
+          "vulnerable_version_range": "<= 2.4.0",
+          "first_patched_version": null,
+          "vulnerable_functions": []
+        }
+      ],
+      "updated_at": "2025-03-05T19:50:11Z"
+    }
+  ],
+  "advisory": {
+    "id": "GHSA-3x5x-fw77-g54c",
+    "url": "https://github.com/advisories/GHSA-3x5x-fw77-g54c",
+    "affected": "<= 2.4.0",
+    "first_patched_version": null,
+    "scope_note": "The published range is <=2.4.0, not a claim about every possible future DGL version."
+  },
+  "wheel_metadata": {
+    "name": "dgl",
+    "version": "1.0.2+cu118",
+    "path": "wheel-files/dgl-1.0.2+cu118.dist-info/METADATA",
+    "sha256": "9d465388e1d15cc31ca7ecdd6ff6fcc430c4fe974d9691b0e07ff7821a739af3"
+  },
+  "source_anchors": [
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/__init__.py",
+      "sha256": "1ba48d2aba23ae168cdf4c7101fc1cf2625b8fe2b65ca3af5d142d0e4c75ea42",
+      "start_line": 18,
+      "end_line": 29,
+      "explanation": "Normal import dgl imports the distributed namespace; vulnerable code is installed and imported.",
+      "excerpt": "from .backend import load_backend, backend_name\n\nfrom . import function\nfrom . import container\nfrom . import distributed\nfrom . import random\nfrom . import sampling\nfrom . import storages\nfrom . import dataloading\nfrom . import ops\nfrom . import cuda\n"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/__init__.py",
+      "sha256": "b4dfbb9f91b56cb2858ec265c5eea448e8f7f1b224ad4891bd89f77df641a14b",
+      "start_line": 1,
+      "end_line": 20,
+      "explanation": "Imports distributed entry points without directly calling initialize or start_server.",
+      "excerpt": "\"\"\"DGL distributed module\"\"\"\nfrom . import optim\nfrom .dist_context import exit_client, initialize\nfrom .dist_dataloader import DistDataLoader\nfrom .dist_graph import DistGraph, DistGraphServer, edge_split, node_split\nfrom .dist_tensor import DistTensor\nfrom .graph_partition_book import GraphPartitionBook, PartitionPolicy\nfrom .graph_services import *\nfrom .kvstore import KVClient, KVServer\nfrom .nn import *\nfrom .partition import (\n    load_partition,\n    load_partition_book,\n    load_partition_feats,\n    partition_graph,\n)\nfrom .rpc import *\nfrom .rpc_client import connect_to_server, shutdown_servers\nfrom .rpc_server import start_server\nfrom .server_state import ServerState"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/dist_context.py",
+      "sha256": "46cd995d83321d07cd0b3018d535fa2126dcd9110d11982f05a8bb98cdc9471a",
+      "start_line": 211,
+      "end_line": 220,
+      "explanation": "Distributed initialization is an explicit function.",
+      "excerpt": "def initialize(\n    ip_config,\n    max_queue_size=MAX_QUEUE_SIZE,\n    net_type=\"socket\",\n    num_worker_threads=1,\n):\n    \"\"\"Initialize DGL's distributed module\n\n    This function initializes DGL's distributed module. It acts differently in server\n    or client modes. In the server mode, it runs the server code and never returns."
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/dist_context.py",
+      "sha256": "46cd995d83321d07cd0b3018d535fa2126dcd9110d11982f05a8bb98cdc9471a",
+      "start_line": 246,
+      "end_line": 280,
+      "explanation": "Server environment variables are read inside initialize; server object startup is explicit.",
+      "excerpt": "    if os.environ.get(\"DGL_ROLE\", \"client\") == \"server\":\n        from .dist_graph import DistGraphServer\n\n        assert (\n            os.environ.get(\"DGL_SERVER_ID\") is not None\n        ), \"Please define DGL_SERVER_ID to run DistGraph server\"\n        assert (\n            os.environ.get(\"DGL_IP_CONFIG\") is not None\n        ), \"Please define DGL_IP_CONFIG to run DistGraph server\"\n        assert (\n            os.environ.get(\"DGL_NUM_SERVER\") is not None\n        ), \"Please define DGL_NUM_SERVER to run DistGraph server\"\n        assert (\n            os.environ.get(\"DGL_NUM_CLIENT\") is not None\n        ), \"Please define DGL_NUM_CLIENT to run DistGraph server\"\n        assert (\n            os.environ.get(\"DGL_CONF_PATH\") is not None\n        ), \"Please define DGL_CONF_PATH to run DistGraph server\"\n        formats = os.environ.get(\"DGL_GRAPH_FORMAT\", \"csc\").split(\",\")\n        formats = [f.strip() for f in formats]\n        rpc.reset()\n        keep_alive = bool(int(os.environ.get(\"DGL_KEEP_ALIVE\", 0)))\n        serv = DistGraphServer(\n            int(os.environ.get(\"DGL_SERVER_ID\")),\n            os.environ.get(\"DGL_IP_CONFIG\"),\n            int(os.environ.get(\"DGL_NUM_SERVER\")),\n            int(os.environ.get(\"DGL_NUM_CLIENT\")),\n            os.environ.get(\"DGL_CONF_PATH\"),\n            graph_format=formats,\n            keep_alive=keep_alive,\n            net_type=net_type,\n        )\n        serv.start()\n        sys.exit()\n    else:"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/dist_graph.py",
+      "sha256": "7255d624f73450903f1c54c7f3efca2b956b133c1a77ff23fe24e9b351365cbd",
+      "start_line": 371,
+      "end_line": 384,
+      "explanation": "DistGraphServer.start explicitly calls the RPC server.",
+      "excerpt": "    def start(self):\n        \"\"\" Start graph store server.\n        \"\"\"\n        # start server\n        server_state = ServerState(kv_store=self, local_g=self.client_g,\n                                   partition_book=self.gpb, keep_alive=self.keep_alive)\n        print('start graph service on server {} for part {}'.format(\n            self.server_id, self.part_id))\n        start_server(server_id=self.server_id,\n                     ip_config=self.ip_config,\n                     num_servers=self.num_servers,\n                     num_clients=self.num_clients,\n                     server_state=server_state,\n                     net_type=self.net_type)"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/rpc_server.py",
+      "sha256": "88736fe29c287a7f69f278181117825bb0d4c22ed0087281ec47c58b8702659e",
+      "start_line": 87,
+      "end_line": 102,
+      "explanation": "The server function creates the receiver and binds/waits using the configured address.",
+      "excerpt": "    rpc.set_rank(server_id)\n    server_namebook = rpc.read_ip_config(ip_config, num_servers)\n    machine_id = server_namebook[server_id][0]\n    rpc.set_machine_id(machine_id)\n    ip_addr = server_namebook[server_id][1]\n    port = server_namebook[server_id][2]\n    rpc.create_sender(max_queue_size, net_type)\n    rpc.create_receiver(max_queue_size, net_type)\n    # wait all the senders connect to server.\n    # Once all the senders connect to server, server will not\n    # accept new sender's connection\n    print(\n        \"Server is waiting for connections on [{}:{}]...\".format(ip_addr, port)\n    )\n    rpc.wait_for_senders(\n        ip_addr, port, num_clients, blocking=net_type == \"socket\""
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/rpc_server.py",
+      "sha256": "88736fe29c287a7f69f278181117825bb0d4c22ed0087281ec47c58b8702659e",
+      "start_line": 141,
+      "end_line": 146,
+      "explanation": "The running server's loop receives network requests.",
+      "excerpt": "                    register_res = rpc.ClientRegisterResponse(client_id)\n                    rpc.send_response(client_id, register_res, group_id)\n        # receive incomming client requests\n        timeout = 60 * 1000  # in milliseconds\n        req, client_id, group_id = rpc.recv_request(timeout)\n        if req is None:"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/rpc.py",
+      "sha256": "af208b5997c3e2c646342791de138c5108a2d60432dc864410470a2608388547",
+      "start_line": 781,
+      "end_line": 798,
+      "explanation": "recv_request passes received message bytes into the deserializer.",
+      "excerpt": "    msg = recv_rpc_message(timeout)\n    if msg is None:\n        return None, -1, -1\n    set_msg_seq(msg.msg_seq)\n    req_cls, _ = SERVICE_ID_TO_PROPERTY[msg.service_id]\n    if req_cls is None:\n        raise DGLError(\n            \"Got request message from service ID {}, \"\n            \"but no request class is registered.\".format(msg.service_id)\n        )\n    req = deserialize_from_payload(req_cls, msg.data, msg.tensors)\n    if msg.server_id != get_rank():\n        raise DGLError(\n            \"Got request sent to server {}, \"\n            \"different from my rank {}!\".format(msg.server_id, get_rank())\n        )\n    return req, msg.client_id, msg.group_id\n"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/rpc.py",
+      "sha256": "af208b5997c3e2c646342791de138c5108a2d60432dc864410470a2608388547",
+      "start_line": 524,
+      "end_line": 547,
+      "explanation": "The deserializer calls pickle.loads on payload bytes; the vulnerability remains present.",
+      "excerpt": "\ndef deserialize_from_payload(cls, data, tensors):\n    \"\"\"Deserialize and reconstruct the object from payload.\n\n    The object must have implemented the __setstate__ function.\n\n    Parameters\n    ----------\n    cls : class\n        The object class.\n    data : bytearray\n        Serialized data buffer.\n    tensors : list[Tensor]\n        A list of tensor payloads.\n\n    Returns\n    -------\n    object\n        De-serialized object of class cls.\n    \"\"\"\n    pos, nonarray_state = pickle.loads(data)\n    # Use _PLACEHOLDER to distinguish with other deserizliaed elements\n    state = [_PLACEHOLDER] * (len(nonarray_state) + len(tensors))\n    for i, no_state in zip(pos, nonarray_state):"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/_ffi/function.py",
+      "sha256": "1c8836dc8fe1629a8e36ce291a5089736058855ee2b09269f5692cfdab7881b0",
+      "start_line": 289,
+      "end_line": 327,
+      "explanation": "Python _init_api obtains registered native functions and attaches them to the module; this review does not audit native-library initialization.",
+      "excerpt": "def _init_api(namespace, target_module_name=None):\n    \"\"\"Initialize api for a given module name\n\n    namespace : str\n       The namespace of the source registry\n\n    target_module_name : str\n       The target module name if different from namespace\n    \"\"\"\n    target_module_name = target_module_name if target_module_name else namespace\n    if namespace.startswith(\"dgl.\"):\n        _init_api_prefix(target_module_name, namespace[4:])\n    else:\n        _init_api_prefix(target_module_name, namespace)\n\n\ndef _init_api_prefix(module_name, prefix):\n    module = sys.modules[module_name]\n\n    for name in list_global_func_names():\n        if name.startswith(\"_\") and not name.startswith(\"_deprecate\"):\n            # internal APIs are ignored\n            continue\n        name_split = name.rsplit(\".\", 1)\n        if name_split[0] != prefix:\n            continue\n\n        if len(name_split) == 1:\n            print('Warning: invalid API name \"%s\".' % name)\n            continue\n        fname = name_split[1]\n        target_module = module\n\n        f = get_global_func(name)\n        ff = _get_api(f)\n        ff.__name__ = fname\n        ff.__doc__ = \"DGL PackedFunc %s. \" % fname\n        setattr(target_module, ff.__name__, ff)\n"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/rpc.py",
+      "sha256": "af208b5997c3e2c646342791de138c5108a2d60432dc864410470a2608388547",
+      "start_line": 368,
+      "end_line": 405,
+      "explanation": "Import-time register_service stores class mappings locally; it does not create network receivers.",
+      "excerpt": "def register_service(service_id, req_cls, res_cls=None):\n    \"\"\"Register a service to RPC.\n\n    Parameter\n    ---------\n    service_id : int\n        Service ID.\n    req_cls : class\n        Request class.\n    res_cls : class, optional\n        Response class. If none, the service has no response.\n    \"\"\"\n    REQUEST_CLASS_TO_SERVICE_ID[req_cls] = service_id\n    if res_cls is not None:\n        RESPONSE_CLASS_TO_SERVICE_ID[res_cls] = service_id\n    SERVICE_ID_TO_PROPERTY[service_id] = (req_cls, res_cls)\n\n\ndef get_service_property(service_id):\n    \"\"\"Get service property.\n\n    Parameters\n    ----------\n    service_id : int\n        Service ID.\n\n    Returns\n    -------\n    (class, class)\n        (Request class, Response class)\n    \"\"\"\n    return SERVICE_ID_TO_PROPERTY[service_id]\n\n\nclass Request:\n    \"\"\"Base request class\"\"\"\n\n    @abc.abstractmethod"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/nn/__init__.py",
+      "sha256": "14ca0f42121a0558c62acbe5620f5d1139c6649993f347935d0946bf9fcd46b8",
+      "start_line": 10,
+      "end_line": 17,
+      "explanation": "Import-time backend loader imports the selected Python module and exposes its names; PyTorch module calls are included in the AST inventory.",
+      "excerpt": "def _load_backend(mod_name):\n    mod = importlib.import_module(\".%s\" % mod_name, __name__)\n    thismod = sys.modules[__name__]\n    for api, obj in mod.__dict__.items():\n        setattr(thismod, api, obj)\n\n\n_load_backend(backend_name)"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/distributed/optim/__init__.py",
+      "sha256": "14ca0f42121a0558c62acbe5620f5d1139c6649993f347935d0946bf9fcd46b8",
+      "start_line": 10,
+      "end_line": 17,
+      "explanation": "Optimizer backend loader similarly exposes imported module names.",
+      "excerpt": "def _load_backend(mod_name):\n    mod = importlib.import_module(\".%s\" % mod_name, __name__)\n    thismod = sys.modules[__name__]\n    for api, obj in mod.__dict__.items():\n        setattr(thismod, api, obj)\n\n\n_load_backend(backend_name)"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/convert.py",
+      "sha256": "b817afdfa91f1f7071768bfa99f7ba056856699a1110e4511a7e0be43b7280ec",
+      "start_line": 156,
+      "end_line": 168,
+      "explanation": "dgl.graph constructs a local graph and transfers it to the selected device.",
+      "excerpt": "\n    (sparse_fmt, arrays), urange, vrange = utils.graphdata2tensors(data, idtype)\n    if num_nodes is not None:  # override the number of nodes\n        if num_nodes < max(urange, vrange):\n            raise DGLError('The num_nodes argument must be larger than the max ID in the data,'\n                           ' but got {} and {}.'.format(num_nodes, max(urange, vrange) - 1))\n        urange, vrange = num_nodes, num_nodes\n\n    g = create_from_edges(sparse_fmt, arrays, '_N', '_E', '_N', urange, vrange,\n                          row_sorted=row_sorted, col_sorted=col_sorted)\n\n    return g.to(device)\n"
+    },
+    {
+      "source_root": "upstream/dgl-1.0.2+cu118-wheel",
+      "path": "dgl/heterograph.py",
+      "sha256": "8d9f6ee1c1380d4b6230da7ecf664a37ef1b7ad0cb03d926ee1d3abab5d921aa",
+      "start_line": 4774,
+      "end_line": 4785,
+      "explanation": "DGLGraph.update_all dispatches local graph message passing, not distributed RPC.",
+      "excerpt": "        \"\"\"\n        # Graph with one relation type\n        if self._graph.number_of_etypes() == 1 or etype is not None:\n            etid = self.get_etype_id(etype)\n            etype = self.canonical_etypes[etid]\n            _, dtid = self._graph.metagraph.find_edge(etid)\n            g = self if etype is None else self[etype]\n            ndata = core.message_passing(g, message_func, reduce_func, apply_node_func)\n            if core.is_builtin(reduce_func) and reduce_func.name in ['min', 'max'] and ndata:\n                # Replace infinity with zero for isolated nodes\n                key = list(ndata.keys())[0]\n                ndata[key] = F.replace_inf_with_zero(ndata[key])"
+    },
+    {
+      "source_root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "path": "rfdiffusion/util_module.py",
+      "sha256": "07b31581f9b2c40aad76af0d69656bb16eee42ecebcff928327ee9154d69b1db",
+      "start_line": 152,
+      "end_line": 157,
+      "explanation": "Pinned RFdiffusion builds a DGL graph from local source/target tensors.",
+      "excerpt": "    src = b*L+i\n    tgt = b*L+j\n    G = dgl.graph((src, tgt), num_nodes=B*L).to(device)\n    G.edata['rel_pos'] = (xyz[b,j,:] - xyz[b,i,:]).detach() # no gradient through basis function\n\n    return G, pair[b,i,j][...,None]"
+    },
+    {
+      "source_root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "path": "rfdiffusion/util_module.py",
+      "sha256": "07b31581f9b2c40aad76af0d69656bb16eee42ecebcff928327ee9154d69b1db",
+      "start_line": 190,
+      "end_line": 195,
+      "explanation": "The second RFdiffusion graph constructor also uses dgl.graph.",
+      "excerpt": "    src = b*L+i\n    tgt = b*L+j\n    G = dgl.graph((src, tgt), num_nodes=B*L).to(device)\n    G.edata['rel_pos'] = (xyz[b,j,:] - xyz[b,i,:]).detach() # no gradient through basis function\n\n    return G, pair[b,i,j][...,None]"
+    },
+    {
+      "source_root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "path": "env/SE3Transformer/se3_transformer/model/layers/attention.py",
+      "sha256": "b7ae90e1058500d4dbe748336d5c17fd0b6c4d214fec61ded46ff19bb91f9df8",
+      "start_line": 79,
+      "end_line": 92,
+      "explanation": "Pinned SE3 attention uses local graph tensor operators and edge softmax.",
+      "excerpt": "            with nvtx_range('attention dot product + softmax'):\n                # Compute attention weights (softmax of inner product between key and query)\n                edge_weights = dgl.ops.e_dot_v(graph, key, query).squeeze(-1)\n                edge_weights /= np.sqrt(self.key_fiber.num_features)\n                edge_weights = edge_softmax(graph, edge_weights)\n                edge_weights = edge_weights[..., None, None]\n\n            with nvtx_range('weighted sum'):\n                if isinstance(value, Tensor):\n                    # features of all types are fused\n                    v = value.view(value.shape[0], self.num_heads, -1, value.shape[-1])\n                    weights = edge_weights * v\n                    feat_out = dgl.ops.copy_e_sum(graph, weights)\n                    feat_out = feat_out.view(feat_out.shape[0], -1, feat_out.shape[-1])  # merge heads"
+    },
+    {
+      "source_root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "path": "env/SE3Transformer/se3_transformer/model/layers/convolution.py",
+      "sha256": "af0e1d2ddf6412b9134708e1072845c6c7e85fbe673a709f9b06d6fe824f465c",
+      "start_line": 329,
+      "end_line": 336,
+      "explanation": "Pinned SE3 convolution uses local copy_e_sum graph reduction.",
+      "excerpt": "\n                if self.pool:\n                    with nvtx_range(f'pooling'):\n                        if isinstance(out, dict):\n                            out[str(degree_out)] = dgl.ops.copy_e_sum(graph, out[str(degree_out)])\n                        else:\n                            out = dgl.ops.copy_e_sum(graph, out)\n            return out"
+    },
+    {
+      "source_root": "repository",
+      "path": "bindsight/runners/gpu_runtime.py",
+      "sha256": "fb142fd449cbba175ea97fe87640fb930fccf4bd447c73334fa7bc55be0609d0",
+      "start_line": 340,
+      "end_line": 347,
+      "explanation": "Bindsight's CUDA smoke uses graph creation and local update_all reduction.",
+      "excerpt": "            if name == \"se3\":\n                program += (\n                    \"g=dgl.graph(([0],[1]),num_nodes=2,device='cuda'); \"\n                    \"g.ndata['x']=torch.ones((2,1),device='cuda'); \"\n                    \"g.update_all(dgl.function.copy_u('x','m'),dgl.function.sum('m','y')); \"\n                    \"assert g.ndata['y'].sum().item()==1, 'DGL CUDA reduction failed'; \"\n                    \"torch.cuda.synchronize(); \"\n                )"
+    }
+  ],
+  "entry_point_scans": {
+    "bindsight": {
+      "root": "repository\\bindsight",
+      "python_files": 100,
+      "pattern": "dgl\\.distributed|distributed\\.initialize|DistGraph|start_server\\s*\\(|recv_request\\s*\\(|DGL_ROLE|DGL_NUM_SERVER|DGL_IP_CONFIG",
+      "matches": []
+    },
+    "pinned_rfdiffusion_including_vendored_se3": {
+      "root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "python_files": 65,
+      "pattern": "dgl\\.distributed|distributed\\.initialize|DistGraph|start_server\\s*\\(|recv_request\\s*\\(|DGL_ROLE|DGL_NUM_SERVER|DGL_IP_CONFIG",
+      "matches": []
+    },
+    "positive_control_dgl_match_count": 124
+  },
+  "indirect_entry_point_scans": [
+    {
+      "root": "repository\\bindsight",
+      "python_files": 100,
+      "pattern": "[\\\"'](?:dgl\\.)?(?:distributed|rpc)[\\\"']|getattr\\(\\s*dgl|import_module\\([^\\n]*dgl|__import__\\([^\\n]*dgl",
+      "matches": []
+    },
+    {
+      "root": "upstream/RFdiffusion@2d0c003df46b9db41d119321f15403dec3716cd9",
+      "python_files": 65,
+      "pattern": "[\\\"'](?:dgl\\.)?(?:distributed|rpc)[\\\"']|getattr\\(\\s*dgl|import_module\\([^\\n]*dgl|__import__\\([^\\n]*dgl",
+      "matches": []
+    }
+  ],
+  "distributed_module_import_time_calls": [
+    {
+      "path": "dgl/distributed/__init__.py",
+      "sha256": "b4dfbb9f91b56cb2858ec265c5eea448e8f7f1b224ad4891bd89f77df641a14b",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/constants.py",
+      "sha256": "651f320442b91c254f6e411fb73c2c8dedd69d33c671218409054b5cd1c9a504",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/dist_context.py",
+      "sha256": "46cd995d83321d07cd0b3018d535fa2126dcd9110d11982f05a8bb98cdc9471a",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/dist_dataloader.py",
+      "sha256": "edbc3e60df96b8f3a432f4ff138ac0497dd78990c7a1bb21dc3597b032ca139f",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/dist_graph.py",
+      "sha256": "7255d624f73450903f1c54c7f3efca2b956b133c1a77ff23fe24e9b351365cbd",
+      "calls": [
+        {
+          "line": 145,
+          "expression": "namedtuple('NodeSpace', ['data'])"
+        },
+        {
+          "line": 146,
+          "expression": "namedtuple('EdgeSpace', ['data'])"
+        },
+        {
+          "line": 1591,
+          "expression": "rpc.register_service(INIT_GRAPH, InitGraphRequest, InitGraphResponse)"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/dist_tensor.py",
+      "sha256": "3fc959cb43038b38348b45bbf5ae8d3a35f206d98419117343bbe014dee2d0b5",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/graph_partition_book.py",
+      "sha256": "b31af6b96ae9ac4b02ddbe481fd2438e4dbd2b51908e9031ddcd0d501c091d1c",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/graph_services.py",
+      "sha256": "217c75fec4a8aea950d73bc3eb40ca4fb33478f97ca3f10545ba72cf413b4cb7",
+      "calls": [
+        {
+          "line": 460,
+          "expression": "namedtuple('LocalSampledGraph', 'global_src global_dst global_eids')"
+        },
+        {
+          "line": 1035,
+          "expression": "register_service(SAMPLING_SERVICE_ID, SamplingRequest, SubgraphResponse)"
+        },
+        {
+          "line": 1036,
+          "expression": "register_service(EDGES_SERVICE_ID, EdgesRequest, FindEdgeResponse)"
+        },
+        {
+          "line": 1037,
+          "expression": "register_service(INSUBGRAPH_SERVICE_ID, InSubgraphRequest, SubgraphResponse)"
+        },
+        {
+          "line": 1038,
+          "expression": "register_service(OUTDEGREE_SERVICE_ID, OutDegreeRequest, OutDegreeResponse)"
+        },
+        {
+          "line": 1039,
+          "expression": "register_service(INDEGREE_SERVICE_ID, InDegreeRequest, InDegreeResponse)"
+        },
+        {
+          "line": 1040,
+          "expression": "register_service(ETYPE_SAMPLING_SERVICE_ID, SamplingRequestEtype, SubgraphResponse)"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/id_map.py",
+      "sha256": "c176551ffcf8121156fdb6794192029af4745aa9186326181c46c72bb545b493",
+      "calls": [
+        {
+          "line": 147,
+          "expression": "_init_api('dgl.distributed.id_map')"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/kvstore.py",
+      "sha256": "1907211e257606c5a54214f1bdc667f9c4e9b2a2441c5e5ebe02f5e6ac778d21",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/nn/__init__.py",
+      "sha256": "14ca0f42121a0558c62acbe5620f5d1139c6649993f347935d0946bf9fcd46b8",
+      "calls": [
+        {
+          "line": 17,
+          "expression": "_load_backend(backend_name)"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/nn/mxnet/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/nn/pytorch/__init__.py",
+      "sha256": "5e58ae4de1ce0bc4a2ba4a64e1152f2017ed6f3390ef94669cbfa3e9f7380d7d",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/nn/pytorch/sparse_emb.py",
+      "sha256": "19e9284ae234d0d954cc80d12aa64e7cc1c491c39b484f6add45bbe35943e5c1",
+      "calls": [
+        {
+          "line": 87,
+          "expression": "th.device('cpu')"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/nn/tensorflow/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/optim/__init__.py",
+      "sha256": "14ca0f42121a0558c62acbe5620f5d1139c6649993f347935d0946bf9fcd46b8",
+      "calls": [
+        {
+          "line": 17,
+          "expression": "_load_backend(backend_name)"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/optim/mxnet/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/optim/pytorch/__init__.py",
+      "sha256": "d219f6d75874ba4ce4bc4369957febccdf6c72951eeb6df5c9178f1cca8bae9c",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/optim/pytorch/sparse_optim.py",
+      "sha256": "eb89e51c11459dfc0bc316cc2df650bb39e0fc89ff5314ebab5785e858b3a020",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/optim/pytorch/utils.py",
+      "sha256": "380ac5d83f2edcce7430f0e029801a2a1ed72ee35d118d37955893c1a6fb185f",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/optim/tensorflow/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/partition.py",
+      "sha256": "2d4dc389b28e71e81ade2bdfc00cd82bcbb97d7c7c87813a84bc9b7fd151546d",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/role.py",
+      "sha256": "9bfb20f5177709024c037040869785aa1befa73bb26d2b0604f896cf89b89454",
+      "calls": [
+        {
+          "line": 246,
+          "expression": "rpc.register_service(REGISTER_ROLE, RegisterRoleRequest, RegisterRoleResponse)"
+        },
+        {
+          "line": 247,
+          "expression": "rpc.register_service(GET_ROLE, GetRoleRequest, GetRoleResponse)"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/rpc.py",
+      "sha256": "af208b5997c3e2c646342791de138c5108a2d60432dc864410470a2608388547",
+      "calls": [
+        {
+          "line": 522,
+          "expression": "PlaceHolder()"
+        },
+        {
+          "line": 565,
+          "expression": "register_object('rpc.RPCMessage')"
+        },
+        {
+          "line": 1442,
+          "expression": "_init_api('dgl.distributed.rpc')"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/rpc_client.py",
+      "sha256": "a4376f72c557972a5d21702e69049694758f9a8d620b8c14a11063002e1d99f0",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/rpc_server.py",
+      "sha256": "88736fe29c287a7f69f278181117825bb0d4c22ed0087281ec47c58b8702659e",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/server_state.py",
+      "sha256": "1c61a1864599a17bf533e23a11dbfb8386704117436c88f0a2fd575df0f81609",
+      "calls": [
+        {
+          "line": 81,
+          "expression": "_init_api('dgl.distributed.server_state')"
+        }
+      ]
+    },
+    {
+      "path": "dgl/distributed/shared_mem_utils.py",
+      "sha256": "471f8ab21ab4fd74ef4f5b33e2d6a563c0e66f0809dab58d9df992fe6a5de602",
+      "calls": []
+    },
+    {
+      "path": "dgl/distributed/standalone_kvstore.py",
+      "sha256": "97e804470253d407cb0f96aad46520c8ea1bbfe838898254df2f91e4354061c7",
+      "calls": []
+    }
+  ],
+  "import_time_review": "Reviewed all recorded module/class-body calls in the 29 distributed Python modules: service registrations, namedtuples/placeholders, backend module loaders, a CPU-device default and FFI/object registrations. No direct server/receiver startup call appears in that inventory. This does not prove absence of native initialization side effects.",
+  "prior_runtime_evidence": {
+    "path": "probe-result-v4/bindsight-runtime-probe/cuda-probe.json",
+    "sha256": "9176f60487b3ad51eab2554057aff25428c9ff8d4693b12e9b16f73de21898b3",
+    "scope": "Passed actual pinned DGL import/local CUDA reduction and SE3 forward; did not monitor sockets or audit native initialization. Used Hydra1.3.6, not final1.3.8; not full pipeline validation.",
+    "published_artifact": "components/rfdiffusion-cuda-check.json"
+  },
+  "conclusion": "The reviewed Bindsight and pinned RFdiffusion/SE3 workflow uses local DGL graph operations and contains no direct or identified dynamic calls to distributed RPC startup. The exact DGL wheel imports distributed code and retains vulnerable pickle deserialization; explicit distributed initialization/server entry points are separate from these local graph operations.",
+  "limitations": [
+    "Static source evidence is not packet capture or a runtime proof that no socket can ever open.",
+    "Native libdgl initialization, arbitrary dynamically constructed calls and other installed third-party packages were not comprehensively audited.",
+    "This is an unsupported-feature boundary, not removal, patching or a security sandbox for DGL RPC.",
+    "Custom code, plugins or explicitly started DistDGL services can invoke the installed vulnerable API; DGL-related host environment variables are not themselves an enforcement boundary.",
+    "The prior component probe loaded no scientific checkpoints; full GPU inference validation remains separate."
+  ],
+  "suggested_documentation": "Static review of the supported Bindsight workflow and pinned RFdiffusion/SE3 source found local graph operations and no calls to DGL's distributed server/RPC entry points. DGL 1.0.2 nevertheless imports and retains the vulnerable RPC code (GHSA-3x5x-fw77-g54c, affected <=2.4.0; no patched version listed); DistDGL/RPC use is unsupported, and this source review is not a runtime network-isolation guarantee."
+}

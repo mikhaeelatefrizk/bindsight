@@ -1,0 +1,13 @@
+{
+  "schema": "bindsight-actual-gpu-advisory-result/1",
+  "complete": true,
+  "status": "dated_reports_reused_with_known_exclusions",
+  "fresh_query": false,
+  "comparison_sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57",
+  "scientific_acceptance": false,
+  "known_limitations": [
+    "DGL 1.0.2+cu118 retains unpatched distributed-RPC GHSA-3x5x-fw77-g54c; RPC is unsupported; skipped database lookup is not clearance",
+    "Local Bindsight/Boltz and RFdiffusion/SE3 source packages are excluded from package advisory lookup",
+    "Package-version queries do not establish comprehensive/native-binary safety or scientific equivalence"
+  ]
+}

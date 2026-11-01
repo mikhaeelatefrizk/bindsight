@@ -9,15 +9,15 @@ This enforces reproducibility at the workflow boundary; it does not establish
 that the underlying estimator is stable under arbitrary row order. The workflow must not be described as fully validated,
 100% accurate, or a demonstrated biological breakthrough.
 
-## November 2026 runtime maintenance — candidate 0.3.8
+## November 2026 runtime maintenance — 0.3.8
 
 The supported-Python GPU component check on a real Kaggle T4 passed CUDA tensor
 operations, local DGL graph operations, scientific imports and a nonzero
 SE3 forward/rotation-equivariance check. It used Python 3.11.18,
 PyTorch 2.14.1 with CUDA 12.6, DGL 1.0.2 with its CUDA 11.8 libraries,
 NumPy 1.23.5 and e3nn 0.3.3. The probe used Hydra 1.3.6; the subsequent advisory
-review requires Hydra 1.3.8 in the final candidate. The component result must
-not be reported as a full test of that final dependency set.
+review required Hydra 1.3.8 for the updated runtime. This historical component
+result must not be reported as a full test of that later dependency set.
 
 A separate real T4 prediction-component probe passed scientific imports and
 CUDA arithmetic with Boltz `2.0.3+bindsight.1`, Python 3.11.18, PyTorch
@@ -28,20 +28,32 @@ Boltz package files byte-for-byte; Requests 2.34.2 and Biopython 1.88 are the
 other corrected requirements. Dependency compatibility is not numerical
 equivalence.
 
-The 2026-11-01 advisory lookup of that prediction environment's measured freeze
-reported no known vulnerabilities in its 92 queried PyPI package versions. The
-local Boltz wheel was excluded from that lookup and reviewed separately. This
-does not cover every installed artifact or remove the design environment's
-known DGL advisory.
+The earlier prediction-component probe's 2026-11-01 advisory lookup reported no
+known vulnerabilities in 92 queried PyPI versions. Its local Boltz wheel was
+excluded and reviewed separately. Current CI freezes match the versions in the
+retained dated advisory reports; no new query is implied. The [evidence and
+audit scope](audits/gpu-runtime/2026-11-01/README.md) retain source-package exclusions and the
+design environment's known DGL advisory.
 
-**The final updated RFdiffusion → ProteinMPNN → Boltz prediction run is still
-pending.** The managed runtime and remote wrappers now share one provisioning
-implementation. CPU tests check their source verification, setup boundaries and
-job staging, but do not establish successful live Colab or Modal execution.
-The [runtime guide](gpu-runtime.md) records the current recipe and known limits;
-the [security policy](https://github.com/mikhaeelatefrizk/bindsight/blob/main/SECURITY.md)
-identifies the remaining unpatched DGL RPC
-advisory. The package stack is not claimed to have zero known vulnerabilities.
+**The updated recipe completed a small RFdiffusion → ProteinMPNN → Boltz run
+on 2026-11-01 using a Kaggle Tesla T4.** It produced one backbone, two sequences
+and two predictions from the frozen HER2 protocol. All eight independent
+artifact checks passed for the exact tested commit and wheel in the
+[evidence bundle](audits/gpu-runtime/2026-11-01/README.md).
+
+The RF check follows the pinned model: nonfinal frames retain the fixed target's
+internal geometry, and the saved final backbone matches both final trajectory
+frames. Final target displacement is reported without a new quality threshold
+or a requirement that the final prediction rigidly copy the input. Historical
+numerical equivalence is not established. The canceled first attempt,
+checkpoint-failed second attempt and separate CPU model-construction test are
+retained with their original scopes.
+
+The wrappers share one provisioner, but no live Colab or Modal execution is
+claimed. The [runtime guide](gpu-runtime.md) and
+[security policy](https://github.com/mikhaeelatefrizk/bindsight/blob/main/SECURITY.md)
+retain the remaining unpatched DGL RPC advisory. The environment is not claimed
+to have zero known vulnerabilities.
 
 Existing research tables, structures, sequences and dated numerical audits are
 preserved. The runtime update neither regenerates those results nor proves

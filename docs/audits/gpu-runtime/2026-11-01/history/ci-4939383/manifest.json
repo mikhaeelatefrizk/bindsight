@@ -1,0 +1,307 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T18:39:52.609187+00:00",
+  "candidate_commit": "493938376ffbbd554998c6b559a7c265827ffb73",
+  "ci_run_url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41336508233",
+  "status": "All 18 CI jobs and Docker passed; runtime provisioning/import evidence is CPU-only; full GPU completion not established",
+  "corroborated_freezes": [
+    "ci/se3-freeze.txt",
+    "ci/boltz-freeze.txt"
+  ],
+  "prior_evidence_preserved": true,
+  "audit_summary": {
+    "ci-se3-audit": {
+      "records": 54,
+      "with_advisories": 0,
+      "skipped": [
+        "dgl==1.0.2"
+      ],
+      "fresh_query": false
+    },
+    "ci-boltz-audit": {
+      "records": 101,
+      "with_advisories": 0,
+      "skipped": [],
+      "fresh_query": true,
+      "query_completed_at": "2026-11-01T18:37:36.027422+00:00"
+    },
+    "ci-cuda11-audit": {
+      "records": 4,
+      "with_advisories": 0,
+      "skipped": [],
+      "fresh_query": false
+    },
+    "known_manual_advisory": "GHSA-3x5x-fw77-g54c remains applicable to DGL distributed RPC"
+  },
+  "files": [
+    {
+      "artifact": "ci/recipe-check.json",
+      "sha256": "bea142af44ad5170545e95a9e18d72bde3692276515b1d628cccff581ad72a98",
+      "bytes": 24941,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Actual canonical CPU setup/import receipt from final CI",
+      "transformation": "JSON formatting and CI path normalization only; package versions and hashes unchanged"
+    },
+    {
+      "artifact": "ci/se3-freeze.txt",
+      "sha256": "18057295e17dedcd2c396b11338f96f52bac81b4644eb14a037b587be7427008",
+      "bytes": 1399,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/se3-freeze.txt",
+          "sha256": "b14641834f3002658f40eae197b3f1983040aeaf03a1721b6cb96e665d7d461f"
+        }
+      ],
+      "purpose": "Installed packages derived exactly from this CI receipt",
+      "transformation": "One receipt list entry per line; CI paths normalized; not installation instructions"
+    },
+    {
+      "artifact": "ci/boltz-freeze.txt",
+      "sha256": "ca7a343e56f95a72dbba0ca7eb9fe8141397ac50e73b1e548ab00a5c2eefa240",
+      "bytes": 2169,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-freeze.txt",
+          "sha256": "6d625bec375089f13153c5c18fac2b288c26effe632d8759c4bce04a960b140e"
+        }
+      ],
+      "purpose": "Installed packages derived exactly from this CI receipt",
+      "transformation": "One receipt list entry per line; CI paths normalized; not installation instructions"
+    },
+    {
+      "artifact": "ci/auxiliary-cuda11-packages.json",
+      "sha256": "3286f6c58aa52e50f2c7f3f58e4fc53e6931d40bd233ed813d10eee4ca6ef67e",
+      "bytes": 147,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Actual auxiliary package versions, identical to the prior audited receipt",
+      "transformation": "Selected receipt field, unchanged package/version values"
+    },
+    {
+      "artifact": "ci/run-summary.json",
+      "sha256": "0ec10d1fbfd7e9aaa57904206da2fc313de2632b5b000a1bbc7555a8395b9b3b",
+      "bytes": 9358,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-success-4939383.json",
+          "sha256": "0aadc59c461f3ccd5203321b40251eb4d57835e210bca8166dee169f052829e9"
+        }
+      ],
+      "purpose": "Actual IDs, conclusions and URLs for all 18 CI jobs, Docker, and Linux test results",
+      "transformation": "JSON formatting; raw-log reference points to the accompanying selected public excerpt"
+    },
+    {
+      "artifact": "ci/linux-test-summary.txt",
+      "sha256": "37adb46cfb92c106c3af17f85bd8967f5355f315c2147507ef73a655208bdc20",
+      "bytes": 1689,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-linux-4939383.log",
+          "sha256": "b810709b1e5904ff7c590e8e3e5e8254f91130536f35f9135bd05d0f03402a36"
+        }
+      ],
+      "purpose": "Selected checkout identity, command, coverage, complete skipped reasons and final result",
+      "transformation": "Selected public log lines with timestamps removed; all 11 skipped reasons retained"
+    },
+    {
+      "artifact": "ci/artifact-provenance.json",
+      "sha256": "a494ade50dc73df05dd56065a6afb82bc0b0d71477f2f1bacd5b7d4f79f3fefd",
+      "bytes": 823,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/gpu-recipe-import-check.zip",
+          "sha256": "1a1d3852c184ee3338878891de7cfc38ab1c9a7dde7fbad65abfb4e863b9050d"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Authenticates the downloaded CI record before publication transforms",
+      "transformation": "New provenance record; temporary signed download URLs deliberately omitted"
+    },
+    {
+      "artifact": "security/ci-se3-audit.json",
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "bytes": 4819,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-se3-audit.json",
+          "sha256": "0033ce127f50ef754ee158c23e8194e3c54a82bd37d6e6d79c262c77c7fd0591"
+        }
+      ],
+      "purpose": "Retained prior query; exact audited requirements unchanged",
+      "transformation": "JSON formatting only; advisory response content unchanged"
+    },
+    {
+      "artifact": "security/ci-se3-audit.scope.json",
+      "sha256": "673e1b3726927dfbcbed3cc467296828215f49a56edc32c5cf9fb2e2f7e02cc2",
+      "bytes": 550,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/se3-audit-requirements.scope.json",
+          "sha256": "41ea97831c4bd4b869cfb37554d79afef1f1bf92a74245a49d6ad95944b81aa9"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Actual query scope including local/source exclusions",
+      "transformation": "Logical published file references and query status added; source exclusions retained, CI paths normalized"
+    },
+    {
+      "artifact": "security/ci-se3-audit-requirements.txt",
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "bytes": 1113,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/se3-audit-requirements.txt",
+          "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Exact package/version query input derived from the final measured receipt",
+      "transformation": "Normalized using the existing prepare_runtime_audit.py; source/local wheels excluded; Torch/DGL build tags normalized"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.json",
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "bytes": 8769,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-audit.json",
+          "sha256": "300e9207dec9b71ad8179be2e5c191bdf8c774a305c5ff57dacaac06e49e9761"
+        }
+      ],
+      "purpose": "Fresh PyPI query of every exact final normalized requirement",
+      "transformation": "JSON formatting only; advisory response content unchanged"
+    },
+    {
+      "artifact": "security/ci-boltz-audit.scope.json",
+      "sha256": "107f3000996c354bcc569afa3535827fd2309fcd65c72d010153e5f2d1ea01a3",
+      "bytes": 536,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-audit-requirements.scope.json",
+          "sha256": "a62168a0269cd9d05f13f5c4841343de8cdc2c28dc42f7812e8496539c45a986"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Actual query scope including local/source exclusions",
+      "transformation": "Logical published file references and query status added; source exclusions retained, CI paths normalized"
+    },
+    {
+      "artifact": "security/ci-boltz-audit-requirements.txt",
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "bytes": 1960,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-audit-requirements.txt",
+          "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        }
+      ],
+      "purpose": "Exact package/version query input derived from the final measured receipt",
+      "transformation": "Normalized using the existing prepare_runtime_audit.py; source/local wheels excluded; Torch/DGL build tags normalized"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit.json",
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "bytes": 426,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-cuda11-audit.json",
+          "sha256": "47f9de64662ce432c6e4fd695416b620b82410e4734cb92c4a9787638c5739a1"
+        }
+      ],
+      "purpose": "Retained prior query of four unchanged auxiliary package versions",
+      "transformation": "JSON formatting only"
+    },
+    {
+      "artifact": "security/ci-cuda11-audit-requirements.txt",
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "bytes": 116,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-cuda11-audit.txt",
+          "sha256": "c83de4eec2165f365613f7398cf267a4e03a85d8d1facefae5ee7d2d6702f99d"
+        }
+      ],
+      "purpose": "Exact unchanged input of the prior auxiliary audit",
+      "transformation": "Unchanged UTF-8 text"
+    },
+    {
+      "artifact": "security/ci-boltz-audit-query.json",
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "bytes": 927,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-audit-query.json",
+          "sha256": "137b08bf5feee5c0ffc033e66e45373e53c26e42f7db716800a0417b294b8483"
+        }
+      ],
+      "purpose": "Actual start/end time, tool version and read-only query options for the fresh full Boltz audit",
+      "transformation": "Logical published requirements and response references added; command uses logical relative paths"
+    },
+    {
+      "artifact": "security/dependency-comparison.json",
+      "sha256": "19f7e78ea2a354366663c06cf73388ee50b52f5ec0f49bb175fa663988231397",
+      "bytes": 3024,
+      "sources": [
+        {
+          "path": "work/gpu-modernization/ci-recipe-8773fed/recipe_check.json",
+          "sha256": "adb95592fc72443fb978e4b16b0e00fc45ad208f0aed038e3c70b0bce93325b7"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/recipe_check.json",
+          "sha256": "634b6710960312243b24c3f79e9f73659df7ed9f3e29f6fc7e63a2e26d9925b2"
+        },
+        {
+          "path": "work/gpu-modernization/evidence-staging/manifest.json",
+          "sha256": "52b023bcbd5033ab0fb455e6a566c85f1cea6bb4231750f304b672ee39b7a6ff"
+        },
+        {
+          "path": "work/gpu-modernization/ci-recipe-4939383/boltz-audit-query.json",
+          "sha256": "137b08bf5feee5c0ffc033e66e45373e53c26e42f7db716800a0417b294b8483"
+        }
+      ],
+      "purpose": "Exact observed dependency delta, retained audit dates/basis, fresh query scope and exclusions",
+      "transformation": "New comparison derived from authenticated receipts and original audit records"
+    },
+    {
+      "artifact": "README.md",
+      "sha256": "c4c359be6438cda056b758785e0e8afc803f559612f0065dcb509c321e559b51",
+      "bytes": 3193,
+      "sources": [],
+      "purpose": "Scope, provenance, audit dates and publication transformations",
+      "transformation": "New evidence packaging description"
+    }
+  ]
+}

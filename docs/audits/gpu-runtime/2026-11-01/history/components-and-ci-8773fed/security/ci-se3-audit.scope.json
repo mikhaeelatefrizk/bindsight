@@ -1,0 +1,17 @@
+{
+  "measured_freeze": "..\\gpu-modernization\\ci-se3-freeze.txt",
+  "packages": 54,
+  "excluded": [
+    {
+      "name": "rfdiffusion",
+      "source": "file:///CI_RUNTIME/tools/RFdiffusion",
+      "reason": "Editable source revision, not a PyPI distribution"
+    },
+    {
+      "name": "se3-transformer",
+      "source": "file:///CI_RUNTIME/tools/RFdiffusion/env/SE3Transformer",
+      "reason": "Pinned source, not a PyPI distribution"
+    }
+  ],
+  "published_freeze": "../ci/se3-freeze.txt"
+}

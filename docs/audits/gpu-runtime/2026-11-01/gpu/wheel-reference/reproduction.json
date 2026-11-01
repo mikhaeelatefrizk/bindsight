@@ -1,0 +1,572 @@
+{
+  "passed": true,
+  "original_reference_sha256": "d29ebfc6518e4ce8e887a3880975843d69cb4c6daea7a5b817d7719a0a7af3af",
+  "reproduced_linux_sha256": "719ef0012c18319efb04680e86e5e2e0a913fcb905ad8817ac802e2a5b5262f1",
+  "actual_gpu_receipt_sha256": "719ef0012c18319efb04680e86e5e2e0a913fcb905ad8817ac802e2a5b5262f1",
+  "same_all_member_bytes": true,
+  "members": 112,
+  "transformation": "ZIP create_system platform header from Windows 0 to Unix 3 only; all decompressed members unchanged",
+  "changes": [
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/LICENSE",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/METADATA",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/RECORD",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/WHEEL",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/entry_points.txt",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz-2.0.3+bindsight.1.dist-info/top_level.txt",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/const.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/crop/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/crop/affinity.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/crop/boltz.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/crop/cropper.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/feature/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/feature/featurizer.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/feature/featurizerv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/feature/symmetry.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/date.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/filter.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/max_residues.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/resolution.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/size.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/dynamic/subset.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/static/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/static/filter.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/static/ligand.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/filter/static/polymer.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/module/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/module/inference.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/module/inferencev2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/module/training.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/module/trainingv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/mol.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/msa/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/msa/mmseqs2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/pad.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/a3m.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/csv.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/fasta.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/mmcif.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/mmcif_with_constraints.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/schema.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/parse/yaml.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/sample/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/sample/cluster.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/sample/distillation.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/sample/random.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/sample/sampler.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/tokenize/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/tokenize/boltz.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/tokenize/boltz2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/tokenize/tokenizer.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/types.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/write/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/write/mmcif.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/write/pdb.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/write/utils.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/data/write/writer.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/main.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/attention.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/attentionv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/confidence_utils.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/dropout.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/initialize.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/outer_product_mean.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/pair_averaging.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/pairformer.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/relative.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/transition.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/triangular_attention/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/triangular_attention/attention.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/triangular_attention/primitives.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/triangular_attention/utils.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/layers/triangular_mult.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/bfactor.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/confidence.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/confidencev2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/diffusion.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/diffusionv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/distogram.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/distogramv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/loss/validation.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/models/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/models/boltz1.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/models/boltz2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/affinity.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/confidence.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/confidence_utils.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/confidencev2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/diffusion.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/diffusion_conditioning.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/diffusionv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/encoders.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/encodersv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/transformers.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/transformersv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/trunk.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/trunkv2.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/modules/utils.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/optim/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/optim/ema.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/optim/scheduler.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/potentials/__init__.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/potentials/potentials.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    },
+    {
+      "member": "boltz/model/potentials/schedules.py",
+      "from_create_system": 0,
+      "to_create_system": 3
+    }
+  ],
+  "scope": "Exact full-wheel byte reproduction matches the separately downloaded actual GPU runtime receipt; no installed package or scientific outputs changed."
+}

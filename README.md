@@ -42,16 +42,19 @@ test or deployment leaves the preceding release live. Existing local downloads
 must be replaced to receive an update; saved research is kept separately from
 the companion's versioned software environment.
 
-**GPU runtime update for the 0.3.8 candidate:** new managed setups use supported
-Python 3.11 instead of the historical Python 3.9 recipe, with one provisioning
-path for local Linux/WSL, Kaggle, Colab and Modal. Real T4 design and prediction
-component checks have passed; the final updated full design-and-prediction run
-is still pending. The prediction setup uses an explicitly versioned Boltz
-dependency-metadata patch that preserves the upstream implementation files.
-The existing scientific results and model checkpoints have not been replaced.
-See the [runtime recipe and remaining limits](docs/gpu-runtime.md) and
-[validation status](docs/validation-status.md). Earlier releases remain available
-as historical snapshots; their environments do not receive these fixes in place.
+**GPU runtime update in 0.3.8:** new managed setups use Python 3.11 instead of
+the historical Python 3.9 recipe, with one provisioning path for local Linux/WSL,
+Kaggle, Colab and Modal. On 2026-11-01, the updated recipe completed one
+RFdiffusion backbone, two ProteinMPNN sequences and two Boltz predictions on
+a Kaggle Tesla T4. All eight independent artifact checks passed; see the
+[recorded run and its limits](docs/audits/gpu-runtime/2026-11-01/README.md).
+The Boltz dependency-metadata patch preserves all upstream implementation files.
+The historical campaign was not rerun; its numerical results and model checkpoints
+remain unchanged. Three accompanying document version labels were updated. This small
+run does not establish cross-runtime numerical equivalence or biological binding;
+live Colab and Modal execution remains unverified. See the
+[runtime guide](docs/gpu-runtime.md) and [validation status](docs/validation-status.md).
+Earlier releases remain available as historical snapshots, not maintained environments.
 
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
@@ -282,7 +285,7 @@ reference resources, none of which is wired in.
 | **`bindsight ui`** — local interface: the evidence, a demo, your own data, past runs, and the 20 predicted complexes in 3-D | ✅ ready | `bindsight ui` |
 | **`bindsight report`** — paper-style HTML, embedded volcano + provenance | ✅ ready | `bindsight report runs/x` |
 | **`bindsight run`** — full orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
-| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a Kaggle T4 | Historical full-run evidence; updated runtime validation pending | `bindsight design runs/x --backend kaggle` — see [runtime status](docs/gpu-runtime.md) |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a Kaggle T4 | Updated runtime: recorded two-prediction smoke passed | `bindsight design runs/x --backend kaggle` — see [runtime evidence](docs/audits/gpu-runtime/2026-11-01/README.md) |
 | **`bindsight design <run_dir> --dry-run`** — GPU cost estimate before spending | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight rank`** — multi-objective composite scoring | ✅ ready | `bindsight rank runs/x` |
@@ -300,7 +303,7 @@ would be misleading.
 
 | | Status | Why |
 |---|---|---|
-| **Kaggle** | Historical full runs; updated runtime under validation | Headless via the Kaggle API, using a caller-supplied wheel or the exact published Bindsight version. Requests a T4. Component checks do not replace a full run of the final recipe. |
+| **Kaggle** | Historical full runs and a new runtime smoke | The updated recipe completed one backbone, two sequences and two Boltz predictions on a Kaggle Tesla T4; [evidence and limits](docs/audits/gpu-runtime/2026-11-01/README.md). The runner verifies the caller's wheel or exact published version. |
 | **local_docker** | For your own GPU | Native and containerised modes; the native mode is what CPU tests exercise. |
 | **Modal** | Prepared, not executed | Its pinned published driver calls the shared managed GPU provisioner. No live Modal run is claimed; running it incurs provider charges. |
 | **Colab** | Interactive, live execution unverified | Generated notebooks use the same managed recipe and exact published Bindsight version. A user must open and run the notebook in Colab; it is not a reproducibility path for unattended jobs. CPU generation tests do not verify a live GPU run. |

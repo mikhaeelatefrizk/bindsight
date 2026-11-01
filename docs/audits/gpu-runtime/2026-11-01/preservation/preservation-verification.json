@@ -1,0 +1,28 @@
+{
+  "checked_at_utc": "2026-11-01T18:59:19.822428+00:00",
+  "compared_revision": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "passed": true,
+  "baseline_revision": "1b2c255d5b35a841aedabe60fb9fdec187d12804",
+  "historical_files_checked": 216,
+  "byte_identical": 213,
+  "metadata_only_changes": [
+    {
+      "path": "paper/README.md",
+      "scope": "software version label only",
+      "before_sha256": "b1d149b5defabd22225e7f3d88a02b382f57409ddf3199203fc5dc39a3845fae",
+      "after_sha256": "458e667892ed69e225e982a2474956fbd2106ec7bf5705bc373b01cb006db57c"
+    },
+    {
+      "path": "paper/methods/manuscript.tex",
+      "scope": "software version label only",
+      "before_sha256": "5841e08d17939d755a30d188c8bc69b0d6cf0755eaba04e3336124b61f122e0a",
+      "after_sha256": "12d593c29ef531447339fd523fdf7970a7ad0180c9d9403e9c520a93957981c0"
+    },
+    {
+      "path": "paper/paper.bib",
+      "scope": "software version label only",
+      "before_sha256": "b978d779ae58b31c6217e6eaeba8a69f00f3d3db40ee0d074a8a9d75cf5f9d84",
+      "after_sha256": "a1ae96968b4fa9714e84227c2bbc164531184d452af91482ea6d7207c2738251"
+    }
+  ]
+}

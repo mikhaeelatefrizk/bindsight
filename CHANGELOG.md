@@ -62,10 +62,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   conflicting existing results. Update the current guide to this managed path;
   live Colab allocation remains unverified.
 
+### Validation and preserved evidence
+
+- Complete a one-backbone, two-sequence, two-prediction smoke on a Kaggle Tesla T4
+  using the frozen protocol. All eight independent artifact checks pass;
+  [recorded evidence](docs/audits/gpu-runtime/2026-11-01/README.md) identifies the tested code, wheel,
+  environment, model assets, commands, trajectories, sequences and outputs.
+- Retain the canceled and checkpoint-failed attempts as dated history. Verify
+  both real Boltz model constructors on CPU through the production restricted
+  loader. Keep CI installation/import checks separate from GPU prediction proof.
+- Preserve historical scientific outputs and releases. The RF trajectory
+  verifier checks the pinned model's nonfinal fixed-target geometry and final
+  predicted-frame correspondence without inventing a new quality threshold.
+
 Historical scientific results and release artifacts remain preserved. This
 maintenance does not turn prediction confidence into evidence of binding.
 Distributed DGL/RPC remains unsupported: its upstream advisory has no patched
-release, and the managed workflow uses local graph operations only. See
+release, and static source review found no distributed entry-point calls in the
+supported workflow. This is not a runtime network-isolation guarantee. See
 [GPU runtime](docs/gpu-runtime.md) and [security scope](SECURITY.md).
 
 ## [0.3.7] - 2026-11-01

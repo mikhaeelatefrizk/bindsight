@@ -1,0 +1,167 @@
+{
+  "schema": "bindsight-job-evidence/1",
+  "status": "completed",
+  "error": null,
+  "commands": 5,
+  "files": [
+    {
+      "category": "target",
+      "path": "target.pdb",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178"
+    },
+    {
+      "category": "rfdiffusion",
+      "path": "rfdiff_out/binder_42.pdb",
+      "bytes": 54136,
+      "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64"
+    },
+    {
+      "category": "rfdiffusion",
+      "path": "rfdiff_out/binder_42.trb",
+      "bytes": 57344,
+      "sha256": "a6c8aa63dcab8152235b0085080e2ba1481b5e89366b8bbd1791f5461ddac10b"
+    },
+    {
+      "category": "rfdiffusion",
+      "path": "rfdiff_out/traj/binder_42_Xt-1_traj.pdb",
+      "bytes": 4222020,
+      "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789"
+    },
+    {
+      "category": "rfdiffusion",
+      "path": "rfdiff_out/traj/binder_42_pX0_traj.pdb",
+      "bytes": 4419000,
+      "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006"
+    },
+    {
+      "category": "proteinmpnn",
+      "path": "mpnn_out/binder_42/seqs/binder_42.fa",
+      "bytes": 499,
+      "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_0.csv",
+      "bytes": 932561,
+      "sha256": "d80428138bc36062cd8b76ef110f87cc33730fbc23a0e3d6aab2be86c72a5f88"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_1.csv",
+      "bytes": 139,
+      "sha256": "9a1ef3311f5986aa379e1e2d2a5eaefe85a0a21d8c41bdfc0cb2fc45d158780d"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_paired_tmp_pairgreedy-env/pair.a3m",
+      "bytes": 216,
+      "sha256": "d8762ac4f9f7824bd7e55fe5aea9c78ffab261c438790c94b67a4542b5e8ff5f"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_unpaired_tmp_env/bfd.mgnify30.metaeuk30.smag30.a3m",
+      "bytes": 316501,
+      "sha256": "6d5c7f75d07f5b61e7945a4710b03ff4051553231ad83c329454a559bbe706d6"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/msa/P04626_binder_42_seq0_unpaired_tmp_env/uniref.a3m",
+      "bytes": 977575,
+      "sha256": "78ef214c4a092f26d48ab8ac7cfb5b4a45c247bc7ea2b5bc148853cc12c992bf"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/manifest.json",
+      "bytes": 666,
+      "sha256": "ffec73211f1ac3174d897ebec76770f54140ac9b0434c746b829082f746cdf3c"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/msa/P04626_binder_42_seq0_0.npz",
+      "bytes": 365098,
+      "sha256": "fc3d77755f48b0aab3709f6ae0399a4d58d687222feb61928799f175eb837378"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/msa/P04626_binder_42_seq0_1.npz",
+      "bytes": 749,
+      "sha256": "9ed7c49254e3888a5e90e9300c9a5c408b9b0d47a2bc4906e087a4db5f55b5b7"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0/boltz_results_P04626_binder_42_seq0/processed/records/P04626_binder_42_seq0.json",
+      "bytes": 651,
+      "sha256": "a923d6fb6d134087c24242d0b79bbc025ae5864810cec76713a3c35fb6d6120f"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq0.yaml",
+      "bytes": 296,
+      "sha256": "3cd52fd3fcb701f1575ab4b39a07352aecadee11d014a5d77bf5e17f1ad149da"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/msa/P04626_binder_42_seq1_0.csv",
+      "bytes": 932561,
+      "sha256": "d80428138bc36062cd8b76ef110f87cc33730fbc23a0e3d6aab2be86c72a5f88"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/msa/P04626_binder_42_seq1_1.csv",
+      "bytes": 5403,
+      "sha256": "d62cfafbea1af2a036043a860bf623af996d5265873a228a80820a7ac9daeb53"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/msa/P04626_binder_42_seq1_paired_tmp_pairgreedy-env/pair.a3m",
+      "bytes": 216,
+      "sha256": "f853bed933c550d63470e5adb8a559c13f7dbf89b0d07c68e1892ef7bc403f2a"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/msa/P04626_binder_42_seq1_unpaired_tmp_env/bfd.mgnify30.metaeuk30.smag30.a3m",
+      "bytes": 326819,
+      "sha256": "525904a72eac508305b9f67a587638b9caaf57f1fe523da925ca2510ea5dc83d"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/msa/P04626_binder_42_seq1_unpaired_tmp_env/uniref.a3m",
+      "bytes": 977575,
+      "sha256": "9336cbb5baa3bab305146535867faa396ad621c1d2aa02c2744a49ad79a51331"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/processed/manifest.json",
+      "bytes": 666,
+      "sha256": "448c7a5b8b6bde751bcb9510b9b5dd0370e0d062256aed5eacd09c251129f2a7"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/processed/msa/P04626_binder_42_seq1_0.npz",
+      "bytes": 365098,
+      "sha256": "fc3d77755f48b0aab3709f6ae0399a4d58d687222feb61928799f175eb837378"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/processed/msa/P04626_binder_42_seq1_1.npz",
+      "bytes": 2555,
+      "sha256": "da616f1a6036ce0ece10e824d902bb6bfa4e23b664e2f6ccdda8624b459b7b8c"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1/boltz_results_P04626_binder_42_seq1/processed/records/P04626_binder_42_seq1.json",
+      "bytes": 651,
+      "sha256": "437db4239ead46acf8f0dc56d036de7f3eee530ae5b48a1fb339a318be83d4c1"
+    },
+    {
+      "category": "boltz",
+      "path": "boltz_out/P04626_binder_42_seq1.yaml",
+      "bytes": 296,
+      "sha256": "2d8ec30a0693b1db8907f73245262bda7f76d847f89e4e86ea86ab5add3fd088"
+    }
+  ],
+  "skipped": [],
+  "missing_categories": [],
+  "note": "Credential-like text is redacted; logs and raw artifacts have explicit size limits. Model weights and environment variables are not archived."
+}

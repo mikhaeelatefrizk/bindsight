@@ -59,7 +59,7 @@ and is recorded in that release's changelog entry, tag and release notes.
 
 ## Supply-chain notes
 
-### 0.3.8 candidate: supported-Python GPU runtime (2026-11-01)
+### 0.3.8: supported-Python GPU runtime (2026-11-01)
 
 New managed GPU environments use Python 3.11.18 instead of the historical
 Python 3.9 runtime. One provisioner serves local Linux/WSL, Kaggle, Colab and
@@ -82,10 +82,10 @@ Their exploitability through Bindsight was not established. These requirement
 changes preserve the tested dependency versions; they do not constitute a claim
 that every third-party component is free of vulnerabilities.
 
-The candidate pins PyTorch 2.14.1, beyond the 2.10.0 fix for checkpoint
+The managed runtime pins PyTorch 2.14.1, beyond the 2.10.0 fix for checkpoint
 deserialization advisory
 [GHSA-63cw-57p8-fm3p](https://github.com/advisories/GHSA-63cw-57p8-fm3p).
-Hydra 1.3.8 is required for the final candidate, incorporating fixes for
+Hydra 1.3.8 incorporates fixes for
 [untrusted instantiation](https://github.com/advisories/GHSA-2cp2-2r3c-7p7r),
 [logging callable resolution](https://github.com/advisories/GHSA-c3wx-c55w-pxjq),
 [mutable policy bypass](https://github.com/advisories/GHSA-mwj6-rfh8-7qf4) and
@@ -109,9 +109,14 @@ Cached files are rehashed and extracted molecule files are compared against
 the authenticated archive before upstream loading. Unsafe archive paths,
 links and unexpected extracted contents are rejected. This authenticates the
 selected publisher's assets, not arbitrary user-provided pickle/checkpoint
-files. The e3nn compatibility patch verifies its original loader and constants,
-then scopes a `slice` allowlist around `torch.load(weights_only=True)`; it does
-not disable safe loading globally. Source/weight identities and package
+files. The Boltz compatibility wrapper additionally authenticates the same file
+handle before and after loading, restricts the exact asset-specific configuration
+types and explicitly keeps `weights_only=True`. Prior permissions and the class
+loader are restored; unrelated concurrent loads are unsupported because the
+allowlist is process-wide. Actual CPU tests constructed both publisher models
+through this production wrapper. The e3nn patch separately verifies its original
+loader and constants before scoping a `slice` allowlist around its restricted
+load. Neither adapter globally disables safe loading. These identity and
 compatibility checks do not establish numerical equivalence between runtimes.
 
 **Remaining known advisory:** DGL
@@ -124,18 +129,20 @@ imports and retains the vulnerable RPC code. DistDGL/RPC use is unsupported;
 this source review is not a runtime network-isolation guarantee and does not
 justify calling the complete GPU environment free of known vulnerabilities.
 
-A real T4 design-component probe passed, but used Hydra 1.3.6 before the later
-advisory review. A separate T4 prediction probe passed imports and CUDA
-operations with the final Boltz dependency patch and Hydra 1.3.8; it loaded no
-model weights and ran no predictions. A 2026-11-01 advisory lookup of that
-prediction environment's measured freeze reported no known vulnerabilities in
-92 queried PyPI package versions. The locally rebuilt Boltz wheel was excluded
-from that lookup and reviewed separately. This scoped database result does not
-override the DGL advisory above or establish a comprehensive security audit.
-The final candidate's full design-and-prediction run remains pending.
-See [validation status](docs/validation-status.md) for the scope of the evidence.
-Historical releases and research artifacts are retained; use the current tested
-release for new installations rather than treating an archive as maintained.
+The earlier T4 design-component probe used Hydra 1.3.6; the prediction-component
+probe used the corrected Boltz dependency patch and Hydra 1.3.8 but loaded no
+weights and ran no predictions. Its dated lookup covered 92 PyPI versions,
+excluding the local Boltz wheel. Current CI records measured freezes matching
+the retained dated advisory reports, including their source-package and database
+exclusions; this does not imply a fresh advisory query or comprehensive audit.
+
+On 2026-11-01, the updated recipe completed the recorded one-backbone,
+two-sequence, two-prediction smoke on a Kaggle Tesla T4 and passed all eight
+independent artifact checks. See [validation status](docs/validation-status.md)
+and the [dated evidence](docs/audits/gpu-runtime/2026-11-01/README.md). This computational result does
+not remove the DGL advisory above or prove biological efficacy or cross-runtime
+numerical equivalence. Historical releases and research artifacts remain retained;
+new installations should use the current tested release.
 
 ### 0.3.7 certificate incident maintenance — historical record (2026-11-01)
 
@@ -163,9 +170,9 @@ and certifi 2026.10.19 or newer, including a hash-verified bootstrap for old pip
 Rebuild containers without old cached layers. The GPU workflow in 0.3.7 still
 required Python 3.9 for its pinned RFdiffusion dependencies; Python 3.9 was
 end-of-life. A patched external installer protected package downloads but did
-not make that scientific interpreter maintained. The 0.3.8 candidate addresses
-that separate runtime issue above. No compromise of this project was established
-by the maintenance investigation.
+not make that scientific interpreter maintained. The 0.3.8 runtime addresses
+that separate issue above. No compromise of this project was established by
+the maintenance investigation.
 
 - Default pipeline code is MIT / Apache / BSD and its data sources CC0 / CC BY,
   except the SURFY surfaceome list, whose source states no terms — see

@@ -1,0 +1,993 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "created_at_utc": "2026-11-01T19:36:44.440914+00:00",
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "tested_wheel_sha256": "3e0ee56bcadb88e852ec20243b81b3a8a1226d857886872b4007da52517edea2",
+  "actual_gpu_status": "passed",
+  "publication_attestation": false,
+  "original_archive": {
+    "sha256": "9a3a571ac7bf3f49ae7cb7eb2199add7d3999ca9d600ba003c6b2bb70ca0d8d3",
+    "bytes": 5041869,
+    "scope": "Retained read-only outside this selected public subset; includes omitted serialized metadata"
+  },
+  "packager_sha256": "ac1435b8283f39ce1ce1360db03f23f8ade7f1124780a7f2697466e1f9313cff",
+  "files": [
+    {
+      "artifact": "verification.json",
+      "bytes": 26086,
+      "sha256": "67552cff06849b499f794e48134fe2d902a915875c55a9c2c70c18b56b500446",
+      "sources": [
+        {
+          "source_role": "Actual eight-check GPU acceptance",
+          "sha256": "285924e5603db7312b032d89d25280023fef313c6332521e2ec00b081064acde",
+          "bytes": 27002
+        }
+      ],
+      "purpose": "Actual eight-check GPU acceptance",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 7
+      }
+    },
+    {
+      "artifact": "import/verification.json",
+      "bytes": 855,
+      "sha256": "1f763d8fe84699de892f74b1362acd6126768e00b932d4c6f51b556e6367c5a3",
+      "sources": [
+        {
+          "source_role": "Installed CLI executed twice against the actual downloaded archive",
+          "sha256": "1f763d8fe84699de892f74b1362acd6126768e00b932d4c6f51b556e6367c5a3",
+          "bytes": 855
+        }
+      ],
+      "purpose": "Installed CLI executed twice against the actual downloaded archive",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "history/verification-reference-v1.json",
+      "bytes": 17524,
+      "sha256": "79d0840f1b269a510adad05fe40412b823a65fc2be2e708bd1152e8a32d0002e",
+      "sources": [
+        {
+          "source_role": "Superseded verifier-reference mismatch, not a scientific output failure",
+          "sha256": "24a7c34c842b1a1f42b9beefd338b782a6f9522c4d7b28eb33edd44c9d3d6b6a",
+          "bytes": 18073
+        }
+      ],
+      "purpose": "Superseded verifier-reference mismatch, not a scientific output failure",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 1
+      }
+    },
+    {
+      "artifact": "wheel-reference/reproduction.json",
+      "bytes": 15062,
+      "sha256": "daa6f74bfcf06a329081f13879097ee6f96b5f2f029951107efddfa82f291308",
+      "sources": [
+        {
+          "source_role": "Exact Linux ZIP platform-header reproduction; unchanged decompressed members",
+          "sha256": "daa6f74bfcf06a329081f13879097ee6f96b5f2f029951107efddfa82f291308",
+          "bytes": 15062
+        }
+      ],
+      "purpose": "Exact Linux ZIP platform-header reproduction; unchanged decompressed members",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "wheel-reference/reproduce.py",
+      "bytes": 2179,
+      "sha256": "7f3142473502f2b4ef21f78db91af5e733f8dec92837726013efbafeadcac6a9",
+      "sources": [
+        {
+          "source_role": "Recorded reference reproduction method; copied as evidence, not executed",
+          "sha256": "3e9d5b05aa7c2b17810c3423686ccbfeac9bcd6c86b5168c06ba839201c23f13",
+          "bytes": 2179
+        }
+      ],
+      "purpose": "Recorded reference reproduction method; copied as evidence, not executed",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private job identifier": 1
+      }
+    },
+    {
+      "artifact": "interpretation-review.json",
+      "bytes": 2561,
+      "sha256": "15e47a69664339c9520527fda922624da29cc23426dae727c34fafc4f39835e0",
+      "sources": [
+        {
+          "source_role": "Focused Claude interpretation review; no new tests or inference",
+          "sha256": "15e47a69664339c9520527fda922624da29cc23426dae727c34fafc4f39835e0",
+          "bytes": 2561
+        }
+      ],
+      "purpose": "Focused Claude interpretation review; no new tests or inference",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "methods/verify_smoke.py",
+      "bytes": 50283,
+      "sha256": "fc7a9fedac825c3ba055707bfde9c80bbed0ae54ffc75698c96871360bfea941",
+      "sources": [
+        {
+          "source_role": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+          "sha256": "fc7a9fedac825c3ba055707bfde9c80bbed0ae54ffc75698c96871360bfea941",
+          "bytes": 50283
+        }
+      ],
+      "purpose": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "methods/verify_real_import.py",
+      "bytes": 4670,
+      "sha256": "95be630ff32c4ba2f380916375bf50ce7ea401111cf554480a50fe61e3c8d26d",
+      "sources": [
+        {
+          "source_role": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+          "sha256": "95be630ff32c4ba2f380916375bf50ce7ea401111cf554480a50fe61e3c8d26d",
+          "bytes": 4670
+        }
+      ],
+      "purpose": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "methods/extract_actual_results.py",
+      "bytes": 4001,
+      "sha256": "d87591f8da1e4eb900749351aa26e66d2837b1ab5e47f271e34f585446b5512c",
+      "sources": [
+        {
+          "source_role": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+          "sha256": "d87591f8da1e4eb900749351aa26e66d2837b1ab5e47f271e34f585446b5512c",
+          "bytes": 4001
+        }
+      ],
+      "purpose": "Exact method used for actual scientific verification, installed import, or bounded extraction; recorded without execution",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/verification.json",
+      "bytes": 1425,
+      "sha256": "c1aa36f0a6d50e0d07ed34b8a9ef5791c6dc42a0e821822163f26e7cdeb84e33",
+      "sources": [
+        {
+          "source_role": "Independent actual-runtime audit artifact verification",
+          "sha256": "c1aa36f0a6d50e0d07ed34b8a9ef5791c6dc42a0e821822163f26e7cdeb84e33",
+          "bytes": 1425
+        }
+      ],
+      "purpose": "Independent actual-runtime audit artifact verification",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/audit-result.json",
+      "bytes": 668,
+      "sha256": "f1fae4ec5aed27b8796402e3017f5bd4cbca6a16cb3fdac2898c98caf9a51e70",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "f1fae4ec5aed27b8796402e3017f5bd4cbca6a16cb3fdac2898c98caf9a51e70",
+          "bytes": 668
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/boltz-freeze.txt",
+      "bytes": 2200,
+      "sha256": "f4cbabff62268a6f590463e23f3b9586493047cfadba6d817350c36ee7c060a4",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "f4cbabff62268a6f590463e23f3b9586493047cfadba6d817350c36ee7c060a4",
+          "bytes": 2200
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/boltz-requirements.scope.json",
+      "bytes": 455,
+      "sha256": "e516a6e617a1f94572988491fe9da250f88a8ab72023781a2b7b0c75648f3af7",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "e516a6e617a1f94572988491fe9da250f88a8ab72023781a2b7b0c75648f3af7",
+          "bytes": 455
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/boltz-requirements.txt",
+      "bytes": 2061,
+      "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7",
+          "bytes": 2061
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/comparison.json",
+      "bytes": 7420,
+      "sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57",
+          "bytes": 7420
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/cuda11-freeze.txt",
+      "bytes": 116,
+      "sha256": "898b8607d06d046696333d30d34a30d823138baf653443c52ae550a46b29099f",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "898b8607d06d046696333d30d34a30d823138baf653443c52ae550a46b29099f",
+          "bytes": 116
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/cuda11-requirements.scope.json",
+      "bytes": 85,
+      "sha256": "7b245eca6d93c5e87e9bb17170506cdc999dd1dcc88087051f10357b4919f4d0",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "7b245eca6d93c5e87e9bb17170506cdc999dd1dcc88087051f10357b4919f4d0",
+          "bytes": 85
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/cuda11-requirements.txt",
+      "bytes": 120,
+      "sha256": "3c86789455ff46ca1f08f9c827a408a94f8a7fc200dbbf5038bfaeafbf81ed05",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "3c86789455ff46ca1f08f9c827a408a94f8a7fc200dbbf5038bfaeafbf81ed05",
+          "bytes": 120
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited-basis.json",
+      "bytes": 3615,
+      "sha256": "e120b4d47c342f33d566930c74e607d06281f1d143ccc9b902bd34f6d09e675b",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "e120b4d47c342f33d566930c74e607d06281f1d143ccc9b902bd34f6d09e675b",
+          "bytes": 3615
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-boltz-audit-query.json",
+      "bytes": 927,
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253",
+          "bytes": 927
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-boltz-audit-requirements.txt",
+      "bytes": 1960,
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b",
+          "bytes": 1960
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa",
+          "bytes": 8769
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-boltz-audit.scope.json",
+      "bytes": 697,
+      "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e",
+          "bytes": 697
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-cuda11-audit-requirements.txt",
+      "bytes": 116,
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b",
+          "bytes": 116
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e",
+          "bytes": 426
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-se3-audit-requirements.txt",
+      "bytes": 1113,
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91",
+          "bytes": 1113
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda",
+          "bytes": 4819
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/ci-se3-audit.scope.json",
+      "bytes": 713,
+      "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e",
+          "bytes": 713
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/inherited/dependency-comparison.json",
+      "bytes": 3021,
+      "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866",
+          "bytes": 3021
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/preparation-manifest.json",
+      "bytes": 3574,
+      "sha256": "607e2292686e7a3e28853d57c69ccd84a8d16b7a46c877652ffc23a3a6fe6877",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "607e2292686e7a3e28853d57c69ccd84a8d16b7a46c877652ffc23a3a6fe6877",
+          "bytes": 3574
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/se3-freeze.txt",
+      "bytes": 1401,
+      "sha256": "914435451559102084bd68ffb0d759cf3cfcf43c3e19a473b7dee834385675c0",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "914435451559102084bd68ffb0d759cf3cfcf43c3e19a473b7dee834385675c0",
+          "bytes": 1401
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/se3-requirements.scope.json",
+      "bytes": 442,
+      "sha256": "1bdb5ada1db2246e397517a3db467c910f1abf48f66be9c9783b3e9db19f40a3",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "1bdb5ada1db2246e397517a3db467c910f1abf48f66be9c9783b3e9db19f40a3",
+          "bytes": 442
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "security/se3-requirements.txt",
+      "bytes": 1167,
+      "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e",
+      "sources": [
+        {
+          "source_role": "Actual-runtime package advisory scope and original dated query evidence",
+          "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e",
+          "bytes": 1167
+        }
+      ],
+      "purpose": "Actual-runtime package advisory scope and original dated query evidence",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "job/original-manifest.json",
+      "bytes": 6843,
+      "sha256": "788fb808999537a388ae658f46976c476e513b647d963cc31424372fb059a561",
+      "sources": [
+        {
+          "source_role": "Original job receipt; privacy-normalized text retains complete fields",
+          "sha256": "788fb808999537a388ae658f46976c476e513b647d963cc31424372fb059a561",
+          "bytes": 6843
+        }
+      ],
+      "purpose": "Original job receipt; privacy-normalized text retains complete fields",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "job/original-provenance.json",
+      "bytes": 745,
+      "sha256": "928971696bdd07a8b979a9282da915027f8fb249841ca6dcd2a1aeb427af7fcc",
+      "sources": [
+        {
+          "source_role": "Original job receipt; privacy-normalized text retains complete fields",
+          "sha256": "fa600f31bbd0ebdaa4d44f1ca68e3ee249bc0ba1062a6e500be2b1b5d5f46026",
+          "bytes": 772
+        }
+      ],
+      "purpose": "Original job receipt; privacy-normalized text retains complete fields",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 1
+      }
+    },
+    {
+      "artifact": "job/original-weights.json",
+      "bytes": 523,
+      "sha256": "8b9a0cbc818e9faffbf99c0000e07e2750b6a9397b696e5a6acfc24188100186",
+      "sources": [
+        {
+          "source_role": "Original job receipt; privacy-normalized text retains complete fields",
+          "sha256": "8b9a0cbc818e9faffbf99c0000e07e2750b6a9397b696e5a6acfc24188100186",
+          "bytes": 523
+        }
+      ],
+      "purpose": "Original job receipt; privacy-normalized text retains complete fields",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "job/original-spec.json",
+      "bytes": 661,
+      "sha256": "ee113944dbc1a5229ee62e42eb841a7b2f89441c88706e2ffbfc0a03f31136cf",
+      "sources": [
+        {
+          "source_role": "Original job receipt; privacy-normalized text retains complete fields",
+          "sha256": "ee113944dbc1a5229ee62e42eb841a7b2f89441c88706e2ffbfc0a03f31136cf",
+          "bytes": 661
+        }
+      ],
+      "purpose": "Original job receipt; privacy-normalized text retains complete fields",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "inputs/original-spec.json",
+      "bytes": 688,
+      "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+      "sources": [
+        {
+          "source_role": "Exact submitted scientific protocol",
+          "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+          "bytes": 688
+        }
+      ],
+      "purpose": "Exact submitted scientific protocol",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "results/metrics.jsonl",
+      "bytes": 854,
+      "sha256": "5de082187b07cf02b1317a2d82310e86047ca4d08069bf4c0967e83919ca44be",
+      "sources": [
+        {
+          "source_role": "Original predicted metrics; numerical fields unchanged",
+          "sha256": "5de082187b07cf02b1317a2d82310e86047ca4d08069bf4c0967e83919ca44be",
+          "bytes": 854
+        }
+      ],
+      "purpose": "Original predicted metrics; numerical fields unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/runtime-receipt.json",
+      "bytes": 30047,
+      "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "4a60d692ae9846d951593a33b213158fc9a664718928b6a3e3b42d93cfa51ecf",
+          "bytes": 30452
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 15
+      }
+    },
+    {
+      "artifact": "runtime/provision-receipt.json",
+      "bytes": 30047,
+      "sha256": "0bb4aa838d9b5785a97b85b239ff02977aa0430d645961e50540ccb2351c1dc6",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "4a60d692ae9846d951593a33b213158fc9a664718928b6a3e3b42d93cfa51ecf",
+          "bytes": 30452
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 15
+      }
+    },
+    {
+      "artifact": "runtime/source-wheel.json",
+      "bytes": 152,
+      "sha256": "9133d6c18a5ba96359961979312e2d0ec0e07912af9b53c9165172fcded378ea",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "9133d6c18a5ba96359961979312e2d0ec0e07912af9b53c9165172fcded378ea",
+          "bytes": 152
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/attached-wheel.json",
+      "bytes": 163,
+      "sha256": "71557cbc9fa886b2dacb1a3b4006a351cf54cac3880abc1b674e5fe6874d86ec",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "8d9e0576e16b78600f79f8cbcd3c0ac807846b7f4f436a9819e91cd3afede456",
+          "bytes": 228
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private input dataset": 1
+      }
+    },
+    {
+      "artifact": "runtime/model-weights.json",
+      "bytes": 9149,
+      "sha256": "6f7b7ce07db7ae1677738437aeebe646a85501c820c1557778c886fe17557f3f",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "6f7b7ce07db7ae1677738437aeebe646a85501c820c1557778c886fe17557f3f",
+          "bytes": 9149
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/result.json",
+      "bytes": 44,
+      "sha256": "d1cfa1233727ae32135e9cad04bb85038cbb4bc8e616f71ec65af66b82fea84b",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "d1cfa1233727ae32135e9cad04bb85038cbb4bc8e616f71ec65af66b82fea84b",
+          "bytes": 44
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/memory.json",
+      "bytes": 13855,
+      "sha256": "3280b99ecd05c90e3096166167e88ff191e53d2bc2981e4823647018399efe82",
+      "sources": [
+        {
+          "source_role": "Complete original runtime receipt",
+          "sha256": "3280b99ecd05c90e3096166167e88ff191e53d2bc2981e4823647018399efe82",
+          "bytes": 13855
+        }
+      ],
+      "purpose": "Complete original runtime receipt",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/hardware.txt",
+      "bytes": 74,
+      "sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7",
+      "sources": [
+        {
+          "source_role": "Observed device information",
+          "sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7",
+          "bytes": 74
+        }
+      ],
+      "purpose": "Observed device information",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "runtime/commands.log",
+      "bytes": 93430,
+      "sha256": "1322954e93171605d48613fa2363e71c31ed3e304734f86c5d27606c96b7f8cf",
+      "sources": [
+        {
+          "source_role": "Complete process-output command log",
+          "sha256": "8456be8db882dfe51eb6d5f349be74ccb0a794e45311cd095cb48d59d11fa615",
+          "bytes": 99319
+        }
+      ],
+      "purpose": "Complete process-output command log",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 195,
+        "private job identifier": 4
+      }
+    },
+    {
+      "artifact": "commands/000001.json",
+      "bytes": 898,
+      "sha256": "25c41076a97581db70bb7ab0d5b84064bfbebb33f35cd7531414ab4cd49209eb",
+      "sources": [
+        {
+          "source_role": "Original observed command/protocol receipt",
+          "sha256": "66b3f032c566ff13872a303b09bfff63696c522f69b52e0bfd36407150973145",
+          "bytes": 925
+        }
+      ],
+      "purpose": "Original observed command/protocol receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 1
+      }
+    },
+    {
+      "artifact": "commands/000002.json",
+      "bytes": 25702,
+      "sha256": "ab0d3fc1152ae3a89b62ffddea27f32d16c630144e5d76d64639b8d069383572",
+      "sources": [
+        {
+          "source_role": "Original observed command/protocol receipt",
+          "sha256": "afbaad83a95f84ca42f77a395f63ecf52f89edf6303fabd8c70a056d36aa3c6e",
+          "bytes": 26119
+        }
+      ],
+      "purpose": "Original observed command/protocol receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 14
+      }
+    },
+    {
+      "artifact": "commands/000003.json",
+      "bytes": 1603,
+      "sha256": "2a141e0fdacdfdd6f3da1dfa95c9714806482d17e616210c80f5d8a7c9d87667",
+      "sources": [
+        {
+          "source_role": "Original observed command/protocol receipt",
+          "sha256": "45a45130ecdd069f4fa1df0c3290f57a49fd67d33c83bf1bab397a9fa7929bc6",
+          "bytes": 1737
+        }
+      ],
+      "purpose": "Original observed command/protocol receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 4
+      }
+    },
+    {
+      "artifact": "commands/000004.json",
+      "bytes": 4171,
+      "sha256": "dceaad7e3e1b9a3c53b4c7c686bad567546f3b2b8ee0b4870df2635c40eb70fe",
+      "sources": [
+        {
+          "source_role": "Original observed command/protocol receipt",
+          "sha256": "3f80dec0bd4e69e63f5c954601d9809ce76173766b6a481fc83f22a8b2ef9f7a",
+          "bytes": 4372
+        }
+      ],
+      "purpose": "Original observed command/protocol receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 6
+      }
+    },
+    {
+      "artifact": "commands/000005.json",
+      "bytes": 4986,
+      "sha256": "690ab370fa38714897c338d9c7f0a2aaee0c26a6d269753fd737d58e94f2d62e",
+      "sources": [
+        {
+          "source_role": "Original observed command/protocol receipt",
+          "sha256": "03cb794d415d9c27bbaba446e7ab888574211cb68e7ecfd69be8e6074abd256c",
+          "bytes": 5187
+        }
+      ],
+      "purpose": "Original observed command/protocol receipt",
+      "transformation": "Private path/execution text substituted; all numerical, boolean and hash fields preserved",
+      "privacy_substitutions": {
+        "private workspace/runtime path": 6
+      }
+    },
+    {
+      "artifact": "inputs/target.pdb",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+      "sources": [
+        {
+          "source_role": "Original scientific artifact; bytes unchanged",
+          "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+          "bytes": 88569
+        }
+      ],
+      "purpose": "Original scientific artifact; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/rfdiffusion/backbone.pdb",
+      "bytes": 54136,
+      "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64",
+      "sources": [
+        {
+          "source_role": "Original scientific artifact; bytes unchanged",
+          "sha256": "ec156d0627372736a0ed2b45a1b9be2308a6ef0572ee77af3f7fe8f1f7303b64",
+          "bytes": 54136
+        }
+      ],
+      "purpose": "Original scientific artifact; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/rfdiffusion/xt-trajectory.pdb",
+      "bytes": 4222020,
+      "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+      "sources": [
+        {
+          "source_role": "Original scientific artifact; bytes unchanged",
+          "sha256": "4203650d136ab7bd0f679858ba21f1a28f6de0f3cb97170e6a35067214b62789",
+          "bytes": 4222020
+        }
+      ],
+      "purpose": "Original scientific artifact; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/rfdiffusion/px0-trajectory.pdb",
+      "bytes": 4419000,
+      "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+      "sources": [
+        {
+          "source_role": "Original scientific artifact; bytes unchanged",
+          "sha256": "a73c3c887ce9913169600d94c0ece71d6e06346e2ef498dcd635f7315a42d006",
+          "bytes": 4419000
+        }
+      ],
+      "purpose": "Original scientific artifact; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/proteinmpnn/original.fa",
+      "bytes": 499,
+      "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50",
+      "sources": [
+        {
+          "source_role": "Original scientific artifact; bytes unchanged",
+          "sha256": "590f8e6227f265eae98f6c7010e7c5c2cf6a37671692d29a65747699244aec50",
+          "bytes": 499
+        }
+      ],
+      "purpose": "Original scientific artifact; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq0/P04626_binder_42_seq0_model_0.cif",
+      "bytes": 134913,
+      "sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "00156237ce55e9957a0447bc25de85246a55db20d51a61f81152fc8091b512ed",
+          "bytes": 134913
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq0/pae_P04626_binder_42_seq0_model_0.npz",
+      "bytes": 145176,
+      "sha256": "76ce09a3f50a238a617abfc77b4d836c6159c6b281814dbaa0b168f3d9fd47d3",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "76ce09a3f50a238a617abfc77b4d836c6159c6b281814dbaa0b168f3d9fd47d3",
+          "bytes": 145176
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq0/plddt_P04626_binder_42_seq0_model_0.npz",
+      "bytes": 954,
+      "sha256": "53ef1f39f76ef61230ec168d5ec09e9cfed05d41bb9b158934d2e9e93818cf97",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "53ef1f39f76ef61230ec168d5ec09e9cfed05d41bb9b158934d2e9e93818cf97",
+          "bytes": 954
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq0/confidence_P04626_binder_42_seq0_model_0.json",
+      "bytes": 655,
+      "sha256": "baecb6a017aa940201a4061ac10b333ee6fcaadce422ca7e4388f70fdf1c467e",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "baecb6a017aa940201a4061ac10b333ee6fcaadce422ca7e4388f70fdf1c467e",
+          "bytes": 655
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq1/P04626_binder_42_seq1_model_0.cif",
+      "bytes": 134668,
+      "sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "2fdf811c1c827d3a20be1708642db6f6d64e66effb44b4b93755589e01256a96",
+          "bytes": 134668
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq1/pae_P04626_binder_42_seq1_model_0.npz",
+      "bytes": 145662,
+      "sha256": "237303058a8bdf87bdeee7369eb440c7951ccd4cf1acf1463656e27bcf956bf6",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "237303058a8bdf87bdeee7369eb440c7951ccd4cf1acf1463656e27bcf956bf6",
+          "bytes": 145662
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq1/plddt_P04626_binder_42_seq1_model_0.npz",
+      "bytes": 946,
+      "sha256": "765e3d7446902e29ac02faab6c51dbe26670bb848cee160b1cd5c29a2feb7e94",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "765e3d7446902e29ac02faab6c51dbe26670bb848cee160b1cd5c29a2feb7e94",
+          "bytes": 946
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "scientific/boltz/P04626_binder_42_seq1/confidence_P04626_binder_42_seq1_model_0.json",
+      "bytes": 656,
+      "sha256": "fe874e2813e9d29fc430cc15bea0b5335c2cd13e0619fd192f6f1255ed16c8ca",
+      "sources": [
+        {
+          "source_role": "Original predicted structure/confidence array; bytes unchanged",
+          "sha256": "fe874e2813e9d29fc430cc15bea0b5335c2cd13e0619fd192f6f1255ed16c8ca",
+          "bytes": 656
+        }
+      ],
+      "purpose": "Original predicted structure/confidence array; bytes unchanged",
+      "transformation": "Exact byte copy"
+    },
+    {
+      "artifact": "README.md",
+      "bytes": 3232,
+      "sha256": "7e49e2665808bc670614e56cb7ee21a41732b0c03c58cf452261213fdcd38e0f",
+      "purpose": "Measured acceptance scope and limits",
+      "sources": [
+        {
+          "sha256": "285924e5603db7312b032d89d25280023fef313c6332521e2ec00b081064acde",
+          "source_role": "Actual verification"
+        }
+      ],
+      "transformation": "Concise factual summary; rounded display metrics, full precision remains in verification.json"
+    }
+  ]
+}

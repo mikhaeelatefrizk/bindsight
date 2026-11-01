@@ -1,0 +1,5 @@
+{
+  "measured_freeze": "cuda11-freeze.txt",
+  "packages": 4,
+  "excluded": []
+}

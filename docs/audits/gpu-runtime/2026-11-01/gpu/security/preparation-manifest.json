@@ -1,0 +1,110 @@
+{
+  "candidate_commit": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "files": [
+    {
+      "artifact": "boltz-freeze.txt",
+      "bytes": 2200,
+      "sha256": "f4cbabff62268a6f590463e23f3b9586493047cfadba6d817350c36ee7c060a4"
+    },
+    {
+      "artifact": "boltz-requirements.scope.json",
+      "bytes": 455,
+      "sha256": "e516a6e617a1f94572988491fe9da250f88a8ab72023781a2b7b0c75648f3af7"
+    },
+    {
+      "artifact": "boltz-requirements.txt",
+      "bytes": 2061,
+      "sha256": "c033594289fa9b6c74ace8df07c33d5ee5526dd4fe2c337bfad2636f6c4f80e7"
+    },
+    {
+      "artifact": "comparison.json",
+      "bytes": 7420,
+      "sha256": "efe2126bda8d61b385c6be8b75a255fa0671c26ec005e7076024d4b97fc2de57"
+    },
+    {
+      "artifact": "cuda11-freeze.txt",
+      "bytes": 116,
+      "sha256": "898b8607d06d046696333d30d34a30d823138baf653443c52ae550a46b29099f"
+    },
+    {
+      "artifact": "cuda11-requirements.scope.json",
+      "bytes": 85,
+      "sha256": "7b245eca6d93c5e87e9bb17170506cdc999dd1dcc88087051f10357b4919f4d0"
+    },
+    {
+      "artifact": "cuda11-requirements.txt",
+      "bytes": 120,
+      "sha256": "3c86789455ff46ca1f08f9c827a408a94f8a7fc200dbbf5038bfaeafbf81ed05"
+    },
+    {
+      "artifact": "inherited/ci-boltz-audit-query.json",
+      "bytes": 927,
+      "sha256": "782c0d8f24f47a6fe6d78b5dd0cdb523c07e66d19428b902c99fee22cdd0c253"
+    },
+    {
+      "artifact": "inherited/ci-boltz-audit-requirements.txt",
+      "bytes": 1960,
+      "sha256": "94423f378d302cb7b9026fdbedabfcffc088a7ca0cf61f259a08acc68e85217b"
+    },
+    {
+      "artifact": "inherited/ci-boltz-audit.json",
+      "bytes": 8769,
+      "sha256": "f81886d0bd528a702d4bdab8eb5e1f2db5540e00fd25d763d76c5e0bb19860fa"
+    },
+    {
+      "artifact": "inherited/ci-boltz-audit.scope.json",
+      "bytes": 697,
+      "sha256": "18cb358b5541bcdc102a6b27161e35b26e3a6d174285c22df63db84b2bba431e"
+    },
+    {
+      "artifact": "inherited/ci-cuda11-audit-requirements.txt",
+      "bytes": 116,
+      "sha256": "102c9386094d6d881ef7d0bd2da3e657fd8d5f28d185f6665655ae771becb80b"
+    },
+    {
+      "artifact": "inherited/ci-cuda11-audit.json",
+      "bytes": 426,
+      "sha256": "37a111c6e1c0f806603ef8b8a1c464ee52cfea48a2b814343bafda23c2a56f6e"
+    },
+    {
+      "artifact": "inherited/ci-se3-audit-requirements.txt",
+      "bytes": 1113,
+      "sha256": "d056492f717a7b4b824e51c29aa6788c10ee26f90fdd1afc8a8a0b6f93059d91"
+    },
+    {
+      "artifact": "inherited/ci-se3-audit.json",
+      "bytes": 4819,
+      "sha256": "245fe48d13f8a1408592f8045677c6e3c8ab2705f4aa0233d56a1dd3fae30dda"
+    },
+    {
+      "artifact": "inherited/ci-se3-audit.scope.json",
+      "bytes": 713,
+      "sha256": "2ab338caba2b0264f7a4982e505f53c9dcb941699b5fab96785bbcb5f5b67e6e"
+    },
+    {
+      "artifact": "inherited/dependency-comparison.json",
+      "bytes": 3021,
+      "sha256": "ac638a996cb765554f95835370eceeb338b97bcf37140ebc056efc4b79df5866"
+    },
+    {
+      "artifact": "inherited-basis.json",
+      "bytes": 3615,
+      "sha256": "e120b4d47c342f33d566930c74e607d06281f1d143ccc9b902bd34f6d09e675b"
+    },
+    {
+      "artifact": "se3-freeze.txt",
+      "bytes": 1401,
+      "sha256": "914435451559102084bd68ffb0d759cf3cfcf43c3e19a473b7dee834385675c0"
+    },
+    {
+      "artifact": "se3-requirements.scope.json",
+      "bytes": 442,
+      "sha256": "1bdb5ada1db2246e397517a3db467c910f1abf48f66be9c9783b3e9db19f40a3"
+    },
+    {
+      "artifact": "se3-requirements.txt",
+      "bytes": 1167,
+      "sha256": "99cd88fc4ef069d0b3c697f8673a12b40b5b885feef2c11b21c2c880015f796e"
+    }
+  ]
+}

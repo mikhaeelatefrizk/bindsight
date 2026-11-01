@@ -1,0 +1,175 @@
+{
+  "schema": "bindsight-ci-verification/1",
+  "verified_at": "2026-11-01T19:07:29.131Z",
+  "repository": "mikhaeelatefrizk/bindsight",
+  "pull_request": 21,
+  "head_sha": "38fb37ae748e5a7c6430012dc4610c1a7d7abe2a",
+  "tested_checkout_sha": "61d66fd1ca175893fcf42c5f0f09682ba9b5c146",
+  "tested_tree_sha": "4b409aa89384502b4c021112d221cb693917e6f1",
+  "tested_tree_matches_candidate": true,
+  "checkout_note": "Actual Linux job log records this synthetic merge of the candidate into main1b2c255; GitHub Git API confirms merge tree equals candidate tree.",
+  "ci": {
+    "run_id": 41339383404,
+    "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 124945955742,
+        "name": "GPU recipe installation and imports (CPU runner)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955742"
+      },
+      {
+        "id": 124945955757,
+        "name": "Companion (linux-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955757"
+      },
+      {
+        "id": 124945955761,
+        "name": "Companion (macos-arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955761"
+      },
+      {
+        "id": 124945955778,
+        "name": "Test (Python 3.11 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955778"
+      },
+      {
+        "id": 124945955797,
+        "name": "Companion (macos-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955797"
+      },
+      {
+        "id": 124945955837,
+        "name": "Pinned environment (constraints.txt)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955837"
+      },
+      {
+        "id": 124945955878,
+        "name": "Lint (ruff + mypy)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955878"
+      },
+      {
+        "id": 124945955912,
+        "name": "Companion (windows-x64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945955912"
+      },
+      {
+        "id": 124945956016,
+        "name": "Test (Python 3.11 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956016"
+      },
+      {
+        "id": 124945956023,
+        "name": "Test (Python 3.12 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956023"
+      },
+      {
+        "id": 124945956024,
+        "name": "Test (Python 3.12 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956024"
+      },
+      {
+        "id": 124945956032,
+        "name": "Test (Python 3.12 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956032"
+      },
+      {
+        "id": 124945956039,
+        "name": "Test (Python 3.11 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956039"
+      },
+      {
+        "id": 124945956054,
+        "name": "Test (Python 3.13 on ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956054"
+      },
+      {
+        "id": 124945956076,
+        "name": "Test (Python 3.13 on macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956076"
+      },
+      {
+        "id": 124945956185,
+        "name": "Test (Python 3.13 on windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124945956185"
+      },
+      {
+        "id": 124947302011,
+        "name": "Build wheel + sdist",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124947302011"
+      },
+      {
+        "id": 124947552065,
+        "name": "All CI jobs passed",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383404/job/124947552065"
+      }
+    ]
+  },
+  "docker": {
+    "run_id": 41339383435,
+    "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383435",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 124945955319,
+        "name": "docker",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/mikhaeelatefrizk/bindsight/actions/runs/41339383435/job/124945955319"
+      }
+    ]
+  },
+  "linux_python_311": {
+    "job_id": 124945956039,
+    "passed": 2924,
+    "skipped": 11,
+    "deselected": 2,
+    "coverage_percent": 84.69,
+    "raw_log": "linux-test-summary.txt",
+    "scope": "Actual complete pytest outcome, CPU/no slow selection; quiet CI does not enumerate each passing test. All11skip reasons retained; MSA/progress/streaming/checkpoint suites are absent from skips."
+  },
+  "runtime_recipe": {
+    "job_id": 124945955742,
+    "artifact_id": 13097056201,
+    "checkpoint_loader_checked": true,
+    "cuda_tested": false,
+    "models_downloaded": false,
+    "scope": "Actual installed canonical CPU runtime preflight; publisher-weight load and full GPU inference are separate."
+  }
+}

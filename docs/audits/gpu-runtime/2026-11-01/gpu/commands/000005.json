@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "/GPU_JOB/runtime/boltz/bin/python",
+    "-m",
+    "bindsight.runners.boltz_compat",
+    "predict",
+    "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml",
+    "--out_dir",
+    "/GPU_JOB/work/boltz_out/P04626_binder_42_seq1",
+    "--write_full_pae",
+    "--use_msa_server",
+    "--seed",
+    "4169833151"
+  ],
+  "cwd": null,
+  "started_utc": "2026-11-01T19:20:20.784880+00:00",
+  "duration_seconds": 169.12009933399986,
+  "timeout_seconds": 21600.0,
+  "outcome": "ok",
+  "returncode": 0,
+  "stdout": {
+    "text": "bindsight: Boltz 2.0.3+bindsight.1 precision=32\nbindsight: verifying cached Boltz assets\nbindsight: cached Boltz assets verified\nChecking input data.\nProcessing 1 inputs with 1 threads.\nGenerating MSA for /GPU_JOB/work/boltz_out/P04626_binder_42_seq1.yaml with 2 protein entities.\nbindsight: MSA phase begin timeout=1800s\nbindsight: MSA phase complete elapsed=43.392s\nRunning structure prediction for 1 input.\nbindsight: restricted checkpoint load begin (boltz2_conf.ckpt)\nbindsight: restricted checkpoint load complete (boltz2_conf.ckpt)\nNumber of failed examples: 0\nPredicting \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 1/1 0:00:34 \u2022 0:00:00 0.00it/s \n",
+    "redacted_bytes": 762,
+    "observed_bytes": 762,
+    "suppressed_oversized_lines": 0,
+    "truncated": false
+  },
+  "stderr": {
+    "text": "Seed set to 4169833151\n\n  0%|          | 0/1 [00:00<?, ?it/s]\n\n  0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[A\n\nSUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[A\n\nPENDING:   0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[ASleeping for 10s. Reason: PENDING\n\n\nRUNNING:   0%|          | 0/300 [elapsed: 00:11 remaining: ?]\u001b[A\n\nRUNNING:   3%|\u258e         | 10/300 [elapsed: 00:11 remaining: 05:29]\u001b[ASleeping for 5s. Reason: RUNNING\n\n\nCOMPLETE:   3%|\u258e         | 10/300 [elapsed: 00:16 remaining: 05:29]\u001b[A\n\nCOMPLETE: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 300/300 [elapsed: 00:16 remaining: 00:00]\u001b[A\nCOMPLETE: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 300/300 [elapsed: 00:17 remaining: 00:00]\n\n\n  0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[A\n\nSUBMIT:   0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[A\n\nPENDING:   0%|          | 0/300 [elapsed: 00:00 remaining: ?]\u001b[ASleeping for 7s. Reason: PENDING\n\n\nRUNNING:   0%|          | 0/300 [elapsed: 00:08 remaining: ?]\u001b[A\n\nRUNNING:   2%|\u258f         | 7/300 [elapsed: 00:08 remaining: 05:49]\u001b[ASleeping for 5s. Reason: RUNNING\n\n\nRUNNING:   2%|\u258f         | 7/300 [elapsed: 00:13 remaining: 05:49]\u001b[A\n\nRUNNING:   4%|\u258d         | 12/300 [elapsed: 00:13 remaining: 05:32]\u001b[ASleeping for 10s. Reason: RUNNING\n\n\nCOMPLETE:   4%|\u258d         | 12/300 [elapsed: 00:24 remaining: 05:32]\u001b[A\n\nCOMPLETE: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 300/300 [elapsed: 00:24 remaining: 00:00]\u001b[A\nCOMPLETE: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 300/300 [elapsed: 00:25 remaining: 00:00]\n\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 1/1 [00:43<00:00, 43.72s/it]\n100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 1/1 [00:43<00:00, 43.72s/it]\nGPU available: True (cuda), used: True\nTPU available: False, using: 0 TPU cores\n/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default\n\ud83d\udca1 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.\n\ud83d\udca1 Tip: For seamless cloud uploads and versioning, try installing [litmodels](https://pypi.org/project/litmodels/) to enable LitModelCheckpoint, which syncs automatically with the Lightning model registry.\nLOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]\n/GPU_JOB/runtime/boltz/lib/python3.11/site-packages/pytorch_lightning/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.\n",
+    "redacted_bytes": 3038,
+    "observed_bytes": 3038,
+    "suppressed_oversized_lines": 0,
+    "truncated": false
+  }
+}

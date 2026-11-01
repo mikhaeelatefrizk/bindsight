@@ -1,0 +1,109 @@
+{
+  "schema": "bindsight-gpu-evidence-manifest/1",
+  "prepared_at": "2026-11-01T18:07:42.337096+00:00",
+  "status": "Canceled initial full GPU attempt; incomplete scientific verification",
+  "sources": [
+    {
+      "source_role": "commands-log",
+      "bytes": 28271,
+      "sha256": "27479f0eb7c5b7a140a2dd09e95fb88e7323f0cbc5ac0964fb9a7099aff4709b",
+      "copied": false
+    },
+    {
+      "source_role": "outer-log",
+      "bytes": 6682,
+      "sha256": "ca773a88b13b196e599e1c702f7497aeafd0e94df21082e0c1752dc378b4c639",
+      "copied": false
+    },
+    {
+      "source_role": "runtime-receipt",
+      "bytes": 29845,
+      "sha256": "c5c5139ecf803498ce492710eb0dcca8d983b5a562ba35a901366f9cc2c0ff4c",
+      "copied": false
+    },
+    {
+      "source_role": "source-wheel-receipt",
+      "bytes": 152,
+      "sha256": "9452ebe70bc4044bfebe4480501e16340f945d5a57ce7336b3d11f0df6b2f978",
+      "copied": false
+    },
+    {
+      "source_role": "attached-wheel-receipt",
+      "bytes": 228,
+      "sha256": "d1542e250075cde8ff9b317b24c458e6510255daf6f97ab4a853ffda9e4db32f",
+      "copied": false
+    },
+    {
+      "source_role": "hardware-log",
+      "bytes": 74,
+      "sha256": "4ccb8195656139058210e7a2ee0e500ecc4763837ec52f74227659997813a6f7",
+      "copied": false
+    },
+    {
+      "source_role": "original-spec",
+      "bytes": 688,
+      "sha256": "e779ae496bdeafbe7e26264ab5d360c3cf80c3162570f2e715f2a7f40b59c389",
+      "copied": false
+    },
+    {
+      "source_role": "original-target",
+      "bytes": 88569,
+      "sha256": "8286bf0a965a761b41258460cb3e850882b78dd09439eafbced72ec986f72178",
+      "copied": false
+    },
+    {
+      "source_role": "candidate-identity",
+      "bytes": 540,
+      "sha256": "aa66ce8438f65384e8b33bf4ab6a9e12aece82e0f8cc3898d0af47206804ed7d",
+      "copied": false
+    },
+    {
+      "source_role": "submission-record",
+      "bytes": 336,
+      "sha256": "d6f76eb537ad4038783323bac9000089c68e013e15928041f75e249d8f8d9e58",
+      "copied": false
+    },
+    {
+      "source_role": "incomplete-verification",
+      "bytes": 2771,
+      "sha256": "8bac5f2b9914919e7e85a14375426ac90901be3026f05d9fbdb907cfe7a9c19f",
+      "copied": false
+    },
+    {
+      "source_role": "coordinator-status-record",
+      "bytes": 8762,
+      "sha256": "15d8c30d9595e2e12cdfc64bc4dfd22c4f847cd4cdc5e50880e3ef508e7b206e",
+      "copied": false
+    },
+    {
+      "source_role": "source-diagnosis",
+      "bytes": 28878,
+      "sha256": "a622e3708b5e2012cce9311a2dad2080a722cfc08931ebb9435c397403a3e80a",
+      "copied": false
+    },
+    {
+      "source_role": "upstream-msa-source",
+      "bytes": 8690,
+      "sha256": "64ceeda8287778c3ad643ebe11a70df9f7eeaa0f6d89c318b7ef8acadd1d3d29",
+      "copied": false
+    }
+  ],
+  "files": [
+    {
+      "artifact": "observations.json",
+      "bytes": 6011,
+      "sha256": "f9b37d58b79d92164df64c301f7b5c4bced9bed9725ecbe5372f6c656591bdbd"
+    },
+    {
+      "artifact": "README.md",
+      "bytes": 2674,
+      "sha256": "30383d9fcbd77dabfc349752abe60ff5f4da6a72c6bb90b4c1aa74b800156dcb"
+    }
+  ],
+  "source_inventory_scope": "All six files from the saved output download are hashed; input/candidate/status/diagnosis records are additional sources. Logical roles replace private original filenames.",
+  "limitations": [
+    "Raw scientific outputs were not present in the saved output download.",
+    "Final status is retained in a coordinator observation record, not a saved raw backend API response.",
+    "This supplement establishes neither the precise cancellation cause nor a successful final release."
+  ]
+}
