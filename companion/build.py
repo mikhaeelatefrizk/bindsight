@@ -13,12 +13,43 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from companion.core import platform_key  # noqa: E402
+
+
+def pinned_pyinstaller(path: Path) -> str:
+    """Read the one exact packaging-tool pin used by local builds and CI."""
+    requirements = [
+        requirement
+        for line in path.read_text(encoding="utf-8-sig").splitlines()
+        if (requirement := line.partition("#")[0].strip())
+    ]
+    if len(requirements) != 1 or not (
+        match := re.fullmatch(r"pyinstaller\s*==\s*(\d+\.\d+\.\d+)", requirements[0], re.I)
+    ):
+        raise ValueError(f"{path.name} must contain exactly one PyInstaller==X.Y.Z pin")
+    return match.group(1)
+
+
+def check_pyinstaller(path: Path) -> str:
+    """Reject an installed packager that differs from the canonical build pin."""
+    expected = pinned_pyinstaller(path)
+    try:
+        installed = version("pyinstaller")
+    except PackageNotFoundError as error:
+        raise ValueError(
+            f"PyInstaller is not installed; install {path} (PyInstaller=={expected})"
+        ) from error
+    if installed != expected:
+        raise ValueError(
+            f"Installed PyInstaller {installed} differs from {path.name} pin {expected}; "
+            f"install {path} before building"
+        )
+    return installed
 
 
 def main() -> None:
@@ -44,8 +75,10 @@ def main() -> None:
     )
     if dirty and not args.allow_dirty:
         parser.error("Commit reviewed source before building a release")
-    if version("pyinstaller") != "6.16.0":
-        parser.error("Build with the pinned PyInstaller 6.16.0")
+    try:
+        pyinstaller_version = check_pyinstaller(ROOT / "companion/requirements-build.txt")
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     output = args.output.resolve()
     if output.exists() and any(output.iterdir()):
         parser.error("--output must be a new or empty directory")
@@ -132,6 +165,7 @@ def main() -> None:
                 )
         metadata = {
             "revision": args.revision,
+            "pyinstaller_version": pyinstaller_version,
             "platform": key,
             "filename": filename,
             "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),

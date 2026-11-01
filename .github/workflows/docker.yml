@@ -33,6 +33,8 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          # Refresh system certificate packages instead of reusing old layers.
+          no-cache: true
           # Publishing is opt-in. It needs two account-level settings that
           # `permissions:` cannot grant: the ghcr.io package must list this
           # repository under Manage Actions access with role Write (the

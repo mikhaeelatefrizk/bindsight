@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
@@ -27,9 +28,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Require successful main CI for this exact release commit
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" --json conclusion --jq 'any(.[]; .conclusion == "success")')" = true
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.12.16"
+          check-latest: true
       - run: python -m pip install --quiet build twine
       - name: Point the README's relative links at this tag for PyPI
         # PyPI renders the long description with no base URL, so every
@@ -39,6 +47,18 @@ jobs:
       - run: python -m build
       - name: Check metadata
         run: python -m twine check dist/*
+      - name: Exercise the exact wheel that will be published
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          if [ "$GITHUB_EVENT_NAME" = release ]; then test "$RELEASE_TAG" = "v$VERSION"; fi
+          python -m venv "$RUNNER_TEMP/release-wheel"
+          PYTHON="$RUNNER_TEMP/release-wheel/bin/python"
+          "$PYTHON" -m pip install --upgrade "pip>=26.2.2"
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          "$PYTHON" -m pip install -c envs/constraints.txt "${WHEEL}[discover,report]" "httpx2>=2,<3" packaging
+          "$PYTHON" -I scripts/check_release_install.py --expected-version "$VERSION"
       - name: Checksum
         working-directory: dist
         run: sha256sum bindsight-*.whl bindsight-*.tar.gz > SHA256SUMS
@@ -86,8 +106,6 @@ jobs:
       # -- ran whatever had most recently been pushed to it. A tag is at least
       # a statement of intent; a branch is not.
       #
-      # This SHA is what `release/v1` points at today and what the `v1.14.2`
-      # tag dereferences to, so pinning changed nothing at the time. The job
-      # was dormant until `vars.PYPI_TRUSTED_PUBLISHING` was set for 0.3.5,
-      # which made that the cheapest possible moment.
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+      # v1.14.3 removes the affected emSign certificate trust chain;
+      # GHSA-5xjx-3w67-w9x9. The signed upstream tag resolves to this commit.
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3

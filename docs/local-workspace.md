@@ -50,6 +50,15 @@ Open **Protein design** in the local interface. The readiness check reports the 
 
 After explicit approval, **Prepare GPU tools** creates separate RFdiffusion/ProteinMPNN and Boltz environments, runs CUDA checks and records the environment receipt. It does not replace the CPU discovery environment. Downloads and package installation appear in the actual job log. Model weights can require additional downloads at first prediction. Fixed upstream tool revisions and the micromamba bootstrap checksum are recorded; not every transitive GPU dependency or model-weight download has a pre-established checksum pin.
 
+The managed and Kaggle installers use a checksum-verified uv 0.13.6 executable
+for package downloads and require certifi 2026.10.19 or newer. This avoids using
+the legacy environment's pip, which cannot run the current patched pip release.
+RFdiffusion still needs Python 3.9 for its recorded scientific stack. Python 3.9
+is end-of-life; changing the package installer does not make that interpreter
+supported or remove every risk in third-party model software. The Boltz
+environment uses Python 3.11.18. The real installation/import CI check covers the
+managed recipe; it does not establish a new GPU or biological validation.
+
 Select a completed discovery analysis, choose one to three eligible targets and set the number of backbones, seed and candidate-length range. **Run design and prediction** uses the existing RFdiffusion + ProteinMPNN, Boltz, ranking and report stages. Eligible targets need actual recorded structures and extracellular ranges. The child design run preserves its source discovery and records their relationship. A completed setup is an environment check, not an end-to-end scientific validation.
 
 Use the job panel to inspect logs, cancel work, retry supported completed stage boundaries, open the generated report and download recorded artifacts. The predicted-complex viewer loads original saved structure files and displays their checksums. Missing scores or structures are not filled with invented values. Jobs run locally; the public website does not supply a paid GPU service or upload jobs to an external GPU provider.

@@ -50,7 +50,8 @@ jobs:
           test "$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" --json conclusion --jq 'any(.[]; .conclusion == "success")')" = true
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.11.18"
+          check-latest: true
           cache: "pip"
       # The core install is enough: bindsight.report resolves render_run lazily,
       # so the results generator reaches report/showcase.py without pulling in

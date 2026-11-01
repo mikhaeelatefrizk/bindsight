@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bindsight.provenance.manifest import Manifest, sha256_file
-from bindsight.runners import tools
+from bindsight.runners import installer_security, tools
 
 if TYPE_CHECKING:
     from bindsight.report.web.workspace import Workspace
@@ -26,10 +26,8 @@ MIN_MEMORY_MIB = 15360  # A nominal 16 GB T4 reports 15,360 MiB.
 MIN_FREE_MEMORY_MIB = 14900  # Exceeds the recorded 14,859 MiB workload peak.
 SETUP_DISK_BYTES = 60 * 2**30
 DEFAULTS = {"trajectories": 1, "seed": 42, "binder_length_min": 60, "binder_length_max": 100}
-MICROMAMBA_URL = (
-    "https://github.com/mamba-org/micromamba-releases/releases/download/2.3.2-0/micromamba-linux-64"
-)
-MICROMAMBA_SHA256 = "ffc3cb8d52d4d6b354bdbb979c407719c485392b74e462cbd50811aa88e58f85"
+MICROMAMBA_URL = installer_security.MICROMAMBA_URL
+MICROMAMBA_SHA256 = installer_security.MICROMAMBA_SHA256
 
 
 def recipe() -> dict[str, Any]:
@@ -43,12 +41,20 @@ def recipe() -> dict[str, Any]:
         "boltz": tools.BOLTZ_PIP,
         "se3": {"python": "3.9", "torch": "1.12.1+cu113", "dgl": "1.0.2+cu113", "numpy": "1.23.5"},
         "validation": {
-            "python": "3.11",
+            "python": "3.11.18",
             "torch": "2.5.1+cu118",
             "numpy": "1.26.4",
             "trifast": "0.1.11",
         },
         "micromamba_sha256": MICROMAMBA_SHA256,
+        "package_installer": {
+            "uv": installer_security.UV_VERSION,
+            "archive_sha256": installer_security.UV_ARCHIVE_SHA256,
+            "certifi": installer_security.CERTIFI_REQUIREMENT,
+            "source_sha256": hashlib.sha256(
+                Path(installer_security.__file__).read_bytes()
+            ).hexdigest(),
+        },
         "checkpoint_expected_sha256": tools.RFDIFF_WEIGHT_SHA256,
         "minimum_memory_mib": MIN_MEMORY_MIB,
         "minimum_free_memory_mib": MIN_FREE_MEMORY_MIB,

@@ -6,7 +6,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.3.7] - 2026-11-01
+
+### Security
+
+- Update the pinned PyPI publishing action to 1.14.3 for
+  [GHSA-5xjx-3w67-w9x9](https://github.com/pypa/gh-action-pypi-publish/security/advisories/GHSA-5xjx-3w67-w9x9).
+  Require certifi 2026.10.19 or newer, refresh the digest-pinned CPU container
+  to Python 3.11.18, and use verified uv 0.13.6 with managed Python 3.12.16 in
+  desktop companions. These updates follow the upstream emSign certificate
+  incident guidance; they are not evidence of exploitation of Bindsight.
+- Use the verified external installer for managed GPU and Kaggle dependency
+  downloads. Preserve the scientific package versions, including the legacy
+  RFdiffusion Python 3.9 environment; that interpreter remains end-of-life.
+  Existing installations need the updates described in SECURITY.md.
+
+### Packaging and publication
+
+- Publish the previously unreleased September numerical repairs and guided
+  local companions in a new PyPI version matching the tested website source.
+- Update PyInstaller to 6.22.3 through one requirements file consumed by both
+  CI and the build script. Reject a mismatched installed version and record
+  the actual packaging version with every companion artifact.
+- Update Ruff to the tested 0.17 minor family. Exercise the installed wheel's
+  numerical pipeline and bundled interface outside the checkout before the CI
+  gate passes. Require successful main CI for the exact release commit before
+  publishing distributions.
+
+### Guided local workspace
+
+- Include the September companion and hosted-relay repairs, isolated CPU setup,
+  and explicit Windows GPU-workspace setup. The hosted workspace publishes
+  source and companion downloads from the same successful main CI revision.
 
 ### Validation and reliability audit — 2026-09-29
 
