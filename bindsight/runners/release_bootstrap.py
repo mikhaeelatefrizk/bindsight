@@ -186,5 +186,6 @@ def download_release_wheel(version: str, directory: Path) -> Path:
         )
         + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     return destination
