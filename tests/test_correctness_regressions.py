@@ -658,8 +658,12 @@ class TestModelCheckpointsAreVerified:
 
         src = kaggle_kernel.build_kernel_script(handle_id="t", payload={"spec.yaml": "x"})
         ast.parse(src)  # a kernel that does not parse burns quota to say so
-        assert "hashlib.sha256()" in src
-        assert "does not match the pinned" in src
+        # Checkpoint acquisition is delegated to the exact wheel's canonical
+        # provisioner; its expected digests are recorded in the generated job.
+        from bindsight.runners import tools
+
+        assert "bindsight.runners.gpu_runtime" in src
+        assert all(digest in src for digest in tools.RFDIFF_WEIGHT_SHA256.values())
         assert "http://files.ipd.uw.edu" not in src
 
 
@@ -736,12 +740,13 @@ class TestTheGpuRunsTheCodeThatLaunchedIt:
         w.write_bytes(b"PK\x03\x04 not a real wheel, but bytes are bytes")
         return w
 
-    def test_without_a_wheel_the_kernel_installs_from_git(self) -> None:
+    def test_without_a_wheel_the_kernel_verifies_the_exact_release(self) -> None:
         from bindsight.runners import kaggle_kernel
 
         src = kaggle_kernel.build_kernel_script(handle_id="t", payload={"spec.json": "e30="})
         assert "BINDSIGHT_WHEEL_B64" in src
-        assert "git+https://github.com" in src
+        assert "download_release_wheel(RELEASE_VERSION" in src
+        assert "git+https://github.com" not in src
 
     def test_with_a_wheel_the_kernel_installs_the_wheel(self, tmp_path: Path) -> None:
         import ast
@@ -857,7 +862,7 @@ class TestTheGpuRunsTheCodeThatLaunchedIt:
         monkeypatch.setattr(source_wheel, "find_repo_root", lambda *a, **k: None)
 
         assert build_working_tree_wheel(tmp_path / "out", repo_root=None) is None, (
-            "with no source checkout the caller falls back to a git ref and warns; "
+            "with no source checkout the caller uses the exact published release and warns; "
             "returning anything else there breaks a pip-installed user's job"
         )
 
@@ -1976,14 +1981,17 @@ class TestTheWheelIsNotSilentlyDiscarded:
         modal = _bindsight_source("modal", wheel, is_mock=False)
 
         assert kaggle == "working-tree wheel bindsight-0.2.2-py3-none-any.whl"
-        assert "default branch" in modal, "Modal claimed a wheel it never received"
+        from bindsight import __version__
+
+        assert f"published PyPI release bindsight=={__version__}" in modal
         assert "not attributable to the tree that launched them" in modal
 
-    def test_no_wheel_and_the_mock_backend_are_unchanged(self) -> None:
+    def test_no_wheel_uses_published_release_and_mock_remains_explicit(self) -> None:
+        from bindsight import __version__
         from bindsight.benchmark.designer_bench import _bindsight_source
 
         assert _bindsight_source("kaggle", None, is_mock=False) == (
-            "pip install from the repository default branch"
+            f"published PyPI release bindsight=={__version__}"
         )
         assert "mock backend" in _bindsight_source("mock", None, is_mock=True)
 

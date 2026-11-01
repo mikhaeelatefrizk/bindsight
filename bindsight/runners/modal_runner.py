@@ -4,7 +4,7 @@
 
 `Modal <https://modal.com/>`_ provisions a GPU, runs
 :mod:`bindsight.runners.job_exec` (the same executor as the local/Kaggle
-paths), and tears down — per-second billing, A100 ≈ $3/hr. Requires the
+paths), and tears down — subject to Modal's usage billing. Requires the
 ``runners`` extra (``modal``) and a Modal token (``modal token new``).
 
 ``import modal`` happens lazily inside the methods via :func:`_require_modal`,
@@ -13,10 +13,11 @@ synchronous from the caller's point of view (``submit`` runs the job and caches
 the tarball; ``fetch`` returns it), matching the Designer ``submit→fetch``
 contract.
 
-**Verification status.** The image installs Boltz-2; RFdiffusion bootstrapping
-is unverified and still needs a compatible legacy CUDA environment. The other
-designer/validator plugins are unsupported by this backend. No end-to-end
-Modal GPU run is established by the CPU tests.
+The initial image installs the caller's exact published Bindsight version from
+PyPI using pip. Its remote function independently verifies that release wheel,
+uses the same managed GPU provisioner as the other backends, then executes the
+job with the provisioned interpreter. Unpublished local changes are not sent.
+No end-to-end Modal GPU run is established by the CPU tests.
 """
 
 from __future__ import annotations
@@ -28,8 +29,8 @@ from pathlib import Path
 from typing import Any
 
 from bindsight.cost import estimate
-from bindsight.runners import tools
 from bindsight.runners.protocol import CostEstimate, JobHandle, JobStatus
+from bindsight.runners.release_bootstrap import published_version
 
 
 def _ATEXIT_CLEANUP(path: Path) -> None:
@@ -47,13 +48,7 @@ def _ATEXIT_CLEANUP(path: Path) -> None:
 
 LOG = logging.getLogger(__name__)
 
-#: The remote image installs the repository's default branch, not the caller's
-#: working tree. GPU results cannot be attributed to unpushed local changes.
-_BINDSIGHT_REPO = "https://github.com/mikhaeelatefrizk/bindsight.git"
-
-#: CUDA base image for the remote container. Devel rather than runtime because
-#: RFdiffusion's SE3-Transformer builds CUDA extensions at install time.
-_MODAL_CUDA_IMAGE = "nvidia/cuda:12.4.1-devel-ubuntu22.04"
+MAX_PAYLOAD_BYTES = 128 * 1024 * 1024
 
 # Map bindsight GPU names to Modal gpu= strings.
 _MODAL_GPU = {
@@ -117,23 +112,16 @@ class ModalRunner:
 
     def _build_app(self) -> tuple[Any, Any]:
         """Define the Modal app + GPU function lazily."""
+        from bindsight import __version__
+
+        release_version = published_version(__version__)
         modal = _require_modal()
         image = (
-            # A CUDA *devel* base, not debian_slim: RFdiffusion's SE3-Transformer
-            # compiles CUDA extensions during install, so a runtime-only image
-            # cannot build it. debian_slim additionally ships no CUDA at all, so
-            # the previous image could run the Boltz-2 validator and nothing else.
-            modal.Image.from_registry(_MODAL_CUDA_IMAGE, add_python="3.11")
-            .apt_install("git", "wget", "build-essential")
-            # This follows the repository's default branch. Unlike Kaggle's
-            # embedded wheel, it does not capture the caller's working tree.
-            .pip_install(
-                f"bindsight @ git+{_BINDSIGHT_REPO}",
-                tools.BOLTZ_PIP,
-                "pandas",
-                "pyarrow",
-                "biopython",
-            )
+            # Modal supplies the GPU driver; the canonical provisioner owns
+            # the matching scientific Python, CUDA libraries and tool pins.
+            modal.Image.debian_slim(python_version="3.11")
+            .apt_install("git", "build-essential", "ca-certificates")
+            .pip_install("certifi>=2026.10.19", "psutil>=5.9,<8", f"bindsight=={release_version}")
         )
         app = modal.App(self.app_name)
         gpu = _MODAL_GPU[self.gpu_type]
@@ -141,26 +129,68 @@ class ModalRunner:
         @app.function(gpu=gpu, image=image, timeout=self.timeout_s)  # type: ignore[untyped-decorator]
         def _run_remote(spec_json: str, files: dict[str, bytes]) -> bytes:
             import json as _json
+            import os
+            import subprocess
             import tempfile
             from pathlib import Path as _P
+            from pathlib import PurePosixPath
 
-            from bindsight.runners import job_exec
+            from bindsight.runners.gpu_runtime import provision
+            from bindsight.runners.release_bootstrap import download_release_wheel
 
             work = _P(tempfile.mkdtemp(prefix="bindsight_modal_"))
             _ATEXIT_CLEANUP(work)
+            if len(spec_json.encode("utf-8")) > 2 * 1024 * 1024:
+                raise ValueError("The job specification exceeds its size limit.")
+            if len(files) > 1024 or sum(len(data) for data in files.values()) > MAX_PAYLOAD_BYTES:
+                raise ValueError("The job payload exceeds its size limit.")
             spec_dir = work / "spec"
             spec_dir.mkdir(parents=True, exist_ok=True)
             (spec_dir / "spec.json").write_text(spec_json, encoding="utf-8", newline="\n")
             for name, data in files.items():
                 destination = spec_dir / name
-                if not destination.resolve().is_relative_to(spec_dir.resolve()):
+                if (
+                    not name
+                    or "\\" in name
+                    or ".." in PurePosixPath(name).parts
+                    or not destination.resolve().is_relative_to(spec_dir.resolve())
+                    or destination.resolve()
+                    in {spec_dir.resolve(), (spec_dir / "spec.json").resolve()}
+                ):
                     raise ValueError(f"payload entry escapes the spec directory: {name}")
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(data)
             spec = _json.loads(spec_json)
-            job_exec.materialise_target(spec, spec_dir, work / "run")
-            job_exec.materialise_designs(spec_dir, work / "run")
-            tarball = job_exec.run_job(spec, work / "run", tarball=work / "results.tar.gz")
+            mode = spec.get("extra_params", {}).get("mode", "design_and_validate")
+            if mode not in {"design_and_validate", "validate_only"}:
+                raise ValueError("Unsupported GPU job mode.")
+            wheel = download_release_wheel(release_version, work / "release")
+            receipt = provision(work / "runtime", source=wheel, mode=mode, gpu_index=0)
+            environment = dict(os.environ)
+            for key in (
+                "PYTHONPATH",
+                "PYTHONHOME",
+                "PYTHONSTARTUP",
+                "PYTHONUSERBASE",
+                "BINDSIGHT_BOLTZ_BIN",
+                "BINDSIGHT_LOCAL_IMAGE",
+                "BINDSIGHT_DESIGN_PYTHON",
+            ):
+                environment.pop(key, None)
+            environment.update(receipt["execution_environment"])
+            tarball = work / "results.tar.gz"
+            subprocess.run(
+                [
+                    receipt["boltz_python"],
+                    "-I",
+                    "-m",
+                    "bindsight.runners.job_exec",
+                    str(spec_dir / "spec.json"),
+                    str(tarball),
+                ],
+                env=environment,
+                check=True,
+            )
             return tarball.read_bytes()
 
         return app, _run_remote
@@ -172,11 +202,18 @@ class ModalRunner:
         tarball = results_dir / f"{handle_id}.tar.gz"
 
         spec_json = spec_path.read_text(encoding="utf-8")
-        files = {
-            f.relative_to(spec_path.parent).as_posix(): f.read_bytes()
-            for f in spec_path.parent.rglob("*")
-            if f.is_file() and f != spec_path
-        }
+        if len(spec_json.encode("utf-8")) > 2 * 1024 * 1024:
+            raise ValueError("The job specification exceeds its size limit.")
+        files: dict[str, bytes] = {}
+        total = 0
+        for path in spec_path.parent.rglob("*"):
+            if path.is_symlink():
+                raise ValueError("A Modal payload must not contain symlinks.")
+            if path.is_file() and path != spec_path:
+                total += path.stat().st_size
+                if total > MAX_PAYLOAD_BYTES or len(files) >= 1024:
+                    raise ValueError("The job payload exceeds its size limit.")
+                files[path.relative_to(spec_path.parent).as_posix()] = path.read_bytes()
         app, run_remote = self._build_app()
         LOG.info("modal submit: running job on %s (gpu=%s)", self.app_name, self.gpu_type)
         with app.run():

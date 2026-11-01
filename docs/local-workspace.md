@@ -48,19 +48,37 @@ The Windows and Linux workspaces keep separate saved runs. Upload your input fil
 
 Open **Protein design** in the local interface. The readiness check reports the actual NVIDIA device, available memory, platform and setup state. The guided recipe requires Linux x86_64 (including a Linux WSL2 workspace), a supported NVIDIA CUDA driver, at least 15,360 MiB total GPU memory (the reported capacity of a nominal 16 GB T4), and at least 60 GiB free disk for initial setup. The existing CUDA design stack does not support a Mac GPU. More available memory may be necessary for a particular target.
 
-After explicit approval, **Prepare GPU tools** creates separate RFdiffusion/ProteinMPNN and Boltz environments, runs CUDA checks and records the environment receipt. It does not replace the CPU discovery environment. Downloads and package installation appear in the actual job log. Model weights can require additional downloads at first prediction. Fixed upstream tool revisions and the micromamba bootstrap checksum are recorded; not every transitive GPU dependency or model-weight download has a pre-established checksum pin.
+After explicit approval, **Prepare GPU tools** creates separate private
+RFdiffusion/ProteinMPNN and Boltz environments through the shared managed
+provisioner. Both use Python 3.11.18; a historical Python 3.9 environment is not
+reused as the new runtime. The CPU discovery environment and saved research stay
+separate. Setup logs show actual downloads and installation, and the receipt
+records the source identity, runtime recipe, installed packages and checks.
 
-The managed and Kaggle installers use a checksum-verified uv 0.13.6 executable
-for package downloads and require certifi 2026.10.19 or newer. This avoids using
-the legacy environment's pip, which cannot run the current patched pip release.
-RFdiffusion still needs Python 3.9 for its recorded scientific stack. Python 3.9
-is end-of-life; changing the package installer does not make that interpreter
-supported or remove every risk in third-party model software. The Boltz
-environment uses Python 3.11.18. The real installation/import CI check covers the
-managed recipe; it does not establish a new GPU or biological validation.
+The installer verifies uv 0.13.6 before execution and requires certifi 2026.10.19
+or newer. RFdiffusion source revisions and both downloaded RFdiffusion model
+checkpoints have expected SHA256 hashes. Boltz's two checkpoints and molecule
+archive have publisher size and SHA256 pins from a fixed model revision; cached
+files and extracted molecules are verified before loading. These controls
+identify the selected assets without making arbitrary model files safe. CUDA library licences and
+the remaining DGL RPC advisory are documented in the
+[managed runtime guide](gpu-runtime.md). Distributed DGL/RPC services are not a
+supported use of this environment.
+
+The 0.3.8 candidate has passed separate real T4 design and prediction component
+checks. The prediction environment uses Boltz `2.0.3+bindsight.1`, a
+dependency-metadata patch that leaves the upstream Boltz implementation files
+unchanged. The final updated full design-and-prediction run is still pending;
+installation/import tests and CUDA arithmetic alone do not establish scientific
+equivalence to the historical run. Colab and Modal live execution remain unverified.
 
 Select a completed discovery analysis, choose one to three eligible targets and set the number of backbones, seed and candidate-length range. **Run design and prediction** uses the existing RFdiffusion + ProteinMPNN, Boltz, ranking and report stages. Eligible targets need actual recorded structures and extracellular ranges. The child design run preserves its source discovery and records their relationship. A completed setup is an environment check, not an end-to-end scientific validation.
 
 Use the job panel to inspect logs, cancel work, retry supported completed stage boundaries, open the generated report and download recorded artifacts. The predicted-complex viewer loads original saved structure files and displays their checksums. Missing scores or structures are not filled with invented values. Jobs run locally; the public website does not supply a paid GPU service or upload jobs to an external GPU provider.
 
-The current local release has **not** completed a new GPU design campaign on the owner's 2 GB MX450. The original successful recorded campaign used a T4 and 14,859 MiB peak memory (about 14.51 GiB). Neither installer tests, hardware checks nor successful CUDA arithmetic establish binding, specificity, target safety or robustness on every GPU. All resulting candidates remain computational predictions requiring appropriate experimental validation.
+The owner's 2 GB MX450 cannot accommodate the recorded design campaign, which
+used a T4 and 14,859 MiB peak memory (about 14.51 GiB). That hardware limitation
+does not prevent CPU discovery or exploring saved structures. Neither installer
+tests, hardware checks nor successful CUDA arithmetic establish binding,
+specificity, target safety or robustness on every GPU. All resulting candidates
+remain computational predictions requiring appropriate experimental validation.

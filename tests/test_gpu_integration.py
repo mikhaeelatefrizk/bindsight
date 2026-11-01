@@ -111,7 +111,7 @@ def test_explicit_local_environment_is_untested_not_claimed_ready(monkeypatch, m
 
 
 @pytest.mark.parametrize("preexisting", [False, True])
-def test_native_setup_installs_se3_package_into_design_interpreter(
+def test_executor_reuses_prepared_design_interpreter_without_installing(
     tmp_path, monkeypatch, preexisting
 ) -> None:
     calls = []
@@ -131,17 +131,28 @@ def test_native_setup_installs_se3_package_into_design_interpreter(
 
     def run(command):
         calls.append(command)
-        if "-c" in command:
-            raise RuntimeError("previous setup left se3_transformer missing")
 
     monkeypatch.setattr(job_exec, "_run", run)
     monkeypatch.setenv("BINDSIGHT_DESIGN_PYTHON", "/opt/se3/bin/python")
     job_exec._ensure_rfdiff_mpnn(tmp_path)
-    installs = [command for command in calls if "pip" in command]
-    assert len(installs) == 3
-    assert all(command[0] == "/opt/se3/bin/python" for command in installs)
-    assert installs[1][-1] == str(tmp_path / "RFdiffusion/env/SE3Transformer")
-    assert "--no-deps" in installs[1]
+    assert calls[0][:2] == ["/opt/se3/bin/python", "-c"]
+    assert "se3_transformer" in calls[0][2]
+    assert not any("pip" in command or "install" in command for command in calls)
+
+
+def test_executor_refuses_unprepared_interpreter_before_download_or_mutation(
+    tmp_path, monkeypatch
+) -> None:
+    command = Mock(side_effect=RuntimeError("se3_transformer missing"))
+    clone = Mock(side_effect=AssertionError("must fail before downloading tools or weights"))
+    monkeypatch.setattr(job_exec, "_run", command)
+    monkeypatch.setattr(job_exec, "_git_clone", clone)
+    monkeypatch.setenv("BINDSIGHT_DESIGN_PYTHON", "/prepared/bin/python")
+    with pytest.raises(RuntimeError, match="does not install or alter dependencies"):
+        job_exec._ensure_rfdiff_mpnn(tmp_path)
+    assert command.call_count == 1
+    assert command.call_args.args[0][:2] == ["/prepared/bin/python", "-c"]
+    clone.assert_not_called()
 
 
 @pytest.mark.parametrize("mode", ["design", "revalidate"])
@@ -190,7 +201,7 @@ def test_modal_revalidation_preserves_nested_binders(tmp_path, monkeypatch) -> N
 
     class Image:
         @classmethod
-        def from_registry(cls, *args, **kwargs):
+        def debian_slim(cls, *args, **kwargs):
             return cls()
 
         def apt_install(self, *args):
@@ -228,14 +239,35 @@ def test_modal_revalidation_preserves_nested_binders(tmp_path, monkeypatch) -> N
         encoding="utf-8",
     )
 
-    def run_job(spec, work, *, tarball):
-        assert spec["extra_params"]["mode"] == "validate_only"
-        assert (work / "design/binder.fasta").read_text() == ">binder\nAGGV\n"
-        assert (work / "target.pdb").read_text() == "target"
-        tarball.write_bytes(b"test result")
-        return tarball
+    from bindsight.runners import gpu_runtime, release_bootstrap
 
-    monkeypatch.setattr(job_exec, "run_job", run_job)
+    wheel = tmp_path / "bindsight-test.whl"
+    monkeypatch.setattr(
+        release_bootstrap, "download_release_wheel", lambda version, directory: wheel
+    )
+
+    def provision(root, *, source, mode, gpu_index):
+        assert source == wheel
+        assert mode == "validate_only"
+        assert gpu_index == 0
+        return {
+            "boltz_python": "/managed/boltz/python",
+            "execution_environment": {"BINDSIGHT_TOOLS_ROOT": "/managed/tools"},
+        }
+
+    def run(argv, *, env, check):
+        assert argv[:4] == ["/managed/boltz/python", "-I", "-m", "bindsight.runners.job_exec"]
+        staged = Path(argv[4]).parent
+        assert (staged / "design/binder.fasta").read_text() == ">binder\nAGGV\n"
+        assert (staged / "target.pdb").read_text() == "target"
+        assert env["BINDSIGHT_TOOLS_ROOT"] == "/managed/tools"
+        assert "PATH" in env
+        assert "PYTHONPATH" not in env
+        assert check
+        Path(argv[5]).write_bytes(b"test result")
+
+    monkeypatch.setattr(gpu_runtime, "provision", provision)
+    monkeypatch.setattr("subprocess.run", run)
     runner = modal_runner.ModalRunner()
     handle = runner.submit(spec_path, results_dir=tmp_path / "results")
     assert runner.fetch(handle).read_bytes() == b"test result"

@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # -----------------------------------------------------------------------------
 [project]
 name = "bindsight"
-version = "0.3.7"
+version = "0.3.8"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -102,6 +102,8 @@ report = [
 runners = [
     "modal>=0.64",
     "kaggle>=1.6",
+    # Kaggle imports six directly; python-dateutil 4 no longer supplies it.
+    "six>=1.17",
 ]
 workflow = [
     "snakemake>=8.0",  # optional Snakemake front-end (same pipeline as the CLI)

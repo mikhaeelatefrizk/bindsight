@@ -59,15 +59,78 @@ and is recorded in that release's changelog entry, tag and release notes.
 
 ## Supply-chain notes
 
-### November 2026 certificate incident maintenance
+### 0.3.8 candidate: supported-Python GPU runtime (2026-11-01)
 
-Version 0.3.7 updates the publishing action for upstream
+New managed GPU environments use Python 3.11.18 instead of the historical
+Python 3.9 runtime. One provisioner serves local Linux/WSL, Kaggle, Colab and
+Modal. Its source identity, recipe, installed packages and compatibility
+adjustments are recorded in the setup receipt. A changed recipe rebuilds its
+owned scientific environments; upgrading Bindsight does not patch an old
+environment in place. See the [runtime guide](docs/gpu-runtime.md).
+
+The candidate pins PyTorch 2.14.1, beyond the 2.10.0 fix for checkpoint
+deserialization advisory
+[GHSA-63cw-57p8-fm3p](https://github.com/advisories/GHSA-63cw-57p8-fm3p).
+Hydra 1.3.8 is required for the final candidate, incorporating fixes for
+[untrusted instantiation](https://github.com/advisories/GHSA-2cp2-2r3c-7p7r),
+[logging callable resolution](https://github.com/advisories/GHSA-c3wx-c55w-pxjq),
+[mutable policy bypass](https://github.com/advisories/GHSA-mwj6-rfh8-7qf4) and
+[unsafe YAML loading](https://github.com/advisories/GHSA-wf6j-7hvr-gr93).
+Hydra's 1.3 policy remains defense in depth: arbitrary untrusted configuration
+must not be treated as safe executable model configuration.
+
+Upstream Boltz 2.0.3 pins older vulnerable dependencies. The managed runtime
+therefore installs local version `2.0.3+bindsight.1`: its verified upstream wheel
+receives four requirement corrections (Hydra 1.3.8, PyTorch Lightning 2.6.6,
+Requests 2.34.2 and Biopython 1.88), a local version and a regenerated wheel
+record. All 106 files under `boltz/` and its licence remain byte-identical.
+This is a distribution-metadata patch; dependency changes can still affect
+runtime behavior, so byte preservation does not establish scientific equivalence.
+
+Both RFdiffusion checkpoints have expected SHA256 pins and are checked before
+use. Boltz's two checkpoints and CCD molecule archive are pinned by publisher
+size and SHA256 at model revision
+[`6fdef46d763fee7fbb83ca5501ccceff43b85607`](https://huggingface.co/boltz-community/boltz-2/tree/6fdef46d763fee7fbb83ca5501ccceff43b85607).
+Cached files are rehashed and extracted molecule files are compared against
+the authenticated archive before upstream loading. Unsafe archive paths,
+links and unexpected extracted contents are rejected. This authenticates the
+selected publisher's assets, not arbitrary user-provided pickle/checkpoint
+files. The e3nn compatibility patch verifies its original loader and constants,
+then scopes a `slice` allowlist around `torch.load(weights_only=True)`; it does
+not disable safe loading globally. Source/weight identities and package
+compatibility checks do not establish numerical equivalence between runtimes.
+
+**Remaining known advisory:** DGL
+[GHSA-3x5x-fw77-g54c](https://github.com/advisories/GHSA-3x5x-fw77-g54c)
+covers the installed 1.0.2 library and lists no patched release. It concerns
+pickle deserialization in distributed RPC services. Bindsight uses local graph
+operations and does not start those services; distributed DGL/RPC use is
+unsupported. That restriction does not remove the vulnerable code or justify
+calling the complete GPU environment free of known vulnerabilities.
+
+A real T4 design-component probe passed, but used Hydra 1.3.6 before the later
+advisory review. A separate T4 prediction probe passed imports and CUDA
+operations with the final Boltz dependency patch and Hydra 1.3.8; it loaded no
+model weights and ran no predictions. A 2026-11-01 advisory lookup of that
+prediction environment's measured freeze reported no known vulnerabilities in
+92 queried PyPI package versions. The locally rebuilt Boltz wheel was excluded
+from that lookup and reviewed separately. This scoped database result does not
+override the DGL advisory above or establish a comprehensive security audit.
+The final candidate's full design-and-prediction run remains pending.
+See [validation status](docs/validation-status.md) for the scope of the evidence.
+Historical releases and research artifacts are retained; use the current tested
+release for new installations rather than treating an archive as maintained.
+
+### 0.3.7 certificate incident maintenance — historical record (2026-11-01)
+
+Version 0.3.7 updated the publishing action for upstream
 [GHSA-5xjx-3w67-w9x9](https://github.com/pypa/gh-action-pypi-publish/security/advisories/GHSA-5xjx-3w67-w9x9)
-and raises the runtime certificate-bundle floor to certifi 2026.10.19.
-The desktop setup uses verified uv 0.13.6 and Python 3.12.16; the CPU container
-uses a new Python 3.11.18 image digest and refreshed system certificates.
-GPU installers use the same verified uv release instead of network operations
-through the legacy environment's pip. Scientific package pins are unchanged.
+and raised the runtime certificate-bundle floor to certifi 2026.10.19.
+Its desktop setup used verified uv 0.13.6 and Python 3.12.16; the CPU container
+used a new Python 3.11.18 image digest and refreshed system certificates.
+GPU installers switched to the same verified uv release instead of network
+operations through the legacy environment's pip. That release left scientific
+package pins unchanged.
 
 GPU setup and generated Kaggle jobs deliberately ignore inherited uv/pip settings
 and remove `SSL_CERT_FILE`, `SSL_CERT_DIR`, and `CURL_CA_BUNDLE` overrides.
@@ -81,15 +144,18 @@ the new matching companion/source release, or update an existing Python
 installation using the [Python security team's instructions](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576).
 Those instructions cover patched Python, pip 26.2.2 or newer, uv 0.13.6 or newer,
 and certifi 2026.10.19 or newer, including a hash-verified bootstrap for old pip.
-Rebuild containers without old cached layers. The generated GPU workflow still
-needs Python 3.9 for its pinned RFdiffusion dependencies; Python 3.9 is end-of-life.
-Using a patched external installer protects package downloads but does not make
-that scientific interpreter a maintained Python release. No compromise of this
-project was established by the maintenance investigation.
+Rebuild containers without old cached layers. The GPU workflow in 0.3.7 still
+required Python 3.9 for its pinned RFdiffusion dependencies; Python 3.9 was
+end-of-life. A patched external installer protected package downloads but did
+not make that scientific interpreter maintained. The 0.3.8 candidate addresses
+that separate runtime issue above. No compromise of this project was established
+by the maintenance investigation.
 
 - Default pipeline code is MIT / Apache / BSD and its data sources CC0 / CC BY,
   except the SURFY surfaceome list, whose source states no terms — see
-  [LICENSING.md](LICENSING.md) for the full per-dependency inventory.
+  [LICENSING.md](LICENSING.md) for the inventory and its review scope. NVIDIA
+  CUDA runtime libraries have separate proprietary terms; permissive code
+  licences do not describe every component of an installed GPU environment.
 - Python dependencies carry minimum versions, and the scientific stack
   carries deliberate upper bounds, in [pyproject.toml](pyproject.toml).
   These are floors and ceilings, not exact pins: two installs on different

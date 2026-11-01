@@ -42,6 +42,17 @@ test or deployment leaves the preceding release live. Existing local downloads
 must be replaced to receive an update; saved research is kept separately from
 the companion's versioned software environment.
 
+**GPU runtime update for the 0.3.8 candidate:** new managed setups use supported
+Python 3.11 instead of the historical Python 3.9 recipe, with one provisioning
+path for local Linux/WSL, Kaggle, Colab and Modal. Real T4 design and prediction
+component checks have passed; the final updated full design-and-prediction run
+is still pending. The prediction setup uses an explicitly versioned Boltz
+dependency-metadata patch that preserves the upstream implementation files.
+The existing scientific results and model checkpoints have not been replaced.
+See the [runtime recipe and remaining limits](docs/gpu-runtime.md) and
+[validation status](docs/validation-status.md). Earlier releases remain available
+as historical snapshots; their environments do not receive these fixes in place.
+
 > **Expression → Binder.** An open-source pipeline that joins cohort RNA-seq target
 > discovery to de novo protein binder design in one reproducible workflow, with
 > machine-readable provenance across analysis and design stages. The [provenance
@@ -271,7 +282,7 @@ reference resources, none of which is wired in.
 | **`bindsight ui`** — local interface: the evidence, a demo, your own data, past runs, and the 20 predicted complexes in 3-D | ✅ ready | `bindsight ui` |
 | **`bindsight report`** — paper-style HTML, embedded volcano + provenance | ✅ ready | `bindsight report runs/x` |
 | **`bindsight run`** — full orchestrator (discover → design → validate → rank → report → export) | ✅ ready | `bindsight run my.yaml --out runs/x` |
-| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a free Kaggle T4 | ✅ runs end to end | `bindsight design runs/x --backend kaggle` |
+| **`bindsight design`** — RFdiffusion + ProteinMPNN + Boltz-2 on a Kaggle T4 | Historical full-run evidence; updated runtime validation pending | `bindsight design runs/x --backend kaggle` — see [runtime status](docs/gpu-runtime.md) |
 | **`bindsight design <run_dir> --dry-run`** — GPU cost estimate before spending | ✅ ready | `bindsight design runs/x --backend modal --dry-run` |
 | **`bindsight validate`** — materialise the design job's metrics | ✅ ready | `bindsight validate runs/x` |
 | **`bindsight rank`** — multi-objective composite scoring | ✅ ready | `bindsight rank runs/x` |
@@ -289,11 +300,11 @@ would be misleading.
 
 | | Status | Why |
 |---|---|---|
-| **Kaggle** | The verified free path | Headless via the Kaggle API, so a reader can re-run the exact job on their own free quota. Pinned to a T4: Kaggle's own docs warn its default P100 cannot run current PyTorch. |
+| **Kaggle** | Historical full runs; updated runtime under validation | Headless via the Kaggle API, using a caller-supplied wheel or the exact published Bindsight version. Requests a T4. Component checks do not replace a full run of the final recipe. |
 | **local_docker** | For your own GPU | Native and containerised modes; the native mode is what CPU tests exercise. |
-| **Modal** | Prepared, not executed | The paid escape hatch for what free hardware cannot reach. Its image carries the whole design stack, but running it costs money and it has not been run end to end. |
-| **Colab** | Interactive on-ramp only | Google's API does not permit launching a free-tier notebook from a CLI, so this path needs a human with a browser tab open. That is a demo, not a reproducibility path. |
-| **RFdiffusion, ProteinMPNN, Boltz-2** | Verified on free hardware | The committed benchmark ran the whole stack on a free Kaggle T4, from a wheel built out of this tree. All 20 designs carry a target chain byte-identical to the native domain IV, so "the target was held fixed" is a check rather than a claim. |
+| **Modal** | Prepared, not executed | Its pinned published driver calls the shared managed GPU provisioner. No live Modal run is claimed; running it incurs provider charges. |
+| **Colab** | Interactive, live execution unverified | Generated notebooks use the same managed recipe and exact published Bindsight version. A user must open and run the notebook in Colab; it is not a reproducibility path for unattended jobs. CPU generation tests do not verify a live GPU run. |
+| **RFdiffusion, ProteinMPNN, Boltz-2** | Historical full-run evidence | The committed benchmark ran the whole stack on a free Kaggle T4 using the then-recorded environment. All 20 designs carry a target chain byte-identical to the native domain IV. Those preserved results do not establish numerical equivalence of the updated runtime. |
 | **AF2 initial-guess** | Buildable free | PyRosetta is credential-free for non-commercial use since 2024, and is the restriction on this path; the AlphaFold2 parameters are CC BY 4.0. |
 | **BindCraft, BoltzGen** | Reduced-target only on free hardware | Both fit a 16 GB card against a small domain, not a full receptor. BoltzGen's integration was rewritten after its command was found not to exist upstream. |
 | **Chai-1r** | Needs Ampere or newer | It requires bfloat16, which no free-tier GPU has. Verifying it means renting roughly an hour of a modern card. |

@@ -6,7 +6,6 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-import os
 import platform
 import re
 import shutil
@@ -17,54 +16,18 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bindsight.provenance.manifest import Manifest, sha256_file
-from bindsight.runners import installer_security, tools
+from bindsight.runners import gpu_runtime, installer_security
+from bindsight.runners.gpu_recipe import MIN_FREE_MEMORY_MIB as MIN_FREE_MEMORY_MIB
+from bindsight.runners.gpu_recipe import MIN_MEMORY_MIB as MIN_MEMORY_MIB
+from bindsight.runners.gpu_recipe import SETUP_DISK_BYTES as SETUP_DISK_BYTES
+from bindsight.runners.gpu_recipe import recipe as recipe
 
 if TYPE_CHECKING:
     from bindsight.report.web.workspace import Workspace
 
-MIN_MEMORY_MIB = 15360  # A nominal 16 GB T4 reports 15,360 MiB.
-MIN_FREE_MEMORY_MIB = 14900  # Exceeds the recorded 14,859 MiB workload peak.
-SETUP_DISK_BYTES = 60 * 2**30
 DEFAULTS = {"trajectories": 1, "seed": 42, "binder_length_min": 60, "binder_length_max": 100}
 MICROMAMBA_URL = installer_security.MICROMAMBA_URL
 MICROMAMBA_SHA256 = installer_security.MICROMAMBA_SHA256
-
-
-def recipe() -> dict[str, Any]:
-    """Name the fixed installation recipe without claiming all transitives are pinned."""
-    body: dict[str, Any] = {
-        "version": 1,
-        "designer": "rfdiff_mpnn",
-        "validator": "boltz2",
-        "rfdiffusion_commit": tools.RFDIFF_COMMIT,
-        "proteinmpnn_commit": tools.PROTEINMPNN_COMMIT,
-        "boltz": tools.BOLTZ_PIP,
-        "se3": {"python": "3.9", "torch": "1.12.1+cu113", "dgl": "1.0.2+cu113", "numpy": "1.23.5"},
-        "validation": {
-            "python": "3.11.18",
-            "torch": "2.5.1+cu118",
-            "numpy": "1.26.4",
-            "trifast": "0.1.11",
-        },
-        "micromamba_sha256": MICROMAMBA_SHA256,
-        "package_installer": {
-            "uv": installer_security.UV_VERSION,
-            "archive_sha256": installer_security.UV_ARCHIVE_SHA256,
-            "certifi": installer_security.CERTIFI_REQUIREMENT,
-            "source_sha256": hashlib.sha256(
-                Path(installer_security.__file__).read_bytes()
-            ).hexdigest(),
-        },
-        "checkpoint_expected_sha256": tools.RFDIFF_WEIGHT_SHA256,
-        "minimum_memory_mib": MIN_MEMORY_MIB,
-        "minimum_free_memory_mib": MIN_FREE_MEMORY_MIB,
-        "minimum_setup_disk_bytes": SETUP_DISK_BYTES,
-        "installer_sha256": hashlib.sha256(
-            Path(__file__).with_name("gpu_setup.py").read_bytes()
-        ).hexdigest(),
-    }
-    body["id"] = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
-    return body
 
 
 def gpu_root(workspace: Workspace) -> Path:
@@ -152,6 +115,7 @@ def readiness(workspace: Workspace) -> dict[str, Any]:
         receipt = {}
     installed = (
         receipt.get("recipe_id") == recipe()["id"]
+        and gpu_runtime.source_matches_current(receipt.get("source_identity"))
         and (root / "se3-python").is_file()
         and (root / "boltz/bin/python").is_file()
         and receipt.get("cuda_smoke_passed") is True
@@ -425,20 +389,5 @@ def resume(workspace: Workspace, identity: str) -> dict[str, Any]:
 
 
 def execution_environment(root: Path, gpu_index: int) -> dict[str, str]:
-    """Use our prepared interpreters, ignoring unrelated custom executable overrides."""
-    env = dict(os.environ)
-    for key in ("BINDSIGHT_BOLTZ_BIN", "BINDSIGHT_LOCAL_IMAGE"):
-        env.pop(key, None)
-    env.update(
-        BINDSIGHT_LOCAL_NATIVE="1",
-        BINDSIGHT_DESIGN_PYTHON=str(root / "se3-python"),
-        BINDSIGHT_BOLTZ_PYTHON=str(root / "boltz/bin/python"),
-        BINDSIGHT_TOOLS_ROOT=str(root / "tools"),
-        CUDA_VISIBLE_DEVICES=str(gpu_index),
-        OMP_NUM_THREADS="1",
-        OPENBLAS_NUM_THREADS="1",
-        MKL_NUM_THREADS="1",
-        PYTHONUNBUFFERED="1",
-        PYTHONUTF8="1",
-    )
-    return env
+    """Use the same managed overrides as every remote GPU backend."""
+    return gpu_runtime.execution_environment(root, gpu_index)

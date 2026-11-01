@@ -18,6 +18,7 @@ import base64
 import builtins
 import contextlib
 import gzip
+import hashlib
 import json
 import logging
 import time
@@ -26,6 +27,8 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from requests import HTTPError
 
 from bindsight.cost import estimate
 from bindsight.runners import kaggle_kernel
@@ -147,6 +150,7 @@ class KaggleRunner:
         poll_interval_s: int = 30,
         bindsight_ref: str | None = None,
         bindsight_wheel: Path | str | None = None,
+        session_timeout_s: int | None = None,
     ) -> None:
         if gpu_type != kaggle_kernel.KAGGLE_COST_GPU:
             raise ValueError(
@@ -157,11 +161,15 @@ class KaggleRunner:
         self.gpu_type = gpu_type
         self.username = username
         self.poll_interval_s = poll_interval_s
-        # Git ref the kernel installs bindsight from (default branch if None).
+        if session_timeout_s is not None and (
+            type(session_timeout_s) is not int or not 60 <= session_timeout_s <= 43200
+        ):
+            raise ValueError("session_timeout_s must be between 60 and 43200 seconds")
+        self.session_timeout_s = session_timeout_s
+        # Development references require an embedded wheel; remote refs are not resolved.
         self.bindsight_ref = bindsight_ref
-        # A wheel built from the working tree. When set it wins over the ref,
-        # because it is the code that launched the run rather than whatever the
-        # branch resolves to when pip runs on the GPU.
+        # Actual source bytes reach the GPU through an embedded wheel. Without
+        # one, the installed package's exact published release is verified on PyPI.
         self.bindsight_wheel = Path(bindsight_wheel) if bindsight_wheel else None
         # Authenticated client, created on first use. See :meth:`_api`.
         self._api_client: Any = None
@@ -202,10 +210,8 @@ class KaggleRunner:
     def submit(self, spec_path: Path, *, results_dir: Path) -> JobHandle:
         """Push a self-contained Kaggle kernel that runs the executor on the spec.
 
-        The spec dir (``spec.json`` + the target structure it references) is
-        embedded in the kernel as base64 — no Kaggle dataset needed — and the
-        kernel builds RFdiffusion's legacy env + the Boltz-2 env on the GPU before
-        running :mod:`bindsight.runners.job_exec` across them.
+        The spec directory is embedded. A source wheel stays inline when it fits;
+        oversized wheels use a private, version-pinned dataset and a digest check.
         """
         api = self._api()
         results_dir.mkdir(parents=True, exist_ok=True)
@@ -234,21 +240,25 @@ class KaggleRunner:
             if f.is_file()
         }
         wheel_b64: str | None = None
+        wheel_data: bytes | None = None
         if self.bindsight_wheel is not None:
             if not self.bindsight_wheel.is_file():
                 raise FileNotFoundError(f"bindsight wheel not found: {self.bindsight_wheel}")
-            wheel_b64 = base64.b64encode(self.bindsight_wheel.read_bytes()).decode("ascii")
+            wheel_data = self.bindsight_wheel.read_bytes()
+            wheel_b64 = base64.b64encode(wheel_data).decode("ascii")
             LOG.info(
-                "kaggle: embedding %s (%d bytes) — the kernel installs this, not a git ref",
+                "kaggle: embedding exact source wheel %s (%d bytes)",
                 self.bindsight_wheel.name,
                 self.bindsight_wheel.stat().st_size,
             )
         else:
+            from bindsight import __version__
+
             LOG.warning(
-                "kaggle: no wheel given, so the kernel will pip-install bindsight from "
-                "%s. Local changes that are not on that ref will NOT run on the GPU. "
+                "kaggle: no wheel given; the kernel will verify and install published "
+                "Bindsight %s from PyPI. Unpublished local changes are not included. "
                 "Pass bindsight_wheel= to run the working tree.",
-                self.bindsight_ref or "the default branch",
+                __version__,
             )
 
         # Which kind of job this is lives in the spec and nowhere else. A
@@ -271,7 +281,7 @@ class KaggleRunner:
             )
             spec_mode = "design_and_validate"
 
-        script = kaggle_kernel.build_kernel_script(
+        script_args: dict[str, Any] = dict(
             handle_id=handle_id,
             payload=payload,
             mode=spec_mode,
@@ -283,24 +293,56 @@ class KaggleRunner:
                 else "bindsight-0.0.0-py3-none-any.whl"
             ),
         )
+        script = kaggle_kernel.build_kernel_script(**script_args)
+        dataset: dict[str, Any] | None = None
+        if len(script.encode("utf-8")) > _MAX_KERNEL_BYTES and wheel_data is not None:
+            digest = hashlib.sha256(wheel_data).hexdigest()
+            dataset_slug = f"bindsight-wheel-{handle_id}-{digest[:10]}"
+            dataset = {
+                "ref": f"{user}/{dataset_slug}",
+                "version": 1,
+                "filename": script_args["bindsight_wheel_name"],
+                "sha256": digest,
+                "bytes": len(wheel_data),
+                "private": True,
+            }
+            script_args.update(
+                bindsight_wheel_b64=None,
+                bindsight_wheel_path=f"/kaggle/input/datasets/{user}/{dataset_slug}/{dataset['filename']}",
+                bindsight_wheel_sha256=digest,
+                bindsight_wheel_bytes=len(wheel_data),
+            )
+            script = kaggle_kernel.build_kernel_script(**script_args)
         if len(script.encode("utf-8")) > _MAX_KERNEL_BYTES:
             raise ValueError(
                 f"kernel script is {len(script.encode('utf-8')):,} bytes, over the "
                 f"{_MAX_KERNEL_BYTES:,}-byte ceiling. The embedded wheel and target "
-                "structure are what grow it. Push the branch and pass bindsight_ref "
-                "instead of a wheel, or reduce the payload."
+                "structure are what grow it. Reduce the embedded target payload or "
+                "unnecessary wheel contents. Development references still require a wheel."
             )
         # Only now, once the script is known to be submittable: a refused
         # submit should leave no half-built kernel directory behind.
         work = results_dir / f"kaggle_{handle_id}"
         work.mkdir(parents=True, exist_ok=True)
+        if dataset is not None:
+            assert wheel_data is not None
+            self._ensure_wheel_dataset(api, work, dataset, wheel_data)
         (work / "kernel.py").write_text(script, encoding="utf-8", newline="\n")
         (work / "kernel-metadata.json").write_text(
-            json.dumps(kaggle_kernel.build_kernel_metadata(username=user, slug=slug)),
+            json.dumps(
+                kaggle_kernel.build_kernel_metadata(
+                    username=user,
+                    slug=slug,
+                    dataset_sources=[f"{dataset['ref']}/1"] if dataset else [],
+                )
+            ),
             encoding="utf-8",
             newline="\n",
         )
-        api.kernels_push(str(work))
+        if self.session_timeout_s is None:
+            api.kernels_push(str(work))
+        else:
+            api.kernels_push(str(work), timeout=self.session_timeout_s)
         LOG.info("kaggle: pushed kernel %s/%s", user, slug)
         return JobHandle(
             backend=self.name,
@@ -308,6 +350,94 @@ class KaggleRunner:
             submitted_at=datetime.now(UTC).isoformat(timespec="seconds"),
             results_dir=str(results_dir),
             handle_id=handle_id,
+        )
+
+    def _ensure_wheel_dataset(
+        self, api: Any, work: Path, identity: dict[str, Any], data: bytes
+    ) -> None:
+        """Create once under the job handle, never update a dataset version in place."""
+        if len(data) != identity["bytes"] or hashlib.sha256(data).hexdigest() != identity["sha256"]:
+            raise ValueError("The local wheel bytes do not match their upload identity")
+        receipt = work / "wheel-dataset.json"
+        if receipt.exists():
+            if json.loads(receipt.read_text(encoding="utf-8")) != identity:
+                raise RuntimeError("The existing wheel dataset receipt has a different identity")
+        else:
+            folder = work / "wheel-upload"
+            if folder.exists():
+                raise RuntimeError(
+                    "An incomplete wheel upload already exists; preserve it before retrying"
+                )
+            folder.mkdir()
+            (folder / identity["filename"]).write_bytes(data)
+            slug = identity["ref"].split("/", 1)[1]
+            (folder / "dataset-metadata.json").write_text(
+                json.dumps(
+                    {
+                        "title": slug,
+                        "id": identity["ref"],
+                        "licenses": [{"name": "AGPL-3.0"}],
+                        "description": "Private Bindsight execution artifact. Original AGPL-3.0-or-later "
+                        "license and notices are retained in the wheel. SHA256: "
+                        + identity["sha256"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            result = api.dataset_create_new(
+                str(folder), public=False, quiet=True, convert_to_csv=False, dir_mode="skip"
+            )
+            error = (
+                result.get("error") if isinstance(result, dict) else getattr(result, "error", None)
+            )
+            if error:
+                raise RuntimeError(f"Private wheel dataset creation failed: {error}")
+            receipt.write_text(
+                json.dumps(identity, indent=2) + "\n", encoding="utf-8", newline="\n"
+            )
+        deadline = time.monotonic() + 300
+        while True:
+            try:
+                status = str(api.dataset_status(identity["ref"])).lower()
+            except HTTPError as error:
+                # Kaggle may deny a newly created private dataset until its
+                # index catches up. Retry only this read, never dataset creation.
+                code = error.response.status_code if error.response is not None else None
+                if code not in {403, 404, 429} and not (
+                    isinstance(code, int) and 500 <= code < 600
+                ):
+                    raise
+                LOG.info(
+                    "kaggle: new private dataset status is temporarily unavailable (HTTP %s)", code
+                )
+                status = "indexing"
+            if status == "ready":
+                break
+            if status in {"error", "failed"}:
+                raise RuntimeError(f"Private wheel dataset processing failed: {status}")
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Private wheel dataset was not ready within five minutes")
+            time.sleep(2)
+        listing = api.dataset_list_files(f"{identity['ref']}/1")
+        entries = (
+            listing.get("dataset_files", listing.get("files", []))
+            if isinstance(listing, dict)
+            else getattr(listing, "dataset_files", getattr(listing, "files", []))
+        ) or []
+
+        def value(entry: Any, key: str) -> Any:
+            return entry.get(key) if isinstance(entry, dict) else getattr(entry, key, None)
+
+        matches = [entry for entry in entries if value(entry, "name") == identity["filename"]]
+        if len(matches) != 1 or value(matches[0], "total_bytes") != identity["bytes"]:
+            raise RuntimeError(
+                "The private dataset's first version does not contain the expected wheel"
+            )
+        LOG.info(
+            "kaggle: attached private wheel %s/1, SHA256 %s", identity["ref"], identity["sha256"]
         )
 
     def poll(self, handle: JobHandle) -> JobStatus:

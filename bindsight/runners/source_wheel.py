@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Build a wheel from the working tree, so a GPU run executes the code you have.
 
-Remote backends install bindsight with pip. Until now that meant
-``pip install git+<repo>`` with no ref, so every Kaggle run installed the
+Older remote jobs used ``pip install git+<repo>`` with no ref, so Kaggle installed the
 default branch — whatever the operator had checked out, whatever was fixed
 locally, whatever was on an unmerged branch. A run launched to validate a fix
 ran the unfixed code and reported success.
@@ -11,7 +10,8 @@ ran the unfixed code and reported success.
 Pinning a ref narrows that but does not close it: a branch name still resolves
 on the GPU, at pip time, to whatever it points at then, and an unpushed commit
 cannot be named at all. A wheel built from the tree that launched the run is the
-only thing that answers "which code produced this result" exactly.
+way to carry uncommitted changes to the GPU. Installed releases instead fetch
+their exact published wheel and verify its registry size, digest and metadata.
 
 The wheel is small because bindsight is pure Python, so it can travel inside the
 kernel script itself rather than needing a dataset upload.
@@ -57,14 +57,14 @@ def build_working_tree_wheel(dest_dir: Path, *, repo_root: Path | None = None) -
     Returns:
         Path to the built wheel, or None when there is no source tree to build
         or the build failed. Returning None rather than raising is deliberate:
-        the caller falls back to a git ref and warns, so a user who installed
-        bindsight from PyPI can still submit a job.
+        the caller uses its exact published release and warns that local changes
+        are unavailable. Explicit development references still require a wheel.
     """
     root = repo_root or find_repo_root()
     if root is None:
         LOG.warning(
-            "no source checkout found, so no wheel can be built; the remote job will "
-            "install bindsight from git and may therefore run different code"
+            "no source checkout found; the remote job will verify and install this exact "
+            "published Bindsight release from PyPI"
         )
         return None
 
@@ -86,15 +86,25 @@ def build_working_tree_wheel(dest_dir: Path, *, repo_root: Path | None = None) -
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=900)
     except subprocess.CalledProcessError as e:
-        LOG.warning("wheel build failed (%s); falling back to a git install:\n%s", e, e.stderr)
+        LOG.warning(
+            "wheel build failed (%s); remote fallback uses the exact published release, excluding local changes:\n%s",
+            e,
+            e.stderr,
+        )
         return None
     except (subprocess.TimeoutExpired, OSError) as e:
-        LOG.warning("wheel build could not run (%s); falling back to a git install", e)
+        LOG.warning(
+            "wheel build could not run (%s); remote fallback uses the exact published release, excluding local changes",
+            e,
+        )
         return None
 
     wheels = sorted(dest_dir.glob("bindsight-*.whl"), key=lambda p: p.stat().st_mtime)
     if not wheels:
-        LOG.warning("wheel build produced nothing in %s; falling back to a git install", dest_dir)
+        LOG.warning(
+            "wheel build produced nothing in %s; remote fallback uses the exact published release, excluding local changes",
+            dest_dir,
+        )
         return None
     wheel = wheels[-1]
     LOG.info("built %s (%d bytes)", wheel.name, wheel.stat().st_size)

@@ -148,7 +148,18 @@ def test_ready_receipt_does_not_override_current_free_memory(workspace, monkeypa
     (root / "boltz/bin").mkdir(parents=True)
     (root / "boltz/bin/python").touch()
     (root / "se3-python").touch()
-    write_json(root / "ready.json", {"recipe_id": gpu.recipe()["id"], "cuda_smoke_passed": True})
+    write_json(
+        root / "ready.json",
+        {
+            "recipe_id": gpu.recipe()["id"],
+            "cuda_smoke_passed": True,
+            "source_identity": {
+                "kind": "wheel",
+                "sha256": "a" * 64,
+                "implementation_sha256": gpu.gpu_runtime.current_implementation_sha256(),
+            },
+        },
+    )
     monkeypatch.setattr(gpu, "supported_platform", lambda: True)
     monkeypatch.setattr(gpu, "devices", lambda: [_device(free=5000)])
     result = gpu.readiness(workspace)
@@ -417,66 +428,36 @@ def test_cpu_recipe_check_never_writes_gpu_ready_receipt(tmp_path, monkeypatch):
     root = tmp_path / "environments"
     job = tmp_path / "job"
     job.mkdir()
-    monkeypatch.setattr(gpu_setup.sys, "platform", "linux")
-    commands = []
+    source = tmp_path / "bindsight-0.3.8-py3-none-any.whl"
+    source.write_bytes(b"fixture identity only")
+    calls = []
 
-    def fake_command(argv, env):
-        commands.append(argv)
-        if "create" in argv:
-            environment = Path(argv[argv.index("-p") + 1])
-            (environment / "bin").mkdir(parents=True)
-            (environment / "bin/python").touch()
-        if "pip" in argv and "install" in argv:
-            assert argv[0] == str(root / "uv")
-            assert "--no-config" in argv
-            target = Path(argv[argv.index("--python") + 1])
-            assert target in {root / "se3/bin/python", root / "boltz/bin/python"}
-            assert gpu_setup.CERTIFI_REQUIREMENT in argv
+    def provision(path, **kwargs):
+        calls.append((path, kwargs))
+        kwargs["progress"]("recorded phase")
+        assert kwargs["check_only"] is True
+        return {"cuda_tested": False, "models_downloaded": False}
 
-    def fake_download(url, destination, expected, **kwargs):
-        assert url in {gpu.MICROMAMBA_URL, gpu_setup.UV_ARCHIVE_URL}
-        if url == gpu_setup.UV_ARCHIVE_URL:
-            assert expected == gpu_setup.UV_ARCHIVE_SHA256
-            assert kwargs["minimum"] == kwargs["maximum"] == gpu_setup.UV_ARCHIVE_BYTES
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(b"ARTIFICIAL TEST EXECUTABLE")
-        return "a" * 64
-
-    monkeypatch.setattr(gpu_setup, "command", fake_command)
-    monkeypatch.setattr(gpu_setup, "download", fake_download)
-    monkeypatch.setattr(gpu_setup, "extract_verified_uv", lambda archive, destination: destination)
-    monkeypatch.setattr(
-        gpu_setup,
-        "smoke",
-        lambda root, env, require_cuda: (
-            {"boltz": {"boltz": "2.0.3"}}
-            if not require_cuda
-            else pytest.fail("CPU test requested CUDA")
-        ),
-    )
-    monkeypatch.setattr(
-        gpu_setup.subprocess, "run", lambda *a, **k: SimpleNamespace(stdout="artificial==1\n")
-    )
+    monkeypatch.setattr(gpu_setup.gpu_runtime, "provision", provision)
     gpu_setup.install(
         {
             "recipe_id": gpu.recipe()["id"],
             "gpu_root": str(root),
             "gpu_index": 0,
             "out_dir": str(tmp_path / "output"),
+            "source": str(source),
         },
         job,
         check_recipe=True,
     )
+    assert len(calls) == 1
+    assert calls[0][0] == root
+    assert calls[0][1]["source"] == source
+    assert calls[0][1]["mode"] == "design_and_validate"
     assert not (root / "ready.json").exists()
     result = json.loads((job / "recipe_check.json").read_text())
-    assert result["cuda_tested"] is False
-    assert result["models_downloaded"] is False
-    assert any(
-        {"boltz==2.0.3", "torch==2.5.1+cu118", "trifast==0.1.11"}.issubset(command)
-        for command in commands
-    )
-    assert "trifast==0.1.11" in (root / "boltz.constraints.txt").read_text()
-    assert gpu.recipe()["validation"]["torch"] == "2.5.1+cu118"
+    assert result == {"cuda_tested": False, "models_downloaded": False}
+    assert json.loads((job / "progress.json").read_text()) == {"phase": "recorded phase"}
 
 
 @pytest.mark.parametrize("require_cuda", [False, True])
@@ -494,7 +475,7 @@ def test_smoke_checks_actual_entrypoints_and_only_requested_cuda(
         commands.append((argv, tree))
         return SimpleNamespace(stdout='{"artificial_probe":true}\n')
 
-    monkeypatch.setattr(gpu_setup.subprocess, "run", fake_probe)
+    monkeypatch.setattr(gpu_setup.gpu_runtime.subprocess, "run", fake_probe)
     gpu_setup.smoke(tmp_path, {}, require_cuda=require_cuda)
     assert len(commands) == 2
     se3, boltz = [command[0][2] for command in commands]
@@ -503,11 +484,33 @@ def test_smoke_checks_actual_entrypoints_and_only_requested_cuda(
     assert repr(str(tmp_path / "tools/ProteinMPNN")) in se3
     assert "protein_mpnn_utils.__file__" in se3
     assert "import boltz.main" in boltz
-    assert "'1.12.1+cu113'" in se3
-    assert "'2.5.1+cu118'" in boltz
-    assert "version('boltz') == '2.0.3'" in boltz
+    assert "'2.14.1+cu126'" in se3
+    assert "'2.14.1+cu126'" in boltz
+    assert "version('boltz') == '2.0.3+bindsight.1'" in boltz
     assert "version('trifast') == '0.1.11'" in boltz
     assert ("device='cuda'" in se3) is require_cuda
     assert ("device='cuda'" in boltz) is require_cuda
     assert ("g.update_all" in se3) is require_cuda
     assert "g.update_all" not in boltz
+
+
+def test_readiness_rejects_different_or_missing_source_identity(workspace, monkeypatch):
+    root = gpu.gpu_root(workspace)
+    (root / "boltz/bin").mkdir(parents=True)
+    (root / "boltz/bin/python").touch()
+    (root / "se3-python").touch()
+    monkeypatch.setattr(gpu, "supported_platform", lambda: True)
+    monkeypatch.setattr(gpu, "devices", lambda: [_device()])
+    receipt = {"recipe_id": gpu.recipe()["id"], "cuda_smoke_passed": True}
+    write_json(root / "ready.json", receipt)
+    assert not gpu.readiness(workspace)["ready"]
+    receipt["source_identity"] = {
+        "kind": "wheel",
+        "sha256": "a" * 64,
+        "implementation_sha256": gpu.gpu_runtime.current_implementation_sha256(),
+    }
+    write_json(root / "ready.json", receipt)
+    assert gpu.readiness(workspace)["ready"]
+    receipt["source_identity"]["implementation_sha256"] = "b" * 64
+    write_json(root / "ready.json", receipt)
+    assert not gpu.readiness(workspace)["ready"]

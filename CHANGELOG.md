@@ -6,6 +6,42 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ---
 
+## [0.3.8] - 2026-11-01
+
+### Supported scientific runtime
+
+- Replace the managed RFdiffusion Python 3.9 environment with Python 3.11.18
+  and PyTorch 2.14.1. Use one recorded installation recipe for the local GPU
+  workbench, Kaggle, Colab and Modal. Preserve the RFdiffusion and ProteinMPNN
+  source revisions, model parameters and scientific defaults.
+- Isolate the three CUDA 11 libraries required by local DGL graph operations
+  from PyTorch's CUDA 12 packages. Verify the loaded CUDA random-number library
+  and retain the original e3nn constants with a narrowly scoped safe loader.
+- Install Boltz `2.0.3+bindsight.1`, a dependency-only local wheel variant with
+  patched Hydra, Lightning, Requests and Biopython requirements. All 106 Boltz
+  implementation/resource files remain identical to upstream 2.0.3.
+
+### Integrity and reliability
+
+- Verify RFdiffusion checkpoints and Boltz model/molecule assets against fixed
+  SHA256 values. Boltz assets use an immutable publisher revision, bounded safe
+  extraction and cache verification again before prediction.
+- Refuse modified scientific tool checkouts and stale runtime receipts. Bind
+  readiness to the installed Bindsight implementation and complete recipe;
+  rebuild owned obsolete environments without removing scientific outputs.
+- Retain actual commands, precision, package versions, model hashes and raw
+  scientific outputs in new GPU job evidence. Missing version or model outputs
+  cannot silently become successful validation.
+- Transfer large development wheels to Kaggle through a private, version-pinned
+  input with a full integrity check, avoiding Kaggle's script-size limit. Pin
+  remote release bootstraps to verified published artifacts.
+
+Historical scientific results and release artifacts remain preserved. This
+maintenance does not turn prediction confidence into evidence of binding.
+Distributed DGL/RPC remains unsupported: its upstream advisory has no patched
+release, and the managed workflow uses local graph operations only. See
+[GPU runtime](docs/gpu-runtime.md) and [security scope](SECURITY.md).
+
 ## [0.3.7] - 2026-11-01
 
 ### Security

@@ -740,6 +740,17 @@ def _bindsight_source(backend: str, wheel: Path | None, *, is_mock: bool) -> str
     """
     if is_mock:
         return "mock backend: nothing is installed and no GPU runs"
+    if backend in {"modal", "colab"} or (backend == "kaggle" and wheel is None):
+        from bindsight import __version__
+
+        source = f"published PyPI release bindsight=={__version__}"
+        if wheel is not None:
+            source += (
+                f" — a working-tree wheel ({Path(wheel).name}) was built but backend "
+                f"{backend!r} cannot ship one, so these results are not attributable "
+                "to the tree that launched them"
+            )
+        return source
     if wheel is None:
         return "pip install from the repository default branch"
     if not runner_accepts(backend, "bindsight_wheel"):

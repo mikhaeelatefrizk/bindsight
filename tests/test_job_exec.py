@@ -90,6 +90,9 @@ def _fake_run(cmd, *, cwd=None):
         (pred / "affinity_run.json").write_text(
             json.dumps({"affinity_pred_value": -7.0, "affinity_probability_binary": 0.9})
         )
+        return SimpleNamespace(
+            returncode=0, stdout="bindsight: Boltz 2.0.3+bindsight.1 precision=32\n", stderr=""
+        )
     elif "wget" in cmd[0]:
         # The executor now hashes every checkpoint it fetched, so a stub that
         # writes nothing fails verification instead of the behaviour under test.
@@ -110,6 +113,18 @@ def mock_run(monkeypatch):
         return _fake_run(cmd, cwd=cwd)
 
     monkeypatch.setattr(job_exec, "_run", _record)
+    # Production checkpoints now have independent published pins. Only these
+    # synthetic subprocess fixtures use their own known stub bytes.
+    import hashlib
+
+    monkeypatch.setattr(
+        tools,
+        "RFDIFF_WEIGHT_SHA256",
+        {
+            name: hashlib.sha256(b"stub checkpoint bytes").hexdigest()
+            for name in tools.RFDIFF_WEIGHTS
+        },
+    )
     return calls
 
 
@@ -143,6 +158,7 @@ def test_run_job_rfdiff_boltz_produces_correct_layout(mock_run, tmp_path: Path) 
     assert metrics[0]["iptm"] == 0.77
     assert metrics[0]["affinity_pred_value"] == -7.0
     assert metrics[0]["validator_name"] == "boltz2"
+    assert metrics[0]["validator_version"] == "2.0.3+bindsight.1"
 
     # validate/<binder_id>/ holds the per-binder Boltz JSONs for downstream use.
     binder_dirs = list((work / "validate").iterdir())

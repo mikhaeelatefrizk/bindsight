@@ -18,6 +18,26 @@ description: A step-by-step recipe to run the bindsight GPU design half (RFdiffu
 
 ---
 
+## Bindsight-generated notebooks
+
+When the `colab` runner writes a Bindsight notebook, its setup uses the exact
+published Bindsight version that generated it. It verifies that version's PyPI
+wheel size, SHA256, and internal package metadata before installing it into a
+private driver environment. It then calls the same managed GPU provisioner as
+the other Bindsight backends. The notebook's global Python packages are left
+unchanged. An unpublished local change is not included in a generated notebook.
+
+The `modal` runner also uses this shared provisioner. Its initial image installs
+the exact published Bindsight version through pip; the remote function verifies
+the release wheel used to provision its scientific environments. Job execution
+uses the managed interpreter and preserves the host environment in memory;
+provisioning receipts contain only the required environment overrides.
+
+CPU tests cover notebook generation, source verification, and staged Modal job
+execution. They do not establish a successful live Colab or Modal GPU run. The
+manual third-party notebook walkthrough below is a separate workflow and does
+not use Bindsight's managed recipe.
+
 ## What you need before starting
 
 - A finished `bindsight discover` run (e.g. `runs/luad_v01/`).
