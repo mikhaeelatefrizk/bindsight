@@ -288,11 +288,19 @@ def test_case_colliding_or_file_directory_paths_are_rejected(tmp_path, extra):
 
 
 def test_oversized_member_is_refused_before_reading_its_content(tmp_path):
+    import gzip
+
     run, specs = make_jobs(tmp_path)
-    files, _ = result_files(specs[0])
     member = tarfile.TarInfo("evidence/huge.bin")
     member.size = 8 * 1024**3 + 1
-    write_archive(specs[0], files, extra=member)
+    archive = specs[0].with_name(specs[0].name.removesuffix(".spec.json") + ".tar.gz")
+    # Deliberately supply only a valid oversized header, never its 8 GiB body.
+    # Python 3.13 correctly rejects addfile(nonempty_member) without a fileobj.
+    with gzip.open(archive, "wb") as stream:
+        stream.write(member.tobuf(format=tarfile.PAX_FORMAT) + b"\0" * 1024)
+    assert archive.stat().st_size < 4096
+    with tarfile.open(archive, "r:gz") as tf:
+        assert tf.next().size == member.size
     with pytest.raises(ClickException, match="size or member limit"):
         cli._finalize_validate(run)
     assert_not_imported(run)
@@ -391,3 +399,69 @@ def test_linked_validation_destination_cannot_escape_the_run(tmp_path):
         cli._finalize_validate(run)
     assert not list(outside.iterdir())
     assert_not_imported(run)
+
+
+def test_resolved_containment_works_without_python312_is_junction(tmp_path, monkeypatch):
+    run = tmp_path / "selected-run"
+    redirect = run / "design"
+    redirect.mkdir(parents=True)
+    real_resolve = Path.resolve
+
+    def simulated_junction_resolve(path, *args, **kwargs):
+        if path == redirect / "new-file.json":
+            return tmp_path / "outside-run" / "new-file.json"
+        return real_resolve(path, *args, **kwargs)
+
+    monkeypatch.delattr(Path, "is_junction", raising=False)
+    monkeypatch.setattr(Path, "resolve", simulated_junction_resolve)
+    with pytest.raises(ClickException, match="resolves outside this run"):
+        cli._check_import_destination(redirect / "new-file.json", run)
+
+
+@pytest.mark.skipif(__import__("sys").platform != "win32", reason="Windows junction regression")
+def test_actual_windows_junction_cannot_redirect_import(tmp_path, monkeypatch):
+    import os
+    import subprocess
+
+    run, specs = make_jobs(tmp_path)
+    files, _ = result_files(specs[0])
+    write_archive(specs[0], files)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    junction = run / "validate"
+    environment = dict(
+        os.environ, BINDSIGHT_TEST_LINK=str(junction), BINDSIGHT_TEST_TARGET=str(outside)
+    )
+    created = subprocess.run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "$ErrorActionPreference = 'Stop'; New-Item -ItemType Junction "
+            "-Path $env:BINDSIGHT_TEST_LINK -Target $env:BINDSIGHT_TEST_TARGET | Out-Null",
+        ],
+        env=environment,
+        capture_output=True,
+        timeout=30,
+    )
+    if created.returncode:
+        pytest.skip("Windows could not create an owned test junction")
+    try:
+        # Reproduce the Python 3.11 API surface even when CI runs a newer Python.
+        monkeypatch.delattr(Path, "is_junction", raising=False)
+        with pytest.raises(ClickException, match=r"outside|link"):
+            cli._finalize_validate(run)
+        assert not list(outside.iterdir())
+        assert_not_imported(run)
+    finally:
+        # Remove only the junction entry, never recursively traverse its target.
+        junction.rmdir()
+
+
+def test_destination_is_relative_to_the_user_selected_run(tmp_path):
+    selected = tmp_path / "custom-location" / "selected-run"
+    selected.mkdir(parents=True)
+    cli._check_import_destination(selected / "design" / "future-file", selected)
+    with pytest.raises(ClickException, match="outside this run"):
+        cli._check_import_destination(selected.parent / "other-run" / "file", selected)
