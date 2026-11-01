@@ -35,6 +35,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Transfer large development wheels to Kaggle through a private, version-pinned
   input with a full integrity check, avoiding Kaggle's script-size limit. Pin
   remote release bootstraps to verified published artifacts.
+- Import downloaded Colab results against the saved notebook job specification,
+  with separate handles for target sites, bounded archive validation and checks
+  for mismatched targets or metrics. Preserve original downloads and refuse
+  conflicting existing results. Update the current guide to this managed path;
+  live Colab allocation remains unverified.
 
 Historical scientific results and release artifacts remain preserved. This
 maintenance does not turn prediction confidence into evidence of binding.

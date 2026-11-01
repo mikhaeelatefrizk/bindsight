@@ -1548,26 +1548,47 @@ class TestTheSurfaceomeSizesAgreeWithTheData:
         assert sizes["core"] + sizes["added"] == sizes["total"]
 
 
-def test_the_colab_recipe_pins_and_seeds_like_the_pipeline() -> None:
-    """The Colab how-to installed ``boltz==2.*`` and ran ``boltz predict`` with
-    neither ``--seed`` nor ``--diffusion_samples`` — a floating version and a
-    single unseeded draw, in a document teaching the same measurement the
-    pipeline takes care to pin and seed.
+def test_the_colab_recipe_uses_the_managed_pipeline() -> None:
+    """Keep the guide on the provisioned, pinned and seeded notebook path.
+
+    Raw Boltz installation/prediction bypasses the dependency patch, asset
+    authentication and GPU precision handling. Notebook behavior tests cover
+    the generated seed/sampling arguments; prose must direct users to that
+    implementation instead of maintaining another installation recipe.
     """
-    from bindsight.validate.boltz2 import PINNED_BOLTZ2_VERSION
+    import shlex
 
     text = _read("docs/colab-design-howto.md")
-
-    installs = [ln for ln in text.splitlines() if "pip install" in ln and "boltz" in ln]
-    assert installs, "the recipe installs no Boltz-2"
-    for line in installs:
-        assert f"boltz=={PINNED_BOLTZ2_VERSION}" in line, (
-            f"the recipe installs a version that is not the pinned one: {line.strip()}"
-        )
-    # Checked on the install lines rather than the whole document: the comment
-    # explaining why the floating spec was replaced necessarily contains it.
-    assert "--seed" in text, "the recipe runs the validator unseeded"
-    assert "--diffusion_samples" in text, "the recipe takes a single draw"
+    blocks = re.findall(r"```[^\n]*\n(.*?)```", text, re.DOTALL)
+    assert blocks, "the Colab guide contains no runnable instructions"
+    code = "\n".join(blocks).replace("\\\n", " ")
+    commands = [shlex.split(line) for line in code.splitlines() if line.strip()]
+    colab = [
+        command
+        for command in commands
+        if command[:2] == ["bindsight", "design"]
+        and "--backend" in command
+        and command[command.index("--backend") + 1] == "colab"
+    ]
+    assert any("--dry-run" in command for command in colab), "no Colab planning command"
+    assert any("--dry-run" not in command for command in colab), "no notebook generation command"
+    for command in colab:
+        for option, expected in (("--designer", "rfdiff_mpnn"), ("--validator", "boltz2")):
+            assert option in command, f"the managed recipe omits {option}: {command}"
+            assert command[command.index(option) + 1] == expected, (
+                f"the guide left the supported managed recipe: {command}"
+            )
+    assert any(command[:2] == ["bindsight", "validate"] for command in commands), (
+        "the guide omits the supported result-import command"
+    )
+    for line in code.splitlines():
+        assert not (
+            re.search(r"\bpip(?:3)?\s+install\b", line) and re.search(r"\bboltz\b", line)
+        ), f"raw Boltz installation bypasses the managed recipe: {line}"
+    assert not re.search(
+        r"(?m)^\s*!?(?:boltz|python(?:3(?:\.\d+)?)?\s+-m\s+boltz(?:\.main)?)\s+predict\b",
+        code,
+    ), "raw Boltz prediction bypasses the managed executor"
 
 
 def test_the_benchmark_schema_identifier_has_one_definition() -> None:

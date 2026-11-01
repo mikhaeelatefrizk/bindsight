@@ -87,7 +87,7 @@ an account, or a GPU to read.
 | **See the provenance chain, run end to end** | [`benchmarks/provenance_join/`](benchmarks/provenance_join/) |
 | **Find your way around the code** | [Repository map](#repository-map) |
 | **Use your own data** | [Scope — what it accepts](#scope--what-it-accepts) |
-| **Design binders on a free GPU** | [`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md) |
+| **Design binders on a free GPU** | [Current managed runtime](docs/gpu-runtime.md) · [Kaggle setup](benchmarks/RUN_ON_KAGGLE.md) |
 | **Look up a term** (PROV-O, RO-Crate, ipTM, PAE-int…) | [Glossary](docs/glossary.md) |
 | **Contribute** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **Cite it** | [Citation](#citation) |
@@ -338,9 +338,10 @@ python benchmarks/run_study.py --score-only     # re-scores what is already on d
 **3. Re-run the binder design — needs a GPU.**
 
 `score_run.py` is a scorer, not a runner: it consumes the archive a GPU run
-produces. The full chain is in
-[`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md), which runs on a
-free Kaggle T4.
+produces. Use the [current managed runtime](docs/gpu-runtime.md) and
+[Kaggle setup guide](benchmarks/RUN_ON_KAGGLE.md) for new runs. The preserved
+[`RUN_FREE_GPU.md`](benchmarks/designer_benchmark/RUN_FREE_GPU.md) records the
+historical campaign; its old environment versions are not the current setup.
 
 ```bash
 python benchmarks/designer_benchmark/prepare_erbb2_target.py

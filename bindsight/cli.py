@@ -358,7 +358,9 @@ def design(
         return
 
     if backend == "colab":
-        n = _write_design_notebooks(run_dir, designer=designer, trajectories=trajectories)
+        n = _write_design_notebooks(
+            run_dir, designer=designer, trajectories=trajectories, validator=validator
+        )
         if n == 0:
             # The same answer the headless backends give, for the same
             # situation. This printed a green "Wrote 0 Colab notebook(s)" and a
@@ -379,7 +381,8 @@ def design(
             Panel(
                 f"[green]Wrote {n} Colab notebook(s)[/green] to {run_dir / 'design'}.\n"
                 "Open each in Colab (GPU runtime), Run all, download the results "
-                "tarball into <run>/design/, then run [bold]bindsight validate[/bold].",
+                f"tarballs into {run_dir / 'design'}, then run "
+                f"[bold]bindsight validate {run_dir}[/bold]. Keep the .spec.json files there.",
                 title="design: notebooks ready",
                 border_style="green",
             )
@@ -522,6 +525,7 @@ def validate(run_dir: Path, backend: str, validator: str, revalidate: bool) -> N
                 )
             )
             sys.exit(2)
+        _import_colab_results(run_dir)
         done = _launch_revalidate(run_dir, backend=backend, validator=validator)
         if done == 0:
             console.print(
@@ -1639,7 +1643,9 @@ def _design_ranges(raw: Any) -> list[tuple[int, int]]:
     return ranges
 
 
-def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) -> int:
+def _write_design_notebooks(
+    run_dir: Path, *, designer: str, trajectories: int, validator: str = "boltz2"
+) -> int:
     """Write one Colab design+validate notebook per top target. Returns count."""
     from bindsight.plugins import get_designer
     from bindsight.runners.notebook_content import write_design_notebook
@@ -1659,6 +1665,7 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
     # embedded in the notebook -- on `colab`, which is the DEFAULT backend --
     # so a run configured with seed 42 shipped a notebook carrying seed 0.
     seed, binder_length_min, binder_length_max = _design_spec_params_from_run(run_dir)
+    top_k, samples, parallel = _validator_params_from_run(run_dir)
     n = 0
     for t in targets:
         spec = plugin.make_spec(
@@ -1673,20 +1680,43 @@ def _write_design_notebooks(run_dir: Path, *, designer: str, trajectories: int) 
             binder_length_max=binder_length_max,
         )
         spec_dict = spec.model_dump()
+        spec_dict["extra_params"]["validator"] = validator
+        if top_k:
+            spec_dict["extra_params"]["prescreen_top_k"] = top_k
+        if samples != 1:
+            spec_dict["extra_params"]["diffusion_samples"] = samples
+        if parallel != 1:
+            spec_dict["extra_params"]["max_parallel_samples"] = parallel
         # Embed the target structure (converted to PDB) so the Colab notebook is
         # self-contained — RFdiffusion needs PDB; AlphaFold ships mmCIF.
         b64 = _structure_pdb_b64(Path(t["structure_path"]))
         if b64:
             spec_dict["target_structure_b64"] = b64
             spec_dict.setdefault("extra_params", {})["target_structure_name"] = "target.pdb"
-        handle_id = f"{designer}_{t['uniprot']}"
-        write_design_notebook(
-            design_dir / f"{handle_id}.ipynb",
-            handle_id=handle_id,
-            designer=designer,
-            gpu_type="T4",
-            spec=spec_dict,
-        )
+        handle_id = f"{designer}_{_target_artifact_stem(t)}"
+        spec_path = design_dir / f"{handle_id}.spec.json"
+        _check_import_destination(spec_path, run_dir)
+        if spec_path.exists() and json.loads(spec_path.read_text(encoding="utf-8")) != spec_dict:
+            raise click.ClickException(
+                f"Existing Colab job {handle_id} has different inputs. Preserve its notebook, "
+                "spec and results in another run directory before generating a changed job."
+            )
+        notebook_path = design_dir / f"{handle_id}.ipynb"
+        _check_import_destination(notebook_path, run_dir)
+        if notebook_path.exists() and not spec_path.exists():
+            raise click.ClickException(
+                f"Preserve the older notebook {notebook_path} elsewhere before regenerating it "
+                "with a saved .spec.json input record."
+            )
+        if not notebook_path.exists():
+            write_design_notebook(
+                notebook_path,
+                handle_id=handle_id,
+                designer=designer,
+                gpu_type="T4",
+                spec=spec_dict,
+            )
+        spec_path.write_text(json.dumps(spec_dict, indent=2) + "\n", encoding="utf-8", newline="\n")
         n += 1
     return n
 
@@ -2129,6 +2159,316 @@ def _launch_design(
     return launched
 
 
+def _check_import_destination(path: Path, root: Path) -> None:
+    """Refuse symlinks and filesystem redirection in a run-owned import path."""
+    if not path.absolute().is_relative_to(root.absolute()):
+        raise click.ClickException(f"Result path is outside this run: {path}")
+    if not path.resolve().is_relative_to(root.resolve()):
+        raise click.ClickException(f"Result path resolves outside this run: {path}")
+    for part in (path, *path.parents):
+        if part.is_symlink() or (hasattr(part, "is_junction") and part.is_junction()):
+            raise click.ClickException(f"Result path must not contain a link: {part}")
+        if part != path and part.exists() and not part.is_dir():
+            raise click.ClickException(f"Result parent is not a directory: {part}")
+        if part == root:
+            break
+
+
+def _read_colab_archive(
+    archive: Path, expected: dict[str, Any], stage: Path
+) -> tuple[list[dict[str, Any]], list[Path]]:
+    """Validate a complete downloaded job before extracting regular validation files."""
+    import base64
+    import math
+    import re
+    import shutil
+    import tarfile
+    from pathlib import PurePosixPath
+
+    from bindsight.runners.job_exec import _binder_id_prefix
+    from bindsight.validate.protocol import ValidationResult
+
+    members: dict[str, tarfile.TarInfo] = {}
+    folded: set[str] = set()
+    path_spellings: dict[str, str] = {}
+    required_directories: set[str] = set()
+    total = 0
+    with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
+        for member in tf:
+            name = member.name
+            parts = PurePosixPath(name).parts
+            if (
+                not parts
+                or name.startswith("/")
+                or "\\" in name
+                or any(
+                    p in {"", ".", ".."}
+                    or p.endswith((".", " "))
+                    or ":" in p
+                    or any(ord(c) < 32 for c in p)
+                    or re.fullmatch(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?", p)
+                    for p in name.split("/")
+                )
+                or not (member.isfile() or member.isdir())
+                or member.sparse is not None
+                or parts[0]
+                not in {"design", "validate", "evidence", "metrics.jsonl", "prescreen.txt"}
+                or (parts[0] in {"metrics.jsonl", "prescreen.txt"} and len(parts) != 1)
+                or name.casefold() in folded
+            ):
+                raise ValueError(f"Unsafe or duplicate archive member: {name}")
+            folded.add(name.casefold())
+            for length in range(1, len(parts) + 1):
+                prefix = "/".join(parts[:length])
+                previous = path_spellings.setdefault(prefix.casefold(), prefix)
+                if previous != prefix:
+                    raise ValueError(f"Case-colliding archive paths: {previous}, {prefix}")
+                if length < len(parts) and prefix in members and not members[prefix].isdir():
+                    raise ValueError(f"Archive file is used as a directory: {prefix}")
+                if length < len(parts):
+                    required_directories.add(prefix)
+            if member.isfile() and name in required_directories:
+                raise ValueError(f"Archive directory is replaced by a file: {name}")
+            members[name] = member
+            total += member.size
+            if member.size < 0 or total > 8 * 1024**3 or len(members) > 100_000:
+                raise ValueError("Result archive exceeds the import size or member limit")
+
+        def read(name: str) -> bytes:
+            member = members.get(name)
+            if member is None or not member.isfile():
+                raise ValueError(f"Result archive is missing {name}")
+            if member.size > 64 * 1024**2:
+                raise ValueError(f"Result metadata is too large: {name}")
+            stream = tf.extractfile(member)
+            assert stream is not None
+            return stream.read()
+
+        if json.loads(read("evidence/spec.json")) != expected:
+            raise ValueError("Executed spec does not match the saved Colab job inputs")
+        if json.loads(read("evidence/manifest.json")).get("status") != "completed":
+            raise ValueError("Result evidence does not record a completed job")
+        if "target_structure_b64" in expected and read(
+            "evidence/raw/target.pdb"
+        ) != base64.b64decode(expected["target_structure_b64"], validate=True):
+            raise ValueError("Result target structure differs from the notebook's target")
+        rows = [json.loads(line) for line in read("metrics.jsonl").splitlines() if line.strip()]
+        if not rows:
+            raise ValueError("Result archive contains no measured binder rows")
+        prefix = _binder_id_prefix(expected) + "_"
+        ids: set[str] = set()
+        folded_ids: set[str] = set()
+        for row in rows:
+            parsed = ValidationResult.model_validate(row, strict=True)
+            if not parsed.measured or any(
+                isinstance(value, float) and not math.isfinite(value)
+                for value in parsed.model_dump().values()
+            ):
+                raise ValueError("Result metrics must contain finite measured values")
+            binder = row.get("binder_id") if isinstance(row, dict) else None
+            if (
+                not isinstance(binder, str)
+                or not re.fullmatch(r"[A-Za-z0-9_-]+", binder)
+                or not binder.startswith(prefix)
+                or binder in ids
+                or binder.casefold() in folded_ids
+                or row.get("target_uniprot") != expected.get("target_uniprot")
+                or row.get("validator_name")
+                != expected.get("extra_params", {}).get("validator", "boltz2")
+                or not row.get("validator_version")
+                or f"design/{binder}.fasta" not in members
+                or not members[f"design/{binder}.fasta"].isfile()
+            ):
+                raise ValueError("Result metrics contain mismatched or duplicate binder identities")
+            ids.add(binder)
+            folded_ids.add(binder.casefold())
+        files = []
+        seen: set[str] = set()
+        for name, member in members.items():
+            parts = PurePosixPath(name).parts
+            if parts[0] != "validate" or len(parts) == 1:
+                continue
+            if parts[1] not in ids:
+                raise ValueError(f"Validation output has no matching metric row: {name}")
+            if not member.isfile():
+                continue
+            if len(parts) < 3:
+                raise ValueError(f"Validation output must be inside a binder directory: {name}")
+            destination = stage.joinpath(*parts)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            stream = tf.extractfile(member)
+            assert stream is not None
+            with destination.open("xb") as output:
+                shutil.copyfileobj(stream, output)
+            files.append(destination)
+            seen.add(parts[1])
+        if seen != ids:
+            raise ValueError("Result archive is missing validation files for a measured binder")
+    return rows, files
+
+
+def _import_colab_results(run_dir: Path) -> None:
+    """Import all saved Colab jobs together; preserve originals and refuse conflicts."""
+    import hashlib
+    import os
+    import shutil
+    import tarfile
+    import tempfile
+
+    from bindsight.runners.job_exec import _binder_id_prefix
+
+    design_dir = run_dir / "design"
+    _check_import_destination(design_dir, run_dir)
+    downloads = {p.name: p for p in design_dir.glob("*.tar.gz") if p.name != "results.tar.gz"}
+    specs = sorted(design_dir.glob("*.spec.json"))
+    if not specs:
+        if downloads:
+            raise click.ClickException(
+                "Downloaded results have no saved Colab .spec.json inputs. Preserve the old "
+                "notebooks/results and regenerate notebooks with `bindsight design RUN --backend colab`."
+            )
+        return
+    expected_names = {p.name.removesuffix(".spec.json") + ".tar.gz" for p in specs}
+    if unexpected := downloads.keys() - expected_names:
+        raise click.ClickException(
+            f"Unrecognized Colab result archive(s): {', '.join(sorted(unexpected))}"
+        )
+    missing = expected_names - downloads.keys()
+    if missing:
+        raise click.ClickException(
+            "Download all Colab results into the design directory first; missing: "
+            + ", ".join(sorted(missing))
+        )
+
+    def digest(path: Path) -> bytes:
+        with path.open("rb") as stream:
+            return hashlib.file_digest(stream, "sha256").digest()
+
+    lock = design_dir / ".colab-import.lock"
+    _check_import_destination(lock, run_dir)
+    try:
+        lock_fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError as error:
+        raise click.ClickException(
+            f"A Colab import lock already exists: {lock}. Wait for the other validation; "
+            "if it stopped, remove only this stale lock before retrying."
+        ) from error
+    try:
+        inputs = {}
+        target_archives = []
+        for spec_path in specs:
+            name = spec_path.name.removesuffix(".spec.json") + ".tar.gz"
+            _check_import_destination(spec_path, run_dir)
+            _check_import_destination(downloads[name], run_dir)
+            if downloads[name].stat().st_size > 8 * 1024**3:
+                raise ValueError("Compressed result archive exceeds the import size limit")
+            inputs[name] = {
+                "archive_sha256": digest(downloads[name]).hex(),
+                "spec_sha256": digest(spec_path).hex(),
+            }
+            expected = json.loads(spec_path.read_text(encoding="utf-8"))
+            target_archives.append(
+                design_dir / "_targets" / (_binder_id_prefix(expected) + ".tar.gz")
+            )
+        receipt_path = design_dir / "colab-imports.json"
+        _check_import_destination(receipt_path, run_dir)
+        receipt = {"schema": "bindsight-colab-import/1", "inputs": inputs}
+        if receipt_path.exists():
+            if json.loads(receipt_path.read_text(encoding="utf-8")) != receipt:
+                raise ValueError(
+                    "Previously imported Colab inputs changed; preserve them in a separate run"
+                )
+            # Deliberate later revalidation may replace metrics and per-target archives.
+            # Do not restore old Colab scores over the newer validator's output.
+            for path in [design_dir / "metrics.jsonl", *target_archives]:
+                _check_import_destination(path, run_dir)
+            if (design_dir / "metrics.jsonl").is_file() and all(
+                p.is_file() for p in target_archives
+            ):
+                return
+        # Nothing reaches run outputs until every archive and destination passes.
+        with tempfile.TemporaryDirectory(prefix=".colab-import-", dir=design_dir) as temporary:
+            stage = Path(temporary)
+            metrics_path = design_dir / "metrics.jsonl"
+            _check_import_destination(metrics_path, run_dir)
+            rows = (
+                [
+                    json.loads(line)
+                    for line in metrics_path.read_text(encoding="utf-8").splitlines()
+                    if line.strip()
+                ]
+                if metrics_path.exists()
+                else []
+            )
+            by_id = {row["binder_id"]: row for row in rows}
+            if len(by_id) != len(rows):
+                raise ValueError("Existing design metrics contain duplicate binder identities")
+            transfers: list[tuple[Path, Path]] = []
+            imported_ids: set[str] = set()
+            for index, spec_path in enumerate(specs):
+                _check_import_destination(spec_path, run_dir)
+                name = spec_path.name.removesuffix(".spec.json") + ".tar.gz"
+                spec_bytes = spec_path.read_bytes()
+                if hashlib.sha256(spec_bytes).hexdigest() != inputs[name]["spec_sha256"]:
+                    raise ValueError("Saved Colab spec changed during import")
+                expected = json.loads(spec_bytes)
+                original = downloads[name]
+                _check_import_destination(original, run_dir)
+                if original.stat().st_size > 8 * 1024**3:
+                    raise ValueError("Compressed result archive exceeds the import size limit")
+                job_stage = stage / str(index)
+                job_stage.mkdir()
+                archive = job_stage / "result.tar.gz"
+                shutil.copyfile(original, archive)
+                if digest(archive).hex() != inputs[name]["archive_sha256"]:
+                    raise ValueError("Downloaded Colab archive changed during import")
+                imported, files = _read_colab_archive(archive, expected, job_stage)
+                for row in imported:
+                    binder = row["binder_id"]
+                    if binder in imported_ids or (binder in by_id and by_id[binder] != row):
+                        raise ValueError(f"Conflicting metrics for binder {binder}")
+                    imported_ids.add(binder)
+                    by_id[binder] = row
+                target = design_dir / "_targets" / (_binder_id_prefix(expected) + ".tar.gz")
+                transfers.append((archive, target))
+                transfers.extend((p, run_dir / p.relative_to(job_stage)) for p in files)
+            destinations: set[Path] = set()
+            for source, destination in transfers:
+                _check_import_destination(destination, run_dir)
+                if destination in destinations:
+                    raise ValueError(f"Duplicate result destination: {destination}")
+                destinations.add(destination)
+                if destination.exists() and (
+                    not destination.is_file() or digest(source) != digest(destination)
+                ):
+                    raise ValueError(
+                        f"Existing result differs; refusing to overwrite {destination}"
+                    )
+            for source, destination in transfers:
+                if destination.exists():
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with source.open("rb") as incoming, destination.open("xb") as output:
+                    shutil.copyfileobj(incoming, output)
+            combined = stage / "metrics.jsonl"
+            combined.write_text(
+                "".join(json.dumps(row) + "\n" for row in by_id.values()),
+                encoding="utf-8",
+                newline="\n",
+            )
+            combined.replace(metrics_path)
+            staged_receipt = stage / "colab-imports.json"
+            staged_receipt.write_text(
+                json.dumps(receipt, indent=2) + "\n", encoding="utf-8", newline="\n"
+            )
+            staged_receipt.replace(receipt_path)
+    except (ValueError, KeyError, TypeError, OSError, EOFError, tarfile.TarError) as error:
+        raise click.ClickException(f"Cannot import Colab results: {error}") from error
+    finally:
+        os.close(lock_fd)
+        lock.unlink()
+
+
 def _finalize_validate(run_dir: Path) -> int:
     """Build validate/validated.parquet from design metrics; unpack per-binder dirs."""
     import tarfile
@@ -2136,6 +2476,7 @@ def _finalize_validate(run_dir: Path) -> int:
     import pandas as pd
 
     design_dir = run_dir / "design"
+    _import_colab_results(run_dir)
     validate_dir = run_dir / "validate"
     validate_dir.mkdir(parents=True, exist_ok=True)
 

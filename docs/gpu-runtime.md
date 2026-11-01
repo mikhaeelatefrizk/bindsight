@@ -103,10 +103,12 @@ probe's freeze reported no known vulnerabilities on 2026-11-01. The locally
 rebuilt Boltz wheel was excluded from that database lookup and checked separately
 for the metadata-only change. This is a scoped, dated result, not a complete
 security audit of all code or both scientific environments.
-DGL's distributed RPC deserialization advisory remains unpatched. Bindsight
-uses local graph operations and does not start distributed DGL/RPC services;
-exposing those services is unsupported. This limited use does not remove the
-vulnerable code from the installed dependency or establish comprehensive safety.
+DGL's distributed RPC deserialization advisory remains unpatched. Static review
+of the supported Bindsight workflow and pinned RFdiffusion/SE3 source found local
+graph operations and no calls to distributed server/RPC entry points. DGL still
+imports and retains the vulnerable RPC code. DistDGL/RPC use is unsupported;
+the source review is not a runtime network-isolation guarantee or a complete
+security audit.
 
 The NVIDIA CUDA libraries have proprietary licence terms separate from the
 permissive Python packages. See the scoped

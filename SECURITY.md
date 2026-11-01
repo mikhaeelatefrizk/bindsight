@@ -103,10 +103,12 @@ compatibility checks do not establish numerical equivalence between runtimes.
 **Remaining known advisory:** DGL
 [GHSA-3x5x-fw77-g54c](https://github.com/advisories/GHSA-3x5x-fw77-g54c)
 covers the installed 1.0.2 library and lists no patched release. It concerns
-pickle deserialization in distributed RPC services. Bindsight uses local graph
-operations and does not start those services; distributed DGL/RPC use is
-unsupported. That restriction does not remove the vulnerable code or justify
-calling the complete GPU environment free of known vulnerabilities.
+pickle deserialization in distributed RPC services. Static review of the
+supported Bindsight workflow and pinned RFdiffusion/SE3 source found local graph
+operations and no calls to distributed server/RPC entry points. DGL nevertheless
+imports and retains the vulnerable RPC code. DistDGL/RPC use is unsupported;
+this source review is not a runtime network-isolation guarantee and does not
+justify calling the complete GPU environment free of known vulnerabilities.
 
 A real T4 design-component probe passed, but used Hydra 1.3.6 before the later
 advisory review. A separate T4 prediction probe passed imports and CUDA
