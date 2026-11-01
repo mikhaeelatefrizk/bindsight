@@ -68,6 +68,20 @@ adjustments are recorded in the setup receipt. A changed recipe rebuilds its
 owned scientific environments; upgrading Bindsight does not patch an old
 environment in place. See the [runtime guide](docs/gpu-runtime.md).
 
+The package also raises its direct dependency minimums to the versions already
+used in the audited installation: Pydantic 2.14.2, Requests 2.34.2, Jinja2 3.1.6
+and, for discovery, Biopython 1.88. Earlier minimums allowed an upgrade to retain
+affected installed versions even though fresh installations resolved newer ones.
+The relevant upstream fixes include
+[Pydantic validation](https://github.com/pydantic/pydantic/security/advisories/GHSA-3r8g-cqwr-jr29),
+[Pydantic JSON validation](https://github.com/pydantic/pydantic/security/advisories/GHSA-qpmf-fgh3-ff25),
+[Requests](https://github.com/psf/requests/security/advisories/GHSA-gc5v-m9x4-r6x2),
+[Jinja 3.1.6](https://github.com/pallets/jinja/releases/tag/3.1.6) and
+[Biopython](https://github.com/advisories/GHSA-x3vf-39hj-gxr4).
+Their exploitability through Bindsight was not established. These requirement
+changes preserve the tested dependency versions; they do not constitute a claim
+that every third-party component is free of vulnerabilities.
+
 The candidate pins PyTorch 2.14.1, beyond the 2.10.0 fix for checkpoint
 deserialization advisory
 [GHSA-63cw-57p8-fm3p](https://github.com/advisories/GHSA-63cw-57p8-fm3p).

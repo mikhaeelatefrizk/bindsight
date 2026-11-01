@@ -824,7 +824,7 @@ def provision(
         str(boltz_wheel),
         f"trifast=={pins.BOLTZ_TRIFAST}",
         f"numpy=={pins.BOLTZ_NUMPY}",
-        "biopython>=1.83,<2",
+        "biopython>=1.88,<2",
     )
     pip("boltz", str(source))
     phase(

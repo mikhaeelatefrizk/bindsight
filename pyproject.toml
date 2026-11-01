@@ -53,14 +53,14 @@ classifiers = [
 # -----------------------------------------------------------------------------
 dependencies = [
     "click>=8.1",
-    "pydantic>=2.6",
+    "pydantic>=2.14.2",
     "pyyaml>=6.0",
-    "requests>=2.32",
+    "requests>=2.34.2",
     "certifi>=2026.10.19", # emSign trust-store incident: exclude affected bundles
     "rich>=13.7",          # CLI output formatting
     "tenacity>=8.4",       # API retry policies
     "platformdirs>=4.2",   # cache locations
-    "jinja2>=3.1",         # Colab/Modal notebook templating
+    "jinja2>=3.1.6",       # Colab/Modal notebook templating
     # Imported directly by report/web/app.py, which marks its own
     # already-escaped JSON safe. It arrives with jinja2 either way, but a
     # module this project imports is a module this project declares.
@@ -80,7 +80,7 @@ discover = [
     "pyarrow>=23.0.1,<25",
     "numpy>=1.26,<3",
     "scipy>=1.11,<2",      # arrives via pydeseq2; its numerics move DEG results
-    "biopython>=1.83,<2",
+    "biopython>=1.88,<2",
     "openpyxl>=3.1",       # parse the SURFY surfaceome .xlsx
 ]
 report = [

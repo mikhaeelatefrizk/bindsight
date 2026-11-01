@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.3.8] - 2026-11-01
 
+### Security
+
+- Raise dependency minimums to the already tested Pydantic 2.14.2, Requests
+  2.34.2, Jinja2 3.1.6 and Biopython 1.88. Existing installations can no longer
+  satisfy these requirements with the older affected versions. Keep the
+  recorded scientific versions unchanged and align the discovery environment's
+  installer and certificate requirements with the security bootstrap.
+
 ### Supported scientific runtime
 
 - Replace the managed RFdiffusion Python 3.9 environment with Python 3.11.18

@@ -13,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from packaging.requirements import Requirement
 
 from bindsight.runners import gpu_recipe as pins
 from bindsight.runners import gpu_runtime as runtime
@@ -121,6 +122,15 @@ def test_provision_uses_exact_interpreters_and_preserves_mode_boundary(
         pins.TORCH_WHEEL in argv and any("boltz-2.0.3+bindsight.1" in arg for arg in argv)
         for argv in installs
     )
+    biopython = [
+        Requirement(argument)
+        for argv in installs
+        for argument in argv
+        if argument.startswith("biopython")
+    ]
+    assert len(biopython) == 1
+    assert "1.86" not in biopython[0].specifier  # GHSA-x3vf-39hj-gxr4.
+    assert "1.88" in biopython[0].specifier
     assert not any("python=3.9" in argv for argv in commands)
 
 
