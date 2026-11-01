@@ -38,6 +38,7 @@ from typing import Any
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
+from bindsight.archive_bounds import open_bounded_tar
 from bindsight.pipelines.caveats import DISCOVERY_LIMITATIONS
 from bindsight.report.coverage import annotation_coverage
 from bindsight.report.fit_diagnostics import fit_summary
@@ -244,7 +245,7 @@ def _binder_structures(
 
     for archive in sorted(targets_dir.glob("*.tar.gz")):
         try:
-            with tarfile.open(archive, encoding="utf-8") as tf:
+            with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
                 for member in tf.getmembers():
                     name = PurePosixPath(member.name)
                     if name.suffix != ".cif" or not member.isfile():
@@ -314,7 +315,7 @@ def _binder_sequences(run_dir: Path) -> dict[str, str]:
         return sequences
     for archive in sorted(targets_dir.glob("*.tar.gz")):
         try:
-            with tarfile.open(archive, encoding="utf-8") as tf:
+            with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
                 for member in tf.getmembers():
                     name = PurePosixPath(member.name)
                     if name.suffix != ".fasta" or not member.isfile():

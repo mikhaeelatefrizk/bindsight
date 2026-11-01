@@ -696,7 +696,7 @@ def test_the_external_tool_seam_has_a_wall_clock() -> None:
         seen.update(kwargs)
         return _sp.CompletedProcess(cmd, 0, "", "")
 
-    with patch.object(_sp, "run", _fake_run):
+    with patch.object(job_exec, "_stream_command", _fake_run):
         job_exec._run(["true"])
 
     assert "timeout" in seen, "the external-tool seam runs without a wall clock"

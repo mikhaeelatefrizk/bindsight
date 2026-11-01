@@ -32,6 +32,7 @@ from typing import Any
 
 from bindsight import __version__
 from bindsight import cost as cost_mod
+from bindsight.archive_bounds import open_bounded_tar
 from bindsight.benchmark.statistics import cluster_bootstrap_interval, wilson_interval
 from bindsight.plugins import get_designer, get_runner, runner_accepts
 
@@ -440,8 +441,6 @@ def stage_binder_artifacts(archives: list[Path], out_dir: Path) -> dict[str, int
     Returns:
         Counts of what was removed and written.
     """
-    import tarfile
-
     binders = Path(out_dir) / "binders"
     binders.mkdir(parents=True, exist_ok=True)
 
@@ -456,7 +455,7 @@ def stage_binder_artifacts(archives: list[Path], out_dir: Path) -> dict[str, int
         if not Path(archive).is_file():
             LOG.warning("results archive missing, cannot stage: %s", archive)
             continue
-        with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
+        with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
             for member in tf.getmembers():
                 if not member.isfile():
                     continue

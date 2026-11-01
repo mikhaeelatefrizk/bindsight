@@ -111,8 +111,8 @@ bindsight design runs/my-analysis --backend kaggle --designer rfdiff_mpnn --vali
 
 Remove `--dry-run` when ready to submit. After successful retrieval, use the same
 `validate`, `rank`, and `report` commands above. See the
-[Kaggle setup guide](../benchmarks/RUN_ON_KAGGLE.md) and
+[Kaggle setup guide](https://github.com/mikhaeelatefrizk/bindsight/blob/main/benchmarks/RUN_ON_KAGGLE.md) and
 [current runtime status](gpu-runtime.md). The preserved
-[historical benchmark walkthrough](../benchmarks/designer_benchmark/RUN_FREE_GPU.md)
+[historical benchmark walkthrough](https://github.com/mikhaeelatefrizk/bindsight/blob/v0.3.7/benchmarks/designer_benchmark/RUN_FREE_GPU.md)
 describes the earlier campaign; its old environment versions are not the current
 managed setup.

@@ -296,11 +296,14 @@ def test_source_identity_matches_wheel_code_and_ignores_documentation(tmp_path):
     assert second["sha256"] != first["sha256"]
 
 
-def test_recipe_fingerprint_changes_with_metadata_helper(monkeypatch):
+@pytest.mark.parametrize("helper", ["boltz_runtime_wheel.py", "archive_bounds.py"])
+def test_recipe_fingerprint_changes_with_metadata_helper(monkeypatch, helper):
     first = pins.recipe()
     assert {
+        "archive_bounds.py",
         "boltz_runtime_wheel.py",
         "boltz_assets.py",
+        "boltz_msa.py",
         "job_exec.py",
         "tools.py",
         "boltz_compat.py",
@@ -309,9 +312,7 @@ def test_recipe_fingerprint_changes_with_metadata_helper(monkeypatch):
 
     def changed(path):
         data = read(path)
-        return (
-            data + b"\n# changed implementation" if path.name == "boltz_runtime_wheel.py" else data
-        )
+        return data + b"\n# changed implementation" if path.name == helper else data
 
     monkeypatch.setattr(Path, "read_bytes", changed)
     second = pins.recipe()

@@ -391,7 +391,17 @@ def build_boltz_cmd(
         raise ValueError(f"diffusion_samples must be at least 1; got {diffusion_samples}")
     if max_parallel_samples < 1:
         raise ValueError(f"max_parallel_samples must be at least 1; got {max_parallel_samples}")
-    cmd = [*_boltz_command(), "predict", str(yaml_path), "--out_dir", str(out_dir)]
+    # The pinned Click option is a flag whose actual default is False despite
+    # its help text saying True. The inter-chain PAE metric needs this matrix;
+    # requesting serialization leaves the model parameters and draws unchanged.
+    cmd = [
+        *_boltz_command(),
+        "predict",
+        str(yaml_path),
+        "--out_dir",
+        str(out_dir),
+        "--write_full_pae",
+    ]
     if use_msa_server:
         cmd.append("--use_msa_server")
     if seed is not None:

@@ -122,7 +122,7 @@ def test_failure_retains_output_and_resets_recording(
             raise FileNotFoundError("missing scientific executable")
         return subprocess.CompletedProcess(args[0], 2, "before failure", "model failed")
 
-    monkeypatch.setattr(job_exec.subprocess, "run", spawn)
+    monkeypatch.setattr(job_exec, "_stream_command", spawn)
 
     def designer(*args):
         job_exec._run(["model", "--seed", "42"])

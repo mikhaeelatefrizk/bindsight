@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from bindsight import archive_bounds
 from bindsight.runners import installer_security, tools
 from bindsight.runners.boltz_runtime_wheel import RUNTIME_VERSION as _BOLTZ_RUNTIME_VERSION
 
@@ -108,14 +109,20 @@ def recipe() -> dict[str, Any]:
         "installer_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),
         "recipe_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "implementation_helpers_sha256": {
-            name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
-            for name in (
-                "boltz_runtime_wheel.py",
-                "boltz_assets.py",
-                "job_exec.py",
-                "tools.py",
-                "boltz_compat.py",
-            )
+            "archive_bounds.py": hashlib.sha256(
+                Path(archive_bounds.__file__).read_bytes()
+            ).hexdigest(),
+            **{
+                name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                for name in (
+                    "boltz_runtime_wheel.py",
+                    "boltz_assets.py",
+                    "boltz_msa.py",
+                    "job_exec.py",
+                    "tools.py",
+                    "boltz_compat.py",
+                )
+            },
         },
     }
     body["id"] = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()

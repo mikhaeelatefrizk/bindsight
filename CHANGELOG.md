@@ -32,6 +32,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Retain actual commands, precision, package versions, model hashes and raw
   scientific outputs in new GPU job evidence. Missing version or model outputs
   cannot silently become successful validation.
+- Stream bounded, redacted scientific progress and retain partial evidence
+  during hosted jobs so a session limit cannot erase all diagnostics. Request
+  Boltz's full PAE output explicitly for the inter-chain error calculation;
+  keep its model settings and hosted MSA default unchanged.
+- Bound the hosted MSA phase and validate its downloaded archive before
+  extraction. A stalled alignment service fails with retained diagnostics
+  instead of silently retrying for the entire GPU session.
+- Bound decompression and extended tar headers before parsing both MSA and
+  imported scientific result archives, retaining existing path and type checks.
 - Transfer large development wheels to Kaggle through a private, version-pinned
   input with a full integrity check, avoiding Kaggle's script-size limit. Pin
   remote release bootstraps to verified published artifacts.

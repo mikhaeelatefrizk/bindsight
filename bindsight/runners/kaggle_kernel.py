@@ -139,7 +139,8 @@ def build_kernel_metadata(
 
 
 _BODY = r'''
-import base64, gzip, hashlib, json, os, pathlib, shlex, shutil, signal, subprocess, sys, threading, time, traceback
+import base64, gzip, hashlib, json, os, pathlib, re, shlex, shutil, signal, stat, subprocess, sys, tempfile, threading, time, traceback
+from urllib.parse import urlsplit, urlunsplit
 from collections.abc import Callable
 
 OUTPUT = pathlib.Path("/kaggle/working")
@@ -157,26 +158,177 @@ env["UV_PYTHON_INSTALL_DIR"] = str(SCRATCH / "python")
 env["PYTHONNOUSERSITE"] = "1"
 
 
-def run(argv, *, environment=None):
-    """Retain complete installer/runtime output and enforce a bounded command."""
-    print("\n+ " + shlex.join([str(x) for x in argv]), flush=True)
-    with (EVIDENCE / "commands.log").open("a", encoding="utf-8") as log:
-        log.write("\n+ " + shlex.join([str(x) for x in argv]) + "\n")
-        log.flush()
-        with subprocess.Popen([str(x) for x in argv], env=environment or env,
-                              stdout=log, stderr=subprocess.STDOUT, start_new_session=True) as process:
+_DIAGNOSTICS_LOCK = threading.Lock()
+_SNAPSHOT_LOCK = threading.Lock()
+_MONITOR_STOP = threading.Event()
+_PHASE = ["bootstrap"]
+_STARTED = time.monotonic()
+_LAST_OUTPUT = [_STARTED]
+_ACTIVE_PID = [None]
+_LOG_LIMIT = 4 * 2**20
+_LINE_LIMIT = 16 * 1024
+_SNAPSHOT_FILE_LIMIT = 8 * 2**20
+_SNAPSHOT_TOTAL_LIMIT = 64 * 2**20
+_SNAPSHOT_STATE = {}
+_COMMAND_TIMEOUT = 21600
+_READER_JOIN_TIMEOUT = 10
+_SECRET_KEY = re.compile(r"(?i)(?:token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)")
+
+
+def outer_redact(text):
+    """Use the executor's credential rules without importing its dependencies."""
+    for key, value in os.environ.items():
+        if (_SECRET_KEY.search(key) or key == "KAGGLE_KEY") and len(value) >= 8:
+            text = text.replace(value, "<redacted>")
+            if "\n" in value or "\r" in value:
+                for line in value.splitlines():
+                    if line:
+                        text = text.replace(line, "<redacted>")
+    def url(match):
+        try:
+            parsed = urlsplit(match.group())
+        except ValueError:
+            return "<redacted malformed URL>"
+        return urlunsplit((parsed.scheme, parsed.netloc.rsplit("@", 1)[-1], parsed.path,
+                           "<redacted>" if parsed.query else "", ""))
+    text = re.sub(r"https?://[^\s\"'<>]+", url, text)
+    text = re.sub(r"(?i)\bBearer\s+[\w.~+/=-]+", "Bearer <redacted>", text)
+    text = re.sub(r"\b(?:hf_|gh[pousr]_|sk-)[A-Za-z0-9_-]{12,}", "<redacted>", text)
+    return re.sub(r"(?i)\b(token|secret|password|api[_-]?key|authorization|cookie|access[_-]?key)"
+                  r"([\"']?\s*[:=]\s*[\"']?)[^\s\"',;]+", r"\1\2<redacted>", text)
+
+
+def diagnostic(text):
+    """Stream redacted progress and keep at most two bounded, flushed log files."""
+    safe = outer_redact(text)
+    data = (safe if safe.endswith("\n") else safe + "\n").encode("utf-8", errors="replace")
+    if len(data) > _LOG_LIMIT:
+        marker = b"<bindsight: diagnostic truncated>\n"
+        data = (marker + data[-max(1, _LOG_LIMIT - len(marker)):])[-_LOG_LIMIT:]
+    with _DIAGNOSTICS_LOCK:
+        path = EVIDENCE / "commands.log"
+        if path.exists() and path.stat().st_size + len(data) > _LOG_LIMIT:
+            path.replace(EVIDENCE / "commands.previous.log")
+        with path.open("ab") as log:
+            log.write(data)
+            log.flush()
+        try:
+            print(safe, end="" if safe.endswith("\n") else "\n", flush=True)
+        except (OSError, UnicodeError, ValueError):
+            pass  # A closed/unencodable console must not stop the scientific child.
+
+
+class OutputLines:
+    """Redact complete records; discard oversized lines without splitting secrets."""
+    def __init__(self, emit):
+        self.emit = emit
+        self.pending = bytearray()
+        self.discarding = False
+
+    def feed(self, data):
+        for byte in data:
+            if byte in (10, 13):
+                if self.pending:
+                    self.emit(self.pending.decode("utf-8", errors="replace") + "\n")
+                self.pending.clear()
+                self.discarding = False
+            elif not self.discarding:
+                self.pending.append(byte)
+                if len(self.pending) > _LINE_LIMIT:
+                    self.pending.clear()
+                    self.discarding = True
+                    self.emit("<bindsight: oversized output line omitted>\n")
+
+    def close(self):
+        if self.pending:
+            self.emit(self.pending.decode("utf-8", errors="replace") + "\n")
+        self.pending.clear()
+
+
+def stop_process(process):
+    """Terminate the owned group and observed descendants, including new sessions."""
+    descendants = []
+    try:
+        import psutil
+        descendants = psutil.Process(process.pid).children(recursive=True)
+    except Exception as error:
+        diagnostic("[termination warning] descendant inventory unavailable: " + type(error).__name__ + "\n")
+    for child in reversed(descendants):
+        try:
+            child.terminate()
+        except Exception:
+            pass
+    try:
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGTERM)
+        else:
+            process.terminate()
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
+    except ProcessLookupError:
+        pass
+    finally:
+        # The group may still exist after its leader exits on SIGTERM.
+        if os.name == "posix":
             try:
-                code = process.wait(timeout=21600)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait(timeout=10)
-                raise
-            if code:
-                raise subprocess.CalledProcessError(code, argv)
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        for child in reversed(descendants):
+            try:
+                child.kill()
+            except Exception:
+                pass
+
+
+def run(argv, *, environment=None):
+    """Tee live child output without waiting for command completion or finalization."""
+    command = [str(x) for x in argv]
+    shown = [outer_redact(arg) for arg in command]
+    for index, arg in enumerate(command[:-1]):
+        if _SECRET_KEY.fullmatch(arg.lstrip("-")):
+            shown[index + 1] = "<redacted>"
+    diagnostic("\n+ " + shlex.join(shown) + "\n")
+    child_env = dict(environment if environment is not None else env)
+    child_env["PYTHONUNBUFFERED"] = "1"
+    process = subprocess.Popen(command, env=child_env, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, start_new_session=True, bufsize=0)
+    _ACTIVE_PID[0] = process.pid
+    read_errors = []
+    def read_output():
+        lines = OutputLines(diagnostic)
+        try:
+            while True:
+                data = process.stdout.read(4096)
+                if not data:
+                    break
+                _LAST_OUTPUT[0] = time.monotonic()
+                lines.feed(data)
+            lines.close()
+        except (OSError, ValueError) as error:
+            read_errors.append(type(error).__name__)
+    reader = threading.Thread(target=read_output, daemon=True)
+    reader.start()
+    try:
+        code = process.wait(timeout=_COMMAND_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        stop_process(process)
+        raise subprocess.TimeoutExpired(shown, _COMMAND_TIMEOUT) from None
+    except BaseException:
+        stop_process(process)
+        raise
+    finally:
+        reader.join(timeout=_READER_JOIN_TIMEOUT)
+        if reader.is_alive():
+            diagnostic("<bindsight: output pipe remained open after command exit>\n")
+        process.stdout.close()
+        _ACTIVE_PID[0] = None
+        if read_errors:
+            diagnostic("<bindsight: output reader stopped: " + read_errors[0] + ">\n")
+    if code:
+        raise subprocess.CalledProcessError(code, shown)
 
 
 def disk_report(label):
@@ -197,7 +349,7 @@ def disk_report(label):
         except OSError:
             continue
         parts.append(f"{path} {u.free / 2**30:.1f}/{u.total / 2**30:.1f} GiB free")
-    print(f"[disk @ {label}] " + " | ".join(parts), flush=True)
+    diagnostic(f"[disk @ {label}] " + " | ".join(parts) + "\n")
 
 
 _VRAM_PEAK = [0]
@@ -206,10 +358,13 @@ _VRAM_SAMPLES = []
 
 def _vram_now():
     """Device-wide VRAM in use, in MiB, or None if it cannot be read."""
-    out = subprocess.run(
-        ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
-        capture_output=True, text=True,
-    )
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
     if out.returncode != 0 or not out.stdout.strip():
         return None
     try:
@@ -231,41 +386,84 @@ def _vram_sampler():
     and it does so regardless of which environment or subprocess holds the
     allocation — which is the reason not to use torch's own counter here.
     """
-    while True:
+    while not _MONITOR_STOP.is_set():
         v = _vram_now()
         if len(_VRAM_SAMPLES) < 20000:
             _VRAM_SAMPLES.append({"unix_time": time.time(), "memory_mib": v})
         if v is not None and v > _VRAM_PEAK[0]:
             _VRAM_PEAK[0] = v
-        time.sleep(5)
+        _MONITOR_STOP.wait(5)
 
 
 threading.Thread(target=_vram_sampler, daemon=True).start()
 
 
+def gpu_reading():
+    """Bound driver queries so diagnostics cannot indefinitely stall the executor."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total",
+             "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=5)
+        if out.returncode:
+            return {"error": "nvidia-smi exit " + str(out.returncode)}
+        rows = []
+        for row in out.stdout.strip().splitlines():
+            name, utilization, used, total = [item.strip() for item in row.split(",")]
+            rows.append({"name": name, "utilization_percent": int(utilization),
+                         "memory_used_mib": int(used), "memory_total_mib": int(total)})
+        return {"devices": rows, "observed_unix_time": time.time()}
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return {"error": type(error).__name__}
+
+
 def gpu_report(label):
-    """Print current and peak VRAM, so every memory claim is a measurement."""
-    out = subprocess.run(
-        ["nvidia-smi", "--query-gpu=name,memory.used,memory.total",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True,
-    )
-    if out.returncode == 0 and out.stdout.strip():
-        print(
-            f"[gpu @ {label}] {out.stdout.strip()} | peak so far {_VRAM_PEAK[0]} MiB",
-            flush=True,
-        )
+    """Record current GPU utilization and the sampled memory high-water mark."""
+    diagnostic(f"[gpu @ {label}] {gpu_reading()} | peak so far {_VRAM_PEAK[0]} MiB\n")
 
 
 def step(msg):
-    print(f"\n========== {msg} ==========", flush=True)
+    _PHASE[0] = msg
+    diagnostic(f"\n========== {msg} ==========\n")
     disk_report(msg)
     gpu_report(msg)
 
 
 
+def atomic_bytes(path, data):
+    """Publish within the owned output tree using no-follow directory handles."""
+    relative = path.relative_to(EVIDENCE)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    directory = os.open(EVIDENCE, flags)
+    pending = ".pending-" + os.urandom(12).hex()
+    try:
+        for part in relative.parts[:-1]:
+            if part in {"", ".", ".."}:
+                raise ValueError("Unsafe evidence path")
+            try:
+                os.mkdir(part, dir_fd=directory)
+            except FileExistsError:
+                pass
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        fd = os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                     0o600, dir_fd=directory)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(pending, relative.name, src_dir_fd=directory, dst_dir_fd=directory)
+        os.fsync(directory)
+    finally:
+        try:
+            os.unlink(pending, dir_fd=directory)
+        except FileNotFoundError:
+            pass
+        os.close(directory)
+
+
 def save_json(path, value):
-    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    atomic_bytes(path, (outer_redact(json.dumps(value, indent=2)) + "\n").encode("utf-8"))
 
 
 def read_attached_wheel(declared_path, filename, size, digest, input_root=pathlib.Path("/kaggle/input")):
@@ -295,21 +493,127 @@ def read_attached_wheel(declared_path, filename, size, digest, input_root=pathli
 
 
 def retain_failed_evidence():
-    """Keep bounded diagnostic artifacts; never copy environments or model caches."""
-    source = SCRATCH / (HANDLE_ID + "_work") / "evidence"
-    total = 0
-    if not source.is_dir() or source.is_symlink():
+    """Incrementally snapshot changed small evidence, never models or environments."""
+    if not _SNAPSHOT_LOCK.acquire(blocking=False):
         return
-    for path in sorted(source.rglob("*")):
-        if not path.is_file() or path.is_symlink():
-            continue
-        size = path.stat().st_size
-        if size > 64 * 2**20 or total + size > 256 * 2**20:
-            continue
-        destination = EVIDENCE / "job-evidence" / path.relative_to(source)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, destination)
-        total += size
+    directory = None
+    copied = 0
+    skipped = 0
+    try:
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        directory = os.open(SCRATCH, flags)
+        for part in (HANDLE_ID + "_work", "evidence"):
+            child = os.open(part, flags, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        total = sum(item[1] for item in _SNAPSHOT_STATE.values())
+        seen = 0
+        for root, dirs, files, root_fd in os.fwalk(".", dir_fd=directory,
+                                                 follow_symlinks=False):
+            parts = pathlib.PurePosixPath(root).parts
+            if len(parts) >= 8:
+                dirs.clear()
+            for name in sorted(files):
+                seen += 1
+                if seen > 5000:
+                    return
+                relative = pathlib.PurePosixPath(*parts, name)
+                if relative.suffix not in {".json", ".log", ".txt", ".csv", ".tsv", ".yaml", ".yml",
+                                           ".pdb", ".trb", ".cif", ".npz", ".fa", ".fasta", ".a3m"}:
+                    continue
+                try:
+                    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                 dir_fd=root_fd)
+                    with os.fdopen(fd, "rb") as source:
+                        before = os.fstat(source.fileno())
+                        signature = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+                        previous = _SNAPSHOT_STATE.get(str(relative))
+                        if (not stat.S_ISREG(before.st_mode) or before.st_size > _SNAPSHOT_FILE_LIMIT
+                                or (previous and previous[0] == signature)):
+                            continue
+                        data = source.read(_SNAPSHOT_FILE_LIMIT + 1)
+                        after = os.fstat(source.fileno())
+                    current = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
+                    if any((item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns) != signature
+                           for item in (after, current)) or len(data) != before.st_size:
+                        skipped += 1
+                        continue
+                    if relative.suffix in {".json", ".log", ".txt", ".csv", ".tsv", ".yaml", ".yml", ".fa", ".fasta", ".a3m"}:
+                        data = outer_redact(data.decode("utf-8", errors="replace")).encode("utf-8")
+                    revised_total = total - (previous[1] if previous else 0) + len(data)
+                    if revised_total > _SNAPSHOT_TOTAL_LIMIT:
+                        skipped += 1
+                        continue
+                    atomic_bytes(EVIDENCE / "job-evidence" / relative, data)
+                    _SNAPSHOT_STATE[str(relative)] = (signature, len(data))
+                    total = revised_total
+                    copied += 1
+                except OSError:
+                    skipped += 1
+        save_json(EVIDENCE / "snapshot.json", {"copied_this_pass": copied,
+                  "retained_files": len(_SNAPSHOT_STATE), "retained_bytes": total,
+                  "skipped_this_pass": skipped, "unix_time": time.time(),
+                  "file_limit_bytes": _SNAPSHOT_FILE_LIMIT, "total_limit_bytes": _SNAPSHOT_TOTAL_LIMIT})
+    except FileNotFoundError:
+        pass  # The executor has not created its evidence directory yet.
+    finally:
+        if directory is not None:
+            os.close(directory)
+        _SNAPSHOT_LOCK.release()
+
+
+def process_reading():
+    """Best-effort process RSS and cumulative CPU seconds, without a new dependency."""
+    pid = _ACTIVE_PID[0]
+    if pid is None:
+        return {"active_pid": None, "processes": []}
+    try:
+        import psutil
+        parent = psutil.Process(pid)
+        rows = []
+        for process in [parent, *parent.children(recursive=True)][:128]:
+            try:
+                cpu = process.cpu_times()
+                rows.append({"pid": process.pid, "name": process.name(),
+                             "rss_bytes": process.memory_info().rss,
+                             "cpu_seconds": cpu.user + cpu.system, "status": process.status()})
+            except (psutil.Error, OSError):
+                continue
+        return {"active_pid": pid, "processes": rows}
+    except Exception as error:
+        return {"active_pid": pid, "error": type(error).__name__}
+
+
+def heartbeat():
+    """Persist a live phase, last output age and bounded GPU diagnostic snapshot."""
+    current = None
+    files = sorted((EVIDENCE / "job-evidence").glob("attempt-*/current-command.json"),
+                   key=lambda path: path.stat().st_mtime_ns, reverse=True)
+    if files:
+        try:
+            if files[0].stat().st_size <= 64 * 1024:
+                current = json.loads(files[0].read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+    progress = {"schema": "bindsight-kaggle-progress/1", "unix_time": time.time(),
+                "elapsed_seconds": round(time.monotonic() - _STARTED, 1),
+                "phase": _PHASE[0], "last_output_seconds_ago": round(time.monotonic() - _LAST_OUTPUT[0], 1),
+                "current_command": current, "gpu": gpu_reading(), "processes": process_reading(),
+                "peak_device_memory_mib": _VRAM_PEAK[0]}
+    save_json(EVIDENCE / "heartbeat.json", progress)
+    diagnostic("[heartbeat] " + json.dumps(progress, sort_keys=True) + "\n")
+    save_json(EVIDENCE / "memory-progress.json", {"peak_device_memory_mib": _VRAM_PEAK[0],
+              "sample_count": len(_VRAM_SAMPLES), "recent_samples": _VRAM_SAMPLES[-12:]})
+
+
+def monitor_progress():
+    while not _MONITOR_STOP.is_set():
+        try:
+            retain_failed_evidence()
+            heartbeat()
+        except Exception as error:
+            diagnostic("[progress warning] " + type(error).__name__ + ": " + str(error) + "\n")
+        _MONITOR_STOP.wait(30)
 
 
 def cleanup():
@@ -321,6 +625,8 @@ def cleanup():
 
 
 status = {"passed": False, "stage": "bootstrap"}
+_monitor = threading.Thread(target=monitor_progress, daemon=True)
+_monitor.start()
 try:
     step("check requested T4 hardware")
     hardware = subprocess.run(
@@ -368,6 +674,7 @@ try:
                 "PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE"):
         job_env.pop(key, None)
     job_env.update(receipt["execution_environment"])
+    job_env["BINDSIGHT_GPU_DIAGNOSTICS"] = "1"
     # boltz_compat retains the audited precision=32 setting instead of bf16-mixed.
     step("materialise spec + target structure")
     spec_dir = SCRATCH / "spec"
@@ -387,9 +694,10 @@ try:
     status.update(passed=True, stage="complete")
 except BaseException as error:
     status["error"] = f"{type(error).__name__}: {error}"
-    (EVIDENCE / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
+    atomic_bytes(EVIDENCE / "error.txt", outer_redact(traceback.format_exc()).encode("utf-8"))
     raise
 finally:
+    _PHASE[0] = "finalize runtime evidence"
     retain_failed_evidence()
     for source_name in ("provision-receipt.json", "ready.json"):
         source_file = ROOT / source_name
@@ -403,14 +711,18 @@ finally:
                     frozen = subprocess.run(
                         [str(UV), "--no-config", "pip", "freeze", "--python", str(python)],
                         env=env, capture_output=True, text=True, check=True, timeout=60)
-                    (EVIDENCE / (name + "-final-freeze.txt")).write_text(frozen.stdout, encoding="utf-8")
+                    atomic_bytes(EVIDENCE / (name + "-final-freeze.txt"), outer_redact(frozen.stdout).encode("utf-8"))
             run([driver, "-I", "-c",
                  "from pathlib import Path; from bindsight.runners.gpu_runtime import collect_model_weights, write_json; "
                  "import sys; write_json(Path(sys.argv[3]), collect_model_weights(Path(sys.argv[1]), Path(sys.argv[2])))",
                  ROOT, SCRATCH / (HANDLE_ID + "_work") / "evidence", EVIDENCE / "model-weights.json"])
         except Exception as error:
             status["weight_receipt_error"] = str(error)
+    _MONITOR_STOP.set()
+    _monitor.join(timeout=15)
+    retain_failed_evidence()
     save_json(EVIDENCE / "result.json", status)
     save_json(EVIDENCE / "memory.json", {"peak_device_memory_mib": _VRAM_PEAK[0], "samples": _VRAM_SAMPLES})
-    cleanup()
+    if not _monitor.is_alive():
+        cleanup()
 '''

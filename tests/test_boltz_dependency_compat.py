@@ -53,17 +53,21 @@ def test_unknown_local_variant_is_not_accepted(tmp_path):
 
 def test_precision_receipt_names_actual_distribution(monkeypatch, capsys, tmp_path):
     module = _module(tmp_path / "main.py")
+    configure_msa = Mock()
     monkeypatch.setitem(sys.modules, "torch", _torch())
     monkeypatch.setattr(boltz_compat, "import_module", lambda _: module)
     monkeypatch.setattr(boltz_compat, "version", lambda _: RUNTIME_VERSION)
     monkeypatch.setattr(boltz_compat, "configure_precision", lambda *a, **kw: "32")
+    monkeypatch.setattr(boltz_compat, "configure_msa", configure_msa)
     assert boltz_compat.main(["predict", "input.yaml"]) == 0
+    configure_msa.assert_called_once_with(module)
     assert f"Boltz {RUNTIME_VERSION} precision=32" in capsys.readouterr().out
     module.cli.assert_called_once_with(args=["predict", "input.yaml"])
 
 
 def test_actual_cli_download_hook_refuses_changed_cache_before_prediction(monkeypatch, tmp_path):
     module = _module(tmp_path / "main.py")
+    configure_msa = Mock()
     original_download = Mock()
     module.download_boltz2 = original_download
     prediction = Mock()
@@ -79,9 +83,11 @@ def test_actual_cli_download_hook_refuses_changed_cache_before_prediction(monkey
     monkeypatch.setattr(boltz_compat, "import_module", lambda _: module)
     monkeypatch.setattr(boltz_compat, "version", lambda _: RUNTIME_VERSION)
     monkeypatch.setattr(boltz_compat, "configure_precision", lambda *a, **kw: "32")
+    monkeypatch.setattr(boltz_compat, "configure_msa", configure_msa)
     monkeypatch.setattr(boltz_compat, "prepare_boltz_assets", verified_download)
     with pytest.raises(ValueError, match="SHA256 mismatch"):
         boltz_compat.main(["predict", "input.yaml"])
+    configure_msa.assert_called_once_with(module)
     verified_download.assert_called_once_with(cache)
     original_download.assert_not_called()
     prediction.assert_not_called()

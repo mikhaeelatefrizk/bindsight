@@ -12,8 +12,11 @@ local DGL operations, imports and an SE3 rotation-equivariance check. That probe
 used Hydra 1.3.6; the final candidate requires the later 1.3.8 security fixes.
 A separate T4 prediction-component probe passed imports and CUDA operations
 with the final Boltz dependency patch below, including Hydra 1.3.8. It loaded
-no model weights and ran no predictions. A full RFdiffusion → ProteinMPNN → Boltz
-run of the final recipe is still pending.
+no model weights and ran no predictions. A full-workflow attempt installed the
+final recipe, completed RFdiffusion and ProteinMPNN, and reached the first Boltz
+command before its hosted session ended. That attempt did not return a completed
+prediction archive; its buffered child output cannot establish the stopping
+cause. A full RFdiffusion → ProteinMPNN → Boltz run is still pending.
 No live Colab or Modal run is established by the wrapper tests.
 
 ## Environment and source identity
@@ -55,6 +58,23 @@ SHA256 on the GPU host before installation. The dataset remains a private
 execution input for that run; it is not uploaded publicly or updated in place.
 This transport changes neither the supplied wheel nor the default exact-version
 download for published releases, and is not evidence of completed GPU inference.
+
+Scientific commands stream bounded, redacted progress and write command receipts.
+Kaggle also retains periodic progress and partial evidence during execution, so
+an abrupt hosted-session termination leaves diagnostics even when final cleanup
+cannot run. Boltz's hosted MSA service remains the default. Service queue or
+network delays are distinct from GPU inference, and an incomplete run is never
+reported as a successful prediction. Full PAE matrices are explicitly requested
+to support the inter-chain error calculation without changing model parameters.
+The hosted MSA phase has a 30-minute deadline, configurable through
+`BINDSIGHT_MSA_TIMEOUT` in seconds (up to six hours). Its downloaded archives
+must pass bounded path and file-type checks before extraction. This boundary
+also bounds decompression and extended archive headers before parsing them.
+Imported result archives use the same parser guard with their own size limits.
+The MSA deadline
+requires a Linux main thread with no existing alarm timer; an unsupported
+execution context fails explicitly. It does not replace an MSA with an empty
+alignment or change successful server responses.
 
 Generated Colab notebooks use the exact published version
 in a private driver. Modal's initial image installs that version through pip,

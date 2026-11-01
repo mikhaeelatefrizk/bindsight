@@ -31,6 +31,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from bindsight import __version__
+from bindsight.archive_bounds import open_bounded_tar
 
 if TYPE_CHECKING:  # pragma: no cover - typing only; runtime imports stay lazy
     from bindsight.config import RunConfig
@@ -1245,7 +1246,7 @@ def _count_designs(design_dir: Path) -> int | None:
     n = len({p for p in design_dir.rglob("*.pdb") if "validate" not in p.parts})
     for archive in sorted(design_dir.rglob("*.tar.gz")):
         try:
-            with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
+            with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
                 # Only the archive's own design/ members; the per-target tarballs
                 # nested inside results.tar.gz are counted from their own files.
                 n += sum(
@@ -1955,7 +1956,7 @@ def _archive_carries_designs(archive: Path) -> bool:
     if not archive.is_file():
         return False
     try:
-        with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
+        with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
             return any(
                 m.isfile() and m.name.startswith("design/") and m.name.endswith(".fasta")
                 for m in tf.getmembers()
@@ -1975,7 +1976,6 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
     Returns the number of targets revalidated.
     """
     import shutil
-    import tarfile
     import tempfile
 
     from bindsight.design._common import make_cache_key, submit_via_runner
@@ -2015,7 +2015,7 @@ def _launch_revalidate(run_dir: Path, *, backend: str, validator: str) -> int:
         with tempfile.TemporaryDirectory() as tmp:
             staged = Path(tmp) / "design"
             staged.mkdir(parents=True, exist_ok=True)
-            with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
+            with open_bounded_tar(tar_path, max_bytes=8 * 1024**3, max_members=100_000) as tf:
                 for m in tf.getmembers():
                     if m.isfile() and m.name.startswith("design/"):
                         src = tf.extractfile(m)
@@ -2193,7 +2193,7 @@ def _read_colab_archive(
     path_spellings: dict[str, str] = {}
     required_directories: set[str] = set()
     total = 0
-    with tarfile.open(archive, "r:gz", encoding="utf-8") as tf:
+    with open_bounded_tar(archive, max_bytes=8 * 1024**3, max_members=100_000) as tf:
         for member in tf:
             name = member.name
             parts = PurePosixPath(name).parts
@@ -2485,7 +2485,7 @@ def _finalize_validate(run_dir: Path) -> int:
     if targets_dir.exists():
         for tar_path in targets_dir.glob("*.tar.gz"):
             try:
-                with tarfile.open(tar_path, "r:gz", encoding="utf-8") as tf:
+                with open_bounded_tar(tar_path, max_bytes=8 * 1024**3, max_members=100_000) as tf:
                     for m in tf.getmembers():
                         if m.name.startswith("validate/"):
                             tf.extract(m, validate_dir.parent, filter="data")
