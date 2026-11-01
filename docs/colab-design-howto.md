@@ -17,8 +17,9 @@ See [validation status](validation-status.md) and the
   `epitopes/epitopes.parquet`, and target structure files available. The examples
   below use `runs/my-analysis`; replace it with your own run directory.
 - Generate the notebook with the published Bindsight release you intend to run.
-  Its setup verifies and installs that exact release from PyPI. Unpublished
-  checkout changes are not transferred to Colab.
+  Its setup verifies and installs that exact release from PyPI. Maintainers can
+  explicitly select a candidate wheel through the Python runner interface;
+  ordinary notebook generation never implicitly transfers checkout changes.
 - Use a Colab GPU allocation that meets the [managed runtime requirements](gpu-runtime.md),
   including sufficient GPU memory and setup disk. Free access does not guarantee
   those resources. Check your account's available runtime and quota before starting.

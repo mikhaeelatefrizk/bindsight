@@ -31,6 +31,14 @@ def provisioning(tmp_path, monkeypatch):
     monkeypatch.setattr(runtime.sys, "platform", "linux")
     monkeypatch.setattr(
         runtime,
+        "prepare_dgl_runtime_wheel",
+        lambda directory: (
+            directory / f"dgl-{pins.SE3_DGL}-cp311-cp311-manylinux1_x86_64.whl",
+            {"fixture": "RPC removal"},
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
         "devices",
         lambda: [{"index": 0, "memory_mib": 15360, "compute_capability": [7, 5]}],
     )
@@ -109,11 +117,19 @@ def test_provision_uses_exact_interpreters_and_preserves_mode_boundary(
         }
         assert "-r" not in argv  # No unbounded upstream training requirements.
     if mode == "validate_only":
+        assert result["dgl_runtime_wheel"] == {}
         assert not any("RFdiffusion" in " ".join(argv) for argv in commands)
         assert not any("se3/bin/python" in " ".join(argv).replace("\\", "/") for argv in commands)
         assert not set(downloads).intersection(tools.RFDIFF_WEIGHTS.values())
     else:
-        assert any(pins.SE3_DGL_WHEEL in argv for argv in installs)
+        assert result["dgl_runtime_wheel"] == {"fixture": "RPC removal"}
+        guard = root / "dgl-runtime-guard.py"
+        assert guard.read_bytes() == Path(runtime.dgl_runtime_wheel.__file__).read_bytes()
+        wrapper = (root / "se3-python").read_text()
+        assert wrapper.index(" -I -B ") < wrapper.index("\nexec ")
+        assert "dgl-runtime-guard.py" in wrapper
+        assert any(any(f"dgl-{pins.SE3_DGL}-" in arg for arg in argv) for argv in installs)
+        assert not any(pins.SE3_DGL_UPSTREAM_WHEEL in arg for argv in installs for arg in argv)
         assert any("hydra-core==1.3.8" in argv for argv in installs)
         assert set(downloads).intersection(tools.RFDIFF_WEIGHTS.values()) == (
             set() if check_only else set(tools.RFDIFF_WEIGHTS.values())
@@ -143,6 +159,25 @@ def test_receipt_environment_is_allowlisted_and_removes_host_python_config(tmp_p
     env = runtime.execution_environment(tmp_path, 0)
     assert env["API_TOKEN"] == "host-only-secret"  # Host authentication stays only in memory.
     assert not {"PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE"}.intersection(env)
+
+
+def test_smoke_validates_dgl_before_import_and_exposes_negative_checks(tmp_path, monkeypatch):
+    programs = []
+
+    def completed(argv, **kwargs):
+        program = argv[-1]
+        compile(program, "<runtime-smoke>", "exec")
+        programs.append(program)
+        return SimpleNamespace(stdout='{"observed":true}\n')
+
+    monkeypatch.setattr(runtime.subprocess, "run", completed)
+    runtime.smoke(tmp_path, {}, require_cuda=False)
+    se3, boltz = programs
+    assert se3.index("dgl_files = dgl_guard") < se3.index("import rfdiffusion")
+    assert "dgl_guard['verify_disabled_distributed'](dgl)" in se3
+    assert "'dgl_runtime_checked':True" in se3
+    assert "'negative_api_checks':dgl_disabled" in se3
+    assert "'dgl_runtime_checked':False" in boltz
 
 
 def test_constants_patch_is_scoped_idempotent_and_rejects_tampering(tmp_path, monkeypatch):
@@ -307,13 +342,15 @@ def test_source_identity_matches_wheel_code_and_ignores_documentation(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "helper", ["boltz_runtime_wheel.py", "boltz_checkpoint.py", "archive_bounds.py"]
+    "helper",
+    ["boltz_runtime_wheel.py", "dgl_runtime_wheel.py", "boltz_checkpoint.py", "archive_bounds.py"],
 )
 def test_recipe_fingerprint_changes_with_metadata_helper(monkeypatch, helper):
     first = pins.recipe()
     assert {
         "archive_bounds.py",
         "boltz_runtime_wheel.py",
+        "dgl_runtime_wheel.py",
         "boltz_assets.py",
         "boltz_checkpoint.py",
         "boltz_msa.py",

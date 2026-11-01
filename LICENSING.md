@@ -2,7 +2,9 @@
 
 > **Read this before commercial use or redistribution.** `bindsight` itself is AGPL-3.0-or-later, and it orchestrates external tools and data sources whose licenses differ. This inventory records the stated terms and review scope; it does not certify legal suitability for a particular use or distribution.
 >
-> Last reviewed: 2026-11-01 — scoped review for candidate 0.3.8. Checked PyTorch 2.14.1's source licence; licences inside the hash-verified Hydra 1.3.8, e3nn 0.3.3, PyTorch Lightning 2.6.6, Requests 2.34.2 and Biopython 1.88 release wheels; and the three pinned CUDA 11 packages' licence metadata against NVIDIA's CUDA 11.8 EULA. The e3nn compatibility patch and Boltz distribution-metadata patch retain their upstream licences. This is not a complete transitive-dependency review; unchanged rows keep their earlier review scope.
+> Last reviewed: 2026-11-01 — scoped DGL review for candidate 0.3.9. The authenticated upstream DGL 1.0.2+cu118 wheel contains Apache-2.0 licence text. The downstream RPC-removal wheel preserves it byte-for-byte and marks its modified Python files. The native libraries remain unchanged; this is not a fresh review of their embedded dependencies.
+>
+> Earlier scoped review, 2026-11-01, release 0.3.8: checked PyTorch 2.14.1's source licence; licences inside the hash-verified Hydra 1.3.8, e3nn 0.3.3, PyTorch Lightning 2.6.6, Requests 2.34.2 and Biopython 1.88 release wheels; and the three pinned CUDA 11 packages' licence metadata against NVIDIA's CUDA 11.8 EULA. The e3nn compatibility patch and Boltz distribution-metadata patch retain their upstream licences. This is not a complete transitive-dependency review; unchanged rows keep their earlier review scope.
 >
 > Earlier scoped review, 2026-11-01, release 0.3.7: the [2026-09-29 tool-registry change](https://github.com/mikhaeelatefrizk/bindsight/commit/3b08a00c273ba9e4b22deb633242cf29e8f8a4ce) routed Boltz through Bindsight's precision shim without changing upstream tool or model pins. That review re-checked Boltz 2.0.3's code licence and model-weight statement, and uv 0.13.6's bootstrap licences. It did not refresh every data-provider or transitive-dependency row.
 >
@@ -63,10 +65,11 @@ the separately licensed components described below the table.
 
 The companion and GPU/Kaggle installers download an official uv archive during setup and verify its pinned size and SHA-256 before extracting the executable. The uv binary is not bundled in Bindsight's Python package or companion executable. If redistributing an installed workspace or image containing uv, include the applicable licence and copyright notices and account for its third-party components; the code licence above is not an audit of every dependency in the binary. Downloading Python and scientific packages through uv does not change their separate licence terms.
 
-### Managed GPU runtime — scoped 0.3.8 review
+### Managed GPU runtime — scoped 0.3.8 and 0.3.9 reviews
 
 | Component | Verified licence and source | Scope and obligations |
 | --- | --- | --- |
+| DGL 1.0.2+cu118, installed as `1.0.2+cu118.bindsight.rpcoff1` | Apache-2.0, licence text inside the [authenticated upstream wheel](https://data.dgl.ai/wheels/cu118/dgl-1.0.2%2Bcu118-cp311-cp311-manylinux1_x86_64.whl) | The downstream build retains the original licence and marks its Python modifications. The scientific graph implementation and native libraries are unchanged. |
 | PyTorch 2.14.1+cu126 | BSD-style 3-clause, [v2.14.1 source LICENSE](https://github.com/pytorch/pytorch/blob/v2.14.1/LICENSE) | Preserve source/binary notices and avoid implied endorsement. Vendored components and CUDA libraries have separate terms. |
 | hydra-core 1.3.8 | MIT, `hydra_core-1.3.8.dist-info/licenses/LICENSE` inside the [official release wheel](https://pypi.org/project/hydra-core/1.3.8/#files) | The wheel's size and SHA256 matched PyPI metadata. Retain the Facebook and affiliates copyright and permission notice. |
 | e3nn 0.3.3 | MIT, `e3nn-0.3.3.dist-info/LICENSE` inside the [official release wheel](https://pypi.org/project/e3nn/0.3.3/#files) | The wheel's size and SHA256 matched PyPI metadata. Retain the UC/LBNL, EPFL, Free University of Berlin and Kostiantyn Lapchevskyi notices, including in a redistributed modified package. |

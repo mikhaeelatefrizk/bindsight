@@ -721,13 +721,10 @@ def _success_intervals(outcomes: dict[str, list[bool]]) -> dict[str, Any]:
 def _bindsight_source(backend: str, wheel: Path | None, *, is_mock: bool) -> str:
     """Which bindsight actually ran, as opposed to which one was offered.
 
-    This said "working-tree wheel <name>" whenever a wheel had been *built*,
-    and building one is not the same as the backend taking it.
-    ``get_runner`` forwards only the kwargs a runner's constructor declares, and
-    ``ModalRunner`` declares no ``bindsight_wheel`` — so a Modal benchmark built
-    the wheel, dropped it, installed bindsight from the repository's default
-    branch, and published the wheel's name as its provenance. That is the exact
-    failure the wheel was introduced to prevent, reported as though prevented.
+    Building a wheel does not establish that the backend received it.
+    ``get_runner`` forwards only the kwargs a runner's constructor declares;
+    source attribution must follow that same capability check. Hosted runners
+    use their exact published version when no candidate wheel was supplied.
 
     Args:
         backend: the runner name the results came from.
@@ -739,7 +736,9 @@ def _bindsight_source(backend: str, wheel: Path | None, *, is_mock: bool) -> str
     """
     if is_mock:
         return "mock backend: nothing is installed and no GPU runs"
-    if backend in {"modal", "colab"} or (backend == "kaggle" and wheel is None):
+    if backend in {"modal", "colab", "kaggle"} and (
+        wheel is None or not runner_accepts(backend, "bindsight_wheel")
+    ):
         from bindsight import __version__
 
         source = f"published PyPI release bindsight=={__version__}"

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from bindsight import archive_bounds
-from bindsight.runners import installer_security, tools
+from bindsight.runners import dgl_runtime_wheel, installer_security, tools
 from bindsight.runners.boltz_runtime_wheel import RUNTIME_VERSION as _BOLTZ_RUNTIME_VERSION
 
 BOLTZ_RUNTIME_VERSION = _BOLTZ_RUNTIME_VERSION
@@ -27,12 +27,9 @@ TORCH_WHEEL = (
     "torch-2.14.1%2Bcu126-cp311-cp311-manylinux_2_28_x86_64.whl"
     "#sha256=acffcaa38f734dc04ba243d6192875a6ca185a2d2f19aac07fd16dc1aa7c926f"
 )
-SE3_DGL = "1.0.2+cu118"
-SE3_DGL_WHEEL = (
-    "https://data.dgl.ai/wheels/cu118/"
-    "dgl-1.0.2%2Bcu118-cp311-cp311-manylinux1_x86_64.whl"
-    "#sha256=84c6c705a01692a7c36038581a54c1b04a6cd3ce86d20f1607695aa61d9edd3b"
-)
+SE3_DGL = dgl_runtime_wheel.RUNTIME_VERSION
+SE3_DGL_UPSTREAM_WHEEL = dgl_runtime_wheel.UPSTREAM_URL
+SE3_DGL_PATCHED_SHA256 = dgl_runtime_wheel.PATCHED_SHA256
 SE3_NUMPY = "1.23.5"
 SE3_E3NN = "0.3.3"
 E3NN_LOADER_SHA256 = "e32eef83faf0878ccd87cf77bc4d8cb99ea95612054822326f896d30ac3cbc58"
@@ -68,7 +65,7 @@ def recipe() -> dict[str, Any]:
     """Fingerprint exact runtime controls without implying numerical equivalence."""
     runtime = Path(__file__).with_name("gpu_runtime.py")
     body: dict[str, Any] = {
-        "version": 2,
+        "version": 3,
         "designer": "rfdiff_mpnn",
         "validator": "boltz2",
         "rfdiffusion_commit": tools.RFDIFF_COMMIT,
@@ -79,6 +76,8 @@ def recipe() -> dict[str, Any]:
             "python": SE3_PYTHON,
             "torch": SE3_TORCH,
             "dgl": SE3_DGL,
+            "dgl_upstream_sha256": dgl_runtime_wheel.UPSTREAM_SHA256,
+            "dgl_patched_sha256": SE3_DGL_PATCHED_SHA256,
             "numpy": SE3_NUMPY,
             "e3nn": SE3_E3NN,
             "private_cuda11": list(CUDA11_PIP),
@@ -98,8 +97,9 @@ def recipe() -> dict[str, Any]:
             ).hexdigest(),
         },
         "security_boundary": {
-            "dgl": "Local graph operations only; distributed DGL/RPC servers are unsupported",
-            "unpatched_advisory": "GHSA-3x5x-fw77-g54c",
+            "dgl": "Authenticated downstream wheel removes distributed Python RPC; local graph and native payload bytes retained",
+            "dgl_remediated_advisory": dgl_runtime_wheel.ADVISORY,
+            "dgl_native_rpc": "Present in unchanged native libraries; unrelated local-file deserialization remains",
             "e3nn_loader": "Verified constants; scoped slice allowlist; weights_only remains enabled",
             "boltz_loader": "Publisher-pinned checkpoints; same authenticated handle; scoped fixed globals; weights_only=True",
         },
@@ -117,6 +117,7 @@ def recipe() -> dict[str, Any]:
                 name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                 for name in (
                     "boltz_runtime_wheel.py",
+                    "dgl_runtime_wheel.py",
                     "boltz_assets.py",
                     "boltz_checkpoint.py",
                     "boltz_msa.py",

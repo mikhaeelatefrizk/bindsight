@@ -22,10 +22,11 @@ from typing import Any
 
 import requests
 
+from bindsight.runners import dgl_runtime_wheel, tools
 from bindsight.runners import gpu_recipe as pins
-from bindsight.runners import tools
 from bindsight.runners.boltz_assets import prepare_boltz_assets
 from bindsight.runners.boltz_runtime_wheel import prepare_boltz_runtime_wheel
+from bindsight.runners.dgl_runtime_wheel import prepare_dgl_runtime_wheel
 from bindsight.runners.installer_security import (
     CERTIFI_REQUIREMENT,
     MICROMAMBA_SHA256,
@@ -305,7 +306,15 @@ def smoke(
     if mode == "design_and_validate":
         programs["se3"] = (
             root / "se3-python",
-            "import rfdiffusion.inference.model_runners, se3_transformer, dgl, e3nn; "
+            # The design environment deliberately excludes Bindsight's unrelated
+            # package dependencies. Run the exact stdlib-only checker source in
+            # a private namespace before importing any installed DGL code.
+            "dgl_guard = {'__name__':'bindsight_dgl_guard'}; exec(compile("
+            + repr(Path(dgl_runtime_wheel.__file__).read_text(encoding="utf-8"))
+            + ", '<bindsight-dgl-runtime-guard>', 'exec'), dgl_guard); "
+            + "dgl_files = dgl_guard['verify_installed_dgl'](); "
+            + "import rfdiffusion.inference.model_runners, se3_transformer, dgl, e3nn; "
+            + "dgl_disabled = dgl_guard['verify_disabled_distributed'](dgl); "
             + f"sys.path.insert(0, {str(root / 'tools/ProteinMPNN')!r}); "
             + "import protein_mpnn_utils; from pathlib import Path; "
             + "assert Path(protein_mpnn_utils.__file__).resolve() == "
@@ -372,6 +381,10 @@ def smoke(
             "'numpy':version('numpy'),"
             "'loaded_curand_sha256':curand_hashes,"
             "'distributed_dgl_supported':False,"
+            "'dgl_runtime_checked':" + repr(name == "se3") + ","
+            "'dgl_security_check':{'installed':dgl_files,'negative_api_checks':dgl_disabled} if "
+            + repr(name == "se3")
+            + " else None,"
             "'checkpoint_loader_checked':" + repr(name == "boltz") + ","
             "'boltz':version('boltz') if " + repr(name == "boltz") + " else None,"
             "'trifast':version('trifast') if " + repr(name == "boltz") + " else None}))"
@@ -727,6 +740,7 @@ def provision(
     compatibility_patches = {}
     auxiliary_packages = {}
     auxiliary_libraries = {}
+    dgl_wheel_receipt = {}
     if mode == "design_and_validate":
         # Conda supplies git only. Both scientific interpreters come from the
         # same exact uv-managed Python build already exercised on T4.
@@ -764,7 +778,8 @@ def provision(
                 raise RuntimeError(f"{name} checkout does not match its pinned revision")
 
         phase("Install the isolated RFdiffusion and ProteinMPNN environment")
-        pip("se3", pins.TORCH_WHEEL, pins.SE3_DGL_WHEEL, *pins.SE3_EXTRA_PIP)
+        dgl_wheel, dgl_wheel_receipt = prepare_dgl_runtime_wheel(root / "patched-wheels")
+        pip("se3", pins.TORCH_WHEEL, str(dgl_wheel), *pins.SE3_EXTRA_PIP)
         reset_owned_environment(root, "cuda11")
         pip("se3", "--target", str(root / "cuda11"), "--no-deps", *pins.CUDA11_PIP)
         from importlib.metadata import distributions
@@ -789,6 +804,10 @@ def provision(
         pip("se3", "--no-deps", str(se3))
         pip("se3", "--no-deps", "-e", str(root / "tools/RFdiffusion"))
         wrapper = root / "se3-python"
+        dgl_guard_path = root / "dgl-runtime-guard.py"
+        if dgl_guard_path.is_symlink():
+            raise ValueError("The managed DGL runtime guard must not be a link")
+        dgl_guard_path.write_bytes(Path(dgl_runtime_wheel.__file__).read_bytes())
         python_minor = ".".join(pins.SE3_PYTHON.split(".")[:2])
         site = root / f"se3/lib/python{python_minor}/site-packages"
         compatibility_patches["e3nn_constants_loader"] = patch_e3nn_constants_loader(site)
@@ -805,6 +824,10 @@ def provision(
             + "export LD_LIBRARY_PATH="
             + shlex.quote(libraries)
             + ':"${LD_LIBRARY_PATH:-}"\n'
+            + shlex.quote(str(root / "se3/bin/python"))
+            + " -I -B "
+            + shlex.quote(str(dgl_guard_path))
+            + " || exit $?\n"
             + "exec "
             + shlex.quote(str(root / "se3/bin/python"))
             + ' "$@"\n',
@@ -894,6 +917,7 @@ def provision(
         "installed_packages": freezes,
         "compatibility_patches": compatibility_patches,
         "boltz_runtime_wheel": boltz_wheel_receipt,
+        "dgl_runtime_wheel": dgl_wheel_receipt,
         "boltz_assets": boltz_assets,
         "auxiliary_cuda11_packages": auxiliary_packages,
         "auxiliary_cuda11_libraries": auxiliary_libraries,

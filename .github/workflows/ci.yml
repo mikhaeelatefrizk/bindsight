@@ -72,6 +72,11 @@ jobs:
       - name: Install the workflow extra (Linux only)
         if: runner.os == 'Linux'
         run: pip install -e ".[workflow]"
+      - name: Check the real Modal client without starting cloud compute
+        if: runner.os == 'Linux' && matrix.python-version == '3.11'
+        run: |
+          pip install "modal==1.6.3"
+          pytest tests/test_hosted_backends.py::test_real_modal_sdk_constructs_without_starting_app --no-cov -q
       # Coverage is configured in pyproject and was disabled here by --no-cov,
       # so it had never actually run. It now runs AND gates: --cov-fail-under
       # fails the build if coverage regresses below the floor. Kept a couple of

@@ -24,13 +24,14 @@ divergent copy lives here.
 from __future__ import annotations
 
 import base64
+import hashlib
 import inspect
 import json
 import re
 from pathlib import Path
 from typing import Any
 
-from bindsight.runners import installer_security, release_bootstrap, tools
+from bindsight.runners import hosted_source, installer_security, release_bootstrap, tools
 from bindsight.runners.notebook import (
     build_notebook,
     code_cell_from_template,
@@ -45,6 +46,7 @@ def build_design_notebook(
     designer: str,
     gpu_type: str,
     spec: dict[str, Any],
+    bindsight_wheel: Path | None = None,
 ) -> dict[str, Any]:
     """Build the design + validation notebook for a single GPU job.
 
@@ -52,6 +54,7 @@ def build_design_notebook(
         handle_id: stable ID; results tarball is ``<handle_id>.tar.gz``.
         designer: ``rfdiff_mpnn`` | ``bindcraft`` | ``boltzgen``.
         gpu_type: ``T4`` (free Colab) or ``A100`` (Pro+/Modal).
+        bindsight_wheel: optional explicit, integrity-checked unpublished candidate wheel.
         spec: design spec dict (``DesignSpec.model_dump()``); include
             ``target_structure_b64`` so the target is materialised on the GPU.
 
@@ -60,7 +63,17 @@ def build_design_notebook(
     """
     from bindsight import __version__
 
-    version = release_bootstrap.published_version(__version__)
+    candidate = hosted_source.candidate_source(bindsight_wheel) if bindsight_wheel else None
+    version = (
+        candidate["version"] if candidate else release_bootstrap.published_version(__version__)
+    )
+    wheel_b64 = ""
+    if bindsight_wheel is not None:
+        assert candidate is not None
+        wheel_data = bindsight_wheel.read_bytes()
+        if hashlib.sha256(wheel_data).hexdigest() != candidate["sha256"]:
+            raise ValueError("Candidate wheel changed during notebook generation")
+        wheel_b64 = base64.b64encode(wheel_data).decode("ascii")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", handle_id):
         raise ValueError("The notebook job ID must be a safe directory name.")
     mode = spec.get("extra_params", {}).get("mode", "design_and_validate")
@@ -72,8 +85,12 @@ def build_design_notebook(
         code_cell_from_template(_GPU_CHECK_CELL, {}),
         markdown_cell(
             "## 1. Install RFdiffusion + ProteinMPNN + Boltz-2 + bindsight\n\n"
-            f"Uses published Bindsight {version} and its canonical managed GPU recipe. "
-            "Unpublished changes are not included. The first setup downloads packages and models."
+            + (
+                f"Uses explicitly selected candidate Bindsight {version} (SHA256 `{candidate['sha256']}`). "
+                if candidate
+                else f"Uses published Bindsight {version}. "
+            )
+            + "The canonical managed GPU recipe downloads packages and models on first setup."
         ),
         code_cell_from_template(
             _INSTALL_CELL,
@@ -81,6 +98,8 @@ def build_design_notebook(
                 "bootstrap_source": _bootstrap_source(),
                 "version": version,
                 "mode": mode,
+                "candidate_json_b64": base64.b64encode(json.dumps(candidate).encode()).decode(),
+                "wheel_b64": wheel_b64,
             },
         ),
         markdown_cell("## 2. Load the design spec + target structure"),
@@ -115,10 +134,15 @@ def write_design_notebook(
     designer: str,
     gpu_type: str,
     spec: dict[str, Any],
+    bindsight_wheel: Path | None = None,
 ) -> Path:
     """Build and write the design notebook to ``out_path``."""
     notebook = build_design_notebook(
-        handle_id=handle_id, designer=designer, gpu_type=gpu_type, spec=spec
+        handle_id=handle_id,
+        designer=designer,
+        gpu_type=gpu_type,
+        spec=spec,
+        bindsight_wheel=bindsight_wheel,
     )
     return write_notebook(notebook, out_path)
 
@@ -167,6 +191,8 @@ def _bootstrap_source() -> str:
         "from __future__ import annotations\nfrom collections.abc import Callable\n"
         + source
         + "\n"
+        + inspect.getsource(hosted_source).replace("from __future__ import annotations\n", "")
+        + "\n"
         + constants
         + "\n"
         + functions
@@ -194,7 +220,15 @@ import os, subprocess
 ROOT = Path('/content/bindsight_tools'); ROOT.mkdir(exist_ok=True)
 RELEASE_VERSION = '{{ version }}'
 UV = download_verified_uv(ROOT / 'bootstrap/uv', report=print)
-WHEEL = download_release_wheel(RELEASE_VERSION, ROOT / 'release')
+import base64
+CANDIDATE = json.loads(base64.b64decode('{{ candidate_json_b64 }}', validate=True))
+if CANDIDATE is None:
+    WHEEL = download_release_wheel(RELEASE_VERSION, ROOT / 'release')
+    SOURCE_KIND = 'published-wheel'
+else:
+    WHEEL = write_candidate(base64.b64decode('{{ wheel_b64 }}', validate=True),
+                            CANDIDATE, ROOT / 'candidate')
+    SOURCE_KIND = 'candidate-wheel'
 ENV = package_environment(dict(os.environ), ROOT / 'uv-cache')
 ENV.pop('UV_NO_PYTHON_DOWNLOADS', None)
 ENV['UV_PYTHON_INSTALL_DIR'] = str(ROOT / 'python')
@@ -244,12 +278,18 @@ for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'PYTHONUSERBASE',
             'BINDSIGHT_BOLTZ_BIN', 'BINDSIGHT_LOCAL_IMAGE', 'BINDSIGHT_DESIGN_PYTHON'):
     job_env.pop(key, None)
 job_env.update(receipt['execution_environment'])
-subprocess.run(
-    [receipt['boltz_python'], '-I', '-m', 'bindsight.runners.job_exec',
-     f'/content/{JOB_ID}_spec/spec.json', f'/content/{JOB_ID}.tar.gz'],
-    env=job_env, check=True,
+completed = subprocess.run(
+    [receipt['boltz_python'], '-I', '-m', 'bindsight.runners.hosted_job',
+     '--backend', 'colab', '--root', str(ROOT / 'runtime'),
+     '--receipt', str(ROOT / 'provision-receipt.json'), '--source', str(WHEEL),
+     '--source-kind', SOURCE_KIND, '--spec', f'/content/{JOB_ID}_spec/spec.json',
+     '--output', f'/content/{JOB_ID}.tar.gz'],
+    env=job_env, check=False,
 )
-print('done -> /content/{{ handle_id }}.tar.gz')
+if completed.returncode:
+    print('Job incomplete or failed; download the diagnostic archive and inspect runtime/backend-status.json.')
+else:
+    print('done -> /content/{{ handle_id }}.tar.gz (science + runtime receipts)')
 """
 
 _DOWNLOAD_CELL = """\

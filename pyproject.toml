@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # -----------------------------------------------------------------------------
 [project]
 name = "bindsight"
-version = "0.3.8"
+version = "0.3.9"
 description = "A reproducible bridge from RNA-seq to de novo protein binder design, with end-to-end provenance."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -100,7 +100,7 @@ report = [
     "psutil>=5.9,<8",       # measured available memory in the local workbench
 ]
 runners = [
-    "modal>=0.64",
+    "modal>=1.6.3,<2",
     "kaggle>=1.6",
     # Kaggle imports six directly; python-dateutil 4 no longer supplies it.
     "six>=1.17",

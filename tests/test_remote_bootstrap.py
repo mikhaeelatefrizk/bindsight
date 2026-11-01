@@ -94,21 +94,27 @@ def test_notebook_executes_managed_interpreter_and_merges_host_environment(tmp_p
     monkeypatch.setenv("HOST_SECRET", "never-serialize-this")
     monkeypatch.setenv("PYTHONPATH", "/untrusted")
     calls = []
-    monkeypatch.setattr("subprocess.run", lambda argv, **kwargs: calls.append((argv, kwargs)))
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda argv, **kwargs: calls.append((argv, kwargs)) or SimpleNamespace(returncode=0),
+    )
     run = next(cell for cell in notebook_cells({}) if "job_env.update" in cell)
-    exec(compile(run, "execute-job", "exec"), {"ROOT": tmp_path})
+    exec(
+        compile(run, "execute-job", "exec"),
+        {"ROOT": tmp_path, "WHEEL": tmp_path / "source.whl", "SOURCE_KIND": "candidate-wheel"},
+    )
     argv, options = calls[0]
-    assert argv[:4] == ["/managed/bin/python", "-I", "-m", "bindsight.runners.job_exec"]
+    assert argv[:4] == ["/managed/bin/python", "-I", "-m", "bindsight.runners.hosted_job"]
     assert options["env"]["HOST_SECRET"] == "never-serialize-this"
     assert "PYTHONPATH" not in options["env"]
     assert options["env"]["MANAGED"] == "yes"
-    assert options["check"] is True
+    assert options["check"] is False
     assert "HOST_SECRET" not in (tmp_path / "provision-receipt.json").read_text()
 
 
 @pytest.fixture
 def modal_stub(tmp_path, monkeypatch):
-    calls = {"pip": [], "base": []}
+    calls = {"pip": [], "base": [], "commands": []}
 
     class Image:
         @classmethod
@@ -121,6 +127,10 @@ def modal_stub(tmp_path, monkeypatch):
 
         def pip_install(self, *args):
             calls["pip"].extend(args)
+            return self
+
+        def run_commands(self, *args):
+            calls["commands"].extend(args)
             return self
 
     class App:
@@ -143,7 +153,9 @@ def modal_stub(tmp_path, monkeypatch):
 
 def test_modal_initial_driver_pins_callers_published_release(modal_stub):
     _, calls, _ = modal_stub
-    assert calls["pip"] == ["certifi>=2026.10.19", "psutil>=5.9,<8", f"bindsight=={__version__}"]
+    assert calls["pip"] == ["certifi>=2026.10.19", "psutil>=5.9,<8"]
+    assert "download_release_wheel" in calls["commands"][0]
+    assert f"bindsight-{__version__}-py3-none-any.whl" in calls["commands"][1]
     assert calls["base"] == [{"python_version": "3.11"}]
 
 

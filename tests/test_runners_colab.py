@@ -51,7 +51,7 @@ def test_submit_writes_valid_notebook_json(runner: ColabRunner, tmp_path: Path) 
     assert "RFdiffusion" in src
     assert "ProteinMPNN" in src
     assert "boltz" in src.lower()
-    assert "bindsight.runners.job_exec" in src
+    assert "bindsight.runners.hosted_job" in src
 
 
 def test_submit_handles_missing_spec_file_gracefully(runner: ColabRunner, tmp_path: Path) -> None:
