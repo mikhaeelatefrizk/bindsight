@@ -32,14 +32,14 @@ The earlier prediction-component probe's 2026-11-01 advisory lookup reported no
 known vulnerabilities in 92 queried PyPI versions. Its local Boltz wheel was
 excluded and reviewed separately. Current CI freezes match the versions in the
 retained dated advisory reports; no new query is implied. The [evidence and
-audit scope](audits/gpu-runtime/2026-11-01/README.md) retain source-package exclusions and the
+audit scope](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01) retain source-package exclusions and the
 design environment's known DGL advisory.
 
 **The updated recipe completed a small RFdiffusion → ProteinMPNN → Boltz run
 on 2026-11-01 using a Kaggle Tesla T4.** It produced one backbone, two sequences
 and two predictions from the frozen HER2 protocol. All eight independent
 artifact checks passed for the exact tested commit and wheel in the
-[evidence bundle](audits/gpu-runtime/2026-11-01/README.md).
+[evidence bundle](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01).
 
 The RF check follows the pinned model: nonfinal frames retain the fixed target's
 internal geometry, and the saved final backbone matches both final trajectory

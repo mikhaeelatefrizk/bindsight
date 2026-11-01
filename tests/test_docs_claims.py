@@ -24,6 +24,7 @@ DOI and the retracted novelty claim verbatim while describing their removal.
 from __future__ import annotations
 
 import functools
+import hashlib
 import json
 import re
 import subprocess
@@ -34,6 +35,39 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Dated receipts and method snapshots are evidence, not current test-count
+# claims or maintained generators. Exempt only this exact reviewed inventory;
+# new/unmanifested files remain covered by the ordinary documentation guards.
+_GPU_AUDIT = "docs/audits/gpu-runtime/2026-11-01"
+_GPU_AUDIT_MANIFEST_SHA = "1e89c186dd1c4610b0a7f25264dd4e65c30def56728682a82dd9c970bad4c071"
+
+
+@functools.lru_cache(maxsize=1)
+def _frozen_gpu_evidence_files() -> frozenset[str]:
+    manifest_bytes = (ROOT / _GPU_AUDIT / "manifest.json").read_bytes()
+    assert hashlib.sha256(manifest_bytes).hexdigest() == _GPU_AUDIT_MANIFEST_SHA
+    manifest = json.loads(manifest_bytes)
+    return frozenset(f"{_GPU_AUDIT}/{row['artifact']}" for row in manifest["files"])
+
+
+def test_frozen_gpu_evidence_retains_its_complete_exact_inventory() -> None:
+    """Historical counts/methods must retain their actual recorded bytes."""
+    directory = ROOT / _GPU_AUDIT
+    manifested = _frozen_gpu_evidence_files()
+    inventory = {
+        path.relative_to(ROOT).as_posix() for path in directory.rglob("*") if path.is_file()
+    }
+    assert inventory == manifested | {f"{_GPU_AUDIT}/manifest.json"}
+    manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    for row in manifest["files"]:
+        path = directory / row["artifact"]
+        assert not path.is_symlink()
+        assert path.resolve().is_relative_to(directory.resolve())
+        data = path.read_bytes()
+        assert len(data) == row["bytes"], row["artifact"]
+        assert hashlib.sha256(data).hexdigest() == row["sha256"], row["artifact"]
+
 
 # --- The exact strings the E-docs fixes turned on ----------------------------
 
@@ -659,7 +693,7 @@ def _documents_stating_a_test_count() -> list[tuple[str, bool, int, str]]:
     found: list[tuple[str, bool, int, str]] = []
     for path in _shipped_documents():
         rel = path.relative_to(ROOT).as_posix()
-        if path.name in _TEST_COUNT_EXEMPT:
+        if path.name in _TEST_COUNT_EXEMPT or rel in _frozen_gpu_evidence_files():
             continue
         for over, number, plus, noun in _TEST_COUNT_CLAIM.findall(path.read_text(encoding="utf-8")):
             metric = "functions" if "function" in noun.lower() else "collected"
@@ -1836,6 +1870,8 @@ def _modules_that_write_text() -> tuple[str, ...]:
             continue
         if rel.startswith("tests/"):
             continue  # a test's scratch files are not artifacts
+        if rel in _frozen_gpu_evidence_files():
+            continue  # an exact archived method is not a maintained generator
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except (OSError, SyntaxError, UnicodeDecodeError):  # pragma: no cover
@@ -2031,7 +2067,7 @@ def test_the_generator_sweep_covers_every_module_that_writes() -> None:
         if "__pycache__" in path.parts:
             continue
         rel = path.relative_to(ROOT).as_posix()
-        if rel not in tracked or rel.startswith("tests/"):
+        if rel not in tracked or rel.startswith("tests/") or rel in _frozen_gpu_evidence_files():
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))

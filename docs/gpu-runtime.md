@@ -12,7 +12,7 @@ RFdiffusion backbone, two ProteinMPNN sequences and two Boltz predictions on
 a Kaggle Tesla T4. The independent artifact verifier passed all eight checks for
 the frozen protocol, transported evidence, runtime and model identities,
 recorded commands, RF trajectories, sequences, structures and finite metrics.
-The [evidence bundle](audits/gpu-runtime/2026-11-01/README.md) identifies the exact tested commit
+The [evidence bundle](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01) identifies the exact tested commit
 and wheel. This is a small computational smoke, not a numerical-equivalence or
 biological-efficacy study. No live Colab or Modal execution is established.
 
@@ -111,7 +111,7 @@ restored on success or failure. PyTorch's allowlist is process-wide, so this
 adapter is limited to the single prediction driver and does not support unrelated
 concurrent loads. It rejects arbitrary checkpoints. Both actual Boltz models
 were constructed on CPU using this exact helper; this CPU result does not claim
-GPU prediction. See the [checkpoint evidence](audits/gpu-runtime/2026-11-01/README.md).
+GPU prediction. See the [checkpoint evidence](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01).
 
 Both RFdiffusion checkpoint downloads must match pre-established SHA256 pins.
 Boltz's confidence checkpoint, affinity checkpoint and CCD molecule archive
@@ -140,7 +140,7 @@ vulnerabilities in 92 queried PyPI versions on 2026-11-01; its local Boltz wheel
 was excluded and reviewed separately. Current CI records the complete measured
 freezes and retained dated advisory results for the same versions, with source
 package and database exclusions explicit. No new advisory query is claimed by
-the freeze comparison. See the [dated audit scope](audits/gpu-runtime/2026-11-01/README.md).
+the freeze comparison. See the [dated audit scope](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01).
 These records are not a comprehensive audit of all installed code.
 DGL's distributed RPC deserialization advisory remains unpatched. Static review
 of the supported Bindsight workflow and pinned RFdiffusion/SE3 source found local

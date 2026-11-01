@@ -67,7 +67,7 @@ supported use of this environment.
 
 The 0.3.8 managed recipe completed one RFdiffusion backbone, two ProteinMPNN
 sequences and two Boltz predictions on a Kaggle Tesla T4; the [recorded smoke
-and independent checks](audits/gpu-runtime/2026-11-01/README.md) identify its exact code and inputs.
+and independent checks](https://github.com/mikhaeelatefrizk/bindsight/tree/v0.3.8/docs/audits/gpu-runtime/2026-11-01) identify its exact code and inputs.
 Boltz `2.0.3+bindsight.1` changes dependency metadata while preserving the
 upstream implementation files. This computational run does not establish
 numerical equivalence to the historical campaign or support for every local
